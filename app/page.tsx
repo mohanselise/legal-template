@@ -108,7 +108,7 @@ const benefits = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[hsl(var(--bg))] font-sans">
+    <div className="min-h-screen bg-background font-sans">
       {/* Announcement Bar */}
       <div className="bg-blue-600 px-4 py-3 text-center text-sm text-white">
         <div className="flex items-center justify-center gap-2">
@@ -121,7 +121,7 @@ export default function Home() {
       </div>
 
       {/* Hero Section - Enhanced */}
-      <section className="relative overflow-hidden border-b border-[hsl(var(--border))]">
+      <section className="relative overflow-hidden border-b border-border">
         {/* Background texture layer */}
         <div className="absolute inset-0">
           <Image
@@ -134,7 +134,7 @@ export default function Home() {
         </div>
 
         {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20" />
+        <div className="absolute inset-0 bg-linear-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20" />
 
         {/* Decorative elements */}
         <div className="absolute left-0 top-0 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl dark:bg-blue-600/20" />
@@ -153,16 +153,16 @@ export default function Home() {
               </Badge>
             </div>
 
-            <h1 className="text-5xl font-bold tracking-tight text-[hsl(var(--fg))] sm:text-7xl bg-clip-text">
+            <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-7xl bg-clip-text">
               Professional Legal Documents,
               <span className="block bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400">
                 Generated Instantly
               </span>
             </h1>
 
-            <p className="mt-8 text-xl leading-8 text-[hsl(var(--muted-foreground))]">
+            <p className="mt-8 text-xl leading-8 text-muted-foreground">
               Stop paying expensive lawyers for standard documents. Generate customized,
-              <span className="font-semibold text-[hsl(var(--fg))]"> plain-English legal templates</span> in minutes—
+              <span className="font-semibold text-foreground"> plain-English legal templates</span> in minutes—
               completely free, forever.
             </p>
 
@@ -182,7 +182,7 @@ export default function Home() {
             </div>
 
             {/* Quick benefits */}
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-[hsl(var(--muted-foreground))]">
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 <span>No credit card needed</span>
@@ -204,10 +204,10 @@ export default function Home() {
               {stats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={index} className="group rounded-2xl border border-[hsl(var(--border))] bg-white/50 p-6 text-center backdrop-blur-sm transition-all hover:border-blue-300 hover:shadow-lg dark:bg-black/20 dark:hover:border-blue-700">
+                  <div key={index} className="group rounded-2xl border border-border bg-white/50 p-6 text-center backdrop-blur-sm transition-all hover:border-blue-300 hover:shadow-lg dark:bg-black/20 dark:hover:border-blue-700">
                     <Icon className="mx-auto mb-3 h-8 w-8 text-blue-600 dark:text-blue-400" />
-                    <div className="text-4xl font-bold text-[hsl(var(--fg))]">{stat.value}</div>
-                    <div className="mt-2 text-sm font-medium text-[hsl(var(--muted-foreground))]">{stat.label}</div>
+                    <div className="text-4xl font-bold text-foreground">{stat.value}</div>
+                    <div className="mt-2 text-sm font-medium text-muted-foreground">{stat.label}</div>
                   </div>
                 );
               })}
@@ -223,12 +223,12 @@ export default function Home() {
             <Badge className="mb-4 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
               Popular Templates
             </Badge>
-            <h2 className="text-4xl font-bold tracking-tight text-[hsl(var(--fg))] sm:text-5xl">
+            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
               Choose Your Template
             </h2>
-            <p className="mt-6 text-lg text-[hsl(var(--muted-foreground))]">
+            <p className="mt-6 text-lg text-muted-foreground">
               Select from our growing library of professional legal templates.
-              <span className="font-semibold text-[hsl(var(--fg))]"> More templates added every month.</span>
+              <span className="font-semibold text-foreground"> More templates added every month.</span>
             </p>
           </div>
 
@@ -316,10 +316,10 @@ export default function Home() {
             <Badge className="mb-4 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
               Why Choose Us
             </Badge>
-            <h2 className="text-4xl font-bold tracking-tight text-[hsl(var(--fg))] sm:text-5xl">
+            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
               Legal Documents Made Simple
             </h2>
-            <p className="mt-6 text-lg text-[hsl(var(--muted-foreground))]">
+            <p className="mt-6 text-lg text-muted-foreground">
               We believe legal documents should be accessible, understandable, and free for everyone.
             </p>
           </div>
@@ -328,7 +328,7 @@ export default function Home() {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <div key={index} className="group relative rounded-2xl border border-[hsl(var(--border))] bg-white p-8 shadow-sm transition-all hover:border-blue-300 hover:shadow-xl dark:bg-black/40 dark:hover:border-blue-700">
+                <div key={index} className="group relative rounded-2xl border border-border bg-white p-8 shadow-sm transition-all hover:border-blue-300 hover:shadow-xl dark:bg-black/40 dark:hover:border-blue-700">
                   <div className="absolute -right-3 -top-3">
                     <Badge className="bg-blue-600 text-white text-xs">
                       {feature.highlight}
@@ -337,10 +337,10 @@ export default function Home() {
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500 to-purple-600 shadow-lg">
                     <Icon className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="mt-6 text-xl font-semibold text-[hsl(var(--fg))]">
+                  <h3 className="mt-6 text-xl font-semibold text-foreground">
                     {feature.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-[hsl(var(--muted-foreground))]">
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                     {feature.description}
                   </p>
                 </div>
@@ -350,8 +350,8 @@ export default function Home() {
 
           {/* Additional benefits list */}
           <div className="mx-auto mt-16 max-w-3xl">
-            <div className="rounded-2xl border border-[hsl(var(--border))] bg-white/50 p-8 backdrop-blur-sm dark:bg-black/20">
-              <h3 className="text-center text-xl font-semibold text-[hsl(var(--fg))]">
+            <div className="rounded-2xl border border-border bg-white/50 p-8 backdrop-blur-sm dark:bg-black/20">
+              <h3 className="text-center text-xl font-semibold text-foreground">
                 Everything You Need, Nothing You Don&apos;t
               </h3>
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -360,7 +360,7 @@ export default function Home() {
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
                       <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                     </div>
-                    <span className="text-sm text-[hsl(var(--fg))]">{benefit}</span>
+                    <span className="text-sm text-foreground">{benefit}</span>
                   </div>
                 ))}
               </div>
@@ -376,10 +376,10 @@ export default function Home() {
             <Badge className="mb-4 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
               Quick & Easy
             </Badge>
-            <h2 className="text-4xl font-bold tracking-tight text-[hsl(var(--fg))] sm:text-5xl">
+            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
               Generate in 3 Simple Steps
             </h2>
-            <p className="mt-6 text-lg text-[hsl(var(--muted-foreground))]">
+            <p className="mt-6 text-lg text-muted-foreground">
               From zero to legally-sound document in under 2 minutes.
             </p>
           </div>
@@ -419,10 +419,10 @@ export default function Home() {
                         </div>
                         <Icon className="h-10 w-10 text-white" />
                       </div>
-                      <h3 className="mt-8 text-2xl font-semibold text-[hsl(var(--fg))]">
+                      <h3 className="mt-8 text-2xl font-semibold text-foreground">
                         {item.title}
                       </h3>
-                      <p className="mt-4 text-base leading-relaxed text-[hsl(var(--muted-foreground))]">
+                      <p className="mt-4 text-base leading-relaxed text-muted-foreground">
                         {item.description}
                       </p>
                     </div>
@@ -452,10 +452,10 @@ export default function Home() {
                 <Star key={i} className="h-8 w-8 fill-current" />
               ))}
             </div>
-            <p className="mt-6 text-2xl font-semibold text-[hsl(var(--fg))] sm:text-3xl">
+            <p className="mt-6 text-2xl font-semibold text-foreground sm:text-3xl">
               &quot;Finally, legal documents that don&apos;t require a law degree to understand!&quot;
             </p>
-            <p className="mt-4 text-lg text-[hsl(var(--muted-foreground))]">
+            <p className="mt-4 text-lg text-muted-foreground">
               Join thousands of professionals, startups, and small businesses who trust our templates.
             </p>
           </div>

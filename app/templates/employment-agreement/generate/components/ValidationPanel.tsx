@@ -105,6 +105,7 @@ export function ValidationPanel({
           <AnimatePresence mode="popLayout">
             {missingRequired.length === 0 ? (
               <motion.div
+                key="required-complete"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
@@ -117,6 +118,7 @@ export function ValidationPanel({
               </motion.div>
             ) : (
               <motion.div
+                key="required-missing"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
@@ -136,6 +138,7 @@ export function ValidationPanel({
 
             {warnings.length === 0 ? (
               <motion.div
+                key="warnings-none"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
@@ -148,6 +151,7 @@ export function ValidationPanel({
               </motion.div>
             ) : (
               <motion.div
+                key="warnings-present"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}

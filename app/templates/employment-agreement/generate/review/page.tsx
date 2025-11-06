@@ -19,13 +19,27 @@ function ReviewContent() {
     const dataParam = searchParams.get('data');
 
     if (docParam) {
-      setGeneratedDocument(decodeURIComponent(docParam));
+      let documentContent = docParam;
+      try {
+        // Handle legacy URLs where we manually encoded the document
+        documentContent = decodeURIComponent(docParam);
+      } catch (err) {
+        documentContent = docParam;
+      }
+      setGeneratedDocument(documentContent);
       setIsGenerating(false);
     }
 
     if (dataParam) {
+      let dataContent = dataParam;
       try {
-        const parsed = JSON.parse(dataParam);
+        dataContent = decodeURIComponent(dataParam);
+      } catch (err) {
+        dataContent = dataParam;
+      }
+
+      try {
+        const parsed = JSON.parse(dataContent);
         setFormData(parsed);
       } catch (e) {
         console.error('Failed to parse form data');
@@ -160,15 +174,15 @@ function ReviewContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[hsl(var(--brand-primary))] to-[hsl(var(--brand-secondary))] text-white">
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
         <div className="container mx-auto px-4 py-12">
           <div className="flex items-center gap-4 mb-3">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-              <CheckCircle2 className="w-7 h-7" />
+            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+              <CheckCircle2 className="w-7 h-7 text-green-400" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold">Your Agreement is Ready!</h1>
-              <p className="text-blue-100 mt-1">Review and send for signature</p>
+              <h1 className="text-4xl font-bold text-white">Your Agreement is Ready!</h1>
+              <p className="text-gray-300 mt-1">Review and send for signature</p>
             </div>
           </div>
         </div>

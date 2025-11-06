@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
+import { useDrag } from '@use-gesture/react';
 import * as Icons from 'lucide-react';
 import { SmartCard as SmartCardType } from '@/lib/card-engine/types';
 import { Card } from '@/components/ui/card';
@@ -18,9 +19,38 @@ interface SmartCardProps {
 export function SmartCard({ card, onClick, onValueChange }: SmartCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [localValue, setLocalValue] = useState(card.value || '');
+  const [showHint, setShowHint] = useState(false);
+
+  // Motion values for swipe gestures
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-100, 100], [-10, 10]);
+  const opacity = useTransform(x, [-100, -50, 0, 50, 100], [0.5, 0.8, 1, 0.8, 0.5]);
 
   // Dynamically get the Lucide icon
   const IconComponent = (Icons as any)[card.icon] || Icons.Circle;
+
+  // Swipe gesture handler (mobile-friendly)
+  const bind = useDrag(({ offset: [ox], direction: [dx], velocity: [vx], cancel }) => {
+    // Only on mobile
+    if (window.innerWidth > 640) return;
+
+    if (Math.abs(ox) > 100 || (Math.abs(vx) > 0.5 && Math.abs(ox) > 50)) {
+      if (dx > 0 && card.state === 'suggested') {
+        // Swipe right = Accept suggestion
+        onValueChange?.(card.id, card.value || '');
+        cancel?.();
+      } else if (dx < 0) {
+        // Swipe left = Edit
+        setIsEditing(true);
+        cancel?.();
+      }
+      x.set(0); // Reset position
+    }
+  }, {
+    from: () => [x.get(), 0],
+    bounds: { left: -150, right: 150 },
+    rubberband: true,
+  });
 
   const getStateStyles = () => {
     switch (card.state) {
@@ -137,15 +167,34 @@ export function SmartCard({ card, onClick, onValueChange }: SmartCardProps) {
     return (
       <Popover open={isEditing} onOpenChange={setIsEditing}>
         <PopoverTrigger asChild>
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            {cardContent}
-          </motion.div>
+          <div {...bind()} className="relative touch-none">
+            <motion.div
+              style={{ x, rotate, opacity }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onHoverStart={() => setShowHint(true)}
+              onHoverEnd={() => setShowHint(false)}
+            >
+              {cardContent}
+
+              {/* Swipe hints for mobile */}
+              <AnimatePresence>
+                {card.state === 'suggested' && showHint && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-[hsl(215,16%,47%)] whitespace-nowrap sm:hidden"
+                  >
+                    Swipe → to accept, ← to edit
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </div>
         </PopoverTrigger>
         <PopoverContent className="w-80" align="center">
           <div className="space-y-4">

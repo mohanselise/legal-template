@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { Metadata } from 'next';
 import { CheckCircle2, Clock, Shield, FileText, Users, Briefcase, Scale, AlertCircle } from 'lucide-react';
 
@@ -116,7 +115,7 @@ export default function EmploymentAgreementPage() {
 
           <div className="prose prose-lg max-w-none text-[hsl(var(--fg))]">
             <p>
-              An employment agreement is more than just a formality—it's a critical legal document that protects both employers and employees. Whether you're hiring your first employee or your hundredth, having a clear, written agreement prevents misunderstandings and provides legal protection.
+              An employment agreement is more than just a formality—it&apos;s a critical legal document that protects both employers and employees. Whether you&apos;re hiring your first employee or your hundredth, having a clear, written agreement prevents misunderstandings and provides legal protection.
             </p>
 
             <p>
@@ -144,7 +143,7 @@ export default function EmploymentAgreementPage() {
                 <Briefcase className="h-10 w-10 text-[hsl(var(--brand-primary))] mb-4" />
                 <h3 className="text-xl font-semibold text-[hsl(var(--fg))] mb-2">Professional Image</h3>
                 <p className="text-[hsl(var(--brand-muted))]">
-                  Show candidates you're a serious, organized employer who values proper documentation.
+                  Show candidates you&apos;re a serious, organized employer who values proper documentation.
                 </p>
               </div>
 

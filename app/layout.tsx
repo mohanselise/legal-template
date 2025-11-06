@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   description: "Generate customized legal documents instantly with our free template generator. Employment agreements, NDAs, founder agreements, and more. No legal jargon, 100% free, no sign-up required.",
   keywords: ["legal templates", "free legal documents", "employment agreement", "NDA template", "founders agreement", "legal document generator", "free contract templates"],
   authors: [{ name: "Legal Templates" }],
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+    shortcut: "/favicon.png",
+  },
   openGraph: {
     title: "Free Legal Template Generator | Professional Legal Documents",
     description: "Generate customized, plain-English legal documents in minutes. Completely free, no sign-up required.",

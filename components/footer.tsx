@@ -6,8 +6,17 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-[hsl(var(--border))] bg-gray-50 py-12 dark:bg-gray-950">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    <footer className="relative border-t border-[hsl(var(--border))] bg-gray-50 py-12 dark:bg-gray-950 overflow-hidden">
+      {/* Subtle texture background */}
+      <div className="absolute inset-0">
+        <Image
+          src="/graphics/bg-black-texture.webp"
+          alt=""
+          fill
+          className="object-cover opacity-[0.02] dark:opacity-[0.05]"
+        />
+      </div>
+      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="text-center sm:text-left">
             <p className="text-sm text-[hsl(var(--muted-foreground))]">
@@ -38,15 +47,30 @@ export default function Footer() {
         </div>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-6 border-t border-[hsl(var(--border))] pt-8 text-xs text-[hsl(var(--muted-foreground))]">
-          <Link href="/privacy" className="hover:text-[hsl(var(--fg))] hover:underline">
+          <Link
+            href="https://selisegroup.com/privacy-policy/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[hsl(var(--fg))] hover:underline"
+          >
             Privacy Policy
           </Link>
           <span>•</span>
-          <Link href="/terms" className="hover:text-[hsl(var(--fg))] hover:underline">
-            Terms of Service
+          <Link
+            href="https://selisegroup.com/software-development-terms/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[hsl(var(--fg))] hover:underline"
+          >
+            Software Development Terms
           </Link>
           <span>•</span>
-          <Link href="/contact" className="hover:text-[hsl(var(--fg))] hover:underline">
+          <Link
+            href="https://selisegroup.com/contact-us/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[hsl(var(--fg))] hover:underline"
+          >
             Contact Us
           </Link>
           <span>•</span>

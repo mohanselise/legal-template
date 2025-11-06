@@ -122,8 +122,19 @@ export default function Home() {
 
       {/* Hero Section - Enhanced */}
       <section className="relative overflow-hidden border-b border-[hsl(var(--border))]">
+        {/* Background texture layer */}
+        <div className="absolute inset-0">
+          <Image
+            src="/graphics/bg-black-texture.webp"
+            alt=""
+            fill
+            className="object-cover opacity-[0.03] dark:opacity-[0.08]"
+            priority
+          />
+        </div>
+
         {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-linear-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20" />
 
         {/* Decorative elements */}
         <div className="absolute left-0 top-0 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl dark:bg-blue-600/20" />
@@ -144,7 +155,7 @@ export default function Home() {
 
             <h1 className="text-5xl font-bold tracking-tight text-[hsl(var(--fg))] sm:text-7xl bg-clip-text">
               Professional Legal Documents,
-              <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400">
+              <span className="block bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400">
                 Generated Instantly
               </span>
             </h1>
@@ -235,7 +246,7 @@ export default function Home() {
                 >
                   {template.popular && template.available && (
                     <div className="absolute -right-2 -top-2">
-                      <Badge className="bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg">
+                      <Badge className="bg-linear-to-r from-orange-500 to-pink-500 text-white shadow-lg">
                         <Star className="mr-1 h-3 w-3 fill-current" />
                         Most Popular
                       </Badge>
@@ -249,7 +260,7 @@ export default function Home() {
                     </div>
                   )}
                   <CardHeader className="pb-4">
-                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 to-purple-600 shadow-lg">
                       <Icon className="h-7 w-7 text-white" />
                     </div>
                     <CardTitle className="text-2xl">{template.title}</CardTitle>
@@ -289,7 +300,17 @@ export default function Home() {
       </section>
 
       {/* Features Section - Enhanced */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 to-white py-24 dark:from-blue-950/10 dark:to-black sm:py-32">
+      <section className="relative overflow-hidden bg-linear-to-b from-blue-50 to-white py-24 dark:from-blue-950/10 dark:to-black sm:py-32">
+        {/* Spinning background graphic */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Image
+            src="/graphics/black-spin-bg.webp"
+            alt=""
+            width={800}
+            height={800}
+            className="opacity-[0.02] dark:opacity-[0.06] animate-[spin_60s_linear_infinite]"
+          />
+        </div>
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <Badge className="mb-4 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
@@ -313,7 +334,7 @@ export default function Home() {
                       {feature.highlight}
                     </Badge>
                   </div>
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500 to-purple-600 shadow-lg">
                     <Icon className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="mt-6 text-xl font-semibold text-[hsl(var(--fg))]">
@@ -331,7 +352,7 @@ export default function Home() {
           <div className="mx-auto mt-16 max-w-3xl">
             <div className="rounded-2xl border border-[hsl(var(--border))] bg-white/50 p-8 backdrop-blur-sm dark:bg-black/20">
               <h3 className="text-center text-xl font-semibold text-[hsl(var(--fg))]">
-                Everything You Need, Nothing You Don't
+                Everything You Need, Nothing You Don&apos;t
               </h3>
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {benefits.map((benefit, index) => (
@@ -389,10 +410,10 @@ export default function Home() {
                 return (
                   <div key={index} className="relative">
                     {index < 2 && (
-                      <div className="absolute left-1/2 top-12 hidden h-0.5 w-full bg-gradient-to-r from-blue-400 to-purple-400 md:block" />
+                      <div className="absolute left-1/2 top-12 hidden h-0.5 w-full bg-linear-to-r from-blue-400 to-purple-400 md:block" />
                     )}
                     <div className="relative flex flex-col items-center text-center">
-                      <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-purple-600 shadow-2xl shadow-blue-600/30">
+                      <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-purple-600 shadow-2xl shadow-blue-600/30">
                         <div className="absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl font-bold text-blue-600 shadow-lg dark:bg-gray-900">
                           {item.step}
                         </div>
@@ -414,8 +435,17 @@ export default function Home() {
       </section>
 
       {/* Social Proof Section */}
-      <section className="border-y border-[hsl(var(--border))] bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 py-16 dark:from-blue-950/10 dark:via-purple-950/10 dark:to-pink-950/10">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+      <section className="relative border-y border-[hsl(var(--border))] bg-linear-to-r from-blue-50 via-purple-50 to-pink-50 py-16 dark:from-blue-950/10 dark:via-purple-950/10 dark:to-pink-950/10 overflow-hidden">
+        {/* Subtle texture overlay */}
+        <div className="absolute inset-0">
+          <Image
+            src="/graphics/bg-black-texture.webp"
+            alt=""
+            fill
+            className="object-cover opacity-[0.015] dark:opacity-[0.04]"
+          />
+        </div>
+        <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <div className="flex items-center justify-center gap-2 text-yellow-500">
               {[...Array(5)].map((_, i) => (
@@ -423,7 +453,7 @@ export default function Home() {
               ))}
             </div>
             <p className="mt-6 text-2xl font-semibold text-[hsl(var(--fg))] sm:text-3xl">
-              "Finally, legal documents that don't require a law degree to understand!"
+              &quot;Finally, legal documents that don&apos;t require a law degree to understand!&quot;
             </p>
             <p className="mt-4 text-lg text-[hsl(var(--muted-foreground))]">
               Join thousands of professionals, startups, and small businesses who trust our templates.
@@ -458,8 +488,17 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-purple-700 py-24 sm:py-32">
-        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:32px_32px]" />
+      <section className="relative overflow-hidden bg-linear-to-br from-blue-600 to-purple-700 py-24 sm:py-32">
+        {/* Background texture for depth */}
+        <div className="absolute inset-0">
+          <Image
+            src="/graphics/bg-black-texture.webp"
+            alt=""
+            fill
+            className="object-cover opacity-[0.08] mix-blend-overlay"
+          />
+        </div>
+        <div className="absolute inset-0 bg-grid-white/[0.05] bg-size-[32px_32px]" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">

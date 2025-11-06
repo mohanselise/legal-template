@@ -52,3 +52,6 @@ yarn-error.log*
 .vscode/
 .idea/
 .fleet/
+
+# repo-specific ignores
+/SELISE Brand Book.pdf

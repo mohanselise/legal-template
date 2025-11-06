@@ -46,6 +46,12 @@
 :root {
   --radius: 0.625rem;
 
+  /* Brand colors */
+  --brand-primary: 222 89% 52%;
+  --brand-primary-foreground: 210 40% 98%;
+  --brand-secondary: 262 83% 58%;
+  --brand-muted: 215 16% 47%;
+
   /* Base colors */
   --bg: 0 0% 100%;
   --fg: 222 47% 11%;

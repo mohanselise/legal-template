@@ -46,7 +46,7 @@ importers:
         version: 0.4.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       openai:
         specifier: ^6.8.1
-        version: 6.8.1(zod@4.1.12)
+        version: 6.8.1(zod@3.23.8)
       react:
         specifier: 19.2.0
         version: 19.2.0
@@ -63,8 +63,8 @@ importers:
         specifier: ^3.3.1
         version: 3.3.1
       zod:
-        specifier: ^4.1.12
-        version: 4.1.12
+        specifier: 3.23.8
+        version: 3.23.8
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -3340,6 +3340,9 @@ packages:
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
 
+  zod@3.23.8:
+    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
@@ -3809,8 +3812,8 @@ snapshots:
       express-rate-limit: 7.5.1(express@5.1.0)
       pkce-challenge: 5.0.0
       raw-body: 3.0.1
-      zod: 3.25.76
-      zod-to-json-schema: 3.24.6(zod@3.25.76)
+      zod: 3.23.8
+      zod-to-json-schema: 3.24.6(zod@3.23.8)
     transitivePeerDependencies:
       - supports-color
 
@@ -5944,9 +5947,9 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
 
-  openai@6.8.1(zod@4.1.12):
+  openai@6.8.1(zod@3.23.8):
     optionalDependencies:
-      zod: 4.1.12
+      zod: 3.23.8
 
   optionator@0.9.4:
     dependencies:
@@ -6806,6 +6809,10 @@ snapshots:
 
   yoctocolors@2.1.2: {}
 
+  zod-to-json-schema@3.24.6(zod@3.23.8):
+    dependencies:
+      zod: 3.23.8
+
   zod-to-json-schema@3.24.6(zod@3.25.76):
     dependencies:
       zod: 3.25.76
@@ -6813,6 +6820,8 @@ snapshots:
   zod-validation-error@4.0.2(zod@4.1.12):
     dependencies:
       zod: 4.1.12
+
+  zod@3.23.8: {}
 
   zod@3.25.76: {}
 

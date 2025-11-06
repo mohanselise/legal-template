@@ -508,16 +508,15 @@ export default function Home() {
                 href="https://selisesignature.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-white px-4 py-2 transition-all hover:border-blue-400 hover:shadow-md dark:bg-gray-900 dark:hover:border-blue-600"
+                className="group flex items-center gap-3 rounded-lg border border-[hsl(var(--border))] bg-white px-5 py-3 transition-all hover:border-blue-400 hover:shadow-lg dark:bg-gray-900 dark:hover:border-blue-600"
               >
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-purple-600">
-                    <Sparkles className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-sm font-semibold text-[hsl(var(--fg))] group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                    SELISE Signature
-                  </span>
-                </div>
+                <Image
+                  src="/signature-black.svg"
+                  alt="SELISE Signature"
+                  width={140}
+                  height={28}
+                  className="h-7 w-auto transition-opacity group-hover:opacity-80 dark:invert"
+                />
                 <ArrowRight className="h-4 w-4 text-[hsl(var(--muted-foreground))] transition-transform group-hover:translate-x-1 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
               </Link>
             </div>

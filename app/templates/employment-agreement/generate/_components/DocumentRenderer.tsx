@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { FileText, Hash } from 'lucide-react';
 
 interface DocumentRendererProps {
@@ -52,7 +53,7 @@ type SectionType = {
 
 function Section({ type, content, level, number }: SectionType) {
   if (type === 'heading') {
-    const HeadingTag = `h${level || 2}` as keyof JSX.IntrinsicElements;
+    const HeadingTag = `h${level || 2}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     return (
       <HeadingTag className="font-bold text-[hsl(var(--fg))] mt-8 mb-4 flex items-center gap-2">
         {number && <Hash className="w-5 h-5 text-[hsl(var(--brand-primary))]" />}

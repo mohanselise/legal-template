@@ -28,7 +28,7 @@ export function FormWizard() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const form = useForm<EmploymentAgreementFormData>({
-    resolver: zodResolver(employmentAgreementSchema),
+    resolver: zodResolver(employmentAgreementSchema) as any,
     defaultValues,
     mode: 'onChange',
   });

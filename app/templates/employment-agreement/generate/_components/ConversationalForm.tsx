@@ -405,7 +405,7 @@ export function ConversationalForm() {
           <QuestionInput
             question={currentQuestion}
             value={formData[currentQuestion.id]}
-            onChange={(value) => setValue(currentQuestion.id, value as any)}
+            onChange={(value: string) => setValue(currentQuestion.id, value as any)}
             error={form.formState.errors[currentQuestion.id]?.message as string}
           />
         </div>

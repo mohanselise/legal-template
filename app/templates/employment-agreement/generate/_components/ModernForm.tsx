@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Sparkles, ArrowRight, Check, Loader2, Building2, Briefcase, DollarSign, FileText, Shield } from 'lucide-react';
+import { saveEmploymentAgreementReview } from '../reviewStorage';
 
 type Question = {
   id: string;
@@ -113,8 +114,19 @@ export function ModernForm() {
       });
 
       const data = await response.json();
-      const params = new URLSearchParams({
+      const persisted = saveEmploymentAgreementReview({
         document: data.document,
+        formData: structuredData,
+        storedAt: new Date().toISOString(),
+      });
+
+      if (persisted) {
+        window.location.href = '/templates/employment-agreement/generate/review';
+        return;
+      }
+
+      const params = new URLSearchParams({
+        document: JSON.stringify(data.document),
         data: JSON.stringify(structuredData),
       });
       window.location.href = `/templates/employment-agreement/generate/review?${params}`;

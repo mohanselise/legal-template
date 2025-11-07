@@ -3,34 +3,53 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ActionButtons } from '../_components/ActionButtons';
-import { DocumentRenderer } from '../_components/DocumentRenderer';
-import { Loader2, CheckCircle2, Edit, Download, Send, Sparkles } from 'lucide-react';
+import { DocumentRendererJSON } from '../_components/DocumentRendererJSON';
+import { Loader2, CheckCircle2, Edit, Download, Send, Sparkles, FileText } from 'lucide-react';
+import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
+import {
+  clearEmploymentAgreementReview,
+  loadEmploymentAgreementReview,
+} from '../reviewStorage';
 
 function ReviewContent() {
   const searchParams = useSearchParams();
   const [formData, setFormData] = useState<any>(null);
-  const [generatedDocument, setGeneratedDocument] = useState<string>('');
+  const [generatedDocument, setGeneratedDocument] = useState<EmploymentAgreement | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get document from URL params
+    const sessionPayload = loadEmploymentAgreementReview();
+    const hasSessionDocument = Boolean(sessionPayload?.document);
+
+    if (hasSessionDocument) {
+      setGeneratedDocument(sessionPayload!.document);
+      setFormData(sessionPayload!.formData);
+      setIsGenerating(false);
+      setError(null);
+    }
+
     const docParam = searchParams.get('document');
     const dataParam = searchParams.get('data');
 
-    if (docParam) {
-      let documentContent = docParam;
+    if (!hasSessionDocument && docParam) {
       try {
-        // Handle legacy URLs where we manually encoded the document
-        documentContent = decodeURIComponent(docParam);
+        const parsedDocument = JSON.parse(docParam);
+        setGeneratedDocument(parsedDocument);
+        setIsGenerating(false);
+        setError(null);
+        console.log('✅ Document parsed successfully:', parsedDocument);
       } catch (err) {
-        documentContent = docParam;
+        console.error('❌ Failed to parse document JSON:', err);
+        setError('Failed to load document. Please try generating again.');
+        setIsGenerating(false);
       }
-      setGeneratedDocument(documentContent);
+    } else if (!hasSessionDocument && !docParam) {
       setIsGenerating(false);
+      setError('We could not load your generated document. Please try generating again.');
     }
 
-    if (dataParam) {
+    if ((!sessionPayload || !sessionPayload.formData) && dataParam) {
       let dataContent = dataParam;
       try {
         dataContent = decodeURIComponent(dataParam);
@@ -48,17 +67,19 @@ function ReviewContent() {
   }, [searchParams]);
 
   const handleSendToSignature = async () => {
+    if (!generatedDocument) return;
+
     try {
       const response = await fetch('/api/signature/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          document: generatedDocument,
+          document: generatedDocument, // Send the full JSON document
           formData,
           signatories: [
             {
-              name: formData?.employeeName || 'Employee',
-              email: formData?.employeeEmail || 'employee@company.com',
+              name: generatedDocument.parties.employee.legalName,
+              email: generatedDocument.parties.employee.email || 'employee@company.com',
             },
           ],
         }),
@@ -77,12 +98,14 @@ function ReviewContent() {
   };
 
   const handleDownloadDocx = async () => {
+    if (!generatedDocument) return;
+
     try {
       const response = await fetch('/api/documents/generate-docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          document: generatedDocument,
+          document: generatedDocument, // Send the full JSON document
           formData,
         }),
       });
@@ -93,7 +116,8 @@ function ReviewContent() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Employment_Agreement_${Date.now()}.docx`;
+      const employeeName = generatedDocument.parties.employee.legalName.replace(/\s+/g, '_');
+      a.download = `Employment_Agreement_${employeeName}_${Date.now()}.docx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -135,6 +159,7 @@ function ReviewContent() {
 
     // Clear saved data
     localStorage.removeItem('employment-agreement-conversation');
+    clearEmploymentAgreementReview();
   };
 
   if (error) {
@@ -155,78 +180,148 @@ function ReviewContent() {
 
   if (isGenerating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        <div className="text-center space-y-6 animate-pulse">
-          <div className="relative w-24 h-24 mx-auto">
-            <div className="absolute inset-0 border-4 border-purple-200 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-            <Sparkles className="w-10 h-10 text-purple-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden relative">
+        {/* Animated background gradients */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        </div>
+
+        <div className="relative z-10 text-center space-y-8 px-6 max-w-2xl">
+          {/* Animated icon */}
+          <div className="relative w-28 h-28 mx-auto">
+            <div className="absolute inset-0 border-4 border-purple-300/30 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute inset-2 border-4 border-pink-300/30 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '3s' }}></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Sparkles className="w-12 h-12 text-purple-300 animate-pulse" />
+            </div>
           </div>
-          <h2 className="text-3xl font-bold text-[hsl(var(--fg))]">Crafting Your Agreement</h2>
-          <p className="text-[hsl(var(--brand-muted))] max-w-md mx-auto">
-            Our AI is generating a professional, legally-sound employment agreement tailored to your needs...
+
+          {/* Title */}
+          <div className="space-y-3">
+            <h2 className="text-4xl md:text-5xl font-bold text-white">
+              Crafting Your Agreement
+            </h2>
+            <p className="text-lg text-purple-200/80 max-w-xl mx-auto leading-relaxed">
+              Our AI is generating a professional, legally-sound employment agreement tailored to your specifications. This usually takes 10-20 seconds.
+            </p>
+          </div>
+
+          {/* Loading steps */}
+          <div className="space-y-3 bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
+            {[
+              'Analyzing your requirements',
+              'Drafting core provisions',
+              'Building protective clauses',
+              'Finalizing document structure'
+            ].map((step, index) => (
+              <div
+                key={step}
+                className="flex items-center gap-3 text-purple-100/70 text-sm"
+                style={{
+                  animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`
+                }}
+              >
+                <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
+                <span>{step}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Fun fact */}
+          <p className="text-xs text-purple-300/50 italic">
+            ⚖️ Did you know? Employment agreements help protect both employer and employee by clearly defining expectations and obligations.
           </p>
         </div>
+
+        <style jsx>{`
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
-        <div className="container mx-auto px-4 py-12">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-              <CheckCircle2 className="w-7 h-7 text-green-400" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl">
+        <div className="container mx-auto px-6 py-16">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+              <CheckCircle2 className="w-9 h-9 text-white" strokeWidth={2.5} />
             </div>
-            <div>
-              <h1 className="text-4xl font-bold text-white">Your Agreement is Ready!</h1>
-              <p className="text-gray-300 mt-1">Review and send for signature</p>
+            <div className="flex-1">
+              <div className="inline-block px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-3">
+                Document Ready
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 leading-tight">
+                Your Employment Agreement is Ready
+              </h1>
+              <p className="text-slate-300 text-lg leading-relaxed max-w-2xl">
+                A professionally crafted legal document tailored to your specifications. Review carefully before proceeding to signature.
+              </p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Document Preview - Takes up 2 columns */}
           <div className="lg:col-span-2">
-            <DocumentRenderer document={generatedDocument} />
+            {generatedDocument && <DocumentRendererJSON document={generatedDocument} />}
           </div>
 
           {/* Actions Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-8 space-y-6">
               {/* Quick Actions */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                <h3 className="font-semibold text-[hsl(var(--fg))] mb-4 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-600" />
-                  Quick Actions
-                </h3>
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-slate-200 dark:border-gray-700 p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="font-bold text-slate-900 dark:text-gray-100 text-lg">
+                    Next Steps
+                  </h3>
+                </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {/* Primary: Send to Signature */}
                   <button
                     onClick={handleSendToSignature}
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-lg font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all group"
+                    className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 via-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:from-purple-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-200 group relative overflow-hidden"
                   >
-                    <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    Send via SELISE Signature
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
+                    <span className="relative z-10">Send via SELISE Signature</span>
                   </button>
-                  <p className="text-xs text-center text-[hsl(var(--brand-muted))]">
-                    ✨ Recommended - Electronic signature workflow
-                  </p>
+                  <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                    <p className="text-xs text-center text-purple-800 dark:text-purple-300 font-medium">
+                      ✨ Recommended for fast, secure execution
+                    </p>
+                  </div>
 
                   {/* Divider */}
-                  <div className="relative py-2">
+                  <div className="relative py-4">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+                      <div className="w-full border-t-2 border-slate-200 dark:border-gray-700"></div>
                     </div>
                     <div className="relative flex justify-center">
-                      <span className="bg-white dark:bg-gray-800 px-2 text-xs text-[hsl(var(--brand-muted))]">
-                        or
+                      <span className="bg-white dark:bg-gray-800 px-4 text-sm font-semibold text-slate-500 dark:text-gray-400">
+                        OR
                       </span>
                     </div>
                   </div>
@@ -234,9 +329,9 @@ function ReviewContent() {
                   {/* Secondary: Download */}
                   <button
                     onClick={handleDownloadDocx}
-                    className="w-full flex items-center justify-center gap-2 border-2 border-gray-200 dark:border-gray-700 text-[hsl(var(--fg))] px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                    className="w-full flex items-center justify-center gap-3 border-2 border-slate-300 dark:border-gray-600 text-slate-900 dark:text-gray-100 px-6 py-4 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-gray-700 hover:border-slate-400 dark:hover:border-gray-500 transition-all duration-200 group"
                   >
-                    <Download className="w-5 h-5" />
+                    <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
                     Download as DOCX
                   </button>
                 </div>
@@ -244,15 +339,18 @@ function ReviewContent() {
 
               {/* Document Info */}
               {formData && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-                  <h3 className="font-semibold text-[hsl(var(--fg))] mb-4">Document Summary</h3>
-                  <dl className="space-y-3 text-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-slate-200 dark:border-gray-700 p-8">
+                  <h3 className="font-bold text-slate-900 dark:text-gray-100 text-lg mb-5 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-slate-600 dark:text-gray-400" />
+                    Document Details
+                  </h3>
+                  <dl className="space-y-4 text-sm border-t border-slate-200 dark:border-gray-700 pt-5">
                     {Object.entries(formData).slice(0, 5).map(([key, value]: [string, any]) => (
-                      <div key={key}>
-                        <dt className="text-[hsl(var(--brand-muted))] capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}:
+                      <div key={key} className="pb-3 border-b border-slate-100 dark:border-gray-800 last:border-0">
+                        <dt className="text-slate-500 dark:text-gray-500 capitalize text-xs font-semibold uppercase tracking-wider mb-1.5">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
                         </dt>
-                        <dd className="font-medium text-[hsl(var(--fg))] mt-1">
+                        <dd className="font-semibold text-slate-900 dark:text-gray-100">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
                       </div>
@@ -260,7 +358,7 @@ function ReviewContent() {
                   </dl>
                   <button
                     onClick={() => window.location.href = '/templates/employment-agreement/generate'}
-                    className="mt-4 w-full flex items-center justify-center gap-2 text-[hsl(var(--brand-primary))] hover:underline text-sm"
+                    className="mt-6 w-full flex items-center justify-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-semibold text-sm py-2 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
                   >
                     <Edit className="w-4 h-4" />
                     Start Over
@@ -268,12 +366,25 @@ function ReviewContent() {
                 </div>
               )}
 
-              {/* Legal Notice */}
-              <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400 p-4 rounded-lg">
-                <p className="text-xs text-amber-800 dark:text-amber-200">
-                  <strong>⚖️ Legal Notice:</strong> This AI-generated document should be reviewed by a qualified
-                  attorney before use. Employment laws vary by jurisdiction.
-                </p>
+              {/* Legal Notice - Enhanced */}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-l-4 border-amber-500 dark:border-amber-600 rounded-xl p-6 shadow-lg">
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-lg flex items-center justify-center">
+                      <span className="text-xl">⚖️</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-amber-900 dark:text-amber-200 mb-2 text-sm">
+                      Professional Legal Review Required
+                    </h4>
+                    <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                      This AI-enhanced document should be reviewed by a qualified employment attorney
+                      admitted to practice in the relevant jurisdiction before execution. Employment
+                      laws and regulations vary significantly by location.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

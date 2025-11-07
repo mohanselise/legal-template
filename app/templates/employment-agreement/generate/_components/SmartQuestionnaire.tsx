@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Sparkles, ArrowRight, Check, Loader2, MessageCircle, FileText } from 'lucide-react';
+import { saveEmploymentAgreementReview } from '../reviewStorage';
 
 type Message = {
   role: 'assistant' | 'user';
@@ -142,9 +143,19 @@ export function SmartQuestionnaire() {
 
       const data = await response.json();
 
-      // Navigate to preview
-      const params = new URLSearchParams({
+      const persisted = saveEmploymentAgreementReview({
         document: data.document,
+        formData: structuredData,
+        storedAt: new Date().toISOString(),
+      });
+
+      if (persisted) {
+        window.location.href = '/templates/employment-agreement/generate/review';
+        return;
+      }
+
+      const params = new URLSearchParams({
+        document: JSON.stringify(data.document),
         data: JSON.stringify(structuredData),
       });
       window.location.href = `/templates/employment-agreement/generate/review?${params}`;

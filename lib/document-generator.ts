@@ -1,108 +1,36 @@
-import { Document, Paragraph, TextRun, AlignmentType, HeadingLevel, Packer } from 'docx';
+import { Document, Paragraph, TextRun, AlignmentType, HeadingLevel, Packer, UnderlineType, Table, TableRow, TableCell, WidthType, BorderStyle } from 'docx';
 import jsPDF from 'jspdf';
 import type { SmartCard } from './card-engine/types';
+import type { EmploymentAgreement, ContentBlock, ListItem, DefinitionItem } from '@/app/api/templates/employment-agreement/schema';
 
 export interface DocumentGeneratorOptions {
-  document: string;
+  document: EmploymentAgreement;
   formData: any;
 }
 
 export async function generateEmploymentAgreementDocx(
   options: DocumentGeneratorOptions
 ): Promise<Buffer> {
-  const { document, formData } = options;
+  const { document } = options;
 
-  // Parse the plain text document into structured sections
-  const sections = parseDocumentSections(document);
+  // Convert JSON structure to DOCX paragraphs
+  const paragraphs = convertJsonToDocx(document);
 
   // Create DOCX document
   const doc = new Document({
     sections: [
       {
-        properties: {},
-        children: [
-          // Title
-          new Paragraph({
-            text: 'EMPLOYMENT AGREEMENT',
-            heading: HeadingLevel.TITLE,
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 400 },
-          }),
-
-          // Generate paragraphs from parsed content
-          ...sections.map((section) => {
-            if (section.isHeading) {
-              return new Paragraph({
-                text: section.text,
-                heading: HeadingLevel.HEADING_1,
-                spacing: { before: 300, after: 200 },
-              });
-            } else {
-              return new Paragraph({
-                text: section.text,
-                spacing: { after: 200 },
-                alignment: AlignmentType.JUSTIFIED,
-              });
-            }
-          }),
-
-          // Signature blocks
-          new Paragraph({
-            text: '',
-            spacing: { before: 600, after: 200 },
-          }),
-          new Paragraph({
-            text: 'SIGNATURES',
-            heading: HeadingLevel.HEADING_1,
-            spacing: { after: 300 },
-          }),
-
-          // Employer signature
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Employer: ${formData.companyName}`,
-                bold: true,
-              }),
-            ],
-            spacing: { after: 200 },
-          }),
-          new Paragraph({
-            text: 'Signature: _______________________________',
-            spacing: { after: 100 },
-          }),
-          new Paragraph({
-            text: 'Name: _______________________________',
-            spacing: { after: 100 },
-          }),
-          new Paragraph({
-            text: 'Title: _______________________________',
-            spacing: { after: 100 },
-          }),
-          new Paragraph({
-            text: 'Date: _______________________________',
-            spacing: { after: 400 },
-          }),
-
-          // Employee signature
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: `Employee: ${formData.employeeName}`,
-                bold: true,
-              }),
-            ],
-            spacing: { after: 200 },
-          }),
-          new Paragraph({
-            text: 'Signature: _______________________________',
-            spacing: { after: 100 },
-          }),
-          new Paragraph({
-            text: 'Date: _______________________________',
-            spacing: { after: 100 },
-          }),
-        ],
+        properties: {
+          page: {
+            margin: {
+              top: 1440, // 1 inch = 1440 twips
+              right: 1440,
+              bottom: 1440,
+              left: 1440,
+            },
+          },
+        },
+        children: paragraphs,
       },
     ],
   });
@@ -111,31 +39,264 @@ export async function generateEmploymentAgreementDocx(
   return await Packer.toBuffer(doc);
 }
 
-interface DocumentSection {
-  text: string;
-  isHeading: boolean;
-}
+function convertJsonToDocx(employmentAgreement: EmploymentAgreement): Paragraph[] {
+  const paragraphs: Paragraph[] = [];
 
-function parseDocumentSections(document: string): DocumentSection[] {
-  const lines = document.split('\n');
-  const sections: DocumentSection[] = [];
+  // Title
+  paragraphs.push(
+    new Paragraph({
+      text: employmentAgreement.metadata.title.toUpperCase(),
+      heading: HeadingLevel.TITLE,
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 400 },
+    })
+  );
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
+  // Effective Date
+  paragraphs.push(
+    new Paragraph({
+      text: `Effective Date: ${employmentAgreement.metadata.effectiveDate}`,
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 400 },
+    })
+  );
 
-    // Check if it's a heading (all caps, or starts with a number followed by a period)
-    const isHeading =
-      trimmed === trimmed.toUpperCase() && trimmed.length < 100 ||
-      /^\d+\.\s+[A-Z]/.test(trimmed);
+  // Recitals Section
+  if (employmentAgreement.recitals && employmentAgreement.recitals.length > 0) {
+    paragraphs.push(
+      new Paragraph({
+        text: 'RECITALS',
+        heading: HeadingLevel.HEADING_1,
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 300, after: 200 },
+      })
+    );
 
-    sections.push({
-      text: trimmed,
-      isHeading,
+    employmentAgreement.recitals.forEach((recital) => {
+      paragraphs.push(
+        new Paragraph({
+          text: recital,
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { after: 150 },
+        })
+      );
     });
   }
 
-  return sections;
+  // Agreement clause
+  paragraphs.push(
+    new Paragraph({
+      text: 'NOW, THEREFORE, in consideration of the mutual covenants, agreements, and promises contained herein, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the parties agree as follows:',
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 200, after: 300 },
+    })
+  );
+
+  // Articles
+  employmentAgreement.articles.forEach((article) => {
+    // Article heading
+    paragraphs.push(
+      new Paragraph({
+        text: `ARTICLE ${article.number}. ${article.title}`,
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 300, after: 200 },
+      })
+    );
+
+    // Sections within article
+    article.sections.forEach((section) => {
+      // Section heading (if exists)
+      if (section.title) {
+        paragraphs.push(
+          new Paragraph({
+            text: section.number ? `${section.number} ${section.title}` : section.title,
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 200, after: 120 },
+          })
+        );
+      }
+
+      // Content blocks
+      section.content.forEach((block) => {
+        paragraphs.push(...convertContentBlock(block));
+      });
+    });
+  });
+
+  // Signatures
+  paragraphs.push(
+    new Paragraph({
+      text: '',
+      spacing: { before: 600, after: 200 },
+    })
+  );
+
+  paragraphs.push(
+    new Paragraph({
+      text: 'IN WITNESS WHEREOF, the parties have executed this Employment Agreement as of the date first written above.',
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { before: 300, after: 400 },
+    })
+  );
+
+  employmentAgreement.signatures.forEach((sig) => {
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: sig.partyName.toUpperCase(),
+            bold: true,
+          }),
+        ],
+        spacing: { before: 300, after: 150 },
+      })
+    );
+
+    sig.fields.forEach((field) => {
+      paragraphs.push(
+        new Paragraph({
+          text: `${field.label}: _______________________________`,
+          spacing: { after: 120 },
+        })
+      );
+    });
+  });
+
+  return paragraphs;
+}
+
+function convertContentBlock(block: ContentBlock): Paragraph[] {
+  const paragraphs: Paragraph[] = [];
+
+  switch (block.type) {
+    case 'paragraph':
+      paragraphs.push(createParagraphFromBlock(block));
+      break;
+
+    case 'list':
+      if (Array.isArray(block.content)) {
+        (block.content as ListItem[]).forEach((item, index) => {
+          paragraphs.push(createListItem(item, index));
+        });
+      }
+      break;
+
+    case 'definition':
+      if (Array.isArray(block.content)) {
+        (block.content as DefinitionItem[]).forEach((defItem) => {
+          paragraphs.push(createDefinition(defItem));
+        });
+      }
+      break;
+
+    case 'clause':
+      paragraphs.push(createParagraphFromBlock(block));
+      break;
+
+    default:
+      // Fallback for unknown types
+      if (typeof block.content === 'string') {
+        paragraphs.push(
+          new Paragraph({
+            text: block.content,
+            alignment: AlignmentType.JUSTIFIED,
+            spacing: { after: 150 },
+          })
+        );
+      }
+  }
+
+  return paragraphs;
+}
+
+function createParagraphFromBlock(block: ContentBlock): Paragraph {
+  const text = typeof block.content === 'string' ? block.content : '';
+  const formatting = block.formatting || {};
+
+  const textRuns = parseInlineFormatting(text, formatting.bold, formatting.italic);
+
+  let alignment = AlignmentType.JUSTIFIED;
+  if (formatting.alignment === 'center') alignment = AlignmentType.CENTER;
+  else if (formatting.alignment === 'right') alignment = AlignmentType.RIGHT;
+  else if (formatting.alignment === 'left') alignment = AlignmentType.LEFT;
+
+  const indent = formatting.indent ? { left: formatting.indent * 360 } : undefined;
+
+  return new Paragraph({
+    children: textRuns,
+    alignment,
+    spacing: { after: 150 },
+    indent,
+  });
+}
+
+function createListItem(item: ListItem, index: number): Paragraph {
+  const textRuns = parseInlineFormatting(item.content);
+
+  return new Paragraph({
+    children: textRuns,
+    bullet: { level: 0 },
+    spacing: { after: 100 },
+    indent: { left: 720 },
+  });
+}
+
+function createDefinition(defItem: DefinitionItem): Paragraph {
+  const prefix = defItem.number ? `${defItem.number} ` : '';
+
+  return new Paragraph({
+    children: [
+      new TextRun({
+        text: `${prefix}"${defItem.term}"`,
+        bold: true,
+      }),
+      new TextRun({
+        text: ` means ${defItem.definition}`,
+      }),
+    ],
+    alignment: AlignmentType.JUSTIFIED,
+    spacing: { after: 150 },
+  });
+}
+
+function parseInlineFormatting(text: string, forceBold?: boolean, forceItalic?: boolean): TextRun[] {
+  const runs: TextRun[] = [];
+  let currentPos = 0;
+
+  // Regex to match **bold**, *italic*, or plain text
+  const pattern = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+  let match;
+
+  while ((match = pattern.exec(text)) !== null) {
+    // Add any plain text before this match
+    if (match.index > currentPos) {
+      const plainText = text.substring(currentPos, match.index);
+      runs.push(new TextRun({ text: plainText, bold: forceBold, italics: forceItalic }));
+    }
+
+    // Add the formatted text
+    if (match[2]) {
+      // Bold text (**text**)
+      runs.push(new TextRun({ text: match[2], bold: true, italics: forceItalic }));
+    } else if (match[3]) {
+      // Italic text (*text*)
+      runs.push(new TextRun({ text: match[3], italics: true, bold: forceBold }));
+    }
+
+    currentPos = match.index + match[0].length;
+  }
+
+  // Add any remaining plain text
+  if (currentPos < text.length) {
+    runs.push(new TextRun({ text: text.substring(currentPos), bold: forceBold, italics: forceItalic }));
+  }
+
+  // If no formatting was found, return a single run with the whole text
+  if (runs.length === 0) {
+    runs.push(new TextRun({ text, bold: forceBold, italics: forceItalic }));
+  }
+
+  return runs;
 }
 
 // PDF Generation

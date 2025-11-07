@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ArrowRight, Check, Building2, User, Briefcase, DollarSign, MapPin, Scale, FileText, Sparkles } from 'lucide-react';
 import { EmploymentAgreementFormData } from '../schema';
+import { cn } from '@/lib/utils';
+import { saveEmploymentAgreementReview } from '../reviewStorage';
 
 type ScreenType = 'single' | 'group' | 'cards';
 
@@ -169,6 +171,52 @@ const SCREENS: Screen[] = [
   },
 ];
 
+type GenerationStage = {
+  title: string;
+  description: string;
+  progress: number;
+  duration: number;
+};
+
+const GENERATION_STEPS: GenerationStage[] = [
+  {
+    title: 'Analyzing your requirements',
+    description: 'Reviewing parties, role details, compensation, and employment terms to ensure completeness.',
+    progress: 15,
+    duration: 1800,
+  },
+  {
+    title: 'Drafting core provisions',
+    description: 'Crafting employment terms, duties, and compensation clauses with precise legal language.',
+    progress: 35,
+    duration: 2200,
+  },
+  {
+    title: 'Building protective clauses',
+    description: 'Generating confidentiality, IP assignment, and restrictive covenant provisions tailored to your needs.',
+    progress: 55,
+    duration: 2400,
+  },
+  {
+    title: 'Structuring articles & recitals',
+    description: 'Organizing sections, adding recitals, and formatting signature blocks for professional presentation.',
+    progress: 75,
+    duration: 2300,
+  },
+  {
+    title: 'Quality assurance',
+    description: 'Verifying defined terms, cross-references, dates, and legal consistency throughout the document.',
+    progress: 92,
+    duration: 2600,
+  },
+  {
+    title: 'Finalizing document',
+    description: 'Applying final formatting touches and preparing your employment agreement for review.',
+    progress: 98,
+    duration: 1500,
+  },
+];
+
 export function SmartFlow() {
   const router = useRouter();
   const [showWelcome, setShowWelcome] = useState(true);
@@ -181,6 +229,8 @@ export function SmartFlow() {
     disputeResolution: 'arbitration',
   });
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStepIndex, setGenerationStepIndex] = useState(0);
+  const [fakeProgress, setFakeProgress] = useState(0);
 
   const currentScreen = SCREENS[currentIndex];
   const progress = ((currentIndex + 1) / SCREENS.length) * 100;
@@ -231,11 +281,21 @@ export function SmartFlow() {
       if (!response.ok) throw new Error('Failed to generate');
 
       const result = await response.json();
-      const params = new URLSearchParams({
+      const persisted = saveEmploymentAgreementReview({
         document: result.document,
-        data: JSON.stringify(formData),
+        formData,
+        storedAt: new Date().toISOString(),
       });
 
+      if (persisted) {
+        router.push('/templates/employment-agreement/generate/review');
+        return;
+      }
+
+      const params = new URLSearchParams({
+        document: JSON.stringify(result.document),
+        data: JSON.stringify(formData),
+      });
       router.push(`/templates/employment-agreement/generate/review?${params.toString()}`);
     } catch (error) {
       console.error('Generation error:', error);
@@ -243,6 +303,51 @@ export function SmartFlow() {
       setIsGenerating(false);
     }
   };
+
+  useEffect(() => {
+    if (!isGenerating || GENERATION_STEPS.length === 0) {
+      setGenerationStepIndex(0);
+      setFakeProgress(0);
+      return;
+    }
+
+    type Timer = ReturnType<typeof setTimeout>;
+    let isActive = true;
+    const timeouts: Timer[] = [];
+    let idleInterval: ReturnType<typeof setInterval> | null = null;
+
+    setGenerationStepIndex(0);
+    setFakeProgress(GENERATION_STEPS[0].progress);
+
+    let cumulativeDelay = 0;
+    for (let index = 1; index < GENERATION_STEPS.length; index++) {
+      cumulativeDelay += GENERATION_STEPS[index - 1].duration;
+      const timeout = setTimeout(() => {
+        if (!isActive) return;
+        setGenerationStepIndex(index);
+        setFakeProgress(GENERATION_STEPS[index].progress);
+      }, cumulativeDelay);
+      timeouts.push(timeout);
+    }
+
+    cumulativeDelay += GENERATION_STEPS[GENERATION_STEPS.length - 1].duration;
+    const idleTimeout = setTimeout(() => {
+      idleInterval = setInterval(() => {
+        if (!isActive) return;
+        setFakeProgress(prev => {
+          const next = prev + 0.4 + Math.random() * 1.1;
+          return next >= 99 ? 99 : next;
+        });
+      }, 2000);
+    }, cumulativeDelay);
+    timeouts.push(idleTimeout);
+
+    return () => {
+      isActive = false;
+      timeouts.forEach(timeout => clearTimeout(timeout));
+      if (idleInterval) clearInterval(idleInterval);
+    };
+  }, [isGenerating]);
 
   // Keyboard: Enter to continue
   useEffect(() => {
@@ -310,18 +415,135 @@ export function SmartFlow() {
 
   // Generating Screen
   if (isGenerating) {
+    const currentStep =
+      GENERATION_STEPS[Math.min(generationStepIndex, GENERATION_STEPS.length - 1)];
+    const displayedProgress = Math.round(fakeProgress);
+
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--bg))]">
-        <div className="text-center space-y-6">
-          <div className="relative w-24 h-24 mx-auto">
-            <div className="absolute inset-0 border-4 border-[hsl(var(--border))] rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-[hsl(var(--brand-primary))] border-t-transparent rounded-full animate-spin"></div>
-            <Sparkles className="w-10 h-10 text-[hsl(var(--brand-primary))] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+      <div className="relative min-h-screen overflow-hidden bg-[hsl(var(--bg))] text-white">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#312e81] opacity-95" />
+        <motion.div
+          className="absolute -top-32 -left-24 h-96 w-96 rounded-full bg-emerald-400/20 blur-3xl"
+          animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute bottom-[-10rem] right-[-6rem] h-[28rem] w-[28rem] rounded-full bg-sky-400/20 blur-3xl"
+          animate={{ scale: [1.1, 0.9, 1.1], opacity: [0.45, 0.65, 0.45] }}
+          transition={{ duration: 7, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_55%)]"
+          animate={{ scale: [1, 1.03, 1], opacity: [0.6, 0.75, 0.6] }}
+          transition={{ duration: 10, repeat: Infinity }}
+        />
+
+        <div className="relative z-10 flex min-h-screen items-center justify-center px-6 py-16">
+          <div className="w-full max-w-2xl space-y-10 text-center">
+            <motion.div
+              className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-lg"
+              animate={{ rotate: [0, 4, -4, 0], scale: [1, 1.05, 1] }}
+              transition={{ duration: 6, repeat: Infinity }}
+            >
+              <Sparkles className="h-10 w-10 text-white" />
+            </motion.div>
+
+            <div className="space-y-4">
+              <motion.h2
+                className="text-4xl font-semibold tracking-tight"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                Drafting your agreement
+              </motion.h2>
+              <p className="text-base text-white/70 md:text-lg">
+                Creating a professional, legally-sound document tailored to your specifications.
+                Hang tight while we polish every clause.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="relative h-3 w-full overflow-hidden rounded-full bg-white/10">
+                <motion.div
+                  className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-300 via-sky-400 to-fuchsia-500 shadow-lg shadow-sky-500/40"
+                  animate={{ width: `${Math.min(displayedProgress, 99)}%` }}
+                  transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                />
+                <motion.div
+                  className="absolute -top-1 h-5 w-5 rounded-full bg-white shadow-xl shadow-sky-500/60"
+                  animate={{ x: `${Math.min(displayedProgress, 99)}%` }}
+                  transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-white/60">
+                <span>
+                  Phase {Math.min(generationStepIndex + 1, GENERATION_STEPS.length)} of{' '}
+                  {GENERATION_STEPS.length}
+                </span>
+                <span>{displayedProgress}%</span>
+              </div>
+            </div>
+
+            <motion.div
+              key={generationStepIndex}
+              className="space-y-3 rounded-3xl border border-white/20 bg-white/10 p-6 text-left backdrop-blur-xl shadow-lg shadow-sky-500/10"
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                boxShadow: [
+                  '0 4px 20px rgba(14, 165, 233, 0.1)',
+                  '0 8px 30px rgba(14, 165, 233, 0.2)',
+                  '0 4px 20px rgba(14, 165, 233, 0.1)',
+                ]
+              }}
+              transition={{
+                duration: 0.6,
+                delay: 0.1,
+                boxShadow: {
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                }
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+                  Currently working on
+                </p>
+              </div>
+              <h3 className="text-lg font-semibold text-white">{currentStep.title}</h3>
+              <p className="text-sm leading-relaxed text-white/70">{currentStep.description}</p>
+            </motion.div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium">
+              {GENERATION_STEPS.map((step, index) => {
+                const isPast = index < generationStepIndex;
+                const isActive = index === generationStepIndex;
+                return (
+                  <motion.span
+                    key={step.title}
+                    className={cn(
+                      'rounded-full border px-4 py-1.5 transition-colors',
+                      isActive
+                        ? 'border-white bg-white/20 text-white'
+                        : isPast
+                          ? 'border-white/60 text-white/80'
+                          : 'border-white/10 text-white/50',
+                    )}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.05 }}
+                  >
+                    {step.title}
+                  </motion.span>
+                );
+              })}
+            </div>
           </div>
-          <h2 className="text-3xl font-semibold text-[hsl(var(--fg))]">Drafting your agreement</h2>
-          <p className="text-[hsl(var(--brand-muted))] max-w-md mx-auto">
-            Creating a professional, legally-sound document tailored to your specifications...
-          </p>
         </div>
       </div>
     );

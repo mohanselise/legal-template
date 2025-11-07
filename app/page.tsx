@@ -26,7 +26,7 @@ const templates = [
     description: "Comprehensive employment contracts with customizable terms, salary, benefits, and termination clauses.",
     icon: FileText,
     available: true,
-    href: "/templates/employment-agreement",
+    href: "/templates/employment-agreement/generate",
     popular: true
   },
   {

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openai, EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT } from '@/lib/openai';
+import { openai, EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON } from '@/lib/openai';
+import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   console.log('🚀 [Generate API] Request received at:', new Date().toISOString());
-  
+
   try {
     console.log('📥 [Generate API] Parsing request body...');
     const formData = await request.json();
@@ -16,44 +17,49 @@ export async function POST(request: NextRequest) {
     const promptLength = userPrompt.length;
     console.log('✅ [Generate API] Prompt built - Length:', promptLength, 'characters');
 
-    console.log('🤖 [Generate API] Calling OpenAI API...');
+    console.log('🤖 [Generate API] Calling OpenAI API with GPT-4o (JSON mode)...');
     const apiCallStart = Date.now();
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-4o',
       messages: [
-        { role: 'system', content: EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT },
+        { role: 'system', content: EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON },
         { role: 'user', content: userPrompt },
       ],
+      response_format: { type: 'json_object' }, // Enforce JSON output
       temperature: 0.3, // Lower temperature for more consistent legal text
-      max_tokens: 4000,
+      max_tokens: 16000, // GPT-4o supports longer outputs for comprehensive legal documents
     });
     const apiCallDuration = Date.now() - apiCallStart;
     console.log('✅ [Generate API] OpenAI response received in', apiCallDuration, 'ms');
 
-    const document = completion.choices[0]?.message?.content || '';
-    console.log('📄 [Generate API] Document length:', document.length, 'characters');
+    const documentContent = completion.choices[0]?.message?.content || '';
+    console.log('📄 [Generate API] Document content length:', documentContent.length, 'characters');
     console.log('💰 [Generate API] Tokens used:', completion.usage);
 
-    if (!document) {
+    if (!documentContent) {
       console.error('❌ [Generate API] No content generated!');
       throw new Error('No content generated');
     }
 
-    // Extract metadata for future use
-    const metadata = {
-      companyName: formData.companyName,
-      employeeName: formData.employeeName,
-      jobTitle: formData.jobTitle,
-      generatedAt: new Date().toISOString(),
-    };
+    // Parse and validate JSON
+    let document: EmploymentAgreement;
+    try {
+      document = JSON.parse(documentContent);
+      console.log('✅ [Generate API] JSON parsed successfully');
+      console.log('📊 [Generate API] Articles count:', document.articles?.length);
+    } catch (parseError) {
+      console.error('❌ [Generate API] Failed to parse JSON:', parseError);
+      console.error('📄 [Generate API] Raw content:', documentContent.substring(0, 500));
+      throw new Error('Invalid JSON response from AI');
+    }
 
     const totalDuration = Date.now() - startTime;
     console.log('✨ [Generate API] Request completed successfully in', totalDuration, 'ms');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     return NextResponse.json({
-      document,
-      metadata,
+      document, // This is now a structured JSON object, not a string
+      metadata: document.metadata, // Use metadata from the document
       usage: completion.usage,
     });
   } catch (error) {

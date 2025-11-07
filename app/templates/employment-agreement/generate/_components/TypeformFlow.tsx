@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Sparkles, Check, Building2, User, Briefcase, DollarSign, MapPin, Scale, Loader2 } from 'lucide-react';
 import { EmploymentAgreementFormData } from '../schema';
+import { saveEmploymentAgreementReview } from '../reviewStorage';
 
 type QuestionType = 'text' | 'select' | 'multiselect' | 'date' | 'number' | 'cards';
 
@@ -331,12 +332,21 @@ export function TypeformFlow() {
       if (!response.ok) throw new Error('Failed to generate');
 
       const result = await response.json();
-
-      const params = new URLSearchParams({
+      const persisted = saveEmploymentAgreementReview({
         document: result.document,
-        data: JSON.stringify(formData),
+        formData,
+        storedAt: new Date().toISOString(),
       });
 
+      if (persisted) {
+        router.push('/templates/employment-agreement/generate/review');
+        return;
+      }
+
+      const params = new URLSearchParams({
+        document: JSON.stringify(result.document), // Stringify the JSON document object
+        data: JSON.stringify(formData),
+      });
       router.push(`/templates/employment-agreement/generate/review?${params.toString()}`);
     } catch (error) {
       console.error('Generation error:', error);

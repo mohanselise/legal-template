@@ -7,6 +7,7 @@ export const employmentAgreementSchema = z.object({
   companyAddress: z.string().min(1, 'Company address is required'),
   companyState: z.string().min(1, 'State/Province is required'),
   companyCountry: z.string().min(1, 'Country is required'),
+  companyWebsite: z.string().optional(),
 
   employeeName: z.string().min(1, 'Employee name is required'),
   employeeAddress: z.string().min(1, 'Employee address is required'),
@@ -25,6 +26,7 @@ export const employmentAgreementSchema = z.object({
   salaryPeriod: z.enum(['hourly', 'weekly', 'bi-weekly', 'monthly', 'annual']),
   bonusStructure: z.string().optional(),
   equityOffered: z.string().optional(),
+  signOnBonus: z.string().optional(),
 
   healthInsurance: z.boolean().default(false),
   dentalInsurance: z.boolean().default(false),

@@ -8,6 +8,8 @@ export interface DocumentGeneratorOptions {
   formData: any;
 }
 
+type AlignmentValue = (typeof AlignmentType)[keyof typeof AlignmentType];
+
 export async function generateEmploymentAgreementDocx(
   options: DocumentGeneratorOptions
 ): Promise<Buffer> {
@@ -215,7 +217,7 @@ function createParagraphFromBlock(block: ContentBlock): Paragraph {
 
   const textRuns = parseInlineFormatting(text, formatting.bold, formatting.italic);
 
-  let alignment = AlignmentType.JUSTIFIED;
+  let alignment: AlignmentValue = AlignmentType.JUSTIFIED;
   if (formatting.alignment === 'center') alignment = AlignmentType.CENTER;
   else if (formatting.alignment === 'right') alignment = AlignmentType.RIGHT;
   else if (formatting.alignment === 'left') alignment = AlignmentType.LEFT;

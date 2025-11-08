@@ -9,12 +9,23 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { saveEmploymentAgreementReview } from '../../reviewStorage';
 
-export function Step7Review() {
+interface Step7ReviewProps {
+  onStartGeneration?: () => void;
+}
+
+export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
   const { formData, enrichment, goToStep } = useSmartForm();
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
+    // If parent provides onStartGeneration, use it (triggers loading screen)
+    if (onStartGeneration) {
+      onStartGeneration();
+      return;
+    }
+
+    // Fallback: traditional immediate generation
     setIsGenerating(true);
     try {
       const response = await fetch('/api/templates/employment-agreement/generate', {

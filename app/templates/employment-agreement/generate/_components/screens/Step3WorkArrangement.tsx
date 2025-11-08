@@ -113,15 +113,31 @@ export function Step3WorkArrangement() {
       {/* Location and Hours */}
       <div className="space-y-5">
         <SmartInput
-          label="Primary work location"
+          label={
+            formData.workArrangement === 'remote'
+              ? 'Home base / Tax residence (optional)'
+              : formData.workArrangement === 'hybrid'
+              ? 'Office location'
+              : 'Primary work location'
+          }
           name="workLocation"
           value={formData.workLocation || ''}
           onChange={(value) => updateFormData({ workLocation: value })}
-          placeholder="San Francisco, CA"
-          required
-          helpText="City and state/country where employee will primarily work"
+          placeholder={
+            formData.workArrangement === 'remote'
+              ? 'e.g., Manchester, UK (for tax/legal purposes)'
+              : 'San Francisco, CA'
+          }
+          required={formData.workArrangement !== 'remote'}
+          helpText={
+            formData.workArrangement === 'remote'
+              ? 'Location for tax and legal purposes (not required to work from here)'
+              : formData.workArrangement === 'hybrid'
+              ? 'Office location where employee will work on-site days'
+              : 'City and state/country where employee will primarily work'
+          }
           suggestion={
-            enrichment.jurisdictionData?.city
+            enrichment.jurisdictionData?.city && formData.workArrangement !== 'remote'
               ? {
                   value: `${enrichment.jurisdictionData.city}${enrichment.jurisdictionData.state ? `, ${enrichment.jurisdictionData.state}` : ''}`,
                   reason: 'Based on company address',

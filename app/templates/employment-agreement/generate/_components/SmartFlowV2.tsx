@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, FileText, Check, Sparkles, Zap } from 'lucide-react';
+import { ArrowRight, ArrowLeft, FileText, Check, Sparkles, Zap, AlertTriangle } from 'lucide-react';
 import { SmartFormProvider, useSmartForm } from './SmartFormContext';
 import { Step1CompanyIdentity } from './screens/Step1CompanyIdentity';
 import { Step2EmployeeIdentity } from './screens/Step2EmployeeIdentity';
@@ -12,6 +12,16 @@ import { Step5BenefitsEquity } from './screens/Step5BenefitsEquity';
 import { Step6LegalTerms } from './screens/Step6LegalTerms';
 import { Step7Review } from './screens/Step7Review';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const STEPS = [
   { id: 'company', title: 'Company', component: Step1CompanyIdentity },
@@ -41,7 +51,9 @@ function NavigationButtons({
   onNext,
   onPrevious,
 }: NavigationButtonsProps) {
-  const { enrichment, applyMarketStandards } = useSmartForm();
+  const { enrichment, applyMarketStandards, formData, updateFormData } = useSmartForm();
+  const [showSalaryWarning, setShowSalaryWarning] = useState(false);
+
   const marketStandards = enrichment.marketStandards;
   const jurisdictionName =
     enrichment.jurisdictionData?.state ||
@@ -51,7 +63,16 @@ function NavigationButtons({
   const showMarketStandardButton =
     MARKET_STANDARD_STEPS.includes(currentStep) && marketStandards;
 
+  const isCompensationStep = currentStep === 3; // Step 4 is index 3
+  const hasSalaryAmount = formData.salaryAmount && formData.salaryAmount.trim() !== '';
+
   const handleUseMarketStandard = () => {
+    // Show warning if on compensation step and no salary entered
+    if (isCompensationStep && !hasSalaryAmount) {
+      setShowSalaryWarning(true);
+      return;
+    }
+
     if (marketStandards) {
       applyMarketStandards(marketStandards);
       // Auto-advance to next step after applying
@@ -61,48 +82,131 @@ function NavigationButtons({
     }
   };
 
-  return (
-    <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t">
-      {/* Left side - Back button */}
-      {currentStep > 0 ? (
-        <Button
-          variant="ghost"
-          onClick={onPrevious}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
-      ) : (
-        <div></div>
-      )}
+  const handleProceedWithoutSalary = () => {
+    if (marketStandards) {
+      applyMarketStandards(marketStandards);
+      setShowSalaryWarning(false);
+      setTimeout(() => {
+        onNext();
+      }, 300);
+    }
+  };
 
-      {/* Right side - Market Standard + Continue buttons */}
-      <div className="flex items-center gap-3">
-        {showMarketStandardButton && (
+  const handleUsePlaceholder = () => {
+    if (marketStandards) {
+      applyMarketStandards(marketStandards);
+      updateFormData({ salaryAmount: '[TO BE DETERMINED]' });
+      setShowSalaryWarning(false);
+      setTimeout(() => {
+        onNext();
+      }, 300);
+    }
+  };
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t">
+        {/* Left side - Back button */}
+        {currentStep > 0 ? (
           <Button
             variant="ghost"
-            onClick={handleUseMarketStandard}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            onClick={onPrevious}
+            className="flex items-center gap-2"
           >
-            <Zap className="w-4 h-4" />
-            Use {jurisdictionName} standard
+            <ArrowLeft className="w-4 h-4" />
+            Back
           </Button>
+        ) : (
+          <div></div>
         )}
 
-        {currentStep < totalSteps - 1 && (
-          <Button
-            onClick={onNext}
-            disabled={!canContinue}
-            className="flex items-center gap-3 px-8 py-4"
-            size="lg"
-          >
-            Continue
-            <ArrowRight className="w-5 h-5" />
-          </Button>
-        )}
+        {/* Right side - Market Standard + Continue buttons */}
+        <div className="flex items-center gap-3">
+          {showMarketStandardButton && (
+            <Button
+              variant="ghost"
+              onClick={handleUseMarketStandard}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <Zap className="w-4 h-4" />
+              Use {jurisdictionName} standard
+            </Button>
+          )}
+
+          {currentStep < totalSteps - 1 && (
+            <Button
+              onClick={onNext}
+              disabled={!canContinue}
+              className="flex items-center gap-3 px-8 py-4"
+              size="lg"
+            >
+              Continue
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Salary Warning Dialog */}
+      <AlertDialog open={showSalaryWarning} onOpenChange={setShowSalaryWarning}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader className="space-y-3">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <AlertDialogTitle className="text-lg font-semibold mb-2">
+                  Salary amount missing
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
+                  The final agreement will be generated without salary information. Choose how you&apos;d like to proceed:
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+
+          <div className="space-y-2 py-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowSalaryWarning(false)}
+              className="w-full justify-start h-auto py-3 px-4 border-2 hover:border-primary hover:bg-primary/5"
+            >
+              <div className="text-left flex-1 min-w-0">
+                <div className="font-semibold text-sm">← Go back and enter salary</div>
+                <div className="text-xs text-muted-foreground mt-0.5 truncate">Recommended for complete agreement</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={handleUsePlaceholder}
+              className="w-full justify-start h-auto py-3 px-4 hover:bg-muted"
+            >
+              <div className="text-left flex-1 min-w-0">
+                <div className="font-semibold text-sm">Add placeholder</div>
+                <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                  Shows &quot;[TO BE DETERMINED]&quot; in document
+                </div>
+              </div>
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={handleProceedWithoutSalary}
+              className="w-full justify-start h-auto py-3 px-4 text-muted-foreground hover:text-foreground hover:bg-muted"
+            >
+              <div className="text-left flex-1 min-w-0">
+                <div className="font-medium text-sm">Skip salary entirely</div>
+                <div className="text-xs opacity-75 mt-0.5 truncate">
+                  No salary mention in final document
+                </div>
+              </div>
+            </Button>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -121,7 +225,9 @@ function SmartFlowContent() {
       case 1: // Employee
         return formData.employeeName && formData.jobTitle && formData.startDate;
       case 2: // Work
-        return formData.workLocation && formData.workHoursPerWeek;
+        // Work location is optional for remote workers
+        const workLocationValid = formData.workArrangement === 'remote' || formData.workLocation;
+        return workLocationValid && formData.workHoursPerWeek;
       case 3: // Compensation
         return formData.salaryAmount && formData.salaryCurrency;
       case 4: // Benefits (optional)

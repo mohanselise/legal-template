@@ -184,29 +184,54 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
 
   const applyMarketStandards = useCallback(
     (standards: MarketStandards) => {
-      const updates: Partial<EmploymentAgreementFormData> = {
-        workArrangement: standards.workArrangement,
-        workHoursPerWeek: standards.workHoursPerWeek.toString(),
-        salaryPeriod: standards.payFrequency === 'annual' ? 'annual' : standards.payFrequency,
-        salaryCurrency: standards.currency,
-        paidTimeOff: standards.ptodays.toString(),
-        includeConfidentiality: standards.confidentialityRequired,
-        includeIpAssignment: standards.ipAssignmentRequired,
-        includeNonCompete: standards.nonCompeteEnforceable,
-        includeNonSolicitation: standards.nonSolicitationCommon,
-      };
+      // Only fill in non-critical fields that don't override user input
+      // Critical fields like salaryAmount, companyName, employeeName, etc. are NEVER auto-filled
+      const updates: Partial<EmploymentAgreementFormData> = {};
 
-      if (standards.probationPeriodMonths) {
+      // Work arrangement (only if not already set)
+      if (!formData.workArrangement) {
+        updates.workArrangement = standards.workArrangement;
+      }
+
+      // Work hours (only if not already set)
+      if (!formData.workHoursPerWeek) {
+        updates.workHoursPerWeek = standards.workHoursPerWeek.toString();
+      }
+
+      // Payment frequency (only if not already set)
+      if (!formData.salaryPeriod || formData.salaryPeriod === 'annual') {
+        updates.salaryPeriod = standards.payFrequency === 'annual' ? 'annual' : standards.payFrequency;
+      }
+
+      // Currency (only if not already set or is default USD)
+      if (!formData.salaryCurrency || formData.salaryCurrency === 'USD') {
+        updates.salaryCurrency = standards.currency;
+      }
+
+      // PTO days (only if not already set)
+      if (!formData.paidTimeOff) {
+        updates.paidTimeOff = standards.ptodays.toString();
+      }
+
+      // Legal clauses - always apply standards
+      updates.includeConfidentiality = standards.confidentialityRequired;
+      updates.includeIpAssignment = standards.ipAssignmentRequired;
+      updates.includeNonCompete = standards.nonCompeteEnforceable;
+      updates.includeNonSolicitation = standards.nonSolicitationCommon;
+
+      // Probation period (only if not already set)
+      if (standards.probationPeriodMonths && !formData.probationPeriod) {
         updates.probationPeriod = `${standards.probationPeriodMonths} months`;
       }
 
-      if (standards.noticePeriodDays) {
+      // Notice period (only if not already set)
+      if (standards.noticePeriodDays && !formData.noticePeriod) {
         updates.noticePeriod = `${standards.noticePeriodDays} days`;
       }
 
       updateFormData(updates);
     },
-    [updateFormData]
+    [updateFormData, formData]
   );
 
   const goToStep = useCallback((step: number) => {

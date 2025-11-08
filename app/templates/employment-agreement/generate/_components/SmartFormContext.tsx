@@ -1,0 +1,294 @@
+'use client';
+
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { EmploymentAgreementFormData } from '../schema';
+import {
+  EnrichmentState,
+  JurisdictionIntelligence,
+  CompanyIntelligence,
+  JobTitleAnalysis,
+  MarketStandards,
+} from '@/lib/types/smart-form';
+
+interface SmartFormContextType {
+  // Form data
+  formData: Partial<EmploymentAgreementFormData>;
+  updateFormData: (updates: Partial<EmploymentAgreementFormData>) => void;
+  setFormData: (data: Partial<EmploymentAgreementFormData>) => void;
+
+  // Enrichment state
+  enrichment: EnrichmentState;
+
+  // Actions
+  analyzeCompany: (companyName: string, companyAddress: string) => Promise<void>;
+  analyzeJobTitle: (jobTitle: string, location?: string, industry?: string) => Promise<void>;
+  generateMarketStandards: () => Promise<void>;
+  applyMarketStandards: (standards: MarketStandards) => void;
+
+  // Navigation
+  currentStep: number;
+  totalSteps: number;
+  goToStep: (step: number) => void;
+  nextStep: () => void;
+  previousStep: () => void;
+
+  // Persistence
+  saveProgress: () => void;
+  loadProgress: () => void;
+  clearProgress: () => void;
+}
+
+const SmartFormContext = createContext<SmartFormContextType | undefined>(undefined);
+
+const STORAGE_KEY = 'employment-agreement-smart-flow-v1';
+const TOTAL_STEPS = 7;
+
+export function SmartFormProvider({ children }: { children: React.ReactNode }) {
+  const [formData, setFormDataState] = useState<Partial<EmploymentAgreementFormData>>({
+    salaryCurrency: 'USD',
+    salaryPeriod: 'annual',
+    includeConfidentiality: true,
+    includeIpAssignment: true,
+    disputeResolution: 'arbitration',
+  });
+
+  const [enrichment, setEnrichment] = useState<EnrichmentState>({
+    jurisdictionLoading: false,
+    companyLoading: false,
+    jobTitleLoading: false,
+  });
+
+  const [currentStep, setCurrentStep] = useState(0);
+
+  // Auto-save to localStorage
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      saveProgress();
+    }, 1000); // Debounce saves
+
+    return () => clearTimeout(timer);
+  }, [formData, currentStep]);
+
+  const updateFormData = useCallback((updates: Partial<EmploymentAgreementFormData>) => {
+    setFormDataState((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const setFormData = useCallback((data: Partial<EmploymentAgreementFormData>) => {
+    setFormDataState(data);
+  }, []);
+
+  const analyzeCompany = useCallback(async (companyName: string, companyAddress: string) => {
+    setEnrichment((prev) => ({ ...prev, jurisdictionLoading: true, companyLoading: true }));
+
+    try {
+      const response = await fetch('/api/intelligence/company', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyName, companyAddress }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze company');
+      }
+
+      const data = await response.json();
+
+      setEnrichment((prev) => ({
+        ...prev,
+        jurisdictionLoading: false,
+        companyLoading: false,
+        jurisdictionData: data.jurisdiction as JurisdictionIntelligence,
+        companyData: data.company as CompanyIntelligence,
+      }));
+
+      // Auto-populate currency based on jurisdiction
+      if (data.jurisdiction?.currency) {
+        updateFormData({ salaryCurrency: data.jurisdiction.currency });
+      }
+    } catch (error) {
+      console.error('Company analysis failed:', error);
+      setEnrichment((prev) => ({
+        ...prev,
+        jurisdictionLoading: false,
+        companyLoading: false,
+        jurisdictionError: 'Failed to analyze company information',
+      }));
+    }
+  }, [updateFormData]);
+
+  const analyzeJobTitle = useCallback(
+    async (jobTitle: string, location?: string, industry?: string) => {
+      setEnrichment((prev) => ({ ...prev, jobTitleLoading: true }));
+
+      try {
+        const response = await fetch('/api/intelligence/job-title', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobTitle, location, industry }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to analyze job title');
+        }
+
+        const data: JobTitleAnalysis = await response.json();
+
+        setEnrichment((prev) => ({
+          ...prev,
+          jobTitleLoading: false,
+          jobTitleData: data,
+        }));
+      } catch (error) {
+        console.error('Job title analysis failed:', error);
+        setEnrichment((prev) => ({
+          ...prev,
+          jobTitleLoading: false,
+          jobTitleError: 'Failed to analyze job title',
+        }));
+      }
+    },
+    []
+  );
+
+  const generateMarketStandards = useCallback(async () => {
+    if (!enrichment.jurisdictionData) {
+      console.warn('Cannot generate market standards without jurisdiction data');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/intelligence/market-standards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jurisdiction: enrichment.jurisdictionData,
+          jobTitle: enrichment.jobTitleData,
+          industry: enrichment.companyData?.industryDetected,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate market standards');
+      }
+
+      const standards: MarketStandards = await response.json();
+
+      setEnrichment((prev) => ({
+        ...prev,
+        marketStandards: standards,
+      }));
+    } catch (error) {
+      console.error('Market standards generation failed:', error);
+    }
+  }, [enrichment.jurisdictionData, enrichment.jobTitleData, enrichment.companyData]);
+
+  const applyMarketStandards = useCallback(
+    (standards: MarketStandards) => {
+      const updates: Partial<EmploymentAgreementFormData> = {
+        workArrangement: standards.workArrangement,
+        workHoursPerWeek: standards.workHoursPerWeek.toString(),
+        salaryPeriod: standards.payFrequency === 'annual' ? 'annual' : standards.payFrequency,
+        salaryCurrency: standards.currency,
+        paidTimeOff: standards.ptodays.toString(),
+        includeConfidentiality: standards.confidentialityRequired,
+        includeIpAssignment: standards.ipAssignmentRequired,
+        includeNonCompete: standards.nonCompeteEnforceable,
+        includeNonSolicitation: standards.nonSolicitationCommon,
+      };
+
+      if (standards.probationPeriodMonths) {
+        updates.probationPeriod = `${standards.probationPeriodMonths} months`;
+      }
+
+      if (standards.noticePeriodDays) {
+        updates.noticePeriod = `${standards.noticePeriodDays} days`;
+      }
+
+      updateFormData(updates);
+    },
+    [updateFormData]
+  );
+
+  const goToStep = useCallback((step: number) => {
+    if (step >= 0 && step < TOTAL_STEPS) {
+      setCurrentStep(step);
+    }
+  }, []);
+
+  const nextStep = useCallback(() => {
+    setCurrentStep((prev) => Math.min(prev + 1, TOTAL_STEPS - 1));
+  }, []);
+
+  const previousStep = useCallback(() => {
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  }, []);
+
+  const saveProgress = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const state = {
+        formData,
+        currentStep,
+        timestamp: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (error) {
+      console.error('Failed to save progress:', error);
+    }
+  }, [formData, currentStep]);
+
+  const loadProgress = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const state = JSON.parse(saved);
+        setFormDataState(state.formData || {});
+        setCurrentStep(state.currentStep || 0);
+      }
+    } catch (error) {
+      console.error('Failed to load progress:', error);
+    }
+  }, []);
+
+  const clearProgress = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.error('Failed to clear progress:', error);
+    }
+  }, []);
+
+  const value: SmartFormContextType = {
+    formData,
+    updateFormData,
+    setFormData,
+    enrichment,
+    analyzeCompany,
+    analyzeJobTitle,
+    generateMarketStandards,
+    applyMarketStandards,
+    currentStep,
+    totalSteps: TOTAL_STEPS,
+    goToStep,
+    nextStep,
+    previousStep,
+    saveProgress,
+    loadProgress,
+    clearProgress,
+  };
+
+  return <SmartFormContext.Provider value={value}>{children}</SmartFormContext.Provider>;
+}
+
+export function useSmartForm() {
+  const context = useContext(SmartFormContext);
+  if (!context) {
+    throw new Error('useSmartForm must be used within SmartFormProvider');
+  }
+  return context;
+}

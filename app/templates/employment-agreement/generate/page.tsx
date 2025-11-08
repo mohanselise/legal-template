@@ -1,18 +1,19 @@
 'use client';
 
-import { SmartFlow } from './_components/SmartFlow';
+import { SmartFlowV2 } from './_components/SmartFlowV2';
 
 /**
  * Employment Agreement Generation Page
  *
- * Smart grouped question flow with brand-aligned design:
- * 1. Related questions grouped together
- * 2. All optional fields skippable
- * 3. ~9 screens (down from 20)
- * 4. Click-based cards for choices
- * 5. Brand colors and professional tone
- * 6. Clear, trustworthy, and accessible
+ * AI-powered smart flow with dynamic question adaptation:
+ * 1. Background AI enrichment for jurisdiction and job intelligence
+ * 2. Smart defaults based on market standards
+ * 3. "Use Market Standard" quick-fill buttons
+ * 4. Real-time validation and benchmarking
+ * 5. 7 contextual screens with progressive disclosure
+ * 6. Auto-save progress to localStorage
+ * 7. Brand-aligned, trustworthy, and accessible design
  */
 export default function GeneratePage() {
-  return <SmartFlow />;
+  return <SmartFlowV2 />;
 }

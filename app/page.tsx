@@ -197,7 +197,7 @@ export default function Home() {
         </div>
 
         {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--gradient-light-from))] via-[hsl(var(--gradient-light-to))] to-white dark:from-[hsl(var(--selise-blue))]/5 dark:via-[hsl(var(--oxford-blue))]/10 dark:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-[hsl(var(--gradient-light-to))]/70 to-white/75 dark:from-[hsl(var(--selise-blue))]/20 dark:via-[hsl(var(--oxford-blue))]/20 dark:to-transparent" />
 
         {/* Decorative elements */}
         <div className="absolute left-0 top-0 h-64 w-64 rounded-full bg-[hsl(var(--selise-blue))]/10 blur-3xl dark:bg-[hsl(var(--sky-blue))]/20" />
@@ -507,7 +507,7 @@ export default function Home() {
             className="object-cover opacity-[0.18] dark:opacity-[0.28]"
           />
         </div>
-        <div className="absolute inset-0 bg-white/95 dark:bg-black/80" />
+        <div className="absolute inset-0 bg-white/70 dark:bg-black/65" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]">
@@ -557,7 +557,7 @@ export default function Home() {
             className="object-cover opacity-[0.12] dark:opacity-[0.2]"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-br from-white via-white/95 to-white/90 dark:from-black dark:via-black/85 dark:to-black/75" />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/80 to-white/75 dark:from-black/80 dark:via-black/75 dark:to-black/70" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]">

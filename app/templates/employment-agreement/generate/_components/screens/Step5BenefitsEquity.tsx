@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function Step5BenefitsEquity() {
-  const { formData, updateFormData, enrichment, applyMarketStandards } = useSmartForm();
+  const { formData, updateFormData, enrichment, applyMarketStandards, nextStep } = useSmartForm();
 
   const marketStandards = enrichment.marketStandards;
   const jobTitleData = enrichment.jobTitleData;
@@ -135,7 +135,7 @@ export function Step5BenefitsEquity() {
       <div className="pt-4">
         <button
           type="button"
-          onClick={() => updateFormData({})}
+          onClick={() => nextStep()}
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           Skip benefits details →

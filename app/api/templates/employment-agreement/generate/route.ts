@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { openai, EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON } from '@/lib/openai';
 import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
+import type { JurisdictionIntelligence, CompanyIntelligence, JobTitleAnalysis, MarketStandards } from '@/lib/types/smart-form';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -8,12 +9,16 @@ export async function POST(request: NextRequest) {
 
   try {
     console.log('📥 [Generate API] Parsing request body...');
-    const formData = await request.json();
+    const body = await request.json();
+    const { formData, enrichment } = body;
     console.log('✅ [Generate API] Form data parsed successfully');
     console.log('📋 [Generate API] Company:', formData.companyName, '| Employee:', formData.employeeName);
+    if (enrichment?.jurisdiction) {
+      console.log('🌍 [Generate API] Jurisdiction:', enrichment.jurisdiction.state || '', enrichment.jurisdiction.country);
+    }
 
     console.log('🔨 [Generate API] Building prompt from form data...');
-    const userPrompt = buildPromptFromFormData(formData);
+    const userPrompt = buildPromptFromFormData(formData, enrichment);
     const promptLength = userPrompt.length;
     console.log('✅ [Generate API] Prompt built - Length:', promptLength, 'characters');
 
@@ -79,7 +84,120 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function buildPromptFromFormData(data: any): string {
+interface EnrichmentData {
+  jurisdiction?: JurisdictionIntelligence;
+  company?: CompanyIntelligence;
+  jobTitle?: JobTitleAnalysis;
+  marketStandards?: MarketStandards;
+}
+
+function buildJurisdictionContext(formData: any, enrichment?: EnrichmentData): string {
+  if (!enrichment?.jurisdiction) return '';
+
+  const j = enrichment.jurisdiction;
+  let context = `# JURISDICTION-SPECIFIC INTELLIGENCE & REQUIREMENTS\n\n`;
+  context += `We have analyzed the jurisdiction and role to ensure legal compliance. Apply these critical requirements:\n\n`;
+
+  // Jurisdiction basics
+  context += `**Governing Jurisdiction:** ${j.state ? `${j.state}, ` : ''}${j.country} (${j.countryCode})\n\n`;
+
+  // At-will employment
+  if (!j.atWillEmployment) {
+    context += `⚠️ **CRITICAL - JUST CAUSE REQUIRED:** This jurisdiction does NOT recognize at-will employment.\n`;
+    context += `- The agreement MUST include just cause termination provisions\n`;
+    context += `- List specific grounds for cause (misconduct, breach, poor performance)\n`;
+    context += `- Include procedural safeguards (warnings, opportunity to cure)\n`;
+    context += `- DO NOT use at-will language like "either party may terminate at any time for any reason"\n\n`;
+  } else {
+    context += `✓ **At-Will Employment:** This jurisdiction recognizes at-will employment. Include clear at-will language in the Term article.\n\n`;
+  }
+
+  // Written contract requirement
+  if (j.requiresWrittenContract) {
+    context += `⚠️ **LEGAL REQUIREMENT:** This jurisdiction legally requires written employment contracts.\n`;
+    context += `- Include explicit statement: "This written agreement is executed in compliance with [jurisdiction] employment law requirements"\n`;
+    context += `- Ensure all statutory terms are clearly documented\n\n`;
+  }
+
+  // Notice periods
+  if (j.noticePeriodsRequired && j.defaultNoticePeriodDays) {
+    context += `⚠️ **STATUTORY NOTICE PERIOD:** Minimum ${j.defaultNoticePeriodDays} days notice is legally required.\n`;
+    context += `- Include in termination provisions: "Either party shall provide at least ${j.defaultNoticePeriodDays} days written notice"\n`;
+    context += `- May specify longer notice for employer convenience, but not shorter\n`;
+    context += `- Address payment in lieu of notice if applicable\n\n`;
+  }
+
+  // Non-compete enforceability
+  if (enrichment.marketStandards && !enrichment.marketStandards.nonCompeteEnforceable) {
+    context += `🚫 **NON-COMPETE PROHIBITED:** Non-compete agreements are NOT enforceable in this jurisdiction.\n`;
+    context += `- DO NOT include Article 9 (Non-Competition)\n`;
+    context += `- Focus instead on strong confidentiality (Article 7) and non-solicitation (Article 10) provisions\n`;
+    context += `- If user requested non-compete, replace with enhanced non-solicitation language\n\n`;
+  } else if (formData.includeNonCompete) {
+    context += `✓ **Non-Compete Enforceable:** Include Article 9 with reasonable scope.\n`;
+    context += `- Limit to: ${formData.nonCompeteDuration || '12 months'} duration, ${formData.nonCompeteRadius || 'primary operating regions'}\n`;
+    context += `- Use blue-pencil language allowing court modification\n\n`;
+  }
+
+  // Industry context
+  if (enrichment.company?.industryDetected) {
+    context += `**Industry Context:** ${enrichment.company.industryDetected}\n`;
+    if (enrichment.company.industryDetected.toLowerCase().includes('tech') ||
+        enrichment.company.industryDetected.toLowerCase().includes('software')) {
+      context += `- Include comprehensive IP assignment provisions (Article 8)\n`;
+      context += `- Address remote work policies and equipment in Work Schedule article\n`;
+      context += `- Consider equity/stock option provisions if offered\n`;
+    }
+    context += `\n`;
+  }
+
+  // Job-specific context
+  if (enrichment.jobTitle) {
+    const jt = enrichment.jobTitle;
+    context += `**Role Intelligence:**\n`;
+    context += `- **Seniority:** ${jt.seniorityLevel} level (${jt.department} department)\n`;
+    context += `- **FLSA Classification:** ${jt.exemptStatus}\n`;
+
+    if (jt.exemptStatus === 'non-exempt') {
+      context += `\n⚠️ **NON-EXEMPT ROLE - OVERTIME REQUIRED:**\n`;
+      context += `- This role is NON-EXEMPT under FLSA\n`;
+      context += `- MUST include detailed overtime compensation at 1.5x regular rate\n`;
+      context += `- Specify overtime threshold (typically ${j.overtimeThreshold || 40} hours/week)\n`;
+      context += `- Include timekeeping and approval procedures\n`;
+      context += `- Add language: "EMPLOYEE is eligible for overtime compensation at one and one-half (1.5x) times the regular rate for all hours worked in excess of ${j.overtimeThreshold || 40} hours per week."\n\n`;
+    } else if (jt.exemptStatus === 'exempt') {
+      context += `\n✓ **EXEMPT ROLE:**\n`;
+      context += `- This role is EXEMPT from overtime requirements\n`;
+      context += `- Include language: "EMPLOYEE is classified as exempt from overtime pay requirements under applicable wage and hour laws."\n`;
+      context += `- Base salary must meet minimum threshold (typically $${j.minimumWage ? (j.minimumWage * 2080).toFixed(0) : '35,568'}/year)\n\n`;
+    }
+
+    // Equity context
+    if (jt.equityTypical && formData.equityOffered) {
+      context += `**Equity Compensation:**\n`;
+      context += `- Equity is typical for ${jt.seniorityLevel} ${jt.department} roles\n`;
+      context += `- Market range: ${jt.typicalEquityRange?.min}%-${jt.typicalEquityRange?.max}%\n`;
+      context += `- Include detailed vesting schedule (typically 4-year with 1-year cliff)\n`;
+      context += `- Reference governing equity incentive plan\n\n`;
+    }
+  }
+
+  // Pay frequency
+  if (j.typicalPayFrequency) {
+    const freqMap: Record<string, string> = {
+      'weekly': 'Weekly',
+      'bi-weekly': 'Bi-weekly (every two weeks)',
+      'monthly': 'Monthly (end of month)',
+      'annual': 'Annual (paid bi-weekly)',
+    };
+    context += `**Payment Frequency:** Standard practice in this jurisdiction is ${freqMap[j.typicalPayFrequency] || j.typicalPayFrequency} payroll.\n\n`;
+  }
+
+  context += `---\n\n`;
+  return context;
+}
+
+function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string {
   const employerAddress = formatAddress(
     data.companyAddress,
     data.companyCity,
@@ -104,6 +222,12 @@ function buildPromptFromFormData(data: any): string {
   const companyContact = [data.companyContactName, data.companyContactTitle].filter(Boolean).join(', ');
 
   let prompt = `Draft a sophisticated, legally-sound employment agreement with the following specifications:\n\n`;
+
+  // ADD JURISDICTION INTELLIGENCE FIRST
+  const jurisdictionContext = buildJurisdictionContext(data, enrichment);
+  if (jurisdictionContext) {
+    prompt += jurisdictionContext;
+  }
 
   prompt += `# PARTIES TO THE AGREEMENT\n\n`;
   prompt += `**EMPLOYER:**\n`;

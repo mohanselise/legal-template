@@ -145,9 +145,50 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
         companyError: undefined,
       }));
 
-      // Auto-populate currency based on jurisdiction
+      // Auto-populate fields based on jurisdiction intelligence
+      const updates: Partial<EmploymentAgreementFormData> = {};
+
+      // Currency
       if (data.jurisdiction?.currency) {
-        updateFormData({ salaryCurrency: data.jurisdiction.currency });
+        updates.salaryCurrency = data.jurisdiction.currency;
+      }
+
+      // Pay frequency (only if still at default 'annual')
+      if (data.jurisdiction?.typicalPayFrequency && formData.salaryPeriod === 'annual') {
+        // Map typicalPayFrequency to salaryPeriod values
+        const payFrequencyMap: Record<string, string> = {
+          'weekly': 'weekly',
+          'bi-weekly': 'bi-weekly',
+          'monthly': 'monthly',
+          'annual': 'annual',
+        };
+        const mappedFrequency = payFrequencyMap[data.jurisdiction.typicalPayFrequency];
+        if (mappedFrequency) {
+          updates.salaryPeriod = mappedFrequency as any;
+        }
+      }
+
+      // Governing law
+      if (data.jurisdiction?.state && data.jurisdiction?.country) {
+        updates.governingLaw = `${data.jurisdiction.state}, ${data.jurisdiction.country}`;
+      } else if (data.jurisdiction?.country) {
+        updates.governingLaw = data.jurisdiction.country;
+      }
+
+      // Notice period (if required by jurisdiction)
+      if (data.jurisdiction?.defaultNoticePeriodDays && !formData.noticePeriod) {
+        updates.noticePeriod = `${data.jurisdiction.defaultNoticePeriodDays} days`;
+      }
+
+      // Probation period (if common in jurisdiction)
+      if (data.jurisdiction?.probationDurationMonths &&
+          data.jurisdiction?.probationPeriodCommon &&
+          !formData.probationPeriod) {
+        updates.probationPeriod = `${data.jurisdiction.probationDurationMonths} months`;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        updateFormData(updates);
       }
     } catch (error) {
       console.error('Company analysis failed:', error);

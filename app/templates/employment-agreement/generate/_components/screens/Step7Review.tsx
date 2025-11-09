@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
-import { FileText, AlertCircle, CheckCircle2, Edit3 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { FileText, AlertCircle, CheckCircle2, Edit3, AlertTriangle, Info } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { saveEmploymentAgreementReview } from '../../reviewStorage';
+import { validateAgainstIntelligence } from '@/lib/validation/smart-validation';
 
 interface Step7ReviewProps {
   onStartGeneration?: () => void;
@@ -17,6 +18,17 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
   const { formData, enrichment, goToStep } = useSmartForm();
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Validate form data against intelligence
+  const validationWarnings = useMemo(
+    () => validateAgainstIntelligence(formData, enrichment),
+    [formData, enrichment]
+  );
+
+  // Separate by severity
+  const errors = validationWarnings.filter((w) => w.severity === 'error');
+  const warnings = validationWarnings.filter((w) => w.severity === 'warning');
+  const suggestions = validationWarnings.filter((w) => w.severity === 'info');
 
   const handleGenerate = async () => {
     // If parent provides onStartGeneration, use it (triggers loading screen)
@@ -31,7 +43,15 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
       const response = await fetch('/api/templates/employment-agreement/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          formData,
+          enrichment: {
+            jurisdiction: enrichment.jurisdictionData,
+            company: enrichment.companyData,
+            jobTitle: enrichment.jobTitleData,
+            marketStandards: enrichment.marketStandards,
+          },
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to generate');
@@ -205,6 +225,72 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
           </Button>
         </div>
       </div>
+
+      {/* Validation Errors (critical issues) */}
+      {errors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle className="text-sm font-semibold">
+            {errors.length} critical {errors.length === 1 ? 'issue' : 'issues'} detected
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc list-inside text-sm space-y-2 mt-2">
+              {errors.map((error, i) => (
+                <li key={i}>
+                  <strong>{error.message}</strong>
+                  {error.suggestion && (
+                    <div className="text-xs mt-1 ml-5 opacity-90">{error.suggestion}</div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Validation Warnings */}
+      {warnings.length > 0 && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-sm font-semibold text-amber-900">
+            {warnings.length} {warnings.length === 1 ? 'warning' : 'warnings'}
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc list-inside text-sm space-y-2 mt-2 text-amber-900">
+              {warnings.map((warning, i) => (
+                <li key={i}>
+                  {warning.message}
+                  {warning.suggestion && (
+                    <div className="text-xs mt-1 ml-5 opacity-75">{warning.suggestion}</div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Suggestions */}
+      {suggestions.length > 0 && (
+        <Alert className="border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-sm font-semibold text-blue-900">
+            {suggestions.length} {suggestions.length === 1 ? 'suggestion' : 'suggestions'}
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc list-inside text-sm space-y-2 mt-2 text-blue-900">
+              {suggestions.map((suggestion, i) => (
+                <li key={i}>
+                  {suggestion.message}
+                  {suggestion.suggestion && (
+                    <div className="text-xs mt-1 ml-5 opacity-75">{suggestion.suggestion}</div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Customizations detected */}
       {customizations.length > 0 && (

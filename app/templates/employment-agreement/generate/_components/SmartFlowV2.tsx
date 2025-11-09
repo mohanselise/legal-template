@@ -354,7 +354,15 @@ function SmartFlowContent() {
           const response = await fetch('/api/templates/employment-agreement/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
+            body: JSON.stringify({
+              formData,
+              enrichment: {
+                jurisdiction: enrichment.jurisdictionData,
+                company: enrichment.companyData,
+                jobTitle: enrichment.jobTitleData,
+                marketStandards: enrichment.marketStandards,
+              },
+            }),
           });
 
           if (!response.ok) throw new Error('Failed to generate');

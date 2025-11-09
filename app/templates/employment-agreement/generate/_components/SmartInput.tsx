@@ -64,9 +64,11 @@ export function SmartInput({
 
   // Address autocomplete state
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [userIsTyping, setUserIsTyping] = useState(false);
+  const [inputIsFocused, setInputIsFocused] = useState(false);
   
-  // Use searchQuery if provided, otherwise use the field's own value
-  const queryToUse = searchQuery || value;
+  // Use searchQuery if provided and user hasn't started typing, otherwise use the field's own value
+  const queryToUse = (searchQuery && !userIsTyping) ? searchQuery : value;
   const [debouncedValue] = useDebounce(queryToUse, 500);
   
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -76,19 +78,28 @@ export function SmartInput({
 
   // Fetch suggestions when debounced value changes
   useEffect(() => {
-    if (enableAddressAutocomplete && debouncedValue && debouncedValue.length >= 3) {
+    if (enableAddressAutocomplete && debouncedValue && debouncedValue.length >= 3 && inputIsFocused) {
       fetchSuggestions(debouncedValue);
       setShowSuggestions(true);
     } else {
       clearSuggestions();
+      setShowSuggestions(false);
     }
-  }, [debouncedValue, enableAddressAutocomplete, fetchSuggestions, clearSuggestions]);
+  }, [debouncedValue, enableAddressAutocomplete, inputIsFocused, fetchSuggestions, clearSuggestions]);
+
+  // Reset userIsTyping when searchQuery changes
+  useEffect(() => {
+    if (searchQuery && !value) {
+      setUserIsTyping(false);
+    }
+  }, [searchQuery, value]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
+        setInputIsFocused(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -100,6 +111,33 @@ export function SmartInput({
     onChange(suggestion.description);
     setShowSuggestions(false);
     clearSuggestions();
+    setUserIsTyping(false); // Reset typing state after selection
+    setInputIsFocused(false); // Close suggestions
+  };
+
+  const handleInputChange = (newValue: string) => {
+    // Mark that user is typing (to switch from searchQuery to their input)
+    if (newValue !== value) {
+      setUserIsTyping(true);
+    }
+    onChange(newValue);
+  };
+
+  const handleInputFocus = () => {
+    setInputIsFocused(true);
+    // Only show suggestions if we have them and the field has enough content
+    const currentQuery = (searchQuery && !userIsTyping) ? searchQuery : value;
+    if (enableAddressAutocomplete && currentQuery && currentQuery.length >= 3 && suggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleInputBlur = () => {
+    // Delay to allow click on suggestion to register
+    setTimeout(() => {
+      setInputIsFocused(false);
+      setShowSuggestions(false);
+    }, 200);
   };
 
   const isLoading = loading || suggestionsLoading;
@@ -139,12 +177,9 @@ export function SmartInput({
           name={name}
           type={type}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={() => {
-            if (enableAddressAutocomplete && suggestions.length > 0) {
-              setShowSuggestions(true);
-            }
-          }}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
           placeholder={placeholder}
           className={cn(
             'transition-all',

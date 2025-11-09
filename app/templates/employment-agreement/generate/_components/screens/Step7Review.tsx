@@ -80,6 +80,20 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
     }
   };
 
+  // Helper to convert salary to annual for comparison
+  const convertToAnnualSalary = (amount: number, frequency: string): number => {
+    const workHoursPerYear = 2080;
+    const workWeeksPerYear = 52;
+    switch (frequency?.toLowerCase()) {
+      case 'hourly': return amount * workHoursPerYear;
+      case 'weekly': return amount * workWeeksPerYear;
+      case 'bi-weekly': return amount * (workWeeksPerYear / 2);
+      case 'monthly': return amount * 12;
+      case 'annual':
+      default: return amount;
+    }
+  };
+
   // Detect customizations
   const customizations: string[] = [];
   const marketStandards = enrichment.marketStandards;
@@ -87,12 +101,20 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
   if (marketStandards) {
     const salary = parseFloat(formData.salaryAmount || '0');
     if (enrichment.jobTitleData?.typicalSalaryRange) {
-      const median = enrichment.jobTitleData.typicalSalaryRange.median;
-      const diff = ((salary - median) / median) * 100;
-      if (Math.abs(diff) > 10) {
-        customizations.push(
-          `Salary: ${diff > 0 ? '+' : ''}${diff.toFixed(0)}% ${diff > 0 ? 'above' : 'below'} market median`
-        );
+      const userCurrency = formData.salaryCurrency || 'USD';
+      const marketCurrency = enrichment.jobTitleData.typicalSalaryRange.currency;
+
+      // Only compare if currencies match
+      if (userCurrency === marketCurrency) {
+        // Convert user's salary to annual for comparison (market data is always annual)
+        const annualSalary = convertToAnnualSalary(salary, formData.salaryPeriod || 'annual');
+        const median = enrichment.jobTitleData.typicalSalaryRange.median;
+        const diff = ((annualSalary - median) / median) * 100;
+        if (Math.abs(diff) > 10) {
+          customizations.push(
+            `Salary: ${diff > 0 ? '+' : ''}${diff.toFixed(0)}% ${diff > 0 ? 'above' : 'below'} market median`
+          );
+        }
       }
     }
 

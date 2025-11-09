@@ -13,8 +13,20 @@ export async function POST(request: NextRequest) {
     const { formData, enrichment } = body;
     console.log('✅ [Generate API] Form data parsed successfully');
     console.log('📋 [Generate API] Company:', formData.companyName, '| Employee:', formData.employeeName);
-    if (enrichment?.jurisdiction) {
-      console.log('🌍 [Generate API] Jurisdiction:', enrichment.jurisdiction.state || '', enrichment.jurisdiction.country);
+
+    // Log enrichment data availability
+    if (enrichment) {
+      console.log('🧠 [Generate API] Enrichment data:', {
+        hasJurisdiction: !!enrichment.jurisdiction,
+        hasCompany: !!enrichment.company,
+        hasJobTitle: !!enrichment.jobTitle,
+        hasMarketStandards: !!enrichment.marketStandards,
+      });
+      if (enrichment.jurisdiction) {
+        console.log('🌍 [Generate API] Jurisdiction:', enrichment.jurisdiction.state || '', enrichment.jurisdiction.country);
+      }
+    } else {
+      console.log('⚠️ [Generate API] No enrichment data provided (user may have skipped intelligence gathering)');
     }
 
     console.log('🔨 [Generate API] Building prompt from form data...');
@@ -92,7 +104,19 @@ interface EnrichmentData {
 }
 
 function buildJurisdictionContext(formData: any, enrichment?: EnrichmentData): string {
-  if (!enrichment?.jurisdiction) return '';
+  // If no enrichment data at all, provide basic guidance based on formData.governingLaw if available
+  if (!enrichment?.jurisdiction) {
+    if (formData.governingLaw) {
+      let context = `# GOVERNING LAW\n\n`;
+      context += `**User-specified governing law:** ${formData.governingLaw}\n`;
+      context += `\nNote: Limited jurisdiction intelligence available. Apply standard employment law principles for this jurisdiction.\n`;
+      context += `- Include appropriate termination provisions\n`;
+      context += `- Consider statutory requirements for notice periods and benefits\n`;
+      context += `- Ensure compliance with local labor law\n\n---\n\n`;
+      return context;
+    }
+    return ''; // No jurisdiction context at all
+  }
 
   const j = enrichment.jurisdiction;
   let context = `# JURISDICTION-SPECIFIC INTELLIGENCE & REQUIREMENTS\n\n`;

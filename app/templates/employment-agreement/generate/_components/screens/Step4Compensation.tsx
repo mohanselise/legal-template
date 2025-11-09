@@ -46,6 +46,39 @@ function formatSalary(amount: number, frequency: string): string {
   return amount.toLocaleString();
 }
 
+// Simple currency conversion (approximate rates)
+// This is for rough comparison only - rates are approximate
+function convertCurrency(amount: number, fromCurrency: string, toCurrency: string): number {
+  if (fromCurrency === toCurrency) return amount;
+
+  // Approximate exchange rates to USD (base currency)
+  const ratesToUSD: Record<string, number> = {
+    'USD': 1,
+    'EUR': 1.08,
+    'GBP': 1.27,
+    'CAD': 0.74,
+    'AUD': 0.66,
+    'INR': 0.012,
+    'BDT': 0.0091, // Bangladesh Taka
+    'CNY': 0.14,
+    'JPY': 0.0067,
+    'SGD': 0.74,
+    'CHF': 1.13,
+    'MXN': 0.059,
+    'BRL': 0.20,
+    'ZAR': 0.055,
+    'AED': 0.27, // UAE Dirham
+    'NZD': 0.61,
+  };
+
+  const fromRate = ratesToUSD[fromCurrency] || 1;
+  const toRate = ratesToUSD[toCurrency] || 1;
+
+  // Convert: amount -> USD -> target currency
+  const usdAmount = amount * fromRate;
+  return usdAmount / toRate;
+}
+
 export function Step4Compensation() {
   const { formData, updateFormData, enrichment, applyMarketStandards } = useSmartForm();
 
@@ -59,20 +92,35 @@ export function Step4Compensation() {
   const salaryAmount = parseFloat(formData.salaryAmount || '0');
   const payFrequency = formData.salaryPeriod || 'annual';
 
-  // Salary validation (convert annual ranges to selected frequency)
+  // Salary validation (convert annual ranges to selected frequency and currency)
   let salaryValidation: ValidationWarning | undefined;
   if (salaryAmount > 0 && jobTitleData?.typicalSalaryRange) {
     const range = jobTitleData.typicalSalaryRange;
-    const convertedMin = convertAnnualSalary(range.min, payFrequency);
-    const convertedMax = convertAnnualSalary(range.max, payFrequency);
-    const convertedMedian = convertAnnualSalary(range.median, payFrequency);
+    const userCurrency = formData.salaryCurrency || 'USD';
+    const marketCurrency = range.currency;
+
+    // Convert market ranges to user's currency
+    const convertedMin = convertAnnualSalary(
+      convertCurrency(range.min, marketCurrency, userCurrency),
+      payFrequency
+    );
+    const convertedMax = convertAnnualSalary(
+      convertCurrency(range.max, marketCurrency, userCurrency),
+      payFrequency
+    );
+    const convertedMedian = convertAnnualSalary(
+      convertCurrency(range.median, marketCurrency, userCurrency),
+      payFrequency
+    );
+
+    const currencyNote = userCurrency !== marketCurrency ? ' (converted)' : '';
 
     if (salaryAmount < convertedMin) {
       salaryValidation = {
         field: 'salaryAmount',
         severity: 'warning',
         message: `Below typical range for ${formData.jobTitle}`,
-        suggestion: `Typical range: ${range.currency}${convertedMin.toLocaleString()} - ${range.currency}${convertedMax.toLocaleString()}`,
+        suggestion: `Typical range: ${userCurrency} ${convertedMin.toLocaleString()} - ${convertedMax.toLocaleString()}${currencyNote}`,
       };
     } else if (salaryAmount > convertedMax * 1.5) {
       salaryValidation = {
@@ -126,27 +174,63 @@ export function Step4Compensation() {
               </p>
               <p className="text-xs text-blue-700 mb-3">
                 {payFrequency === 'annual' ? 'Annual' : payFrequency === 'bi-weekly' ? 'Bi-weekly' : payFrequency === 'monthly' ? 'Monthly' : payFrequency === 'weekly' ? 'Weekly' : 'Hourly'} rates
+                {formData.salaryCurrency && formData.salaryCurrency !== jobTitleData.typicalSalaryRange.currency && (
+                  <span className="ml-1">(converted to {formData.salaryCurrency})</span>
+                )}
               </p>
               <div className="grid grid-cols-3 gap-3 text-xs">
                 <div>
                   <p className="text-blue-700">Min</p>
                   <p className="font-semibold text-blue-900">
-                    {jobTitleData.typicalSalaryRange.currency}
-                    {formatSalary(convertAnnualSalary(jobTitleData.typicalSalaryRange.min, payFrequency), payFrequency)}
+                    {formData.salaryCurrency || jobTitleData.typicalSalaryRange.currency}
+                    {' '}
+                    {formatSalary(
+                      convertAnnualSalary(
+                        convertCurrency(
+                          jobTitleData.typicalSalaryRange.min,
+                          jobTitleData.typicalSalaryRange.currency,
+                          formData.salaryCurrency || jobTitleData.typicalSalaryRange.currency
+                        ),
+                        payFrequency
+                      ),
+                      payFrequency
+                    )}
                   </p>
                 </div>
                 <div>
                   <p className="text-blue-700">Median</p>
                   <p className="font-semibold text-blue-900">
-                    {jobTitleData.typicalSalaryRange.currency}
-                    {formatSalary(convertAnnualSalary(jobTitleData.typicalSalaryRange.median, payFrequency), payFrequency)}
+                    {formData.salaryCurrency || jobTitleData.typicalSalaryRange.currency}
+                    {' '}
+                    {formatSalary(
+                      convertAnnualSalary(
+                        convertCurrency(
+                          jobTitleData.typicalSalaryRange.median,
+                          jobTitleData.typicalSalaryRange.currency,
+                          formData.salaryCurrency || jobTitleData.typicalSalaryRange.currency
+                        ),
+                        payFrequency
+                      ),
+                      payFrequency
+                    )}
                   </p>
                 </div>
                 <div>
                   <p className="text-blue-700">Max</p>
                   <p className="font-semibold text-blue-900">
-                    {jobTitleData.typicalSalaryRange.currency}
-                    {formatSalary(convertAnnualSalary(jobTitleData.typicalSalaryRange.max, payFrequency), payFrequency)}
+                    {formData.salaryCurrency || jobTitleData.typicalSalaryRange.currency}
+                    {' '}
+                    {formatSalary(
+                      convertAnnualSalary(
+                        convertCurrency(
+                          jobTitleData.typicalSalaryRange.max,
+                          jobTitleData.typicalSalaryRange.currency,
+                          formData.salaryCurrency || jobTitleData.typicalSalaryRange.currency
+                        ),
+                        payFrequency
+                      ),
+                      payFrequency
+                    )}
                   </p>
                 </div>
               </div>

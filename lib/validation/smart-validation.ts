@@ -2,6 +2,28 @@ import type { EmploymentAgreementFormData } from '@/app/templates/employment-agr
 import type { EnrichmentState, ValidationWarning } from '@/lib/types/smart-form';
 
 /**
+ * Convert salary to annual amount based on payment frequency
+ */
+function convertToAnnualSalary(amount: number, frequency: string): number {
+  const workHoursPerYear = 2080; // Standard 40 hours/week * 52 weeks
+  const workWeeksPerYear = 52;
+
+  switch (frequency?.toLowerCase()) {
+    case 'hourly':
+      return amount * workHoursPerYear;
+    case 'weekly':
+      return amount * workWeeksPerYear;
+    case 'bi-weekly':
+      return amount * (workWeeksPerYear / 2);
+    case 'monthly':
+      return amount * 12;
+    case 'annual':
+    default:
+      return amount;
+  }
+}
+
+/**
  * Validate form data against collected intelligence to detect potential issues
  * Returns array of warnings/errors for user review
  */
@@ -14,24 +36,31 @@ export function validateAgainstIntelligence(
   // Check salary against market benchmarks
   if (enrichment.jobTitleData?.typicalSalaryRange && formData.salaryAmount) {
     const salary = parseFloat(formData.salaryAmount.replace(/[^0-9.-]/g, ''));
-    if (!isNaN(salary)) {
+    const userCurrency = formData.salaryCurrency || 'USD';
+    const marketCurrency = enrichment.jobTitleData.typicalSalaryRange.currency;
+
+    // Only compare if currencies match
+    if (!isNaN(salary) && userCurrency === marketCurrency) {
+      // Convert user's salary to annual for comparison (market data is always annual)
+      const annualSalary = convertToAnnualSalary(salary, formData.salaryPeriod || 'annual');
+
       const median = enrichment.jobTitleData.typicalSalaryRange.median;
       const min = enrichment.jobTitleData.typicalSalaryRange.min;
-      const diffPercent = ((salary - median) / median) * 100;
+      const diffPercent = ((annualSalary - median) / median) * 100;
 
       if (diffPercent < -30) {
         warnings.push({
           field: 'salaryAmount',
           severity: 'warning',
           message: `Salary is ${Math.abs(diffPercent).toFixed(0)}% below market median for this role`,
-          suggestion: `Market median: ${enrichment.jobTitleData.typicalSalaryRange.currency} ${median.toLocaleString()}`,
+          suggestion: `Market median: ${marketCurrency} ${median.toLocaleString()}/year`,
         });
-      } else if (salary < min) {
+      } else if (annualSalary < min) {
         warnings.push({
           field: 'salaryAmount',
           severity: 'warning',
           message: `Salary is below typical minimum for ${formData.jobTitle}`,
-          suggestion: `Market range: ${enrichment.jobTitleData.typicalSalaryRange.currency} ${min.toLocaleString()} - ${enrichment.jobTitleData.typicalSalaryRange.max.toLocaleString()}`,
+          suggestion: `Market range: ${marketCurrency} ${min.toLocaleString()} - ${enrichment.jobTitleData.typicalSalaryRange.max.toLocaleString()}/year`,
         });
       }
     }

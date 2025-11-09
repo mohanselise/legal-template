@@ -62,6 +62,9 @@ export function Step1CompanyIdentity() {
           required
           helpText="Full address including city, state/province, and country"
           loading={enrichment.jurisdictionLoading}
+          enableAddressAutocomplete={true}
+          autocompleteType="address"
+          searchQuery={formData.companyName}
         />
       </div>
 

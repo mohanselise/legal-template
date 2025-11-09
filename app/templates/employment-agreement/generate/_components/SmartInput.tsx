@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useDebounce } from 'use-debounce';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -10,9 +11,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Sparkles, HelpCircle, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Sparkles, HelpCircle, AlertCircle, CheckCircle2, Loader2, MapPin } from 'lucide-react';
 import { SmartFieldSuggestion, ValidationWarning } from '@/lib/types/smart-form';
 import { cn } from '@/lib/utils';
+import { usePlacesAutocomplete } from '@/lib/hooks/usePlacesAutocomplete';
 
 interface SmartInputProps {
   label: string;
@@ -31,6 +33,12 @@ interface SmartInputProps {
 
   // Apply suggestion callback
   onApplySuggestion?: () => void;
+
+  // Address autocomplete
+  enableAddressAutocomplete?: boolean;
+  autocompleteType?: 'establishment' | 'address';
+  onAddressSelect?: (address: string) => void; // Callback for when establishment is selected
+  searchQuery?: string; // External query to use for address search (e.g., company name)
 }
 
 export function SmartInput({
@@ -46,12 +54,58 @@ export function SmartInput({
   validation,
   loading = false,
   onApplySuggestion,
+  enableAddressAutocomplete = false,
+  autocompleteType = 'address',
+  onAddressSelect,
+  searchQuery,
 }: SmartInputProps) {
   const hasValue = value && value.length > 0;
   const isSuggestionApplied = suggestion && value === suggestion.value.toString();
 
+  // Address autocomplete state
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  // Use searchQuery if provided, otherwise use the field's own value
+  const queryToUse = searchQuery || value;
+  const [debouncedValue] = useDebounce(queryToUse, 500);
+  
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const { suggestions, loading: suggestionsLoading, fetchSuggestions, clearSuggestions } =
+    usePlacesAutocomplete(autocompleteType);
+
+  // Fetch suggestions when debounced value changes
+  useEffect(() => {
+    if (enableAddressAutocomplete && debouncedValue && debouncedValue.length >= 3) {
+      fetchSuggestions(debouncedValue);
+      setShowSuggestions(true);
+    } else {
+      clearSuggestions();
+    }
+  }, [debouncedValue, enableAddressAutocomplete, fetchSuggestions, clearSuggestions]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSuggestionClick = (suggestion: { description: string; structured_formatting?: { main_text: string } }) => {
+    // Just set the full address
+    onChange(suggestion.description);
+    setShowSuggestions(false);
+    clearSuggestions();
+  };
+
+  const isLoading = loading || suggestionsLoading;
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" ref={wrapperRef}>
       {/* Label with help icon */}
       <div className="flex items-center justify-between">
         <Label htmlFor={name} className="text-sm font-medium">
@@ -86,6 +140,11 @@ export function SmartInput({
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onFocus={() => {
+            if (enableAddressAutocomplete && suggestions.length > 0) {
+              setShowSuggestions(true);
+            }
+          }}
           placeholder={placeholder}
           className={cn(
             'transition-all',
@@ -96,9 +155,41 @@ export function SmartInput({
         />
 
         {/* Loading indicator */}
-        {loading && (
+        {isLoading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {/* Address suggestions dropdown */}
+        {enableAddressAutocomplete && showSuggestions && suggestions.length > 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion.place_id}
+                type="button"
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b last:border-b-0 transition-colors flex items-start gap-2"
+              >
+                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  {suggestion.structured_formatting ? (
+                    <>
+                      <div className="text-sm font-medium text-foreground truncate">
+                        {suggestion.structured_formatting.main_text}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {suggestion.structured_formatting.secondary_text}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-sm text-foreground">
+                      {suggestion.description}
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
           </div>
         )}
       </div>

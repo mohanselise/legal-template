@@ -20,7 +20,7 @@ export default function Footer() {
         <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="text-center sm:text-left">
             <p className="text-sm text-muted-foreground">
-              &copy; {currentYear} Legal Templates. All rights reserved.
+              &copy; {currentYear} SELISE Group AG. All rights reserved.
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               Providing free, accessible legal document templates for everyone.

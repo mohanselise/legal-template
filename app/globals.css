@@ -46,83 +46,125 @@
 :root {
   --radius: 0.625rem;
 
-  /* Brand colors */
-  --brand-primary: 222 89% 52%;
-  --brand-primary-foreground: 210 40% 98%;
-  --brand-secondary: 262 83% 58%;
-  --brand-muted: 215 16% 47%;
+  /* SELISE Primary Brand Colors */
+  --selise-blue: 206 100% 35%;        /* #0066B2 - Primary brand color */
+  --globe-grey: 0 0% 48%;             /* #7B7C7F - Secondary/muted */
+  --oxford-blue: 204 100% 11%;        /* #001F35 - Dark accent */
+  --white: 0 0% 100%;                 /* #FFFFFF - Light text/backgrounds */
+  --eerie-black: 180 9% 12%;          /* #1B2021 - Primary text (dark) */
 
-  /* Base colors */
-  --bg: 0 0% 100%;
-  --fg: 222 47% 11%;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Extended Brand Palette */
+  --sky-blue: 206 95% 57%;            /* #247EC1 - Light blue variant */
+  --light-blue: 207 87% 70%;          /* #6BAEEE - Lighter blue for highlights */
+
+  /* Highlight Colors (use sparingly) */
+  --mauveine: 281 79% 35%;            /* #791E94 - Purple for infographics */
+  --poly-green: 93 46% 19%;           /* #2A4D14 - Dark green for text/info */
+  --lavender: 289 52% 62%;            /* #BC63D7 - Light purple for infographics */
+  --lime-green: 99 44% 54%;           /* #7BC950 - Green for positive outcomes */
+  --crimson: 346 97% 52%;             /* #D80032 - Red for warnings */
+  --pantone-red: 354 85% 57%;         /* #EF233C - Bright red for negative headers */
+
+  /* UI Surface Tokens */
+  --bg: 0 0% 100%;                    /* White background */
+  --fg: 180 9% 12%;                   /* Eerie black text */
+  --background: 0 0% 100%;
+  --foreground: 180 9% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 180 9% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 180 9% 12%;
+
+  /* UI States - Using SELISE Blue as primary */
+  --primary: 206 100% 35%;            /* SELISE Blue */
+  --primary-foreground: 0 0% 100%;    /* White */
+  --secondary: 0 0% 48%;              /* Globe Grey */
+  --secondary-foreground: 0 0% 100%;  /* White */
+  --muted: 0 0% 96%;                  /* Light grey */
+  --muted-foreground: 0 0% 48%;       /* Globe Grey */
+  --accent: 206 95% 57%;              /* Sky Blue */
+  --accent-foreground: 0 0% 100%;     /* White */
+  --destructive: 354 85% 57%;         /* Pantone Red */
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 90%;                 /* Light grey */
+  --input: 0 0% 90%;
+  --ring: 206 100% 35%;               /* SELISE Blue */
+  --success: 99 44% 54%;              /* Lime green */
+  --warning: 38 92% 50%;
+
+  /* Gradients - Light */
+  --gradient-light-from: 0 0% 98%;    /* #F9F9F9 */
+  --gradient-light-to: 0 0% 93%;      /* #EDEDED */
+
+  /* Gradients - Mid (Sky Blue) */
+  --gradient-mid-from: 206 100% 68%;  /* #5BAEFF */
+  --gradient-mid-to: 206 100% 39%;    /* #0073C6 */
+
+  /* Gradients - Dark (Deep Blue) */
+  --gradient-dark-from: 204 100% 32%; /* #0067A3 */
+  --gradient-dark-to: 211 100% 22%;   /* #002D72 */
+
+  /* Chart colors using brand palette */
+  --chart-1: 206 100% 35%;            /* SELISE Blue */
+  --chart-2: 206 95% 57%;             /* Sky Blue */
+  --chart-3: 0 0% 48%;                /* Globe Grey */
+  --chart-4: 99 44% 54%;              /* Lime Green */
+  --chart-5: 289 52% 62%;             /* Lavender */
+
+  /* Sidebar */
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 180 9% 12%;
+  --sidebar-primary: 206 100% 35%;    /* SELISE Blue */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent-foreground: 180 9% 12%;
+  --sidebar-border: 0 0% 90%;
+  --sidebar-ring: 206 100% 35%;       /* SELISE Blue */
 }
 
 .dark {
-  /* Base colors */
-  --bg: 224 71% 4%;
-  --fg: 213 31% 91%;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Base colors - Dark mode using Eerie Black */
+  --bg: 180 9% 12%;                   /* Eerie black */
+  --fg: 0 0% 100%;                    /* White text */
+  --background: 180 9% 12%;
+  --foreground: 0 0% 100%;
+  --card: 180 9% 15%;
+  --card-foreground: 0 0% 100%;
+  --popover: 180 9% 15%;
+  --popover-foreground: 0 0% 100%;
+
+  /* Primary colors in dark mode */
+  --primary: 206 95% 57%;             /* Sky Blue (lighter variant for dark mode) */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 30%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 20%;
+  --muted-foreground: 0 0% 65%;
+  --accent: 206 95% 57%;              /* Sky Blue */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 354 85% 65%;         /* Lighter red for dark mode */
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 20%;
+  --input: 0 0% 20%;
+  --ring: 206 95% 57%;                /* Sky Blue */
+  --success: 99 44% 60%;              /* Slightly lighter lime green */
+
+  /* Chart colors remain the same */
+  --chart-1: 206 95% 57%;             /* Sky Blue */
+  --chart-2: 207 87% 70%;             /* Light Blue */
+  --chart-3: 0 0% 65%;                /* Light Grey */
+  --chart-4: 99 44% 60%;              /* Lime Green */
+  --chart-5: 289 52% 70%;             /* Lighter Lavender */
+
+  /* Sidebar dark mode */
+  --sidebar: 180 9% 15%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 206 95% 57%;     /* Sky Blue */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 20%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 0 0% 20%;
+  --sidebar-ring: 206 95% 57%;        /* Sky Blue */
 }
 
 @layer base {

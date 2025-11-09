@@ -14,7 +14,16 @@ import {
   Download,
   Star,
   Globe,
-  FileCheck
+  FileCheck,
+  PenTool,
+  Wrench,
+  LifeBuoy,
+  Handshake,
+  ShieldCheck,
+  Feather,
+  Target,
+  Mountain,
+  Rocket
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -106,15 +115,69 @@ const benefits = [
   "Professional quality templates"
 ];
 
+const approach = [
+  {
+    title: "Design",
+    description: "Collaborative discovery turns requirements into human-centered journeys that respect regional regulations from day one.",
+    icon: PenTool,
+    badge: "Insight to Blueprint"
+  },
+  {
+    title: "Implement",
+    description: "Agile sprints with automated QA deliver reliable, scalable document experiences that stay aligned with legal standards.",
+    icon: Wrench,
+    badge: "Build with Precision"
+  },
+  {
+    title: "Operate",
+    description: "Continuous monitoring, analytics, and feedback loops keep every template accurate, secure, and always ready to ship.",
+    icon: LifeBuoy,
+    badge: "Always On"
+  }
+];
+
+const brandValues = [
+  {
+    title: "Respectful",
+    description: "We listen first and co-create solutions that empower distributed teams and their clients.",
+    icon: Handshake
+  },
+  {
+    title: "Integrous",
+    description: "Transparent processes, audit trails, and responsible data handling build long-lasting trust.",
+    icon: ShieldCheck
+  },
+  {
+    title: "Humble",
+    description: "We stay curious, iterate fast, and learn with every release to keep improving our craft.",
+    icon: Feather
+  },
+  {
+    title: "Pragmatic",
+    description: "Every feature is anchored in measurable impact, making legal delivery simpler and faster.",
+    icon: Target
+  },
+  {
+    title: "Persevering",
+    description: "We engineer resilient systems that adapt, scale, and keep critical workflows running.",
+    icon: Mountain
+  },
+  {
+    title: "Empowering",
+    description: "We transfer knowledge and tools that let teams operate independently with confidence.",
+    icon: Rocket
+  }
+];
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-background font-sans">
       {/* Announcement Bar */}
-      <div className="bg-blue-600 px-4 py-3 text-center text-sm text-white">
+      <div className="bg-[hsl(var(--selise-blue))] px-4 py-3 text-center text-sm text-white">
         <div className="flex items-center justify-center gap-2">
           <Sparkles className="h-4 w-4" />
           <span className="font-medium">New: Employment Agreement template now available!</span>
-          <Link href="#templates" className="underline underline-offset-4 hover:text-blue-100">
+          <Link href="#templates" className="underline underline-offset-4 hover:opacity-90">
             Try it now →
           </Link>
         </div>
@@ -134,28 +197,28 @@ export default function Home() {
         </div>
 
         {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-linear-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/20 dark:via-purple-950/20 dark:to-pink-950/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--gradient-light-from))] via-[hsl(var(--gradient-light-to))] to-white dark:from-[hsl(var(--selise-blue))]/5 dark:via-[hsl(var(--oxford-blue))]/10 dark:to-transparent" />
 
         {/* Decorative elements */}
-        <div className="absolute left-0 top-0 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl dark:bg-blue-600/20" />
-        <div className="absolute right-0 top-20 h-80 w-80 rounded-full bg-purple-400/10 blur-3xl dark:bg-purple-600/20" />
+        <div className="absolute left-0 top-0 h-64 w-64 rounded-full bg-[hsl(var(--selise-blue))]/10 blur-3xl dark:bg-[hsl(var(--sky-blue))]/20" />
+        <div className="absolute right-0 top-20 h-80 w-80 rounded-full bg-[hsl(var(--sky-blue))]/10 blur-3xl dark:bg-[hsl(var(--selise-blue))]/20" />
 
         <div className="relative mx-auto max-w-7xl px-6 py-20 sm:py-28 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             {/* Trust badge */}
             <div className="mb-6 flex items-center justify-center gap-2">
-              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800" variant="outline">
+              <Badge className="bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/20 dark:text-[hsl(var(--lime-green))] border-[hsl(var(--lime-green))]/30" variant="outline">
                 <Star className="mr-1 h-3 w-3 fill-current" />
                 Trusted by thousands
               </Badge>
-              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" variant="secondary">
+              <Badge className="bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]" variant="secondary">
                 100% Free
               </Badge>
             </div>
 
             <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-7xl bg-clip-text">
               Professional Legal Documents,
-              <span className="block bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-purple-400">
+              <span className="block bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] bg-clip-text text-transparent dark:from-[hsl(var(--sky-blue))] dark:to-[hsl(var(--light-blue))]">
                 Generated Instantly
               </span>
             </h1>
@@ -168,7 +231,7 @@ export default function Home() {
 
             {/* CTA Buttons */}
             <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" className="group bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30 text-base px-8 py-6 h-auto">
+              <Button asChild size="lg" className="group bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-white shadow-lg shadow-[hsl(var(--selise-blue))]/30 text-base px-8 py-6 h-auto">
                 <Link href="#templates">
                   Start Generating Free
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -184,15 +247,15 @@ export default function Home() {
             {/* Quick benefits */}
             <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <CheckCircle2 className="h-5 w-5 text-[hsl(var(--lime-green))]" />
                 <span>No credit card needed</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <CheckCircle2 className="h-5 w-5 text-[hsl(var(--lime-green))]" />
                 <span>No sign-up required</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <CheckCircle2 className="h-5 w-5 text-[hsl(var(--lime-green))]" />
                 <span>Instant download</span>
               </div>
             </div>
@@ -204,8 +267,8 @@ export default function Home() {
               {stats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={index} className="group rounded-2xl border border-border bg-white/50 p-6 text-center backdrop-blur-sm transition-all hover:border-blue-300 hover:shadow-lg dark:bg-black/20 dark:hover:border-blue-700">
-                    <Icon className="mx-auto mb-3 h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  <div key={index} className="group rounded-2xl border border-border bg-white/50 p-6 text-center backdrop-blur-sm transition-all hover:border-[hsl(var(--sky-blue))] hover:shadow-lg dark:bg-black/20 dark:hover:border-[hsl(var(--sky-blue))]">
+                    <Icon className="mx-auto mb-3 h-8 w-8 text-[hsl(var(--selise-blue))] dark:text-[hsl(var(--sky-blue))]" />
                     <div className="text-4xl font-bold text-foreground">{stat.value}</div>
                     <div className="mt-2 text-sm font-medium text-muted-foreground">{stat.label}</div>
                   </div>
@@ -220,7 +283,7 @@ export default function Home() {
       <section id="templates" className="py-24 sm:py-32 bg-white dark:bg-black">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <Badge className="mb-4 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]">
               Popular Templates
             </Badge>
             <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -240,13 +303,13 @@ export default function Home() {
                   key={template.id}
                   className={`group relative transition-all hover:shadow-2xl ${
                     template.available
-                      ? 'border-2 hover:border-blue-400 hover:-translate-y-1 dark:hover:border-blue-600'
+                      ? 'border-2 hover:border-[hsl(var(--sky-blue))] hover:-translate-y-1 dark:hover:border-[hsl(var(--sky-blue))]'
                       : 'opacity-60'
                   }`}
                 >
                   {template.popular && template.available && (
                     <div className="absolute -right-2 -top-2">
-                      <Badge className="bg-linear-to-r from-orange-500 to-pink-500 text-white shadow-lg">
+                      <Badge className="bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] text-white shadow-lg">
                         <Star className="mr-1 h-3 w-3 fill-current" />
                         Most Popular
                       </Badge>
@@ -260,7 +323,7 @@ export default function Home() {
                     </div>
                   )}
                   <CardHeader className="pb-4">
-                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-linear-to-br from-blue-500 to-purple-600 shadow-lg">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
                       <Icon className="h-7 w-7 text-white" />
                     </div>
                     <CardTitle className="text-2xl">{template.title}</CardTitle>
@@ -270,7 +333,7 @@ export default function Home() {
                   </CardHeader>
                   <CardFooter className="pt-4">
                     {template.available ? (
-                      <Button asChild className="group w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md">
+                      <Button asChild className="group w-full bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-white shadow-md">
                         <Link href={template.href}>
                           Generate Now
                           <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -289,9 +352,9 @@ export default function Home() {
           </div>
 
           <div className="mt-12 text-center">
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            <p className="text-sm text-muted-foreground">
               Need a different template?{" "}
-              <Link href="#" className="font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
+              <Link href="#" className="font-semibold text-[hsl(var(--selise-blue))] hover:text-[hsl(var(--oxford-blue))] dark:text-[hsl(var(--sky-blue))]">
                 Request a template
               </Link>
             </p>
@@ -300,7 +363,7 @@ export default function Home() {
       </section>
 
       {/* Features Section - Enhanced */}
-      <section className="relative overflow-hidden bg-linear-to-b from-blue-50 to-white py-24 dark:from-blue-950/10 dark:to-black sm:py-32">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-white py-24 dark:from-[hsl(var(--selise-blue))]/5 dark:to-black sm:py-32">
         {/* Spinning background graphic */}
         <div className="absolute inset-0 flex items-center justify-center">
           <Image
@@ -313,7 +376,7 @@ export default function Home() {
         </div>
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <Badge className="mb-4 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]">
               Why Choose Us
             </Badge>
             <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -328,13 +391,13 @@ export default function Home() {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <div key={index} className="group relative rounded-2xl border border-border bg-white p-8 shadow-sm transition-all hover:border-blue-300 hover:shadow-xl dark:bg-black/40 dark:hover:border-blue-700">
+                <div key={index} className="group relative rounded-2xl border border-border bg-white p-8 shadow-sm transition-all hover:border-[hsl(var(--sky-blue))] hover:shadow-xl dark:bg-black/40 dark:hover:border-[hsl(var(--sky-blue))]">
                   <div className="absolute -right-3 -top-3">
-                    <Badge className="bg-blue-600 text-white text-xs">
+                    <Badge className="bg-[hsl(var(--selise-blue))] text-white text-xs">
                       {feature.highlight}
                     </Badge>
                   </div>
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-blue-500 to-purple-600 shadow-lg">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
                     <Icon className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="mt-6 text-xl font-semibold text-foreground">
@@ -357,8 +420,8 @@ export default function Home() {
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {benefits.map((benefit, index) => (
                   <div key={index} className="flex items-center gap-3">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                      <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--lime-green))]/10 dark:bg-[hsl(var(--lime-green))]/20">
+                      <CheckCircle2 className="h-4 w-4 text-[hsl(var(--lime-green))] dark:text-[hsl(var(--lime-green))]" />
                     </div>
                     <span className="text-sm text-foreground">{benefit}</span>
                   </div>
@@ -373,7 +436,7 @@ export default function Home() {
       <section id="how-it-works" className="py-24 sm:py-32 bg-white dark:bg-black">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <Badge className="mb-4 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+            <Badge className="mb-4 bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/20 dark:text-[hsl(var(--lime-green))]">
               Quick & Easy
             </Badge>
             <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -410,11 +473,11 @@ export default function Home() {
                 return (
                   <div key={index} className="relative">
                     {index < 2 && (
-                      <div className="absolute left-1/2 top-12 hidden h-0.5 w-full bg-linear-to-r from-blue-400 to-purple-400 md:block" />
+                      <div className="absolute left-1/2 top-12 hidden h-0.5 w-full bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] md:block" />
                     )}
                     <div className="relative flex flex-col items-center text-center">
-                      <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-purple-600 shadow-2xl shadow-blue-600/30">
-                        <div className="absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl font-bold text-blue-600 shadow-lg dark:bg-gray-900">
+                      <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30">
+                        <div className="absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-[hsl(var(--eerie-black))]">
                           {item.step}
                         </div>
                         <Icon className="h-10 w-10 text-white" />
@@ -434,30 +497,98 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Social Proof Section */}
-      <section className="relative border-y border-[hsl(var(--border))] bg-linear-to-r from-blue-50 via-purple-50 to-pink-50 py-16 dark:from-blue-950/10 dark:via-purple-950/10 dark:to-pink-950/10 overflow-hidden">
-        {/* Subtle texture overlay */}
+      {/* SELISE DIO Approach */}
+      <section className="relative overflow-hidden py-24 sm:py-32">
         <div className="absolute inset-0">
           <Image
-            src="/graphics/bg-black-texture.webp"
+            src="/graphics/black-spin-bg.webp"
             alt=""
             fill
-            className="object-cover opacity-[0.015] dark:opacity-[0.04]"
+            className="object-cover opacity-[0.18] dark:opacity-[0.28]"
           />
         </div>
+        <div className="absolute inset-0 bg-white/95 dark:bg-black/80" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-4xl text-center">
-            <div className="flex items-center justify-center gap-2 text-yellow-500">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-8 w-8 fill-current" />
-              ))}
-            </div>
-            <p className="mt-6 text-2xl font-semibold text-foreground sm:text-3xl">
-              &quot;Finally, legal documents that don&apos;t require a law degree to understand!&quot;
+          <div className="mx-auto max-w-3xl text-center">
+            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]">
+              Our DIO Model
+            </Badge>
+            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+              Structured for End-to-End Delivery
+            </h2>
+            <p className="mt-6 text-lg text-muted-foreground">
+              SELISE follows a Design, Implement, Operate rhythm that keeps every template human-centered,
+              technically sound, and continuously optimized.
             </p>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Join thousands of professionals, startups, and small businesses who trust our templates.
+          </div>
+
+          <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
+            {approach.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.title}
+                  className="group relative flex h-full flex-col rounded-2xl border border-border bg-white/80 p-8 backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))] hover:shadow-2xl dark:bg-black/60"
+                >
+                  <Badge className="w-fit bg-[hsl(var(--lime-green))]/15 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/25 dark:text-[hsl(var(--lime-green))]">
+                    {item.badge}
+                  </Badge>
+                  <div className="mt-6 flex items-center gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg shadow-[hsl(var(--selise-blue))]/25">
+                      <Icon className="h-7 w-7 text-white" />
+                    </div>
+                    <h3 className="text-2xl font-semibold text-foreground">{item.title}</h3>
+                  </div>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Brand Values Section */}
+      <section className="relative bg-white py-24 sm:py-32 dark:bg-black overflow-hidden">
+        <div className="absolute inset-0">
+          <Image
+            src="/graphics/contact-page-whole-bg.webp"
+            alt=""
+            fill
+            className="object-cover opacity-[0.12] dark:opacity-[0.2]"
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-br from-white via-white/95 to-white/90 dark:from-black dark:via-black/85 dark:to-black/75" />
+        <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]">
+              Our Values
+            </Badge>
+            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+              Guided by What Matters
+            </h2>
+            <p className="mt-6 text-lg text-muted-foreground">
+              Every interaction reflects SELISE values—respect, integrity, humility, pragmatism, perseverance, and empowerment.
             </p>
+          </div>
+
+          <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3">
+            {brandValues.map((value) => {
+              const Icon = value.icon;
+              return (
+                <div
+                  key={value.title}
+                  className="flex h-full flex-col rounded-2xl border border-border bg-white/75 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-black/60"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--selise-blue))]/12 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/25 dark:text-[hsl(var(--sky-blue))]">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <h3 className="text-lg font-semibold text-foreground">{value.title}</h3>
+                  </div>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{value.description}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -488,7 +619,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="relative overflow-hidden bg-linear-to-br from-blue-600 to-purple-700 py-24 sm:py-32">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--oxford-blue))] py-24 sm:py-32">
         {/* Background texture for depth */}
         <div className="absolute inset-0">
           <Image
@@ -504,12 +635,12 @@ export default function Home() {
             <h2 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
               Ready to Create Your Legal Document?
             </h2>
-            <p className="mt-6 text-xl leading-8 text-blue-100">
+            <p className="mt-6 text-xl leading-8 text-white/90">
               Join thousands of users generating professional legal documents for free.
               No credit card. No sign-up. Just instant access.
             </p>
             <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" className="group bg-white text-blue-600 hover:bg-gray-100 shadow-xl text-base px-10 py-6 h-auto">
+              <Button asChild size="lg" className="group bg-white text-[hsl(var(--selise-blue))] hover:bg-white/90 shadow-xl text-base px-10 py-6 h-auto">
                 <Link href="#templates">
                   Get Started Free
                   <Sparkles className="ml-2 h-5 w-5" />
@@ -521,7 +652,7 @@ export default function Home() {
                 </Link>
               </Button>
             </div>
-            <p className="mt-8 text-sm text-blue-200">
+            <p className="mt-8 text-sm text-white/80">
               ⚡ Generate your first document in under 2 minutes
             </p>
           </div>

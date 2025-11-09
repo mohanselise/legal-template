@@ -18,6 +18,34 @@ const PAY_FREQUENCY_OPTIONS = [
   { value: 'annual', label: 'Annual', regions: ['all'] },
 ];
 
+// Convert annual salary to the selected pay frequency
+function convertAnnualSalary(annualAmount: number, frequency: string): number {
+  const workHoursPerYear = 2080; // Standard 40 hours/week * 52 weeks
+  const workWeeksPerYear = 52;
+
+  switch (frequency) {
+    case 'hourly':
+      return parseFloat((annualAmount / workHoursPerYear).toFixed(2));
+    case 'weekly':
+      return Math.round(annualAmount / workWeeksPerYear);
+    case 'bi-weekly':
+      return Math.round(annualAmount / (workWeeksPerYear / 2));
+    case 'monthly':
+      return Math.round(annualAmount / 12);
+    case 'annual':
+    default:
+      return Math.round(annualAmount);
+  }
+}
+
+// Format salary based on frequency (show decimals for hourly)
+function formatSalary(amount: number, frequency: string): string {
+  if (frequency === 'hourly') {
+    return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  return amount.toLocaleString();
+}
+
 export function Step4Compensation() {
   const { formData, updateFormData, enrichment, applyMarketStandards } = useSmartForm();
 
@@ -29,26 +57,31 @@ export function Step4Compensation() {
     'market';
 
   const salaryAmount = parseFloat(formData.salaryAmount || '0');
+  const payFrequency = formData.salaryPeriod || 'annual';
 
-  // Salary validation
+  // Salary validation (convert annual ranges to selected frequency)
   let salaryValidation: ValidationWarning | undefined;
   if (salaryAmount > 0 && jobTitleData?.typicalSalaryRange) {
     const range = jobTitleData.typicalSalaryRange;
-    if (salaryAmount < range.min) {
+    const convertedMin = convertAnnualSalary(range.min, payFrequency);
+    const convertedMax = convertAnnualSalary(range.max, payFrequency);
+    const convertedMedian = convertAnnualSalary(range.median, payFrequency);
+
+    if (salaryAmount < convertedMin) {
       salaryValidation = {
         field: 'salaryAmount',
         severity: 'warning',
         message: `Below typical range for ${formData.jobTitle}`,
-        suggestion: `Typical range: ${range.currency}${range.min.toLocaleString()} - ${range.currency}${range.max.toLocaleString()}`,
+        suggestion: `Typical range: ${range.currency}${convertedMin.toLocaleString()} - ${range.currency}${convertedMax.toLocaleString()}`,
       };
-    } else if (salaryAmount > range.max * 1.5) {
+    } else if (salaryAmount > convertedMax * 1.5) {
       salaryValidation = {
         field: 'salaryAmount',
         severity: 'info',
         message: 'Significantly above market median',
         suggestion: 'Ensure this aligns with your compensation philosophy',
       };
-    } else if (salaryAmount >= range.min && salaryAmount <= range.max) {
+    } else if (salaryAmount >= convertedMin && salaryAmount <= convertedMax) {
       salaryValidation = {
         field: 'salaryAmount',
         severity: 'info',
@@ -88,29 +121,32 @@ export function Step4Compensation() {
           <div className="flex items-start gap-3">
             <TrendingUp className="w-5 h-5 text-blue-600 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-blue-900 mb-2">
+              <p className="text-sm font-semibold text-blue-900 mb-1">
                 Market Benchmark for {formData.jobTitle}
+              </p>
+              <p className="text-xs text-blue-700 mb-3">
+                {payFrequency === 'annual' ? 'Annual' : payFrequency === 'bi-weekly' ? 'Bi-weekly' : payFrequency === 'monthly' ? 'Monthly' : payFrequency === 'weekly' ? 'Weekly' : 'Hourly'} rates
               </p>
               <div className="grid grid-cols-3 gap-3 text-xs">
                 <div>
                   <p className="text-blue-700">Min</p>
                   <p className="font-semibold text-blue-900">
                     {jobTitleData.typicalSalaryRange.currency}
-                    {jobTitleData.typicalSalaryRange.min.toLocaleString()}
+                    {formatSalary(convertAnnualSalary(jobTitleData.typicalSalaryRange.min, payFrequency), payFrequency)}
                   </p>
                 </div>
                 <div>
                   <p className="text-blue-700">Median</p>
                   <p className="font-semibold text-blue-900">
                     {jobTitleData.typicalSalaryRange.currency}
-                    {jobTitleData.typicalSalaryRange.median.toLocaleString()}
+                    {formatSalary(convertAnnualSalary(jobTitleData.typicalSalaryRange.median, payFrequency), payFrequency)}
                   </p>
                 </div>
                 <div>
                   <p className="text-blue-700">Max</p>
                   <p className="font-semibold text-blue-900">
                     {jobTitleData.typicalSalaryRange.currency}
-                    {jobTitleData.typicalSalaryRange.max.toLocaleString()}
+                    {formatSalary(convertAnnualSalary(jobTitleData.typicalSalaryRange.max, payFrequency), payFrequency)}
                   </p>
                 </div>
               </div>

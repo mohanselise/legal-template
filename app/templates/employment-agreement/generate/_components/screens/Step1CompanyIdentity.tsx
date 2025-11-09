@@ -1,28 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Building2, Zap } from 'lucide-react';
+import React from 'react';
+import { Building2 } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
 import { SmartInput } from '../SmartInput';
-import { Button } from '@/components/ui/button';
 import { getFlagEmoji } from '@/lib/utils/flag-emoji';
 
 export function Step1CompanyIdentity() {
-  const { formData, updateFormData, analyzeCompany, enrichment } = useSmartForm();
-  const [hasAnalyzed, setHasAnalyzed] = useState(false);
-
-  // Auto-trigger analysis when both company name and address are filled
-  useEffect(() => {
-    if (
-      formData.companyName &&
-      formData.companyAddress &&
-      !hasAnalyzed &&
-      !enrichment.jurisdictionLoading
-    ) {
-      setHasAnalyzed(true);
-      analyzeCompany(formData.companyName, formData.companyAddress);
-    }
-  }, [formData.companyName, formData.companyAddress, hasAnalyzed, enrichment.jurisdictionLoading, analyzeCompany]);
+  const { formData, updateFormData, enrichment } = useSmartForm();
 
   const canContinue = formData.companyName && formData.companyAddress;
 

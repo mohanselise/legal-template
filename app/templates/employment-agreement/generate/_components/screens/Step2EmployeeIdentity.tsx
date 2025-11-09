@@ -41,7 +41,7 @@ export function Step2EmployeeIdentity() {
   ]);
 
   const canContinue =
-    formData.employeeName && formData.jobTitle && formData.startDate;
+    formData.employeeName && formData.employeeAddress && formData.jobTitle && formData.startDate;
 
   return (
     <div className="space-y-6">
@@ -101,6 +101,18 @@ export function Step2EmployeeIdentity() {
         />
 
         <SmartInput
+          label="Employee address"
+          name="employeeAddress"
+          value={formData.employeeAddress || ''}
+          onChange={(value) => updateFormData({ employeeAddress: value })}
+          placeholder="456 Oak Avenue, Apt 3B, Austin, TX 78701, USA"
+          required
+          helpText="Full residential address of the employee"
+          enableAddressAutocomplete={true}
+          autocompleteType="address"
+        />
+
+        <SmartInput
           label="Job title"
           name="jobTitle"
           value={formData.jobTitle || ''}
@@ -112,6 +124,15 @@ export function Step2EmployeeIdentity() {
           required
           helpText="Official job title for this position"
           loading={enrichment.jobTitleLoading}
+        />
+
+        <SmartInput
+          label="Reports to (optional)"
+          name="reportsTo"
+          value={formData.reportsTo || ''}
+          onChange={(value) => updateFormData({ reportsTo: value })}
+          placeholder="John Doe, VP of Engineering"
+          helpText="The name and title of the employee's direct supervisor"
         />
 
         <SmartInput

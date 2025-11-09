@@ -100,7 +100,7 @@ function NavigationButtons({
   onNext,
   onPrevious,
 }: NavigationButtonsProps) {
-  const { enrichment, applyMarketStandards, formData, updateFormData } = useSmartForm();
+  const { enrichment, applyMarketStandards, formData, updateFormData, analyzeCompany } = useSmartForm();
   const [showSalaryWarning, setShowSalaryWarning] = useState(false);
 
   const marketStandards = enrichment.marketStandards;
@@ -152,6 +152,15 @@ function NavigationButtons({
     }
   };
 
+  const handleContinue = () => {
+    // If on company step (step 0), trigger analysis in background (don't wait for it)
+    if (currentStep === 0 && formData.companyName && formData.companyAddress) {
+      analyzeCompany(formData.companyName, formData.companyAddress);
+    }
+    // Move to next step immediately without waiting
+    onNext();
+  };
+
   return (
     <>
       <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t">
@@ -184,7 +193,7 @@ function NavigationButtons({
 
           {currentStep < totalSteps - 1 && (
             <Button
-              onClick={onNext}
+              onClick={handleContinue}
               disabled={!canContinue}
               className="flex items-center gap-3 px-8 py-4"
               size="lg"
@@ -260,7 +269,7 @@ function NavigationButtons({
 }
 
 function SmartFlowContent() {
-  const { currentStep, totalSteps, nextStep, previousStep, formData } = useSmartForm();
+  const { currentStep, totalSteps, nextStep, previousStep, formData, analyzeCompany, enrichment } = useSmartForm();
   const router = useRouter();
   const [showWelcome, setShowWelcome] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -276,7 +285,7 @@ function SmartFlowContent() {
       case 0: // Company
         return !!(formData.companyName && formData.companyAddress);
       case 1: // Employee
-        return !!(formData.employeeName && formData.jobTitle && formData.startDate);
+        return !!(formData.employeeName && formData.employeeAddress && formData.jobTitle && formData.startDate);
       case 2: // Work
         // Work location is optional for remote workers
         const workLocationValid = formData.workArrangement === 'remote' || formData.workLocation;

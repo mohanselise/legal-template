@@ -5,6 +5,7 @@ import { User, Briefcase } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
 import { SmartInput } from '../SmartInput';
 import { Badge } from '@/components/ui/badge';
+import { getFlagEmoji } from '@/lib/utils/flag-emoji';
 
 export function Step2EmployeeIdentity() {
   const {
@@ -57,13 +58,33 @@ export function Step2EmployeeIdentity() {
         </p>
       </div>
 
-      {/* Background analysis indicator */}
-      {enrichment.jurisdictionLoading && (
+      {/* Jurisdiction detection - show when loading OR when data arrives */}
+      {enrichment.jurisdictionLoading && !enrichment.jurisdictionData && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
           <p className="text-sm text-blue-900 flex items-center gap-2">
             <span className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
             Analyzing jurisdiction requirements in the background...
           </p>
+        </div>
+      )}
+
+      {/* Show jurisdiction data when it arrives (even if user navigated away quickly) */}
+      {enrichment.jurisdictionData && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+          <div className="flex items-center gap-2">
+            <div className="text-xl">
+              {getFlagEmoji(enrichment.jurisdictionData.countryCode)}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-green-900">
+                Jurisdiction: {enrichment.jurisdictionData.country}
+                {enrichment.jurisdictionData.state && `, ${enrichment.jurisdictionData.state}`}
+              </p>
+              <p className="text-xs text-green-700">
+                {enrichment.jurisdictionData.currency} • {enrichment.jurisdictionData.typicalPTO} days PTO • {enrichment.jurisdictionData.typicalPayFrequency} pay
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

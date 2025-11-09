@@ -43,6 +43,36 @@ const SmartFormContext = createContext<SmartFormContextType | undefined>(undefin
 const STORAGE_KEY = 'employment-agreement-smart-flow-v1';
 const TOTAL_STEPS = 7;
 
+async function parseErrorMessage(response: Response, fallback: string) {
+  try {
+    const data = await response.json();
+
+    if (data && typeof data === 'object') {
+      const parts: string[] = [];
+
+      if (typeof data.error === 'string' && data.error.trim()) {
+        parts.push(data.error.trim());
+      }
+
+      if (typeof data.details === 'string' && data.details.trim()) {
+        parts.push(data.details.trim());
+      }
+
+      if (!parts.length && typeof data.message === 'string' && data.message.trim()) {
+        parts.push(data.message.trim());
+      }
+
+      if (parts.length) {
+        return parts.join(': ');
+      }
+    }
+  } catch {
+    // Ignore JSON parsing failures and fall back to default message
+  }
+
+  return fallback;
+}
+
 export function SmartFormProvider({ children }: { children: React.ReactNode }) {
   const [formData, setFormDataState] = useState<Partial<EmploymentAgreementFormData>>({
     salaryCurrency: 'USD',
@@ -78,7 +108,13 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const analyzeCompany = useCallback(async (companyName: string, companyAddress: string) => {
-    setEnrichment((prev) => ({ ...prev, jurisdictionLoading: true, companyLoading: true }));
+    setEnrichment((prev) => ({
+      ...prev,
+      jurisdictionLoading: true,
+      companyLoading: true,
+      jurisdictionError: undefined,
+      companyError: undefined,
+    }));
 
     try {
       const response = await fetch('/api/intelligence/company', {
@@ -88,7 +124,13 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to analyze company');
+        const fallbackMessage =
+          response.status === 422
+            ? 'Address is too vague. Please provide a complete address including city and country.'
+            : `Failed to analyze company (status ${response.status})`;
+
+        const message = await parseErrorMessage(response, fallbackMessage);
+        throw new Error(message);
       }
 
       const data = await response.json();
@@ -99,6 +141,8 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
         companyLoading: false,
         jurisdictionData: data.jurisdiction as JurisdictionIntelligence,
         companyData: data.company as CompanyIntelligence,
+        jurisdictionError: undefined,
+        companyError: undefined,
       }));
 
       // Auto-populate currency based on jurisdiction
@@ -107,18 +151,30 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Company analysis failed:', error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to analyze company information. Please try again.';
+
       setEnrichment((prev) => ({
         ...prev,
         jurisdictionLoading: false,
         companyLoading: false,
-        jurisdictionError: 'Failed to analyze company information',
+        jurisdictionData: undefined,
+        companyData: undefined,
+        jurisdictionError: message,
+        companyError: message,
       }));
     }
   }, [updateFormData]);
 
   const analyzeJobTitle = useCallback(
     async (jobTitle: string, location?: string, industry?: string) => {
-      setEnrichment((prev) => ({ ...prev, jobTitleLoading: true }));
+      setEnrichment((prev) => ({
+        ...prev,
+        jobTitleLoading: true,
+        jobTitleError: undefined,
+      }));
 
       try {
         const response = await fetch('/api/intelligence/job-title', {
@@ -128,7 +184,9 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to analyze job title');
+          const fallbackMessage = `Failed to analyze job title (status ${response.status})`;
+          const message = await parseErrorMessage(response, fallbackMessage);
+          throw new Error(message);
         }
 
         const data: JobTitleAnalysis = await response.json();
@@ -137,13 +195,21 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
           ...prev,
           jobTitleLoading: false,
           jobTitleData: data,
+          jobTitleError: undefined,
         }));
       } catch (error) {
         console.error('Job title analysis failed:', error);
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to analyze job title. Please try again.';
+
         setEnrichment((prev) => ({
           ...prev,
           jobTitleLoading: false,
-          jobTitleError: 'Failed to analyze job title',
+          jobTitleData: undefined,
+          jobTitleError: message,
         }));
       }
     },

@@ -271,22 +271,22 @@ function SmartFlowContent() {
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   // Basic validation for each step
-  const canContinue = () => {
+  const canContinue = (): boolean => {
     switch (currentStep) {
       case 0: // Company
-        return formData.companyName && formData.companyAddress;
+        return !!(formData.companyName && formData.companyAddress);
       case 1: // Employee
-        return formData.employeeName && formData.jobTitle && formData.startDate;
+        return !!(formData.employeeName && formData.jobTitle && formData.startDate);
       case 2: // Work
         // Work location is optional for remote workers
         const workLocationValid = formData.workArrangement === 'remote' || formData.workLocation;
-        return workLocationValid && formData.workHoursPerWeek;
+        return !!(workLocationValid && formData.workHoursPerWeek);
       case 3: // Compensation
-        return formData.salaryAmount && formData.salaryCurrency;
+        return !!(formData.salaryAmount && formData.salaryCurrency);
       case 4: // Benefits (optional)
         return true;
       case 5: // Legal
-        return formData.governingLaw;
+        return !!formData.governingLaw;
       case 6: // Review
         return true;
       default:

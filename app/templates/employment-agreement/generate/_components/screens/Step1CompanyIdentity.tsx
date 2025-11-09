@@ -5,6 +5,7 @@ import { Building2, Zap } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
 import { SmartInput } from '../SmartInput';
 import { Button } from '@/components/ui/button';
+import { getFlagEmoji } from '@/lib/utils/flag-emoji';
 
 export function Step1CompanyIdentity() {
   const { formData, updateFormData, analyzeCompany, enrichment } = useSmartForm();
@@ -69,13 +70,7 @@ export function Step1CompanyIdentity() {
         <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-2">
           <div className="flex items-center gap-2">
             <div className="text-2xl">
-              {enrichment.jurisdictionData.countryCode === 'US' && '🇺🇸'}
-              {enrichment.jurisdictionData.countryCode === 'GB' && '🇬🇧'}
-              {enrichment.jurisdictionData.countryCode === 'CH' && '🇨🇭'}
-              {enrichment.jurisdictionData.countryCode === 'DE' && '🇩🇪'}
-              {enrichment.jurisdictionData.countryCode === 'CA' && '🇨🇦'}
-              {enrichment.jurisdictionData.countryCode === 'AU' && '🇦🇺'}
-              {enrichment.jurisdictionData.countryCode === 'FR' && '🇫🇷'}
+              {getFlagEmoji(enrichment.jurisdictionData.countryCode)}
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-green-900">

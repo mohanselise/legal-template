@@ -17,9 +17,9 @@ export const metadata: Metadata = {
 
 export default function EmploymentAgreementPage() {
   return (
-    <div className="bg-background">
+    <div className="bg-[hsl(var(--bg))] text-foreground">
       {/* Hero Section - Above the Fold */}
-      <section className="relative bg-gradient-to-br from-[hsl(var(--gradient-dark-from))] via-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] text-white overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[hsl(var(--gradient-dark-from))] via-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] text-[hsl(var(--white))] overflow-hidden">
         {/* Background texture/image */}
         <div className="absolute inset-0">
           <Image
@@ -40,27 +40,27 @@ export default function EmploymentAgreementPage() {
             <div className="relative z-10">
               {/* Trust badge */}
               <div className="mb-6 flex flex-wrap items-center gap-3">
-                <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm" variant="outline">
+                <Badge className="bg-[hsl(var(--white))]/15 text-[hsl(var(--white))] border-[hsl(var(--white))]/30 backdrop-blur-sm font-subheading uppercase tracking-[0.12em]" variant="outline">
                   <Star className="mr-1 h-3 w-3 fill-current" />
                   Trusted by 10,000+ employers
                 </Badge>
-                <Badge className="bg-green-500/90 text-white border-green-400" variant="outline">
+                <Badge className="bg-[hsl(var(--lime-green))]/20 text-[hsl(var(--white))] border-[hsl(var(--lime-green))]/40 font-subheading uppercase tracking-[0.12em]" variant="outline">
                   <CheckCircle2 className="mr-1 h-3 w-3" />
-                  100% Free
+                  Always Free
                 </Badge>
               </div>
 
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-6">
                 Create Professional Employment Agreements in Minutes
               </h1>
-              <p className="text-lg sm:text-xl text-blue-50 leading-relaxed">
+              <p className="text-lg sm:text-xl text-[hsl(var(--white))]/85 leading-relaxed">
                 Generate legally sound employment contracts tailored to your needs. No lawyer required. Save time and money with our trusted template generator.
               </p>
 
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
                 <Link
                   href="/templates/employment-agreement/generate"
-                  className="group inline-flex items-center justify-center rounded-xl bg-white px-8 py-4 text-lg font-semibold text-blue-700 shadow-2xl hover:bg-blue-50 transition-all transform hover:scale-105 hover:shadow-blue-500/50"
+                  className="group inline-flex items-center justify-center rounded-xl bg-[hsl(var(--white))] px-8 py-4 text-lg font-semibold text-[hsl(var(--selise-blue))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 hover:bg-[hsl(var(--white))]/90 transition-all transform hover:scale-105"
                 >
                   Generate Your Agreement Now
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -68,7 +68,7 @@ export default function EmploymentAgreementPage() {
 
                 <Link
                   href="#how-it-works"
-                  className="inline-flex items-center justify-center rounded-xl border-2 border-white/70 px-8 py-4 text-lg font-semibold text-white hover:bg-white/10 hover:border-white transition-all backdrop-blur-sm"
+                  className="inline-flex items-center justify-center rounded-xl border-2 border-[hsl(var(--white))]/70 px-8 py-4 text-lg font-semibold text-[hsl(var(--white))] hover:bg-[hsl(var(--white))]/10 hover:border-[hsl(var(--white))] transition-all backdrop-blur-sm"
                 >
                   See How It Works
                 </Link>
@@ -76,33 +76,33 @@ export default function EmploymentAgreementPage() {
 
               <div className="mt-8 flex flex-wrap gap-6 text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-400/20">
-                    <CheckCircle2 className="h-4 w-4 text-green-300" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[hsl(var(--lime-green))]/15">
+                    <CheckCircle2 className="h-4 w-4 text-[hsl(var(--lime-green))]" />
                   </div>
-                  <span className="text-blue-50">Legally vetted templates</span>
+                  <span className="text-[hsl(var(--white))]/80">Legally vetted templates</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-400/20">
-                    <CheckCircle2 className="h-4 w-4 text-green-300" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[hsl(var(--lime-green))]/15">
+                    <CheckCircle2 className="h-4 w-4 text-[hsl(var(--lime-green))]" />
                   </div>
-                  <span className="text-blue-50">Ready in 5 minutes</span>
+                  <span className="text-[hsl(var(--white))]/80">Ready in 5 minutes</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-400/20">
-                    <CheckCircle2 className="h-4 w-4 text-green-300" />
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[hsl(var(--lime-green))]/15">
+                    <CheckCircle2 className="h-4 w-4 text-[hsl(var(--lime-green))]" />
                   </div>
-                  <span className="text-blue-50">Fully customizable</span>
+                  <span className="text-[hsl(var(--white))]/80">Fully customizable</span>
                 </div>
               </div>
             </div>
 
             {/* Trust Indicators with Visual */}
             <div className="relative">
-              <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 shadow-2xl">
+              <div className="relative rounded-3xl border border-[hsl(var(--white))]/25 bg-[hsl(var(--white))]/10 p-8 shadow-2xl backdrop-blur-md">
                 {/* Decorative sparkle */}
                 <div className="absolute -top-3 -right-3">
-                  <div className="bg-yellow-400 rounded-full p-3 shadow-lg">
-                    <Sparkles className="h-5 w-5 text-yellow-900" />
+                  <div className="rounded-full bg-[hsl(var(--lime-green))]/20 p-3 shadow-lg">
+                    <Sparkles className="h-5 w-5 text-[hsl(var(--white))]" />
                   </div>
                 </div>
 
@@ -122,10 +122,10 @@ export default function EmploymentAgreementPage() {
                     'Dispute resolution terms'
                   ].map((item, index) => (
                     <li key={index} className="flex items-start gap-3 group">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-400/20 group-hover:bg-green-400/30 transition-colors flex-shrink-0 mt-0.5">
-                        <CheckCircle2 className="h-4 w-4 text-green-300" />
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[hsl(var(--lime-green))]/15 transition-colors group-hover:bg-[hsl(var(--lime-green))]/25 flex-shrink-0 mt-0.5">
+                        <CheckCircle2 className="h-4 w-4 text-[hsl(var(--lime-green))]" />
                       </div>
-                      <span className="text-blue-50 leading-relaxed">{item}</span>
+                      <span className="text-[hsl(var(--white))]/85 leading-relaxed">{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -139,7 +139,7 @@ export default function EmploymentAgreementPage() {
       <section className="py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/25 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
               Why It Matters
             </Badge>
             <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
@@ -163,7 +163,7 @@ export default function EmploymentAgreementPage() {
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
             <div className="group bg-card border border-border rounded-2xl p-8 hover:border-[hsl(var(--sky-blue))] hover:shadow-xl transition-all">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
-                <Shield className="h-7 w-7 text-white" />
+                <Shield className="h-7 w-7 text-[hsl(var(--white))]" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Legal Protection</h3>
               <p className="text-muted-foreground leading-relaxed">
@@ -173,7 +173,7 @@ export default function EmploymentAgreementPage() {
 
             <div className="group bg-card border border-border rounded-2xl p-8 hover:border-[hsl(var(--sky-blue))] hover:shadow-xl transition-all">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
-                <Users className="h-7 w-7 text-white" />
+                <Users className="h-7 w-7 text-[hsl(var(--white))]" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Clear Expectations</h3>
               <p className="text-muted-foreground leading-relaxed">
@@ -183,7 +183,7 @@ export default function EmploymentAgreementPage() {
 
             <div className="group bg-card border border-border rounded-2xl p-8 hover:border-[hsl(var(--sky-blue))] hover:shadow-xl transition-all">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
-                <Briefcase className="h-7 w-7 text-white" />
+                <Briefcase className="h-7 w-7 text-[hsl(var(--white))]" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Professional Image</h3>
               <p className="text-muted-foreground leading-relaxed">
@@ -193,7 +193,7 @@ export default function EmploymentAgreementPage() {
 
             <div className="group bg-card border border-border rounded-2xl p-8 hover:border-[hsl(var(--sky-blue))] hover:shadow-xl transition-all">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
-                <Scale className="h-7 w-7 text-white" />
+                <Scale className="h-7 w-7 text-[hsl(var(--white))]" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Compliance</h3>
               <p className="text-muted-foreground leading-relaxed">
@@ -205,7 +205,7 @@ export default function EmploymentAgreementPage() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="relative bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/10 dark:to-black py-20 sm:py-28 overflow-hidden">
+      <section id="how-it-works" className="relative bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-[hsl(var(--bg))] dark:from-[hsl(var(--selise-blue))]/5 dark:to-[hsl(var(--background))] py-20 sm:py-28 overflow-hidden">
         {/* Background spinning graphic */}
         <div className="absolute inset-0 flex items-center justify-center">
           <Image
@@ -219,7 +219,7 @@ export default function EmploymentAgreementPage() {
         
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
-            <Badge className="mb-4 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+            <Badge className="mb-4 bg-[hsl(var(--lime-green))]/15 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/25 dark:text-[hsl(var(--lime-green))] font-subheading uppercase tracking-[0.12em]">
               Quick & Easy Process
             </Badge>
             <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
@@ -236,11 +236,11 @@ export default function EmploymentAgreementPage() {
               {/* Step 1 */}
               <div className="relative">
                 <div className="absolute left-1/2 top-16 hidden h-0.5 w-full bg-gradient-to-r from-[hsl(var(--sky-blue))] to-[hsl(var(--selise-blue))] md:block" />
-                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 group-hover:scale-110 transition-transform">
-                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-gray-900">
+                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 transition-transform group-hover:scale-110">
+                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-[hsl(var(--white))] text-lg font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-[hsl(var(--eerie-black))]">
                     1
                   </div>
-                  <FileText className="h-9 w-9 text-white" />
+                  <FileText className="h-9 w-9 text-[hsl(var(--white))]" />
                 </div>
               </div>
               <h3 className="mt-8 text-2xl font-bold text-foreground mb-4">
@@ -255,11 +255,11 @@ export default function EmploymentAgreementPage() {
               {/* Step 2 */}
               <div className="relative">
                 <div className="absolute left-1/2 top-16 hidden h-0.5 w-full bg-gradient-to-r from-[hsl(var(--sky-blue))] to-[hsl(var(--selise-blue))] md:block" />
-                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 group-hover:scale-110 transition-transform">
-                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-gray-900">
+                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 transition-transform group-hover:scale-110">
+                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-[hsl(var(--white))] text-lg font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-[hsl(var(--eerie-black))]">
                     2
                   </div>
-                  <Sparkles className="h-9 w-9 text-white" />
+                  <Sparkles className="h-9 w-9 text-[hsl(var(--white))]" />
                 </div>
               </div>
               <h3 className="mt-8 text-2xl font-bold text-foreground mb-4">
@@ -273,11 +273,11 @@ export default function EmploymentAgreementPage() {
             <div className="relative text-center group">
               {/* Step 3 */}
               <div className="relative">
-                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 group-hover:scale-110 transition-transform">
-                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-gray-900">
+                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 transition-transform group-hover:scale-110">
+                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-[hsl(var(--white))] text-lg font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-[hsl(var(--eerie-black))]">
                     3
                   </div>
-                  <CheckCircle2 className="h-9 w-9 text-white" />
+                  <CheckCircle2 className="h-9 w-9 text-[hsl(var(--white))]" />
                 </div>
               </div>
               <h3 className="mt-8 text-2xl font-bold text-foreground mb-4">
@@ -292,7 +292,7 @@ export default function EmploymentAgreementPage() {
           <div className="mt-16 text-center">
             <Link
               href="/templates/employment-agreement/generate"
-              className="group inline-flex items-center justify-center rounded-xl bg-[hsl(var(--selise-blue))] px-10 py-5 text-lg font-semibold text-white shadow-2xl hover:bg-[hsl(var(--gradient-dark-from))] transition-all transform hover:scale-105 hover:shadow-[hsl(var(--selise-blue))]/50"
+              className="group inline-flex items-center justify-center rounded-xl bg-[hsl(var(--selise-blue))] px-10 py-5 text-lg font-semibold text-[hsl(var(--white))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 hover:bg-[hsl(var(--gradient-dark-from))] transition-all transform hover:scale-105"
             >
               Start Creating Your Agreement
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -305,10 +305,10 @@ export default function EmploymentAgreementPage() {
       </section>
 
       {/* Key Clauses Explained */}
-      <section className="py-20 sm:py-28 bg-white dark:bg-black">
+      <section className="py-20 sm:py-28 bg-[hsl(var(--bg))] dark:bg-[hsl(var(--background))]">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/25 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
               What's Inside
             </Badge>
             <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
@@ -357,7 +357,7 @@ export default function EmploymentAgreementPage() {
               <div key={index} className="group bg-card border-2 border-border rounded-xl p-6 hover:border-[hsl(var(--sky-blue))] hover:shadow-lg transition-all">
                 <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] group-hover:scale-110 transition-transform">
-                    <FileText className="h-5 w-5 text-white" />
+                    <FileText className="h-5 w-5 text-[hsl(var(--white))]" />
                   </div>
                   {clause.title}
                 </h3>
@@ -369,10 +369,10 @@ export default function EmploymentAgreementPage() {
       </section>
 
       {/* Use Cases */}
-      <section className="bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-[hsl(var(--gradient-light-to))] dark:from-blue-950/10 dark:to-gray-950 py-20 sm:py-28">
+      <section className="bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-[hsl(var(--bg))] dark:from-[hsl(var(--selise-blue))]/5 dark:to-[hsl(var(--background))] py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/25 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
               For Every Business
             </Badge>
             <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
@@ -391,9 +391,9 @@ export default function EmploymentAgreementPage() {
             ].map((useCase, index) => {
               const Icon = useCase.icon;
               return (
-                <div key={index} className="group bg-white dark:bg-gray-900 border-2 border-border rounded-2xl p-6 hover:border-[hsl(var(--sky-blue))] hover:shadow-xl transition-all">
+                <div key={index} className="group border-2 border-border rounded-2xl bg-[hsl(var(--card))] p-6 transition-all hover:border-[hsl(var(--sky-blue))] hover:shadow-xl dark:bg-[hsl(var(--background))]/70">
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
-                    <Icon className="h-6 w-6 text-white" />
+                    <Icon className="h-6 w-6 text-[hsl(var(--white))]" />
                   </div>
                   <h3 className="text-lg font-bold text-foreground mb-2">{useCase.title}</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">{useCase.desc}</p>
@@ -405,7 +405,7 @@ export default function EmploymentAgreementPage() {
       </section>
 
       {/* Social Proof / Stats Section */}
-      <section className="relative py-12 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
+      <section className="relative py-12 bg-gradient-to-r from-[hsl(var(--gradient-light-from))] to-[hsl(var(--gradient-light-to))] dark:from-[hsl(var(--background))] dark:to-[hsl(var(--background))]/85 overflow-hidden">
         {/* Background texture */}
         <div className="absolute inset-0">
           <Image
@@ -556,12 +556,12 @@ export default function EmploymentAgreementPage() {
       {/* Important Disclaimer */}
       <section className="py-12">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="bg-amber-50 border-l-4 border-amber-400 p-6 rounded-r-lg">
+          <div className="rounded-r-lg border-l-4 border-[hsl(var(--warning))] bg-[hsl(var(--warning))]/15 p-6">
             <div className="flex gap-3">
-              <AlertCircle className="h-6 w-6 text-amber-600 flex-shrink-0" />
+              <AlertCircle className="h-6 w-6 flex-shrink-0 text-[hsl(var(--warning))]" />
               <div>
-                <h3 className="text-sm font-semibold text-amber-900 mb-2">Important Legal Notice</h3>
-                <p className="text-sm text-amber-800">
+                <h3 className="mb-2 text-sm font-semibold text-[hsl(var(--warning))]">Important Legal Notice</h3>
+                <p className="text-sm text-muted-foreground">
                   This template is provided for informational purposes and should not be considered legal advice. Employment laws vary by jurisdiction, industry, and specific circumstances. While our templates are drafted to be comprehensive and legally sound, we strongly recommend having any employment agreement reviewed by a qualified attorney in your area before use, especially for executive positions, international hires, or situations involving complex compensation structures.
                 </p>
               </div>
@@ -571,7 +571,7 @@ export default function EmploymentAgreementPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="relative bg-gradient-to-br from-[hsl(var(--gradient-dark-from))] via-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] text-white py-24 sm:py-32 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[hsl(var(--gradient-dark-from))] via-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] text-[hsl(var(--white))] py-24 sm:py-32 overflow-hidden">
         {/* Background texture */}
         <div className="absolute inset-0">
           <Image
@@ -588,7 +588,7 @@ export default function EmploymentAgreementPage() {
         
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="mb-6">
-            <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
+            <Badge className="bg-[hsl(var(--white))]/20 text-[hsl(var(--white))] border-[hsl(var(--white))]/30 backdrop-blur-sm font-subheading uppercase tracking-[0.12em]">
               <Sparkles className="mr-1 h-3 w-3" />
               Ready to Get Started?
             </Badge>
@@ -597,31 +597,31 @@ export default function EmploymentAgreementPage() {
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
             Create Your Employment Agreement Now
           </h2>
-          <p className="text-xl sm:text-2xl text-blue-50 mb-12 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl sm:text-2xl text-[hsl(var(--white))]/85 mb-12 max-w-2xl mx-auto leading-relaxed">
             Join thousands of employers who trust our platform for their hiring needs
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
               href="/templates/employment-agreement/generate"
-              className="group inline-flex items-center justify-center rounded-xl bg-white px-12 py-6 text-lg font-bold text-blue-700 shadow-2xl hover:bg-blue-50 transition-all transform hover:scale-105 hover:shadow-white/30"
+              className="group inline-flex items-center justify-center rounded-xl bg-[hsl(var(--white))] px-12 py-6 text-lg font-bold text-[hsl(var(--selise-blue))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 hover:bg-[hsl(var(--white))]/90 transition-all transform hover:scale-105"
             >
               Generate Your Agreement Now
               <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
 
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-blue-100">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-[hsl(var(--white))]/80">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-300" />
+              <CheckCircle2 className="h-5 w-5 text-[hsl(var(--lime-green))]" />
               <span>No credit card required</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-300" />
+              <CheckCircle2 className="h-5 w-5 text-[hsl(var(--lime-green))]" />
               <span>Ready in 5 minutes</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-300" />
+              <CheckCircle2 className="h-5 w-5 text-[hsl(var(--lime-green))]" />
               <span>Download instantly</span>
             </div>
           </div>

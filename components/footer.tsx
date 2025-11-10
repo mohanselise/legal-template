@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
+import { LegalDisclaimer } from './legal-disclaimer';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -17,6 +18,13 @@ export default function Footer() {
         />
       </div>
       <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+        {/* Legal Disclaimer - Site-wide */}
+        <div className="mb-10 pb-10 border-b border-border">
+          <div className="mx-auto max-w-5xl">
+            <LegalDisclaimer variant="compact" className="px-4 py-4 rounded-lg bg-amber-50/50 dark:bg-amber-950/10 border border-amber-200/50 dark:border-amber-900/30" />
+          </div>
+        </div>
+
         <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="text-center sm:text-left">
             <p className="text-sm text-muted-foreground">

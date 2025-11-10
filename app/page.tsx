@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { LegalDisclaimer } from "@/components/legal-disclaimer";
 
 const templates = [
   {
@@ -593,27 +594,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trust & Disclaimer Section */}
+      {/* Trust & Disclaimer Section - Enhanced */}
       <section className="bg-white py-20 dark:bg-black">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl">
-            <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-8 shadow-lg dark:border-amber-900/50 dark:bg-amber-950/20">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/30">
-                  <Shield className="h-6 w-6 text-amber-600 dark:text-amber-500" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-200">
-                    Important Legal Disclaimer
-                  </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-amber-800 dark:text-amber-300">
-                    These templates are provided for informational purposes and as a starting point for your legal documents.
-                    They do not constitute legal advice. For specific legal guidance tailored to your situation, please consult
-                    with a qualified attorney in your jurisdiction. Laws vary by location and change over time.
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className="mx-auto max-w-4xl">
+            <LegalDisclaimer />
           </div>
         </div>
       </section>

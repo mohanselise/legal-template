@@ -10,6 +10,7 @@ import {
   clearEmploymentAgreementReview,
   loadEmploymentAgreementReview,
 } from '../reviewStorage';
+import { LegalDisclaimer } from '@/components/legal-disclaimer';
 
 function ReviewContent() {
   const searchParams = useSearchParams();
@@ -366,26 +367,8 @@ function ReviewContent() {
                 </div>
               )}
 
-              {/* Legal Notice - Enhanced */}
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-l-4 border-amber-500 dark:border-amber-600 rounded-xl p-6 shadow-lg">
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-lg flex items-center justify-center">
-                      <span className="text-xl">⚖️</span>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-amber-900 dark:text-amber-200 mb-2 text-sm">
-                      Professional Legal Review Required
-                    </h4>
-                    <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                      This AI-enhanced document should be reviewed by a qualified employment attorney
-                      admitted to practice in the relevant jurisdiction before execution. Employment
-                      laws and regulations vary significantly by location.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              {/* Comprehensive Legal Disclaimer */}
+              <LegalDisclaimer className="shadow-lg" />
             </div>
           </div>
         </div>

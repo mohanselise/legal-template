@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { LegalDisclaimer } from '@/components/legal-disclaimer';
 
 const STEPS = [
   { id: 'company', title: 'Company', component: Step1CompanyIdentity },
@@ -567,11 +568,11 @@ function SmartFlowContent() {
   // Welcome Screen
   if (showWelcome) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[hsl(222,89%,52%)] via-[hsl(222,89%,45%)] to-[hsl(262,83%,58%)] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-[hsl(222,89%,52%)] via-[hsl(222,89%,45%)] to-[hsl(262,83%,58%)] flex items-center justify-center px-4 py-12 overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-2xl"
+          className="text-center max-w-3xl w-full"
         >
           <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/20">
             <Sparkles className="w-10 h-10 text-white" />
@@ -597,11 +598,26 @@ function SmartFlowContent() {
               <span>~3-4 minutes</span>
             </div>
           </div>
+
+          {/* Disclaimer - Before user starts */}
+          <div className="mb-8 text-left bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
+            <div className="flex items-start gap-3 mb-3">
+              <AlertTriangle className="w-5 h-5 text-amber-300 flex-shrink-0 mt-0.5" />
+              <h3 className="text-lg font-semibold text-white">Before You Begin</h3>
+            </div>
+            <div className="space-y-2 text-sm text-white/80 leading-relaxed">
+              <p><strong className="text-white">Not Legal Advice:</strong> This tool does not provide legal advice and generates documents for informational purposes only.</p>
+              <p><strong className="text-white">AI-Generated:</strong> AI is inaccurate by nature. Content may contain errors or omissions.</p>
+              <p><strong className="text-white">Jurisdiction:</strong> This is a Switzerland-based product that may not comply with laws in your jurisdiction.</p>
+              <p><strong className="text-white">Review Required:</strong> Always consult a qualified legal advisor before using any generated document.</p>
+            </div>
+          </div>
+
           <button
             onClick={() => setShowWelcome(false)}
             className="bg-white text-[hsl(222,89%,52%)] px-10 py-4 rounded-xl font-semibold text-lg shadow-2xl hover:shadow-xl hover:scale-105 transition-all inline-flex items-center gap-3"
           >
-            Get started
+            I Understand, Get Started
             <ArrowRight className="w-5 h-5" />
           </button>
           <p className="mt-8 text-white/50 text-sm">

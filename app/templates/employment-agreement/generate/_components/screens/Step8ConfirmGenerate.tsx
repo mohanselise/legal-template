@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { CheckCircle2, AlertTriangle, Clock, ShieldCheck } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
 import type { BackgroundGenerationResult } from '../SmartFormContext';
@@ -15,11 +15,11 @@ interface Step8ConfirmGenerateProps {
 export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerateProps) {
   const {
     formData,
-    enrichment,
     backgroundGeneration,
     cancelBackgroundGeneration,
     computeSnapshotHash,
     awaitBackgroundGeneration,
+    startBackgroundGeneration,
   } = useSmartForm();
   const router = useRouter();
 
@@ -60,6 +60,30 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
   if (!isHumanVerified) pendingActions.push('Verify you are human');
   const showPendingActions = !manualGenerating && pendingActions.length > 0;
 
+  const shouldAutoPrefetch =
+    formSnapshotHash &&
+    (backgroundGeneration.status === 'idle' ||
+      backgroundStale ||
+      (!backgroundGeneration.snapshotHash && backgroundGeneration.status !== 'pending'));
+
+  const prefetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (!shouldAutoPrefetch || prefetchedRef.current) {
+      return;
+    }
+
+    prefetchedRef.current = true;
+    const promise = startBackgroundGeneration();
+    promise
+      .catch(() => {
+        // error state handled via context status; no-op here
+      })
+      .finally(() => {
+        prefetchedRef.current = false;
+      });
+  }, [shouldAutoPrefetch, startBackgroundGeneration]);
+
   const backgroundStatusMeta = useMemo(() => {
     if (backgroundReady && backgroundGeneration.result) {
       return {
@@ -73,8 +97,8 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
       return {
         tone: 'border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]',
         icon: <Clock className="h-5 w-5 text-[hsl(var(--brand-primary))]" />,
-        title: 'Background drafting in progress',
-        description: 'We are drafting your agreement behind the scenes. Confirm these details while it finishes.',
+        title: 'Preparing your draft',
+        description: 'We are refreshing the agreement behind the scenes. Confirm these details while it finishes.',
       };
     }
     if (backgroundErrored) {
@@ -89,8 +113,8 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
       return {
         tone: 'border-amber-200 bg-amber-50 text-amber-900',
         icon: <AlertTriangle className="h-5 w-5 text-amber-600" />,
-        title: 'Draft outdated',
-        description: 'Changes were made after the last draft. Re-run the Legal step to pre-generate a new version.',
+        title: 'Draft updating',
+        description: 'We noticed new details. Hang tight while we refresh the agreement automatically.',
       };
     }
     return null;
@@ -131,116 +155,66 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
     }
 
     const snapshotHash = formSnapshotHash;
+    const resolveBackgroundDraft = async (): Promise<BackgroundGenerationResult> => {
+      if (!snapshotHash) {
+        throw new Error('We could not verify your latest answers. Please return to the Legal step and try again.');
+      }
 
-    if (backgroundReady && backgroundGeneration.result) {
-      const readyResult = backgroundGeneration.result;
-      cancelBackgroundGeneration('consumed');
-      navigateWithResult(readyResult);
-      return;
-    }
-
-    if (backgroundPending) {
-      const awaited = await awaitBackgroundGeneration(snapshotHash, 20000);
-      if (awaited && awaited.document) {
+      if (backgroundReady && backgroundGeneration.result) {
+        const readyResult = backgroundGeneration.result;
         cancelBackgroundGeneration('consumed');
-        navigateWithResult(awaited);
-        return;
-      }
-    }
-
-    const formDataSnapshot = { ...formData };
-    const enrichmentPayload = {
-      jurisdiction: enrichment.jurisdictionData,
-      company: enrichment.companyData,
-      jobTitle: enrichment.jobTitleData,
-      marketStandards: enrichment.marketStandards,
-    };
-
-    const runManualGeneration = async (): Promise<BackgroundGenerationResult> => {
-      const response = await fetch('/api/templates/employment-agreement/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          formData: formDataSnapshot,
-          enrichment: enrichmentPayload,
-          acceptedLegalDisclaimer: acceptedDisclaimer,
-          understandAiContent: acknowledgeAi,
-          turnstileToken: verificationToken ?? undefined,
-          background: false,
-        }),
-      });
-
-      const rawBody = await response.text();
-
-      if (!response.ok) {
-        let message = `Failed to generate employment agreement (status ${response.status})`;
-        try {
-          const data = JSON.parse(rawBody);
-          if (data && typeof data === 'object') {
-            message =
-              data.error ||
-              data.details ||
-              data.message ||
-              message;
-          }
-        } catch {
-          if (rawBody) {
-            message = rawBody;
-          }
-        }
-        throw new Error(message);
-      }
-
-      let parsed: unknown;
-      try {
-        parsed = rawBody ? JSON.parse(rawBody) : {};
-      } catch {
-        throw new Error('Received invalid response while generating agreement.');
+        return readyResult;
       }
 
       if (
-        !parsed ||
-        typeof parsed !== 'object' ||
-        parsed === null ||
-        !('document' in parsed)
+        backgroundGeneration.status === 'idle' ||
+        backgroundGeneration.status === 'error' ||
+        !backgroundMatches ||
+        backgroundGeneration.status === 'stale'
       ) {
-        throw new Error('Generation response did not include a document.');
+        try {
+          await startBackgroundGeneration();
+        } catch (error) {
+          throw new Error(
+            error instanceof Error
+              ? error.message
+              : 'We could not start preparing your draft. Please try again.'
+          );
+        }
       }
 
-      const payload = parsed as {
-        document: BackgroundGenerationResult['document'];
-        metadata?: BackgroundGenerationResult['metadata'];
-        usage?: BackgroundGenerationResult['usage'];
-      };
+      const awaited = await awaitBackgroundGeneration(snapshotHash, 20000);
+      if (awaited && awaited.document) {
+        cancelBackgroundGeneration('consumed');
+        return awaited;
+      }
 
-      return {
-        document: payload.document,
-        metadata: payload.metadata,
-        usage: payload.usage,
-        formDataSnapshot,
-      };
+      throw new Error('Still finalizing your draft. Give it another moment and try again.');
     };
 
-    cancelBackgroundGeneration('manual');
-
     if (onStartGeneration) {
+      setManualGenerating(true);
       onStartGeneration(async () => {
-        const result = await runManualGeneration();
-        return result;
+        try {
+          const result = await resolveBackgroundDraft();
+          return result;
+        } finally {
+          setManualGenerating(false);
+        }
       });
       return;
     }
 
     setManualGenerating(true);
     try {
-      const result = await runManualGeneration();
+      const result = await resolveBackgroundDraft();
       navigateWithResult(result);
     } catch (error) {
       console.error('Generation error:', error);
       alert(
         error instanceof Error
           ? error.message
-          : 'Failed to generate agreement. Please try again.'
+          : 'Failed to open your draft. Please return to the Legal step and try again.'
       );
     } finally {
       setManualGenerating(false);

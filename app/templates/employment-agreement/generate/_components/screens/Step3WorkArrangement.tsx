@@ -95,7 +95,7 @@ export function Step3WorkArrangement() {
                 {isRecommended && (
                   <Badge
                     variant="outline"
-                    className="absolute -top-2 left-1/2 -translate-x-1/2 border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-xs text-[hsl(var(--brand-muted))]"
+                    className="absolute -top-2.5 left-1/2 -translate-x-1/2 border-[hsl(var(--brand-primary))]/40 bg-white dark:bg-[hsl(var(--eerie-black))] text-xs text-[hsl(var(--brand-primary))] shadow-md font-medium"
                   >
                     {jurisdictionName} standard
                   </Badge>

@@ -298,7 +298,7 @@ export function Step4Compensation() {
                   {isRecommended && (
                     <Badge
                       variant="outline"
-                      className="absolute -top-2 right-2 border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] px-2 text-[10px] text-[hsl(var(--brand-muted))]"
+                      className="absolute -top-2.5 right-2 border-[hsl(var(--brand-primary))]/40 bg-white dark:bg-[hsl(var(--eerie-black))] px-2 text-[10px] text-[hsl(var(--brand-primary))] shadow-md font-medium"
                     >
                       Recommended
                     </Badge>

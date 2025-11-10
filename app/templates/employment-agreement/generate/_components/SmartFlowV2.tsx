@@ -444,7 +444,7 @@ function SmartFlowContent() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-12 space-y-4 text-center"
           >
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] shadow-sm">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-[hsl(var(--brand-border))] bg-background shadow-sm">
               <FileText className="h-10 w-10 text-[hsl(var(--brand-primary))]" />
             </div>
             <h2 className="text-4xl font-semibold text-[hsl(var(--fg))] md:text-5xl">
@@ -486,10 +486,10 @@ function SmartFlowContent() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4 }}
-              className="rounded-2xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-8 shadow-sm"
+              className="rounded-2xl border border-[hsl(var(--brand-border))] bg-background p-8 shadow-sm"
             >
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[hsl(var(--brand-border))] bg-[hsla(var(--brand-primary)_/_0.12)]">
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[hsl(var(--brand-border))] bg-muted">
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
@@ -561,9 +561,9 @@ function SmartFlowContent() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative mx-auto w-full max-w-4xl rounded-3xl border border-[hsl(var(--brand-border))] bg-white/90 p-10 text-center shadow-xl backdrop-blur-sm"
+          className="relative mx-auto w-full max-w-4xl rounded-3xl border border-[hsl(var(--brand-border))] bg-background p-10 text-center shadow-xl backdrop-blur-sm"
         >
-          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-3xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] shadow-sm">
+          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-3xl border border-[hsl(var(--brand-border))] bg-muted shadow-sm">
             <Sparkles className="h-10 w-10 text-[hsl(var(--brand-primary))]" />
           </div>
           <h1 className="mb-6 text-5xl font-semibold text-[hsl(var(--fg))] md:text-6xl">
@@ -590,7 +590,7 @@ function SmartFlowContent() {
           </div>
 
           {/* Disclaimer - Before user starts */}
-          <div className="mb-8 rounded-2xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-6 text-left shadow-sm">
+          <div className="mb-8 rounded-2xl border border-[hsl(var(--brand-border))] bg-muted p-6 text-left shadow-sm">
             <div className="mb-3 flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-[hsl(var(--brand-primary))]" />
               <h3 className="text-lg font-semibold text-[hsl(var(--fg))]">Before You Begin</h3>
@@ -611,7 +611,7 @@ function SmartFlowContent() {
             <ArrowRight className="h-5 w-5" />
           </button>
           <p className="mt-8 text-sm text-[hsl(var(--brand-muted))]">
-            Press <kbd className="rounded border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] px-2 py-1">Enter</kbd> to begin
+            Press <kbd className="rounded border border-[hsl(var(--brand-border))] bg-background px-2 py-1">Enter</kbd> to begin
           </p>
         </motion.div>
       </div>

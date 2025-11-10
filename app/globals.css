@@ -42,6 +42,29 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  
+  /* SELISE Brand Colors */
+  --color-selise-blue: var(--selise-blue);
+  --color-globe-grey: var(--globe-grey);
+  --color-oxford-blue: var(--oxford-blue);
+  --color-white: var(--white);
+  --color-eerie-black: var(--eerie-black);
+  --color-sky-blue: var(--sky-blue);
+  --color-light-blue: var(--light-blue);
+  --color-mauveine: var(--mauveine);
+  --color-poly-green: var(--poly-green);
+  --color-lavender: var(--lavender);
+  --color-lime-green: var(--lime-green);
+  --color-crimson: var(--crimson);
+  --color-pantone-red: var(--pantone-red);
+  
+  /* Brand Utility Tokens */
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-foreground: var(--brand-primary-foreground);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-surface: var(--brand-surface);
+  --color-brand-surface-strong: var(--brand-surface-strong);
+  --color-brand-border: var(--brand-border);
 }
 
 :root {

@@ -59,7 +59,6 @@ export function SmartInput({
   onAddressSelect,
   searchQuery,
 }: SmartInputProps) {
-  const hasValue = value && value.length > 0;
   const isSuggestionApplied = suggestion && value === suggestion.value.toString();
 
   // Address autocomplete state
@@ -182,10 +181,11 @@ export function SmartInput({
           onBlur={handleInputBlur}
           placeholder={placeholder}
           className={cn(
-            'transition-all',
-            validation?.severity === 'error' && 'border-destructive focus:ring-destructive',
-            validation?.severity === 'warning' && 'border-yellow-500 focus:ring-yellow-500',
-            hasValue && !validation && 'border-green-500 focus:ring-green-500'
+            'transition-all focus-visible:border-[hsl(var(--brand-primary))] focus-visible:ring-[hsla(var(--brand-primary)_/_0.25)]',
+            validation?.severity === 'error' &&
+              'border-[hsla(var(--destructive)_/_0.45)] focus-visible:border-[hsla(var(--destructive)_/_0.7)] focus-visible:ring-[hsla(var(--destructive)_/_0.35)]',
+            validation?.severity === 'warning' &&
+              'border-[hsla(var(--warning)_/_0.5)] focus-visible:border-[hsla(var(--warning)_/_0.7)] focus-visible:ring-[hsla(var(--warning)_/_0.3)]'
           )}
         />
 
@@ -231,24 +231,27 @@ export function SmartInput({
 
       {/* AI Suggestion badge */}
       {suggestion && !isSuggestionApplied && (
-        <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-          <Sparkles className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-2 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-3 shadow-sm">
+          <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-[hsl(var(--brand-primary))]" />
           <div className="flex-1 space-y-1">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium text-blue-900">AI Suggestion</p>
-              <Badge variant="outline" className="text-xs">
+              <p className="text-sm font-medium text-[hsl(var(--fg))]">AI Suggestion</p>
+              <Badge
+                variant="outline"
+                className="text-xs border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+              >
                 {suggestion.confidence} confidence
               </Badge>
             </div>
-            <p className="text-sm text-blue-700">
+            <p className="text-sm text-[hsl(var(--brand-muted))]">
               <strong>{suggestion.value}</strong>
             </p>
-            <p className="text-xs text-blue-600">{suggestion.reason}</p>
+            <p className="text-xs text-[hsl(var(--brand-muted))]">{suggestion.reason}</p>
             {onApplySuggestion && (
               <button
                 type="button"
                 onClick={onApplySuggestion}
-                className="text-xs font-medium text-blue-600 hover:text-blue-800 underline"
+                className="text-xs font-medium text-[hsl(var(--brand-primary))] underline decoration-dotted underline-offset-4 hover:decoration-solid"
               >
                 Apply suggestion
               </button>
@@ -259,8 +262,8 @@ export function SmartInput({
 
       {/* Applied suggestion indicator */}
       {isSuggestionApplied && (
-        <div className="flex items-center gap-2 text-sm text-green-600">
-          <CheckCircle2 className="h-4 w-4" />
+        <div className="flex items-center gap-2 text-sm text-[hsl(var(--brand-muted))]">
+          <CheckCircle2 className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
           <span>Using {suggestion.source} standard</span>
         </div>
       )}
@@ -269,20 +272,21 @@ export function SmartInput({
       {validation && (
         <div
           className={cn(
-            'flex items-start gap-2 rounded-lg border p-3',
+            'flex items-start gap-2 rounded-xl border p-3 shadow-sm',
             validation.severity === 'error' &&
-              'border-red-200 bg-red-50 text-red-900',
+              'border-[hsla(var(--destructive)_/_0.35)] bg-[hsla(var(--destructive)_/_0.08)] text-[hsl(var(--destructive))]',
             validation.severity === 'warning' &&
-              'border-yellow-200 bg-yellow-50 text-yellow-900',
-            validation.severity === 'info' && 'border-blue-200 bg-blue-50 text-blue-900'
+              'border-[hsla(var(--warning)_/_0.4)] bg-[hsla(var(--warning)_/_0.12)] text-[hsla(var(--warning)_/_0.9)]',
+            validation.severity === 'info' &&
+              'border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]'
           )}
         >
           <AlertCircle
             className={cn(
               'h-4 w-4 mt-0.5 flex-shrink-0',
-              validation.severity === 'error' && 'text-red-600',
-              validation.severity === 'warning' && 'text-yellow-600',
-              validation.severity === 'info' && 'text-blue-600'
+              validation.severity === 'error' && 'text-[hsl(var(--destructive))]',
+              validation.severity === 'warning' && 'text-[hsla(var(--warning)_/_0.9)]',
+              validation.severity === 'info' && 'text-[hsl(var(--brand-primary))]'
             )}
           />
           <div className="flex-1 space-y-1">

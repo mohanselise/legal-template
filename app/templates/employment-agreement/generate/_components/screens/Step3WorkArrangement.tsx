@@ -94,8 +94,8 @@ export function Step3WorkArrangement() {
               >
                 {isRecommended && (
                   <Badge
-                    variant="default"
-                    className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs"
+                    variant="outline"
+                    className="absolute -top-2 left-1/2 -translate-x-1/2 border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-xs text-[hsl(var(--brand-muted))]"
                   >
                     {jurisdictionName} standard
                   </Badge>
@@ -204,8 +204,8 @@ export function Step3WorkArrangement() {
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4 space-y-4 animate-in slide-in-from-top-2">
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                <p className="text-sm text-blue-900 mb-3 font-medium">
+              <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
+                <p className="mb-3 text-sm font-medium text-[hsl(var(--fg))]">
                   Customize work schedule
                 </p>
                 <SmartInput
@@ -229,7 +229,7 @@ export function Step3WorkArrangement() {
                   />
                   <label
                     htmlFor="overtimeEligible"
-                    className="text-sm text-blue-900"
+                    className="text-sm text-[hsl(var(--brand-muted))]"
                   >
                     Employee is eligible for overtime pay
                   </label>

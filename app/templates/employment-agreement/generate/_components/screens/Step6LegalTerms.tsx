@@ -75,13 +75,16 @@ export function Step6LegalTerms() {
         <Label className="text-sm font-medium">Standard protection clauses</Label>
 
         {/* Confidentiality */}
-        <div className="flex items-center justify-between p-4 rounded-lg border">
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
           <div className="flex-1">
             <p className="font-medium text-sm">Confidentiality (NDA)</p>
             <p className="text-xs text-muted-foreground">Protects company information</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={marketStandards?.confidentialityRequired ? 'default' : 'outline'}>
+            <Badge
+              variant="outline"
+              className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+            >
               {marketStandards?.confidentialityRequired ? 'Required' : 'Optional'}
             </Badge>
             <input
@@ -94,13 +97,16 @@ export function Step6LegalTerms() {
         </div>
 
         {/* IP Assignment */}
-        <div className="flex items-center justify-between p-4 rounded-lg border">
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
           <div className="flex-1">
             <p className="font-medium text-sm">IP Assignment</p>
             <p className="text-xs text-muted-foreground">Company owns work product</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={marketStandards?.ipAssignmentRequired ? 'default' : 'outline'}>
+            <Badge
+              variant="outline"
+              className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+            >
               {marketStandards?.ipAssignmentRequired ? 'Recommended' : 'Optional'}
             </Badge>
             <input
@@ -113,7 +119,7 @@ export function Step6LegalTerms() {
         </div>
 
         {/* Non-compete */}
-        <div className="flex items-center justify-between p-4 rounded-lg border">
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
           <div className="flex-1">
             <p className="font-medium text-sm">Non-compete</p>
             <p className="text-xs text-muted-foreground">
@@ -123,7 +129,13 @@ export function Step6LegalTerms() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={marketStandards?.nonCompeteEnforceable ? 'outline' : 'secondary'}>
+            <Badge
+              variant="outline"
+              className={cn(
+                'border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]',
+                !marketStandards?.nonCompeteEnforceable && 'opacity-70'
+              )}
+            >
               {marketStandards?.nonCompeteEnforceable ? 'Allowed' : 'Not enforceable'}
             </Badge>
             <input
@@ -137,13 +149,16 @@ export function Step6LegalTerms() {
         </div>
 
         {/* Non-solicitation */}
-        <div className="flex items-center justify-between p-4 rounded-lg border">
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
           <div className="flex-1">
             <p className="font-medium text-sm">Non-solicitation</p>
             <p className="text-xs text-muted-foreground">Prevents poaching employees/clients</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={marketStandards?.nonSolicitationCommon ? 'default' : 'outline'}>
+            <Badge
+              variant="outline"
+              className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+            >
               {marketStandards?.nonSolicitationCommon ? 'Common' : 'Optional'}
             </Badge>
             <input

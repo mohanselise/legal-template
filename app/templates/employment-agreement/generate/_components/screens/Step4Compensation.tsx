@@ -165,14 +165,14 @@ export function Step4Compensation() {
 
       {/* Market benchmarking card */}
       {jobTitleData?.typicalSalaryRange && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
           <div className="flex items-start gap-3">
-            <TrendingUp className="w-5 h-5 text-blue-600 mt-0.5" />
+            <TrendingUp className="mt-0.5 h-5 w-5 text-[hsl(var(--brand-primary))]" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-blue-900 mb-1">
+              <p className="mb-1 text-sm font-semibold text-[hsl(var(--fg))]">
                 Market Benchmark for {formData.jobTitle}
               </p>
-              <p className="text-xs text-blue-700 mb-3">
+              <p className="mb-3 text-xs text-[hsl(var(--brand-muted))]">
                 {payFrequency === 'annual' ? 'Annual' : payFrequency === 'bi-weekly' ? 'Bi-weekly' : payFrequency === 'monthly' ? 'Monthly' : payFrequency === 'weekly' ? 'Weekly' : 'Hourly'} rates
                 {formData.salaryCurrency && formData.salaryCurrency !== jobTitleData.typicalSalaryRange.currency && (
                   <span className="ml-1">(converted to {formData.salaryCurrency})</span>
@@ -180,8 +180,8 @@ export function Step4Compensation() {
               </p>
               <div className="grid grid-cols-3 gap-3 text-xs">
                 <div>
-                  <p className="text-blue-700">Min</p>
-                  <p className="font-semibold text-blue-900">
+                  <p className="text-[hsl(var(--brand-muted))]">Min</p>
+                  <p className="font-semibold text-[hsl(var(--fg))]">
                     {formData.salaryCurrency || jobTitleData.typicalSalaryRange.currency}
                     {' '}
                     {formatSalary(
@@ -198,8 +198,8 @@ export function Step4Compensation() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-blue-700">Median</p>
-                  <p className="font-semibold text-blue-900">
+                  <p className="text-[hsl(var(--brand-muted))]">Median</p>
+                  <p className="font-semibold text-[hsl(var(--fg))]">
                     {formData.salaryCurrency || jobTitleData.typicalSalaryRange.currency}
                     {' '}
                     {formatSalary(
@@ -216,8 +216,8 @@ export function Step4Compensation() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-blue-700">Max</p>
-                  <p className="font-semibold text-blue-900">
+                  <p className="text-[hsl(var(--brand-muted))]">Max</p>
+                  <p className="font-semibold text-[hsl(var(--fg))]">
                     {formData.salaryCurrency || jobTitleData.typicalSalaryRange.currency}
                     {' '}
                     {formatSalary(
@@ -308,7 +308,12 @@ export function Step4Compensation() {
                   )}
                 >
                   {isRecommended && (
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full" />
+                    <Badge
+                      variant="outline"
+                      className="absolute -top-2 right-2 border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] px-2 text-[10px] text-[hsl(var(--brand-muted))]"
+                    >
+                      Recommended
+                    </Badge>
                   )}
                   {option.label}
                 </button>

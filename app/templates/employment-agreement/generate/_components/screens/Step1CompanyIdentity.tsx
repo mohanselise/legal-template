@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Building2 } from 'lucide-react';
+import { AlertTriangle, Building2 } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
 import { SmartInput } from '../SmartInput';
 import { getFlagEmoji } from '@/lib/utils/flag-emoji';
@@ -55,18 +55,16 @@ export function Step1CompanyIdentity() {
 
       {/* Jurisdiction detection feedback */}
       {enrichment.jurisdictionData && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4 space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="text-2xl">
-              {getFlagEmoji(enrichment.jurisdictionData.countryCode)}
-            </div>
+        <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl">{getFlagEmoji(enrichment.jurisdictionData.countryCode)}</div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-green-900">
+              <p className="text-sm font-semibold text-[hsl(var(--fg))]">
                 Jurisdiction detected: {enrichment.jurisdictionData.country}
                 {enrichment.jurisdictionData.state && `, ${enrichment.jurisdictionData.state}`}
               </p>
-              <p className="text-xs text-green-700 mt-1">
-                We&apos;ll apply local labor standards and legal requirements automatically
+              <p className="mt-1 text-xs text-[hsl(var(--brand-muted))]">
+                We&apos;ll apply local labor standards and legal requirements automatically.
               </p>
             </div>
           </div>
@@ -75,18 +73,21 @@ export function Step1CompanyIdentity() {
 
       {/* Company intelligence (if available) */}
       {enrichment.companyData?.industryDetected && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-          <p className="text-sm text-blue-900">
-            <strong>Industry:</strong> {enrichment.companyData.industryDetected}
+        <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-3 text-sm text-[hsl(var(--brand-muted))] shadow-sm">
+          <p>
+            <strong className="font-semibold text-[hsl(var(--brand-primary))]">Industry:</strong> {enrichment.companyData.industryDetected}
           </p>
         </div>
       )}
 
       {/* Error state */}
       {enrichment.jurisdictionError && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-          <p className="text-sm text-yellow-900">
-            ⚠️ Smart suggestions unavailable. You can continue with manual entry.
+        <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 text-sm text-[hsl(var(--brand-muted))] shadow-sm">
+          <p className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[hsl(var(--brand-primary))]" />
+            <span>
+              Smart suggestions are currently unavailable. You can continue with manual entry.
+            </span>
           </p>
         </div>
       )}

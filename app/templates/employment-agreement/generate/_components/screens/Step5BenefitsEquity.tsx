@@ -45,12 +45,12 @@ export function Step5BenefitsEquity() {
       {/* Equity section (conditional) */}
       {shouldShowEquity ? (
         <div className="space-y-4">
-          <div className="rounded-lg border border-purple-200 bg-purple-50 p-4">
-            <p className="text-sm font-semibold text-purple-900 mb-1">
+          <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
+            <p className="mb-1 text-sm font-semibold text-[hsl(var(--fg))]">
               💡 Equity is typical for this role
             </p>
             {jobTitleData?.typicalEquityRange && (
-              <p className="text-xs text-purple-700">
+              <p className="text-xs text-[hsl(var(--brand-muted))]">
                 Typical range: {jobTitleData.typicalEquityRange.min}% - {jobTitleData.typicalEquityRange.max}%
               </p>
             )}
@@ -77,8 +77,8 @@ export function Step5BenefitsEquity() {
           )}
         </div>
       ) : (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
+        <Alert className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
+          <AlertCircle className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
           <AlertDescription className="text-sm">
             Equity compensation is less common for this role. You can skip this section or add if needed.
           </AlertDescription>

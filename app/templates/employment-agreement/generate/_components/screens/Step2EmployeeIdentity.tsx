@@ -60,9 +60,9 @@ export function Step2EmployeeIdentity() {
 
       {/* Jurisdiction detection - show when loading OR when data arrives */}
       {enrichment.jurisdictionLoading && !enrichment.jurisdictionData && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-          <p className="text-sm text-blue-900 flex items-center gap-2">
-            <span className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
+        <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-3 shadow-sm">
+          <p className="flex items-center gap-2 text-sm text-[hsl(var(--brand-muted))]">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[hsl(var(--brand-primary))]" />
             Analyzing jurisdiction requirements in the background...
           </p>
         </div>
@@ -70,17 +70,15 @@ export function Step2EmployeeIdentity() {
 
       {/* Show jurisdiction data when it arrives (even if user navigated away quickly) */}
       {enrichment.jurisdictionData && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-          <div className="flex items-center gap-2">
-            <div className="text-xl">
-              {getFlagEmoji(enrichment.jurisdictionData.countryCode)}
-            </div>
+        <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="text-xl">{getFlagEmoji(enrichment.jurisdictionData.countryCode)}</div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-green-900">
+              <p className="text-sm font-semibold text-[hsl(var(--fg))]">
                 Jurisdiction: {enrichment.jurisdictionData.country}
                 {enrichment.jurisdictionData.state && `, ${enrichment.jurisdictionData.state}`}
               </p>
-              <p className="text-xs text-green-700">
+              <p className="text-xs text-[hsl(var(--brand-muted))]">
                 {enrichment.jurisdictionData.currency} • {enrichment.jurisdictionData.typicalPTO} days PTO • {enrichment.jurisdictionData.typicalPayFrequency} pay
               </p>
             </div>
@@ -148,27 +146,36 @@ export function Step2EmployeeIdentity() {
 
       {/* Job title analysis results */}
       {enrichment.jobTitleData && (
-        <div className="rounded-lg border border-purple-200 bg-purple-50 p-4 space-y-3">
-          <div className="flex items-start gap-2">
-            <Briefcase className="w-5 h-5 text-purple-600 mt-0.5" />
+        <div className="space-y-3 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Briefcase className="mt-0.5 h-5 w-5 text-[hsl(var(--brand-primary))]" />
             <div className="flex-1 space-y-2">
-              <p className="text-sm font-semibold text-purple-900">
+              <p className="text-sm font-semibold text-[hsl(var(--fg))]">
                 Role Analysis
               </p>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="text-xs">
+                <Badge
+                  variant="outline"
+                  className="text-xs border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+                >
                   {enrichment.jobTitleData.department}
                 </Badge>
-                <Badge variant="secondary" className="text-xs capitalize">
+                <Badge
+                  variant="outline"
+                  className="text-xs capitalize border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+                >
                   {enrichment.jobTitleData.seniorityLevel} level
                 </Badge>
-                <Badge variant="secondary" className="text-xs capitalize">
+                <Badge
+                  variant="outline"
+                  className="text-xs capitalize border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+                >
                   {enrichment.jobTitleData.exemptStatus}
                 </Badge>
               </div>
 
               {enrichment.jobTitleData.typicalSalaryRange && (
-                <p className="text-xs text-purple-700">
+                <p className="text-xs text-[hsl(var(--brand-muted))]">
                   Typical salary range:{' '}
                   {enrichment.jobTitleData.typicalSalaryRange.currency}
                   {enrichment.jobTitleData.typicalSalaryRange.min.toLocaleString()} -{' '}
@@ -180,7 +187,7 @@ export function Step2EmployeeIdentity() {
               )}
 
               {enrichment.jobTitleData.equityTypical && (
-                <p className="text-xs text-purple-700">
+                <p className="text-xs text-[hsl(var(--brand-muted))]">
                   💡 Equity compensation is typical for this role
                 </p>
               )}
@@ -191,8 +198,8 @@ export function Step2EmployeeIdentity() {
 
       {/* Market standards preparation */}
       {enrichment.marketStandards && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-          <p className="text-sm text-green-900">
+        <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-3 shadow-sm">
+          <p className="text-sm text-[hsl(var(--brand-muted))]">
             ✓ Market standards prepared based on {enrichment.marketStandards.source}
           </p>
         </div>

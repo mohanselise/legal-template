@@ -272,13 +272,13 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
 
       {/* Validation Warnings */}
       {warnings.length > 0 && (
-        <Alert className="border-amber-200 bg-amber-50">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-sm font-semibold text-amber-900">
+        <Alert className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
+          <AlertCircle className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
+          <AlertTitle className="text-sm font-semibold text-[hsl(var(--fg))]">
             {warnings.length} {warnings.length === 1 ? 'warning' : 'warnings'}
           </AlertTitle>
           <AlertDescription>
-            <ul className="list-disc list-inside text-sm space-y-2 mt-2 text-amber-900">
+            <ul className="mt-2 space-y-2 list-disc list-inside text-sm text-[hsl(var(--brand-muted))]">
               {warnings.map((warning, i) => (
                 <li key={i}>
                   {warning.message}
@@ -294,13 +294,13 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
 
       {/* Suggestions */}
       {suggestions.length > 0 && (
-        <Alert className="border-blue-200 bg-blue-50">
-          <Info className="h-4 w-4 text-blue-600" />
-          <AlertTitle className="text-sm font-semibold text-blue-900">
+        <Alert className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
+          <Info className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
+          <AlertTitle className="text-sm font-semibold text-[hsl(var(--fg))]">
             {suggestions.length} {suggestions.length === 1 ? 'suggestion' : 'suggestions'}
           </AlertTitle>
           <AlertDescription>
-            <ul className="list-disc list-inside text-sm space-y-2 mt-2 text-blue-900">
+            <ul className="mt-2 space-y-2 list-disc list-inside text-sm text-[hsl(var(--brand-muted))]">
               {suggestions.map((suggestion, i) => (
                 <li key={i}>
                   {suggestion.message}
@@ -316,13 +316,13 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
 
       {/* Customizations detected */}
       {customizations.length > 0 && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle className="text-sm font-semibold">
+        <Alert className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
+          <AlertCircle className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
+          <AlertTitle className="text-sm font-semibold text-[hsl(var(--fg))]">
             {customizations.length} customization{customizations.length > 1 ? 's' : ''} detected
           </AlertTitle>
           <AlertDescription>
-            <ul className="list-disc list-inside text-sm space-y-1 mt-2">
+            <ul className="mt-2 space-y-1 list-disc list-inside text-sm">
               {customizations.map((c, i) => (
                 <li key={i}>{c}</li>
               ))}
@@ -333,22 +333,50 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
 
       {/* All standard */}
       {customizations.length === 0 && marketStandards && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-sm text-green-900">
+        <Alert className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
+          <CheckCircle2 className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
+          <AlertDescription className="text-sm">
             All terms align with market standards for this role and jurisdiction.
           </AlertDescription>
         </Alert>
       )}
 
       {/* Protection clauses summary */}
-      <div className="p-4 rounded-lg border bg-card">
-        <p className="font-semibold text-sm mb-3">Protection Clauses Included</p>
+      <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
+        <p className="mb-3 text-sm font-semibold text-[hsl(var(--fg))]">Protection Clauses Included</p>
         <div className="flex flex-wrap gap-2">
-          {formData.includeConfidentiality && <Badge variant="secondary">Confidentiality</Badge>}
-          {formData.includeIpAssignment && <Badge variant="secondary">IP Assignment</Badge>}
-          {formData.includeNonCompete && <Badge variant="secondary">Non-compete</Badge>}
-          {formData.includeNonSolicitation && <Badge variant="secondary">Non-solicitation</Badge>}
+          {formData.includeConfidentiality && (
+            <Badge
+              variant="outline"
+              className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+            >
+              Confidentiality
+            </Badge>
+          )}
+          {formData.includeIpAssignment && (
+            <Badge
+              variant="outline"
+              className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+            >
+              IP Assignment
+            </Badge>
+          )}
+          {formData.includeNonCompete && (
+            <Badge
+              variant="outline"
+              className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+            >
+              Non-compete
+            </Badge>
+          )}
+          {formData.includeNonSolicitation && (
+            <Badge
+              variant="outline"
+              className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+            >
+              Non-solicitation
+            </Badge>
+          )}
           {!formData.includeConfidentiality &&
             !formData.includeIpAssignment &&
             !formData.includeNonCompete &&

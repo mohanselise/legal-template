@@ -411,82 +411,46 @@ function SmartFlowContent() {
     const currentStage = GENERATION_STEPS[generationStepIndex];
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#312e81] relative overflow-hidden flex items-center justify-center px-4">
-        {/* Animated Background Blobs */}
-        <motion.div
-          className="absolute top-20 left-20 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-        <motion.div
-          className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.5, 0.3, 0.5],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[hsl(var(--bg))] px-4">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_hsla(var(--brand-primary)_/_0.14),_transparent_65%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom,_hsla(var(--brand-primary)_/_0.08),_transparent_60%)]" />
 
-        {/* Content */}
         <div className="relative z-10 w-full max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="mb-12 space-y-4 text-center"
           >
-            <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/20">
-              <FileText className="w-10 h-10 text-white" />
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] shadow-sm">
+              <FileText className="h-10 w-10 text-[hsl(var(--brand-primary))]" />
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h2 className="text-4xl font-semibold text-[hsl(var(--fg))] md:text-5xl">
               Generating your agreement
             </h2>
-            <p className="text-xl text-white/70">
+            <p className="text-lg text-[hsl(var(--brand-muted))]">
               Please wait while we craft your employment agreement
             </p>
           </motion.div>
 
           {/* Progress Bar */}
           <div className="mb-10">
-            <div className="flex items-center justify-between text-sm text-white/60 mb-3">
+            <div className="mb-3 flex items-center justify-between text-sm text-[hsl(var(--brand-muted))]">
               <span>{Math.round(fakeProgress)}% complete</span>
               <span>Step {generationStepIndex + 1} of {GENERATION_STEPS.length}</span>
             </div>
-            <div className="relative h-3 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+            <div className="relative h-3 overflow-hidden rounded-full bg-[hsl(var(--brand-surface-strong))]">
               <motion.div
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 rounded-full"
+                className="absolute left-0 top-0 h-full rounded-full bg-[hsl(var(--brand-primary))]"
                 initial={{ width: 0 }}
                 animate={{ width: `${fakeProgress}%` }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
               />
               {/* Moving dot indicator */}
               <motion.div
-                className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-lg"
+                className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border border-white bg-[hsl(var(--brand-primary))] shadow-md"
                 animate={{ left: `${fakeProgress}%` }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
-                style={{ marginLeft: '-10px' }}
+                style={{ marginLeft: '-8px' }}
               />
             </div>
           </div>
@@ -499,22 +463,22 @@ function SmartFlowContent() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4 }}
-              className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-8"
+              className="rounded-2xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-8 shadow-sm"
             >
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0 border border-blue-500/30">
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[hsl(var(--brand-border))] bg-[hsla(var(--brand-primary)_/_0.12)]">
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                   >
-                    <Sparkles className="w-6 h-6 text-blue-400" />
+                    <Sparkles className="h-6 w-6 text-[hsl(var(--brand-primary))]" />
                   </motion.div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-semibold text-white mb-2">
+                  <h3 className="mb-2 text-xl font-semibold text-[hsl(var(--fg))]">
                     {currentStage.title}
                   </h3>
-                  <p className="text-white/70 leading-relaxed">
+                  <p className="leading-relaxed text-[hsl(var(--brand-muted))]">
                     {currentStage.description}
                   </p>
                 </div>
@@ -529,24 +493,24 @@ function SmartFlowContent() {
                   return (
                     <div
                       key={index}
-                      className={`flex items-center gap-3 text-sm ${
+                      className={`flex items-center gap-3 text-sm transition-colors ${
                         isCompleted
-                          ? 'text-green-400'
+                          ? 'text-[hsl(var(--brand-primary))]'
                           : isCurrent
-                          ? 'text-white'
-                          : 'text-white/30'
+                          ? 'text-[hsl(var(--fg))]'
+                          : 'text-[hsl(var(--brand-muted))]/70'
                       }`}
                     >
                       {isCompleted ? (
-                        <Check className="w-4 h-4" />
+                        <Check className="h-4 w-4" />
                       ) : isCurrent ? (
                         <motion.div
                           animate={{ scale: [1, 1.2, 1] }}
                           transition={{ duration: 1, repeat: Infinity }}
-                          className="w-4 h-4 border-2 border-white rounded-full"
+                          className="h-4 w-4 rounded-full border-2 border-[hsl(var(--brand-primary))]"
                         />
                       ) : (
-                        <div className="w-4 h-4 border-2 border-white/30 rounded-full" />
+                        <div className="h-4 w-4 rounded-full border-2 border-[hsl(var(--brand-border))]" />
                       )}
                       <span>{stage.title}</span>
                     </div>
@@ -557,7 +521,7 @@ function SmartFlowContent() {
           </AnimatePresence>
 
           {/* Bottom hint */}
-          <p className="text-center mt-8 text-white/40 text-sm">
+          <p className="mt-8 text-center text-sm text-[hsl(var(--brand-muted))]">
             This typically takes 12-15 seconds
           </p>
         </div>
@@ -568,60 +532,63 @@ function SmartFlowContent() {
   // Welcome Screen
   if (showWelcome) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[hsl(222,89%,52%)] via-[hsl(222,89%,45%)] to-[hsl(262,83%,58%)] flex items-center justify-center px-4 py-12 overflow-y-auto">
+      <div className="relative min-h-screen overflow-y-auto bg-[hsl(var(--bg))] px-4 py-12">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_hsla(var(--brand-primary)_/_0.18),_transparent_55%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom,_hsla(var(--brand-primary)_/_0.1),_transparent_65%)]" />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center max-w-3xl w-full"
+          className="relative mx-auto w-full max-w-4xl rounded-3xl border border-[hsl(var(--brand-border))] bg-white/90 p-10 text-center shadow-xl backdrop-blur-sm"
         >
-          <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/20">
-            <Sparkles className="w-10 h-10 text-white" />
+          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-3xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] shadow-sm">
+            <Sparkles className="h-10 w-10 text-[hsl(var(--brand-primary))]" />
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+          <h1 className="mb-6 text-5xl font-semibold text-[hsl(var(--fg))] md:text-6xl">
             Smart Employment Agreement
           </h1>
-          <p className="text-xl text-white/90 mb-12 leading-relaxed">
-            AI-powered form that adapts to your jurisdiction and role.<br />
-            <span className="text-white/70">Fast, smart, and tailored to your needs.</span>
+          <p className="mb-12 text-xl leading-relaxed text-[hsl(var(--brand-muted))]">
+            AI-powered form that adapts to your jurisdiction and role.
+            <br />
+            <span className="text-[hsl(var(--brand-muted))]">Fast, smart, and tailored to your needs.</span>
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-10">
-            <div className="flex items-center gap-3 text-white/90 text-base">
-              <Check className="w-5 h-5" />
+          <div className="mb-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <div className="flex items-center gap-3 text-base text-[hsl(var(--fg))]">
+              <Check className="h-5 w-5 text-[hsl(var(--brand-primary))]" />
               <span>7 smart screens</span>
             </div>
-            <div className="flex items-center gap-3 text-white/90 text-base">
-              <Check className="w-5 h-5" />
+            <div className="flex items-center gap-3 text-base text-[hsl(var(--fg))]">
+              <Check className="h-5 w-5 text-[hsl(var(--brand-primary))]" />
               <span>Market standards applied</span>
             </div>
-            <div className="flex items-center gap-3 text-white/90 text-base">
-              <Check className="w-5 h-5" />
+            <div className="flex items-center gap-3 text-base text-[hsl(var(--fg))]">
+              <Check className="h-5 w-5 text-[hsl(var(--brand-primary))]" />
               <span>~3-4 minutes</span>
             </div>
           </div>
 
           {/* Disclaimer - Before user starts */}
-          <div className="mb-8 text-left bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6">
-            <div className="flex items-start gap-3 mb-3">
-              <AlertTriangle className="w-5 h-5 text-amber-300 flex-shrink-0 mt-0.5" />
-              <h3 className="text-lg font-semibold text-white">Before You Begin</h3>
+          <div className="mb-8 rounded-2xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-6 text-left shadow-sm">
+            <div className="mb-3 flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-[hsl(var(--brand-primary))]" />
+              <h3 className="text-lg font-semibold text-[hsl(var(--fg))]">Before You Begin</h3>
             </div>
-            <div className="space-y-2 text-sm text-white/80 leading-relaxed">
-              <p><strong className="text-white">Not Legal Advice:</strong> This tool does not provide legal advice and generates documents for informational purposes only.</p>
-              <p><strong className="text-white">AI-Generated:</strong> AI is inaccurate by nature. Content may contain errors or omissions.</p>
-              <p><strong className="text-white">Jurisdiction:</strong> This is a Switzerland-based product that may not comply with laws in your jurisdiction.</p>
-              <p><strong className="text-white">Review Required:</strong> Always consult a qualified legal advisor before using any generated document.</p>
+            <div className="space-y-2 text-sm leading-relaxed text-[hsl(var(--brand-muted))]">
+              <p><strong className="text-[hsl(var(--brand-primary))]">Not Legal Advice:</strong> This tool does not provide legal advice and generates documents for informational purposes only.</p>
+              <p><strong className="text-[hsl(var(--brand-primary))]">AI-Generated:</strong> AI is inaccurate by nature. Content may contain errors or omissions.</p>
+              <p><strong className="text-[hsl(var(--brand-primary))]">Jurisdiction:</strong> This is a Switzerland-based product that may not comply with laws in your jurisdiction.</p>
+              <p><strong className="text-[hsl(var(--brand-primary))]">Review Required:</strong> Always consult a qualified legal advisor before using any generated document.</p>
             </div>
           </div>
 
           <button
             onClick={() => setShowWelcome(false)}
-            className="bg-white text-[hsl(222,89%,52%)] px-10 py-4 rounded-xl font-semibold text-lg shadow-2xl hover:shadow-xl hover:scale-105 transition-all inline-flex items-center gap-3"
+            className="inline-flex items-center gap-3 rounded-xl bg-[hsl(var(--brand-primary))] px-10 py-4 text-lg font-semibold text-[hsl(var(--brand-primary-foreground))] shadow-lg transition-transform hover:scale-105 hover:shadow-xl"
           >
             I Understand, Get Started
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="h-5 w-5" />
           </button>
-          <p className="mt-8 text-white/50 text-sm">
-            Press <kbd className="px-2 py-1 bg-white/10 rounded border border-white/20">Enter</kbd> to begin
+          <p className="mt-8 text-sm text-[hsl(var(--brand-muted))]">
+            Press <kbd className="rounded border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] px-2 py-1">Enter</kbd> to begin
           </p>
         </motion.div>
       </div>

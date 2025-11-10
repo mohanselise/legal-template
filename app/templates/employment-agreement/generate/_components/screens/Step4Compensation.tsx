@@ -1,83 +1,30 @@
 'use client';
 
 import React from 'react';
-import { DollarSign, Zap, TrendingUp, AlertTriangle } from 'lucide-react';
+import { DollarSign, TrendingUp } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
 import { SmartInput } from '../SmartInput';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ValidationWarning } from '@/lib/types/smart-form';
+import type { EmploymentAgreementFormData } from '../../schema';
+import {
+  convertAnnualSalary,
+  convertSalaryToAnnual,
+  convertCurrency,
+  formatSalary,
+  formatSalaryForStorage,
+  type PayFrequency,
+} from '../utils/compensation';
 
-const PAY_FREQUENCY_OPTIONS = [
+const PAY_FREQUENCY_OPTIONS: Array<{ value: PayFrequency; label: string; regions: string[] }> = [
   { value: 'hourly', label: 'Hourly', regions: ['US'] },
   { value: 'weekly', label: 'Weekly', regions: ['US'] },
   { value: 'bi-weekly', label: 'Bi-weekly', regions: ['US', 'CA'] },
   { value: 'monthly', label: 'Monthly', regions: ['GB', 'CH', 'DE', 'FR'] },
   { value: 'annual', label: 'Annual', regions: ['all'] },
 ];
-
-// Convert annual salary to the selected pay frequency
-function convertAnnualSalary(annualAmount: number, frequency: string): number {
-  const workHoursPerYear = 2080; // Standard 40 hours/week * 52 weeks
-  const workWeeksPerYear = 52;
-
-  switch (frequency) {
-    case 'hourly':
-      return parseFloat((annualAmount / workHoursPerYear).toFixed(2));
-    case 'weekly':
-      return Math.round(annualAmount / workWeeksPerYear);
-    case 'bi-weekly':
-      return Math.round(annualAmount / (workWeeksPerYear / 2));
-    case 'monthly':
-      return Math.round(annualAmount / 12);
-    case 'annual':
-    default:
-      return Math.round(annualAmount);
-  }
-}
-
-// Format salary based on frequency (show decimals for hourly)
-function formatSalary(amount: number, frequency: string): string {
-  if (frequency === 'hourly') {
-    return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  return amount.toLocaleString();
-}
-
-// Simple currency conversion (approximate rates)
-// This is for rough comparison only - rates are approximate
-function convertCurrency(amount: number, fromCurrency: string, toCurrency: string): number {
-  if (fromCurrency === toCurrency) return amount;
-
-  // Approximate exchange rates to USD (base currency)
-  const ratesToUSD: Record<string, number> = {
-    'USD': 1,
-    'EUR': 1.08,
-    'GBP': 1.27,
-    'CAD': 0.74,
-    'AUD': 0.66,
-    'INR': 0.012,
-    'BDT': 0.0091, // Bangladesh Taka
-    'CNY': 0.14,
-    'JPY': 0.0067,
-    'SGD': 0.74,
-    'CHF': 1.13,
-    'MXN': 0.059,
-    'BRL': 0.20,
-    'ZAR': 0.055,
-    'AED': 0.27, // UAE Dirham
-    'NZD': 0.61,
-  };
-
-  const fromRate = ratesToUSD[fromCurrency] || 1;
-  const toRate = ratesToUSD[toCurrency] || 1;
-
-  // Convert: amount -> USD -> target currency
-  const usdAmount = amount * fromRate;
-  return usdAmount / toRate;
-}
 
 export function Step4Compensation() {
   const { formData, updateFormData, enrichment, applyMarketStandards } = useSmartForm();
@@ -90,7 +37,7 @@ export function Step4Compensation() {
     'market';
 
   const salaryAmount = parseFloat(formData.salaryAmount || '0');
-  const payFrequency = formData.salaryPeriod || 'annual';
+  const payFrequency = (formData.salaryPeriod || 'annual') as PayFrequency;
 
   // Salary validation (convert annual ranges to selected frequency and currency)
   let salaryValidation: ValidationWarning | undefined;
@@ -137,6 +84,49 @@ export function Step4Compensation() {
       };
     }
   }
+
+  const handleFrequencySelect = (newFrequency: PayFrequency) => {
+    const currentFrequency = (formData.salaryPeriod || 'annual') as PayFrequency;
+    const currentAmount = parseFloat(formData.salaryAmount || '');
+    const updates: Partial<EmploymentAgreementFormData> = {
+      salaryPeriod: newFrequency,
+    };
+
+    if (!Number.isNaN(currentAmount) && currentAmount > 0) {
+      let annualEquivalent = convertSalaryToAnnual(currentAmount, currentFrequency);
+      const converted = convertAnnualSalary(annualEquivalent, newFrequency);
+      updates.salaryAmount = formatSalaryForStorage(converted, newFrequency);
+    }
+
+    updateFormData(updates);
+  };
+
+  const handleCurrencyChange = (newCurrency: string) => {
+    if (!newCurrency) {
+      updateFormData({ salaryCurrency: '' });
+      return;
+    }
+
+    const trimmedCurrency = newCurrency.toUpperCase();
+    const currentAmount = parseFloat(formData.salaryAmount || '');
+    const currentFrequency = (formData.salaryPeriod || 'annual') as PayFrequency;
+    const currentCurrency = formData.salaryCurrency || trimmedCurrency;
+
+    const updates: Partial<EmploymentAgreementFormData> = {
+      salaryCurrency: trimmedCurrency,
+    };
+
+    if (!Number.isNaN(currentAmount) && currentAmount > 0) {
+      let annualEquivalent = convertSalaryToAnnual(currentAmount, currentFrequency);
+      if (currentCurrency !== trimmedCurrency) {
+        annualEquivalent = convertCurrency(annualEquivalent, currentCurrency, trimmedCurrency);
+      }
+      const converted = convertAnnualSalary(annualEquivalent, currentFrequency);
+      updates.salaryAmount = formatSalaryForStorage(converted, currentFrequency);
+    }
+
+    updateFormData(updates);
+  };
 
   const handleUseMarketStandard = () => {
     if (marketStandards) {
@@ -259,7 +249,7 @@ export function Step4Compensation() {
               label="Currency"
               name="salaryCurrency"
               value={formData.salaryCurrency || 'USD'}
-              onChange={(value) => updateFormData({ salaryCurrency: value })}
+              onChange={handleCurrencyChange}
               placeholder="USD"
               required
               suggestion={
@@ -274,9 +264,7 @@ export function Step4Compensation() {
               }
               onApplySuggestion={() => {
                 if (enrichment.jurisdictionData) {
-                  updateFormData({
-                    salaryCurrency: enrichment.jurisdictionData.currency,
-                  });
+                  handleCurrencyChange(enrichment.jurisdictionData.currency);
                 }
               }}
             />
@@ -298,7 +286,7 @@ export function Step4Compensation() {
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => updateFormData({ salaryPeriod: option.value as any })}
+                  onClick={() => handleFrequencySelect(option.value)}
                   className={cn(
                     'relative px-3 py-2 rounded-lg border-2 transition-all text-sm',
                     'hover:border-[hsl(var(--brand-primary))]',

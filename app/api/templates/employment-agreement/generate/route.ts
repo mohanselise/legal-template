@@ -10,9 +10,51 @@ export async function POST(request: NextRequest) {
   try {
     console.log('📥 [Generate API] Parsing request body...');
     const body = await request.json();
-    const { formData, enrichment } = body;
+    const {
+      formData,
+      enrichment,
+      background = false,
+      acceptedLegalDisclaimer,
+      understandAiContent,
+      turnstileToken,
+    } = body;
+
+    if (!formData || typeof formData !== 'object') {
+      return NextResponse.json(
+        { error: 'Missing form data for agreement generation.' },
+        { status: 400 }
+      );
+    }
+
+    const isBackground = Boolean(background);
+
+    if (!isBackground) {
+      if (!acceptedLegalDisclaimer || !understandAiContent) {
+        return NextResponse.json(
+          { error: 'Please acknowledge the required legal disclaimers before generating.' },
+          { status: 400 }
+        );
+      }
+
+      if (!turnstileToken || typeof turnstileToken !== 'string' || !turnstileToken.trim()) {
+        return NextResponse.json(
+          {
+            error: 'Human verification is required before generating the agreement.',
+            details: 'Integrate Cloudflare Turnstile and pass the verification token with your request.',
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     console.log('✅ [Generate API] Form data parsed successfully');
     console.log('📋 [Generate API] Company:', formData.companyName, '| Employee:', formData.employeeName);
+    console.log('🛡️ [Generate API] Background request:', isBackground);
+    if (!isBackground) {
+      console.log('✅ [Generate API] Legal acknowledgments confirmed and human verification token received.');
+    } else {
+      console.log('ℹ️ [Generate API] Background mode – disclaimers and human verification deferred.');
+    }
 
     // Log enrichment data availability
     if (enrichment) {

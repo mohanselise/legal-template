@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, FileText, Check, Sparkles, Zap, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SmartFormProvider, useSmartForm } from './SmartFormContext';
+import type { BackgroundGenerationResult } from './SmartFormContext';
 import { saveEmploymentAgreementReview } from '../reviewStorage';
 import { Step1CompanyIdentity } from './screens/Step1CompanyIdentity';
 import { Step2EmployeeIdentity } from './screens/Step2EmployeeIdentity';
@@ -13,6 +14,7 @@ import { Step4Compensation } from './screens/Step4Compensation';
 import { Step5BenefitsEquity } from './screens/Step5BenefitsEquity';
 import { Step6LegalTerms } from './screens/Step6LegalTerms';
 import { Step7Review } from './screens/Step7Review';
+import { Step8ConfirmGenerate } from './screens/Step8ConfirmGenerate';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -34,6 +36,7 @@ const STEPS = [
   { id: 'benefits', title: 'Benefits', component: Step5BenefitsEquity },
   { id: 'legal', title: 'Legal', component: Step6LegalTerms },
   { id: 'review', title: 'Review', component: Step7Review },
+  { id: 'confirm', title: 'Confirm', component: Step8ConfirmGenerate },
 ];
 
 // Steps where "Use Market Standard" button should appear (screens 2-5)
@@ -101,7 +104,14 @@ function NavigationButtons({
   onNext,
   onPrevious,
 }: NavigationButtonsProps) {
-  const { enrichment, applyMarketStandards, formData, updateFormData, analyzeCompany } = useSmartForm();
+  const {
+    enrichment,
+    applyMarketStandards,
+    formData,
+    updateFormData,
+    analyzeCompany,
+    startBackgroundGeneration,
+  } = useSmartForm();
   const [showSalaryWarning, setShowSalaryWarning] = useState(false);
 
   const marketStandards = enrichment.marketStandards;
@@ -114,6 +124,7 @@ function NavigationButtons({
     MARKET_STANDARD_STEPS.includes(currentStep) && marketStandards;
 
   const isCompensationStep = currentStep === 3; // Step 4 is index 3
+  const isLegalStep = STEPS[currentStep]?.id === 'legal';
   const hasSalaryAmount = formData.salaryAmount && formData.salaryAmount.trim() !== '';
 
   const handleUseMarketStandard = () => {
@@ -125,6 +136,9 @@ function NavigationButtons({
 
     if (marketStandards) {
       applyMarketStandards(marketStandards);
+      if (isLegalStep) {
+        void startBackgroundGeneration();
+      }
       // Auto-advance to next step after applying
       setTimeout(() => {
         onNext();
@@ -157,6 +171,10 @@ function NavigationButtons({
     // If on company step (step 0), trigger analysis in background (don't wait for it)
     if (currentStep === 0 && formData.companyName && formData.companyAddress) {
       analyzeCompany(formData.companyName, formData.companyAddress);
+    }
+    // If on legal step (step 5), kick off background generation before moving forward
+    if (isLegalStep && canContinue) {
+      void startBackgroundGeneration();
     }
     // Move to next step immediately without waiting
     onNext();
@@ -270,15 +288,33 @@ function NavigationButtons({
 }
 
 function SmartFlowContent() {
-  const { currentStep, totalSteps, nextStep, previousStep, formData, analyzeCompany, enrichment } = useSmartForm();
+  const { currentStep, totalSteps, nextStep, previousStep, formData, analyzeCompany } = useSmartForm();
   const router = useRouter();
   const [showWelcome, setShowWelcome] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStepIndex, setGenerationStepIndex] = useState(0);
   const [fakeProgress, setFakeProgress] = useState(0);
+  const generationTaskRef = useRef<(() => Promise<BackgroundGenerationResult | null>) | null>(null);
 
   const CurrentStepComponent = STEPS[currentStep].component;
   const progress = ((currentStep + 1) / totalSteps) * 100;
+
+  const resetLoadingState = useCallback(() => {
+    setIsGenerating(false);
+    setGenerationStepIndex(0);
+    setFakeProgress(0);
+    generationTaskRef.current = null;
+  }, []);
+
+  const beginManualGeneration = useCallback(
+    (task: () => Promise<BackgroundGenerationResult | null>) => {
+      generationTaskRef.current = task;
+      setGenerationStepIndex(0);
+      setFakeProgress(0);
+      setIsGenerating(true);
+    },
+    []
+  );
 
   // Basic validation for each step
   const canContinue = (): boolean => {
@@ -350,52 +386,39 @@ function SmartFlowContent() {
       if (generationStepIndex < GENERATION_STEPS.length - 1) {
         setGenerationStepIndex((prev) => prev + 1);
       } else {
-        // Generation complete - call API and navigate
         try {
-          const response = await fetch('/api/templates/employment-agreement/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              formData,
-              enrichment: {
-                jurisdiction: enrichment.jurisdictionData,
-                company: enrichment.companyData,
-                jobTitle: enrichment.jobTitleData,
-                marketStandards: enrichment.marketStandards,
-              },
-            }),
-          });
+          const task = generationTaskRef.current;
+          if (!task) {
+            throw new Error('No generation task provided.');
+          }
 
-          if (!response.ok) throw new Error('Failed to generate');
+          const result = await task();
+          if (!result || !result.document) {
+            throw new Error('Generation task did not return a document.');
+          }
 
-          const result = await response.json();
           const persisted = saveEmploymentAgreementReview({
             document: result.document,
-            formData,
+            formData: result.formDataSnapshot,
             storedAt: new Date().toISOString(),
           });
 
-          // Reset state
-          setIsGenerating(false);
-          setGenerationStepIndex(0);
-          setFakeProgress(0);
+          resetLoadingState();
 
-          // Navigate to review page
           if (persisted) {
             router.push('/templates/employment-agreement/generate/review');
-          } else {
-            const params = new URLSearchParams({
-              document: JSON.stringify(result.document),
-              data: JSON.stringify(formData),
-            });
-            router.push(`/templates/employment-agreement/generate/review?${params.toString()}`);
+            return;
           }
+
+          const params = new URLSearchParams({
+            document: JSON.stringify(result.document),
+            data: JSON.stringify(result.formDataSnapshot),
+          });
+          router.push(`/templates/employment-agreement/generate/review?${params.toString()}`);
         } catch (error) {
           console.error('Generation error:', error);
           alert('Failed to generate agreement. Please try again.');
-          setIsGenerating(false);
-          setGenerationStepIndex(0);
-          setFakeProgress(0);
+          resetLoadingState();
         }
       }
     }, currentStage.duration);
@@ -404,7 +427,7 @@ function SmartFlowContent() {
       clearInterval(progressInterval);
       clearTimeout(stepTimeout);
     };
-  }, [isGenerating, generationStepIndex]);
+  }, [isGenerating, generationStepIndex, resetLoadingState, router]);
 
   // Loading Screen
   if (isGenerating) {
@@ -438,7 +461,7 @@ function SmartFlowContent() {
               <span>{Math.round(fakeProgress)}% complete</span>
               <span>Step {generationStepIndex + 1} of {GENERATION_STEPS.length}</span>
             </div>
-            <div className="relative h-3 overflow-hidden rounded-full bg-[hsl(var(--brand-surface-strong))]">
+            <div className="relative h-3 overflow-hidden rounded-full border border-[hsl(var(--brand-primary)/0.35)] bg-[hsl(var(--brand-primary)/0.12)] shadow-[0_1px_2px_hsla(0,0%,0%,0.08)]">
               <motion.div
                 className="absolute left-0 top-0 h-full rounded-full bg-[hsl(var(--brand-primary))]"
                 initial={{ width: 0 }}
@@ -447,7 +470,7 @@ function SmartFlowContent() {
               />
               {/* Moving dot indicator */}
               <motion.div
-                className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border border-white bg-[hsl(var(--brand-primary))] shadow-md"
+                className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border border-white bg-[hsl(var(--brand-primary))] shadow-[0_0_0_2px_rgba(255,255,255,0.65),0_4px_10px_hsla(206,100%,35%,0.45)]"
                 animate={{ left: `${fakeProgress}%` }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
                 style={{ marginLeft: '-8px' }}
@@ -631,8 +654,8 @@ function SmartFlowContent() {
               {/* Card Container */}
               <div className="bg-white rounded-3xl shadow-lg border border-[hsl(var(--border))] p-8 md:p-12">
                 {/* Step Content */}
-                {currentStep === 6 ? (
-                  <CurrentStepComponent onStartGeneration={() => setIsGenerating(true)} />
+                {currentStep === totalSteps - 1 ? (
+                  <CurrentStepComponent onStartGeneration={beginManualGeneration} />
                 ) : (
                   <CurrentStepComponent />
                 )}

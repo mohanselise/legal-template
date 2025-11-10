@@ -1,84 +1,15 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { FileText, AlertCircle, CheckCircle2, Edit3, AlertTriangle, Info } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { saveEmploymentAgreementReview } from '../../reviewStorage';
 import { validateAgainstIntelligence } from '@/lib/validation/smart-validation';
 
-interface Step7ReviewProps {
-  onStartGeneration?: () => void;
-}
-
-export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
+export function Step7Review() {
   const { formData, enrichment, goToStep } = useSmartForm();
-  const router = useRouter();
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  // Validate form data against intelligence
-  const validationWarnings = useMemo(
-    () => validateAgainstIntelligence(formData, enrichment),
-    [formData, enrichment]
-  );
-
-  // Separate by severity
-  const errors = validationWarnings.filter((w) => w.severity === 'error');
-  const warnings = validationWarnings.filter((w) => w.severity === 'warning');
-  const suggestions = validationWarnings.filter((w) => w.severity === 'info');
-
-  const handleGenerate = async () => {
-    // If parent provides onStartGeneration, use it (triggers loading screen)
-    if (onStartGeneration) {
-      onStartGeneration();
-      return;
-    }
-
-    // Fallback: traditional immediate generation
-    setIsGenerating(true);
-    try {
-      const response = await fetch('/api/templates/employment-agreement/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          formData,
-          enrichment: {
-            jurisdiction: enrichment.jurisdictionData,
-            company: enrichment.companyData,
-            jobTitle: enrichment.jobTitleData,
-            marketStandards: enrichment.marketStandards,
-          },
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to generate');
-
-      const result = await response.json();
-      const persisted = saveEmploymentAgreementReview({
-        document: result.document,
-        formData,
-        storedAt: new Date().toISOString(),
-      });
-
-      if (persisted) {
-        router.push('/templates/employment-agreement/generate/review');
-        return;
-      }
-
-      const params = new URLSearchParams({
-        document: JSON.stringify(result.document),
-        data: JSON.stringify(formData),
-      });
-      router.push(`/templates/employment-agreement/generate/review?${params.toString()}`);
-    } catch (error) {
-      console.error('Generation error:', error);
-      alert('Failed to generate agreement. Please try again.');
-      setIsGenerating(false);
-    }
-  };
 
   // Helper to convert salary to annual for comparison
   const convertToAnnualSalary = (amount: number, frequency: string): number => {
@@ -94,7 +25,15 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
     }
   };
 
-  // Detect customizations
+  const validationWarnings = useMemo(
+    () => validateAgainstIntelligence(formData, enrichment),
+    [formData, enrichment]
+  );
+
+  const errors = validationWarnings.filter((w) => w.severity === 'error');
+  const warnings = validationWarnings.filter((w) => w.severity === 'warning');
+  const suggestions = validationWarnings.filter((w) => w.severity === 'info');
+
   const customizations: string[] = [];
   const marketStandards = enrichment.marketStandards;
 
@@ -104,9 +43,7 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
       const userCurrency = formData.salaryCurrency || 'USD';
       const marketCurrency = enrichment.jobTitleData.typicalSalaryRange.currency;
 
-      // Only compare if currencies match
       if (userCurrency === marketCurrency) {
-        // Convert user's salary to annual for comparison (market data is always annual)
         const annualSalary = convertToAnnualSalary(salary, formData.salaryPeriod || 'annual');
         const median = enrichment.jobTitleData.typicalSalaryRange.median;
         const diff = ((annualSalary - median) / median) * 100;
@@ -134,22 +71,19 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="space-y-3">
         <div className="w-14 h-14 bg-[hsl(var(--brand-primary))/0.1] rounded-2xl flex items-center justify-center text-[hsl(var(--brand-primary))]">
           <FileText className="w-7 h-7" />
         </div>
         <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))]">
-          Review & generate
+          Review details
         </h2>
         <p className="text-lg text-[hsl(var(--brand-muted))]">
-          Final check before creating your agreement
+          Confirm the information you&#39;ve supplied before moving to final confirmations.
         </p>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Company & Employee */}
         <div className="p-4 rounded-lg border bg-card space-y-3">
           <p className="font-semibold text-sm">Parties</p>
           <div className="space-y-2 text-sm">
@@ -162,18 +96,12 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
               <p className="font-medium">{formData.employeeName || '—'}</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => goToStep(0)}
-            className="text-xs"
-          >
+          <Button variant="ghost" size="sm" onClick={() => goToStep(0)} className="text-xs">
             <Edit3 className="w-3 h-3 mr-1" />
             Edit
           </Button>
         </div>
 
-        {/* Position */}
         <div className="p-4 rounded-lg border bg-card space-y-3">
           <p className="font-semibold text-sm">Position</p>
           <div className="space-y-2 text-sm">
@@ -186,20 +114,14 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
               <p className="font-medium">{formData.startDate || '—'}</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => goToStep(1)}
-            className="text-xs"
-          >
+          <Button variant="ghost" size="sm" onClick={() => goToStep(1)} className="text-xs">
             <Edit3 className="w-3 h-3 mr-1" />
             Edit
           </Button>
         </div>
 
-        {/* Work Arrangement */}
         <div className="p-4 rounded-lg border bg-card space-y-3">
-          <p className="font-semibold text-sm">Work Details</p>
+          <p className="font-semibold text-sm">Work details</p>
           <div className="space-y-2 text-sm">
             <div>
               <p className="text-xs text-muted-foreground">Arrangement</p>
@@ -210,18 +132,12 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
               <p className="font-medium">{formData.workHoursPerWeek || '—'}</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => goToStep(2)}
-            className="text-xs"
-          >
+          <Button variant="ghost" size="sm" onClick={() => goToStep(2)} className="text-xs">
             <Edit3 className="w-3 h-3 mr-1" />
             Edit
           </Button>
         </div>
 
-        {/* Compensation */}
         <div className="p-4 rounded-lg border bg-card space-y-3">
           <p className="font-semibold text-sm">Compensation</p>
           <div className="space-y-2 text-sm">
@@ -236,19 +152,13 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
               <p className="font-medium">{formData.paidTimeOff || '—'}</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => goToStep(3)}
-            className="text-xs"
-          >
+          <Button variant="ghost" size="sm" onClick={() => goToStep(3)} className="text-xs">
             <Edit3 className="w-3 h-3 mr-1" />
             Edit
           </Button>
         </div>
       </div>
 
-      {/* Validation Errors (critical issues) */}
       {errors.length > 0 && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -270,7 +180,6 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
         </Alert>
       )}
 
-      {/* Validation Warnings */}
       {warnings.length > 0 && (
         <Alert className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
           <AlertCircle className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
@@ -292,7 +201,6 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
         </Alert>
       )}
 
-      {/* Suggestions */}
       {suggestions.length > 0 && (
         <Alert className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
           <Info className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
@@ -314,7 +222,6 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
         </Alert>
       )}
 
-      {/* Customizations detected */}
       {customizations.length > 0 && (
         <Alert className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
           <AlertCircle className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
@@ -331,7 +238,6 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
         </Alert>
       )}
 
-      {/* All standard */}
       {customizations.length === 0 && marketStandards && (
         <Alert className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
           <CheckCircle2 className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
@@ -341,39 +247,26 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
         </Alert>
       )}
 
-      {/* Protection clauses summary */}
       <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
         <p className="mb-3 text-sm font-semibold text-[hsl(var(--fg))]">Protection Clauses Included</p>
         <div className="flex flex-wrap gap-2">
           {formData.includeConfidentiality && (
-            <Badge
-              variant="outline"
-              className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
-            >
+            <Badge variant="outline" className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
               Confidentiality
             </Badge>
           )}
           {formData.includeIpAssignment && (
-            <Badge
-              variant="outline"
-              className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
-            >
+            <Badge variant="outline" className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
               IP Assignment
             </Badge>
           )}
           {formData.includeNonCompete && (
-            <Badge
-              variant="outline"
-              className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
-            >
+            <Badge variant="outline" className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
               Non-compete
             </Badge>
           )}
           {formData.includeNonSolicitation && (
-            <Badge
-              variant="outline"
-              className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
-            >
+            <Badge variant="outline" className="border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]">
               Non-solicitation
             </Badge>
           )}
@@ -386,16 +279,8 @@ export function Step7Review({ onStartGeneration }: Step7ReviewProps) {
         </div>
       </div>
 
-      {/* Generate button */}
-      <div className="pt-4">
-        <Button
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          className="w-full py-6 text-lg font-semibold"
-          size="lg"
-        >
-          {isGenerating ? 'Generating your agreement...' : 'Generate Employment Agreement'}
-        </Button>
+      <div className="rounded-xl border border-dashed border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 text-sm text-[hsl(var(--brand-muted))]">
+        All set? Click <strong>Continue</strong> to complete the quick confirmations before generating your agreement.
       </div>
     </div>
   );

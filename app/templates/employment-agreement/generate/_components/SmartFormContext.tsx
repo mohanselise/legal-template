@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { EmploymentAgreementFormData } from '../schema';
 import {
   EnrichmentState,
@@ -9,6 +9,40 @@ import {
   JobTitleAnalysis,
   MarketStandards,
 } from '@/lib/types/smart-form';
+import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
+import {
+  convertAnnualSalary,
+  convertSalaryToAnnual,
+  convertCurrency,
+  formatSalaryForStorage,
+  type PayFrequency,
+} from './utils/compensation';
+
+type BackgroundGenerationStatus = 'idle' | 'pending' | 'ready' | 'stale' | 'error';
+
+interface BackgroundGenerationResult {
+  document: EmploymentAgreement;
+  metadata?: EmploymentAgreement['metadata'];
+  usage?: unknown;
+  formDataSnapshot: Partial<EmploymentAgreementFormData>;
+}
+
+interface BackgroundGenerationState {
+  status: BackgroundGenerationStatus;
+  snapshotHash?: string;
+  startedAt?: string;
+  completedAt?: string;
+  result?: BackgroundGenerationResult;
+  error?: string;
+  staleReason?: string;
+}
+
+type BackgroundCancellationReason = 'form-updated' | 'navigation' | 'consumed' | 'manual';
+export type {
+  BackgroundGenerationState,
+  BackgroundGenerationResult,
+  BackgroundCancellationReason,
+};
 
 interface SmartFormContextType {
   // Form data
@@ -36,12 +70,55 @@ interface SmartFormContextType {
   saveProgress: () => void;
   loadProgress: () => void;
   clearProgress: () => void;
+
+  // Background generation
+  backgroundGeneration: BackgroundGenerationState;
+  startBackgroundGeneration: () => Promise<void>;
+  cancelBackgroundGeneration: (reason?: BackgroundCancellationReason) => void;
+  computeSnapshotHash: (data: Partial<EmploymentAgreementFormData>) => string;
+  awaitBackgroundGeneration: (
+    snapshotHash: string,
+    timeoutMs?: number
+  ) => Promise<BackgroundGenerationResult | null>;
 }
 
 const SmartFormContext = createContext<SmartFormContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'employment-agreement-smart-flow-v1';
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
+const BACKGROUND_DEFAULT_STATE: BackgroundGenerationState = { status: 'idle' };
+
+function sortObject<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => sortObject(item)) as unknown as T;
+  }
+  if (value && typeof value === 'object') {
+    return Object.keys(value as Record<string, unknown>)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = sortObject((value as Record<string, unknown>)[key]);
+        return acc;
+      }, {}) as T;
+  }
+  return value;
+}
+
+function stableStringify(data: Partial<EmploymentAgreementFormData>): string {
+  return JSON.stringify(sortObject(data || {}));
+}
+
+function promiseWithTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  if (timeoutMs <= 0) {
+    return promise;
+  }
+
+  let timeoutHandle: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutHandle));
+}
 
 async function parseErrorMessage(response: Response, fallback: string) {
   try {
@@ -89,6 +166,17 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [backgroundGeneration, setBackgroundGeneration] = useState<BackgroundGenerationState>(
+    BACKGROUND_DEFAULT_STATE
+  );
+
+  const backgroundControllerRef = useRef<AbortController | null>(null);
+  const backgroundStateRef = useRef<BackgroundGenerationState>(BACKGROUND_DEFAULT_STATE);
+  const backgroundPromiseRef = useRef<Promise<BackgroundGenerationResult | null> | null>(null);
+
+  useEffect(() => {
+    backgroundStateRef.current = backgroundGeneration;
+  }, [backgroundGeneration]);
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -99,9 +187,205 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, [formData, currentStep]);
 
-  const updateFormData = useCallback((updates: Partial<EmploymentAgreementFormData>) => {
-    setFormDataState((prev) => ({ ...prev, ...updates }));
+  const computeSnapshotHash = useCallback((data: Partial<EmploymentAgreementFormData>) => {
+    return stableStringify(data);
   }, []);
+
+  const cancelBackgroundGeneration = useCallback(
+    (reason: BackgroundCancellationReason = 'manual') => {
+      if (backgroundControllerRef.current) {
+        backgroundControllerRef.current.abort();
+        backgroundControllerRef.current = null;
+      }
+
+      backgroundPromiseRef.current = null;
+
+      setBackgroundGeneration((prev) => {
+        if (prev.status === 'idle') {
+          return prev;
+        }
+
+        const nextStatus: BackgroundGenerationStatus =
+          reason === 'consumed' ? 'idle' : reason === 'manual' ? 'idle' : 'stale';
+
+        return {
+          status: nextStatus,
+          snapshotHash: nextStatus === 'idle' ? undefined : prev.snapshotHash,
+          startedAt: prev.startedAt,
+          completedAt: prev.completedAt,
+          result: nextStatus === 'idle' ? undefined : prev.result,
+          error: nextStatus === 'idle' ? undefined : prev.error,
+          staleReason: reason,
+        };
+      });
+    },
+    []
+  );
+
+  const startBackgroundGeneration = useCallback(async () => {
+    const snapshotHash = computeSnapshotHash(formData);
+
+    if (!snapshotHash) {
+      return;
+    }
+
+    const currentState = backgroundStateRef.current;
+    if (
+      currentState.status === 'pending' &&
+      currentState.snapshotHash === snapshotHash
+    ) {
+      return;
+    }
+
+    if (currentState.status === 'ready' && currentState.snapshotHash === snapshotHash) {
+      return;
+    }
+
+    if (backgroundControllerRef.current) {
+      backgroundControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    backgroundControllerRef.current = controller;
+
+    const startedAt = new Date().toISOString();
+
+    const formDataSnapshot = { ...formData };
+
+    setBackgroundGeneration({
+      status: 'pending',
+      snapshotHash,
+      startedAt,
+    });
+
+    const runGeneration = async (): Promise<BackgroundGenerationResult | null> => {
+      try {
+        const response = await fetch('/api/templates/employment-agreement/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            formData,
+            enrichment: {
+              jurisdiction: enrichment.jurisdictionData,
+              company: enrichment.companyData,
+              jobTitle: enrichment.jobTitleData,
+              marketStandards: enrichment.marketStandards,
+            },
+            acceptedLegalDisclaimer: true,
+            understandAiContent: true,
+            background: true,
+          }),
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const message = await parseErrorMessage(response, 'Failed to generate employment agreement.');
+          throw new Error(message);
+        }
+
+        const apiResult = (await response.json()) as Omit<BackgroundGenerationResult, 'formDataSnapshot'>;
+        const result: BackgroundGenerationResult = {
+          ...apiResult,
+          formDataSnapshot,
+        };
+
+        setBackgroundGeneration((prev) => {
+          if (controller.signal.aborted || prev.snapshotHash !== snapshotHash) {
+            return prev;
+          }
+
+          return {
+            status: 'ready',
+            snapshotHash,
+            startedAt,
+            completedAt: new Date().toISOString(),
+            result,
+          };
+        });
+
+        return result;
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return null;
+        }
+
+        setBackgroundGeneration({
+          status: 'error',
+          snapshotHash,
+          startedAt,
+          error: error instanceof Error ? error.message : 'Unknown error during background generation.',
+        });
+
+        throw error;
+      } finally {
+        if (backgroundControllerRef.current === controller) {
+          backgroundControllerRef.current = null;
+        }
+      }
+    };
+
+    const generationPromise = runGeneration();
+    backgroundPromiseRef.current = generationPromise;
+
+    generationPromise.finally(() => {
+      if (backgroundPromiseRef.current === generationPromise) {
+        backgroundPromiseRef.current = null;
+      }
+    });
+
+    try {
+      await generationPromise;
+    } catch {
+      // Error state handled within runGeneration
+    }
+  }, [computeSnapshotHash, formData, enrichment]);
+
+  const awaitBackgroundGeneration = useCallback(
+    async (snapshotHash: string, timeoutMs = 20000): Promise<BackgroundGenerationResult | null> => {
+      const current = backgroundStateRef.current;
+
+      if (current.status === 'ready' && current.snapshotHash === snapshotHash) {
+        return current.result ?? null;
+      }
+
+      if (
+        current.status === 'pending' &&
+        current.snapshotHash === snapshotHash &&
+        backgroundPromiseRef.current
+      ) {
+        try {
+          await promiseWithTimeout(backgroundPromiseRef.current, timeoutMs);
+        } catch {
+          return null;
+        }
+
+        const latest = backgroundStateRef.current;
+        if (latest.status === 'ready' && latest.snapshotHash === snapshotHash) {
+          return latest.result ?? null;
+        }
+      }
+
+      return null;
+    },
+    []
+  );
+
+  const updateFormData = useCallback((updates: Partial<EmploymentAgreementFormData>) => {
+    setFormDataState((prev) => {
+      const next = { ...prev, ...updates };
+      const current = backgroundStateRef.current;
+
+      if (
+        current.status !== 'idle' &&
+        current.snapshotHash &&
+        computeSnapshotHash(next) !== current.snapshotHash
+      ) {
+        cancelBackgroundGeneration('form-updated');
+      }
+
+      return next;
+    });
+  }, [cancelBackgroundGeneration, computeSnapshotHash]);
 
   const setFormData = useCallback((data: Partial<EmploymentAgreementFormData>) => {
     setFormDataState(data);
@@ -156,7 +440,7 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
       // Pay frequency (only if still at default 'annual')
       if (data.jurisdiction?.typicalPayFrequency && formData.salaryPeriod === 'annual') {
         // Map typicalPayFrequency to salaryPeriod values
-        const payFrequencyMap: Record<string, string> = {
+        const payFrequencyMap: Record<string, EmploymentAgreementFormData['salaryPeriod']> = {
           'weekly': 'weekly',
           'bi-weekly': 'bi-weekly',
           'monthly': 'monthly',
@@ -164,7 +448,7 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
         };
         const mappedFrequency = payFrequencyMap[data.jurisdiction.typicalPayFrequency];
         if (mappedFrequency) {
-          updates.salaryPeriod = mappedFrequency as any;
+          updates.salaryPeriod = mappedFrequency;
         }
       }
 
@@ -291,54 +575,77 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
 
   const applyMarketStandards = useCallback(
     (standards: MarketStandards) => {
-      // Only fill in non-critical fields that don't override user input
-      // Critical fields like salaryAmount, companyName, employeeName, etc. are NEVER auto-filled
       const updates: Partial<EmploymentAgreementFormData> = {};
 
-      // Work arrangement (only if not already set)
       if (!formData.workArrangement) {
         updates.workArrangement = standards.workArrangement;
       }
 
-      // Work hours (only if not already set)
       if (!formData.workHoursPerWeek) {
         updates.workHoursPerWeek = standards.workHoursPerWeek.toString();
       }
 
-      // Payment frequency (only if not already set)
-      if (!formData.salaryPeriod || formData.salaryPeriod === 'annual') {
-        updates.salaryPeriod = standards.payFrequency === 'annual' ? 'annual' : standards.payFrequency;
+      const currentFrequency = (formData.salaryPeriod || 'annual') as PayFrequency;
+      const targetFrequency = standards.payFrequency || currentFrequency;
+      const hasSalaryPeriod = Boolean(formData.salaryPeriod && formData.salaryPeriod !== 'annual');
+
+      if (!formData.salaryPeriod || !hasSalaryPeriod) {
+        updates.salaryPeriod = targetFrequency;
       }
 
-      // Currency (only if not already set or is default USD)
       if (!formData.salaryCurrency || formData.salaryCurrency === 'USD') {
         updates.salaryCurrency = standards.currency;
       }
 
-      // PTO days (only if not already set)
+      const currentSalaryValue = parseFloat(formData.salaryAmount || '');
+      const hasSalaryAmount = !Number.isNaN(currentSalaryValue) && currentSalaryValue > 0;
+      const jobTitleRange = enrichment.jobTitleData?.typicalSalaryRange;
+
+      const resolvedFrequency = (updates.salaryPeriod || formData.salaryPeriod || 'annual') as PayFrequency;
+      const resolvedCurrency =
+        updates.salaryCurrency || formData.salaryCurrency || jobTitleRange?.currency || standards.currency;
+
+      if (hasSalaryAmount) {
+        let annualEquivalent = convertSalaryToAnnual(currentSalaryValue, currentFrequency);
+        const currentCurrency = formData.salaryCurrency || resolvedCurrency;
+        if (currentCurrency && resolvedCurrency && currentCurrency !== resolvedCurrency) {
+          annualEquivalent = convertCurrency(annualEquivalent, currentCurrency, resolvedCurrency);
+        }
+        const converted = convertAnnualSalary(annualEquivalent, resolvedFrequency);
+        updates.salaryAmount = formatSalaryForStorage(converted, resolvedFrequency);
+      } else if (jobTitleRange?.median) {
+        const annualMedian = convertCurrency(
+          jobTitleRange.median,
+          jobTitleRange.currency,
+          resolvedCurrency
+        );
+        const converted = convertAnnualSalary(annualMedian, resolvedFrequency);
+        updates.salaryAmount = formatSalaryForStorage(converted, resolvedFrequency);
+        if (!updates.salaryCurrency) {
+          updates.salaryCurrency = resolvedCurrency;
+        }
+      }
+
       if (!formData.paidTimeOff) {
         updates.paidTimeOff = standards.ptodays.toString();
       }
 
-      // Legal clauses - always apply standards
       updates.includeConfidentiality = standards.confidentialityRequired;
       updates.includeIpAssignment = standards.ipAssignmentRequired;
       updates.includeNonCompete = standards.nonCompeteEnforceable;
       updates.includeNonSolicitation = standards.nonSolicitationCommon;
 
-      // Probation period (only if not already set)
       if (standards.probationPeriodMonths && !formData.probationPeriod) {
         updates.probationPeriod = `${standards.probationPeriodMonths} months`;
       }
 
-      // Notice period (only if not already set)
       if (standards.noticePeriodDays && !formData.noticePeriod) {
         updates.noticePeriod = `${standards.noticePeriodDays} days`;
       }
 
       updateFormData(updates);
     },
-    [updateFormData, formData]
+    [updateFormData, formData, enrichment.jobTitleData]
   );
 
   const goToStep = useCallback((step: number) => {
@@ -412,6 +719,11 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     saveProgress,
     loadProgress,
     clearProgress,
+    backgroundGeneration,
+    startBackgroundGeneration,
+    cancelBackgroundGeneration,
+    computeSnapshotHash,
+    awaitBackgroundGeneration,
   };
 
   return <SmartFormContext.Provider value={value}>{children}</SmartFormContext.Provider>;

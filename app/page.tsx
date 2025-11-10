@@ -174,7 +174,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background font-sans">
       {/* Announcement Bar */}
-      <div className="bg-[hsl(var(--selise-blue))] px-4 py-3 text-center text-sm text-white">
+      <div className="bg-[hsl(var(--selise-blue))] px-4 py-3 text-center text-sm text-[hsl(var(--white))]">
         <div className="flex items-center justify-center gap-2">
           <Sparkles className="h-4 w-4" />
           <span className="font-medium">New: Employment Agreement template now available!</span>
@@ -198,7 +198,7 @@ export default function Home() {
         </div>
 
         {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-[hsl(var(--gradient-light-to))]/70 to-white/75 dark:from-[hsl(var(--selise-blue))]/20 dark:via-[hsl(var(--oxford-blue))]/20 dark:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--bg))]/80 via-[hsl(var(--gradient-light-to))]/70 to-[hsl(var(--bg))]/75 dark:from-[hsl(var(--selise-blue))]/20 dark:via-[hsl(var(--oxford-blue))]/20 dark:to-transparent" />
 
         {/* Decorative elements */}
         <div className="absolute left-0 top-0 h-64 w-64 rounded-full bg-[hsl(var(--selise-blue))]/10 blur-3xl dark:bg-[hsl(var(--sky-blue))]/20" />
@@ -208,11 +208,11 @@ export default function Home() {
           <div className="mx-auto max-w-3xl text-center">
             {/* Trust badge */}
             <div className="mb-6 flex items-center justify-center gap-2">
-              <Badge className="bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/20 dark:text-[hsl(var(--lime-green))] border-[hsl(var(--lime-green))]/30" variant="outline">
+              <Badge className="bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/20 dark:text-[hsl(var(--lime-green))] border-[hsl(var(--lime-green))]/30 font-subheading uppercase tracking-[0.12em]" variant="outline">
                 <Star className="mr-1 h-3 w-3 fill-current" />
                 Trusted by thousands
               </Badge>
-              <Badge className="bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]" variant="secondary">
+              <Badge className="bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]" variant="secondary">
                 100% Free
               </Badge>
             </div>
@@ -232,13 +232,13 @@ export default function Home() {
 
             {/* CTA Buttons */}
             <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" className="group bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-white shadow-lg shadow-[hsl(var(--selise-blue))]/30 text-base px-8 py-6 h-auto">
+              <Button asChild size="lg" className="group bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] shadow-lg shadow-[hsl(var(--selise-blue))]/30 text-base px-8 py-6 h-auto">
                 <Link href="#templates">
                   Start Generating Free
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="text-base px-8 py-6 h-auto border-2">
+              <Button asChild variant="outline" size="lg" className="text-base px-8 py-6 h-auto border-2 border-[hsl(var(--selise-blue))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/10">
                 <Link href="#how-it-works">
                   See How It Works
                 </Link>
@@ -268,7 +268,7 @@ export default function Home() {
               {stats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={index} className="group rounded-2xl border border-border bg-white/50 p-6 text-center backdrop-blur-sm transition-all hover:border-[hsl(var(--sky-blue))] hover:shadow-lg dark:bg-black/20 dark:hover:border-[hsl(var(--sky-blue))]">
+                  <div key={index} className="group rounded-2xl border border-border bg-[hsl(var(--card))]/70 p-6 text-center backdrop-blur-sm transition-all hover:border-[hsl(var(--sky-blue))] hover:shadow-lg dark:bg-[hsl(var(--background))]/40 dark:hover:border-[hsl(var(--sky-blue))]">
                     <Icon className="mx-auto mb-3 h-8 w-8 text-[hsl(var(--selise-blue))] dark:text-[hsl(var(--sky-blue))]" />
                     <div className="text-4xl font-bold text-foreground">{stat.value}</div>
                     <div className="mt-2 text-sm font-medium text-muted-foreground">{stat.label}</div>
@@ -281,7 +281,7 @@ export default function Home() {
       </section>
 
       {/* Templates Section - Enhanced */}
-      <section id="templates" className="py-24 sm:py-32 bg-white dark:bg-black">
+      <section id="templates" className="py-24 sm:py-32 bg-[hsl(var(--bg))] dark:bg-[hsl(var(--background))]">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]">
@@ -310,7 +310,7 @@ export default function Home() {
                 >
                   {template.popular && template.available && (
                     <div className="absolute -right-2 -top-2">
-                      <Badge className="bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] text-white shadow-lg">
+                      <Badge className="bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] text-[hsl(var(--white))] shadow-lg font-subheading uppercase tracking-[0.12em]">
                         <Star className="mr-1 h-3 w-3 fill-current" />
                         Most Popular
                       </Badge>
@@ -318,14 +318,17 @@ export default function Home() {
                   )}
                   {!template.available && (
                     <div className="absolute right-4 top-4">
-                      <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-800">
+                      <Badge
+                        variant="secondary"
+                        className="bg-[hsl(var(--brand-surface))] text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--brand-surface-strong))] dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.1em]"
+                      >
                         Coming Soon
                       </Badge>
                     </div>
                   )}
                   <CardHeader className="pb-4">
                     <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
-                      <Icon className="h-7 w-7 text-white" />
+                      <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
                     </div>
                     <CardTitle className="text-2xl">{template.title}</CardTitle>
                     <CardDescription className="mt-3 text-base leading-relaxed">
@@ -334,7 +337,7 @@ export default function Home() {
                   </CardHeader>
                   <CardFooter className="pt-4">
                     {template.available ? (
-                      <Button asChild className="group w-full bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-white shadow-md">
+                      <Button asChild className="group w-full bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] shadow-md">
                         <Link href={template.href}>
                           Generate Now
                           <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -364,7 +367,7 @@ export default function Home() {
       </section>
 
       {/* Features Section - Enhanced */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-white py-24 dark:from-[hsl(var(--selise-blue))]/5 dark:to-black sm:py-32">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-[hsl(var(--bg))] py-24 dark:from-[hsl(var(--selise-blue))]/5 dark:to-[hsl(var(--background))] sm:py-32">
         {/* Spinning background graphic */}
         <div className="absolute inset-0 flex items-center justify-center">
           <Image
@@ -377,7 +380,7 @@ export default function Home() {
         </div>
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]">
+            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
               Why Choose Us
             </Badge>
             <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -392,14 +395,14 @@ export default function Home() {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <div key={index} className="group relative rounded-2xl border border-border bg-white p-8 shadow-sm transition-all hover:border-[hsl(var(--sky-blue))] hover:shadow-xl dark:bg-black/40 dark:hover:border-[hsl(var(--sky-blue))]">
+                <div key={index} className="group relative rounded-2xl border border-border bg-[hsl(var(--card))] p-8 shadow-sm transition-all hover:border-[hsl(var(--sky-blue))] hover:shadow-xl dark:bg-[hsl(var(--background))]/60 dark:hover:border-[hsl(var(--sky-blue))]">
                   <div className="absolute -right-3 -top-3">
-                    <Badge className="bg-[hsl(var(--selise-blue))] text-white text-xs">
+                    <Badge className="bg-[hsl(var(--selise-blue))] text-[hsl(var(--white))] text-xs font-subheading uppercase tracking-[0.14em]">
                       {feature.highlight}
                     </Badge>
                   </div>
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
-                    <Icon className="h-8 w-8 text-white" />
+                    <Icon className="h-8 w-8 text-[hsl(var(--white))]" />
                   </div>
                   <h3 className="mt-6 text-xl font-semibold text-foreground">
                     {feature.title}
@@ -414,7 +417,7 @@ export default function Home() {
 
           {/* Additional benefits list */}
           <div className="mx-auto mt-16 max-w-3xl">
-            <div className="rounded-2xl border border-border bg-white/50 p-8 backdrop-blur-sm dark:bg-black/20">
+            <div className="rounded-2xl border border-border bg-[hsl(var(--card))]/70 p-8 backdrop-blur-sm dark:bg-[hsl(var(--background))]/40">
               <h3 className="text-center text-xl font-semibold text-foreground">
                 Everything You Need, Nothing You Don&apos;t
               </h3>
@@ -434,10 +437,10 @@ export default function Home() {
       </section>
 
       {/* How It Works Section - Enhanced */}
-      <section id="how-it-works" className="py-24 sm:py-32 bg-white dark:bg-black">
+      <section id="how-it-works" className="py-24 sm:py-32 bg-[hsl(var(--bg))] dark:bg-[hsl(var(--background))]">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <Badge className="mb-4 bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/20 dark:text-[hsl(var(--lime-green))]">
+            <Badge className="mb-4 bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/20 dark:text-[hsl(var(--lime-green))] font-subheading uppercase tracking-[0.12em]">
               Quick & Easy
             </Badge>
             <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -478,10 +481,10 @@ export default function Home() {
                     )}
                     <div className="relative flex flex-col items-center text-center">
                       <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30">
-                        <div className="absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-xl font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-[hsl(var(--eerie-black))]">
+                        <div className="absolute -right-2 -top-2 flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--white))] text-xl font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-[hsl(var(--eerie-black))]">
                           {item.step}
                         </div>
-                        <Icon className="h-10 w-10 text-white" />
+                        <Icon className="h-10 w-10 text-[hsl(var(--white))]" />
                       </div>
                       <h3 className="mt-8 text-2xl font-semibold text-foreground">
                         {item.title}
@@ -508,10 +511,10 @@ export default function Home() {
             className="object-cover opacity-[0.18] dark:opacity-[0.28]"
           />
         </div>
-        <div className="absolute inset-0 bg-white/70 dark:bg-black/65" />
+        <div className="absolute inset-0 bg-[hsl(var(--bg))]/70 dark:bg-[hsl(var(--background))]/60" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]">
+            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
               Our DIO Model
             </Badge>
             <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -529,14 +532,14 @@ export default function Home() {
               return (
                 <div
                   key={item.title}
-                  className="group relative flex h-full flex-col rounded-2xl border border-border bg-white/80 p-8 backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))] hover:shadow-2xl dark:bg-black/60"
+                  className="group relative flex h-full flex-col rounded-2xl border border-border bg-[hsl(var(--card))]/80 p-8 backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))] hover:shadow-2xl dark:bg-[hsl(var(--background))]/70"
                 >
-                  <Badge className="w-fit bg-[hsl(var(--lime-green))]/15 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/25 dark:text-[hsl(var(--lime-green))]">
+                  <Badge className="w-fit bg-[hsl(var(--lime-green))]/15 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/25 dark:text-[hsl(var(--lime-green))] font-subheading uppercase tracking-[0.12em]">
                     {item.badge}
                   </Badge>
                   <div className="mt-6 flex items-center gap-4">
                     <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg shadow-[hsl(var(--selise-blue))]/25">
-                      <Icon className="h-7 w-7 text-white" />
+                      <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
                     </div>
                     <h3 className="text-2xl font-semibold text-foreground">{item.title}</h3>
                   </div>
@@ -549,7 +552,7 @@ export default function Home() {
       </section>
 
       {/* Brand Values Section */}
-      <section className="relative bg-white py-24 sm:py-32 dark:bg-black overflow-hidden">
+      <section className="relative bg-[hsl(var(--bg))] py-24 sm:py-32 dark:bg-[hsl(var(--background))] overflow-hidden">
         <div className="absolute inset-0">
           <Image
             src="/graphics/contact-page-whole-bg.webp"
@@ -558,10 +561,10 @@ export default function Home() {
             className="object-cover opacity-[0.12] dark:opacity-[0.2]"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/80 to-white/75 dark:from-black/80 dark:via-black/75 dark:to-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--bg))]/85 via-[hsl(var(--bg))]/80 to-[hsl(var(--bg))]/75 dark:from-[hsl(var(--background))]/80 dark:via-[hsl(var(--background))]/75 dark:to-[hsl(var(--background))]/70" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]">
+            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
               Our Values
             </Badge>
             <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
@@ -578,7 +581,7 @@ export default function Home() {
               return (
                 <div
                   key={value.title}
-                  className="flex h-full flex-col rounded-2xl border border-border bg-white/75 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-black/60"
+                  className="flex h-full flex-col rounded-2xl border border-border bg-[hsl(var(--card))]/75 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-[hsl(var(--background))]/70"
                 >
                   <div className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--selise-blue))]/12 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/25 dark:text-[hsl(var(--sky-blue))]">
@@ -595,7 +598,7 @@ export default function Home() {
       </section>
 
       {/* Trust & Disclaimer Section - Enhanced */}
-      <section className="bg-white py-20 dark:bg-black">
+      <section className="bg-[hsl(var(--bg))] py-20 dark:bg-[hsl(var(--background))]">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-4xl">
             <LegalDisclaimer />
@@ -617,27 +620,27 @@ export default function Home() {
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-size-[32px_32px]" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            <h2 className="text-4xl font-bold tracking-tight text-[hsl(var(--white))] sm:text-5xl">
               Ready to Create Your Legal Document?
             </h2>
-            <p className="mt-6 text-xl leading-8 text-white/90">
+            <p className="mt-6 text-xl leading-8 text-[hsl(var(--white))]/90">
               Join thousands of users generating professional legal documents for free.
               No credit card. No sign-up. Just instant access.
             </p>
             <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" className="group bg-white text-[hsl(var(--selise-blue))] hover:bg-white/90 shadow-xl text-base px-10 py-6 h-auto">
+              <Button asChild size="lg" className="group bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))]/90 shadow-xl text-base px-10 py-6 h-auto">
                 <Link href="#templates">
                   Get Started Free
                   <Sparkles className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="border-2 border-white bg-transparent text-white hover:bg-white/10 text-base px-10 py-6 h-auto">
+              <Button asChild variant="outline" size="lg" className="border-2 border-[hsl(var(--white))] bg-transparent text-[hsl(var(--white))] hover:bg-[hsl(var(--white))]/10 text-base px-10 py-6 h-auto">
                 <Link href="#templates">
                   View All Templates
                 </Link>
               </Button>
             </div>
-            <p className="mt-8 text-sm text-white/80">
+            <p className="mt-8 text-sm text-[hsl(var(--white))]/80">
               ⚡ Generate your first document in under 2 minutes
             </p>
           </div>

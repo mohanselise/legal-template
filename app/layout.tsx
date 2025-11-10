@@ -1,18 +1,45 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Open_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// SELISE Brand Typography System
+// Primary: Aptos (headlines, primary headings)
+// Secondary: Bahnschrift (subheadings, supporting text)
+// Body: Open Sans (body text, standard content)
+
+const openSans = Open_Sans({
+  variable: "--font-open-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const aptos = localFont({
+  src: [
+    {
+      path: "../public/fonts/aptos/aptos-regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/aptos/aptos-bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-aptos",
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
+});
+
+const bahnschrift = localFont({
+  src: "../public/fonts/bahnschrift/bahnschrift-regular.ttf",
+  variable: "--font-bahnschrift",
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
 export const metadata: Metadata = {
@@ -50,7 +77,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
+        className={`${openSans.variable} ${aptos.variable} ${bahnschrift.variable} antialiased flex flex-col min-h-screen`}
       >
         <Header />
         <main className="flex-1">{children}</main>

@@ -150,7 +150,7 @@ function ReviewContent() {
             <code class="text-xs text-blue-700 dark:text-blue-300">${data.trackingId}</code>
           </div>
           <button onclick="this.closest('.fixed').remove(); window.location.href='/templates/employment-agreement';"
-            class="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all">
+            class="w-full py-3 bg-gradient-to-r from-[hsl(var(--gradient-mid-from))] to-[hsl(var(--gradient-mid-to))] text-white rounded-lg font-semibold hover:from-[hsl(var(--selise-blue))] hover:to-[hsl(var(--gradient-dark-to))] transition-all">
             Done
           </button>
         </div>
@@ -181,22 +181,22 @@ function ReviewContent() {
 
   if (isGenerating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden relative">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(var(--gradient-dark-from))] via-[hsl(var(--oxford-blue))] to-[hsl(var(--gradient-dark-to))] overflow-hidden relative">
         {/* Animated background gradients */}
         <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-[hsl(var(--sky-blue))]/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[hsl(var(--selise-blue))]/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[hsl(var(--light-blue))]/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
         </div>
 
         <div className="relative z-10 text-center space-y-8 px-6 max-w-2xl">
           {/* Animated icon */}
           <div className="relative w-28 h-28 mx-auto">
-            <div className="absolute inset-0 border-4 border-purple-300/30 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-            <div className="absolute inset-2 border-4 border-pink-300/30 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '3s' }}></div>
+            <div className="absolute inset-0 border-4 border-[hsl(var(--sky-blue))]/30 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-[hsl(var(--selise-blue))] border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute inset-2 border-4 border-[hsl(var(--light-blue))]/30 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '3s' }}></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles className="w-12 h-12 text-purple-300 animate-pulse" />
+              <Sparkles className="w-12 h-12 text-[hsl(var(--sky-blue))] animate-pulse" />
             </div>
           </div>
 
@@ -205,7 +205,7 @@ function ReviewContent() {
             <h2 className="text-4xl md:text-5xl font-bold text-white">
               Crafting Your Agreement
             </h2>
-            <p className="text-lg text-purple-200/80 max-w-xl mx-auto leading-relaxed">
+            <p className="text-lg text-[hsl(var(--light-blue))]/90 max-w-xl mx-auto leading-relaxed">
               Our AI is generating a professional, legally-sound employment agreement tailored to your specifications. This usually takes 10-20 seconds.
             </p>
           </div>
@@ -220,19 +220,19 @@ function ReviewContent() {
             ].map((step, index) => (
               <div
                 key={step}
-                className="flex items-center gap-3 text-purple-100/70 text-sm"
+                className="flex items-center gap-3 text-[hsl(var(--light-blue))]/80 text-sm"
                 style={{
                   animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`
                 }}
               >
-                <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
+                <div className="w-1.5 h-1.5 bg-[hsl(var(--sky-blue))] rounded-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
                 <span>{step}</span>
               </div>
             ))}
           </div>
 
           {/* Fun fact */}
-          <p className="text-xs text-purple-300/50 italic">
+          <p className="text-xs text-[hsl(var(--sky-blue))]/60 italic">
             ⚖️ Did you know? Employment agreements help protect both employer and employee by clearly defining expectations and obligations.
           </p>
         </div>
@@ -256,14 +256,14 @@ function ReviewContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       {/* Premium Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl">
+      <div className="bg-gradient-to-r from-[hsl(var(--gradient-dark-from))] via-[hsl(var(--oxford-blue))] to-[hsl(var(--gradient-dark-to))] text-white shadow-2xl">
         <div className="container mx-auto px-6 py-16">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+            <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-[hsl(var(--lime-green))] to-[hsl(var(--poly-green))] rounded-2xl flex items-center justify-center shadow-lg shadow-[hsl(var(--lime-green))]/30">
               <CheckCircle2 className="w-9 h-9 text-white" strokeWidth={2.5} />
             </div>
             <div className="flex-1">
-              <div className="inline-block px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-3">
+              <div className="inline-block px-3 py-1 bg-[hsl(var(--lime-green))]/20 border border-[hsl(var(--lime-green))]/30 rounded-full text-[hsl(var(--lime-green))] text-xs font-semibold uppercase tracking-wider mb-3">
                 Document Ready
               </div>
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 leading-tight">
@@ -291,7 +291,7 @@ function ReviewContent() {
               {/* Quick Actions */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-slate-200 dark:border-gray-700 p-8">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] rounded-lg flex items-center justify-center">
                     <Sparkles className="w-5 h-5 text-white" />
                   </div>
                   <h3 className="font-bold text-slate-900 dark:text-gray-100 text-lg">
@@ -303,14 +303,14 @@ function ReviewContent() {
                   {/* Primary: Send to Signature */}
                   <button
                     onClick={handleSendToSignature}
-                    className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 via-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:from-purple-700 hover:via-purple-700 hover:to-pink-700 transition-all duration-200 group relative overflow-hidden"
+                    className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[hsl(var(--gradient-mid-from))] via-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-mid-to))] text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:from-[hsl(var(--selise-blue))] hover:via-[hsl(var(--gradient-dark-from))] hover:to-[hsl(var(--gradient-dark-to))] transition-all duration-200 group relative overflow-hidden"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                     <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
                     <span className="relative z-10">Send via SELISE Signature</span>
                   </button>
-                  <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-                    <p className="text-xs text-center text-purple-800 dark:text-purple-300 font-medium">
+                  <div className="bg-[hsl(var(--selise-blue))]/10 dark:bg-[hsl(var(--selise-blue))]/20 border border-[hsl(var(--selise-blue))]/30 dark:border-[hsl(var(--selise-blue))]/40 rounded-lg p-3">
+                    <p className="text-xs text-center text-[hsl(var(--selise-blue))] dark:text-[hsl(var(--sky-blue))] font-medium">
                       ✨ Recommended for fast, secure execution
                     </p>
                   </div>
@@ -359,7 +359,7 @@ function ReviewContent() {
                   </dl>
                   <button
                     onClick={() => window.location.href = '/templates/employment-agreement/generate'}
-                    className="mt-6 w-full flex items-center justify-center gap-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-semibold text-sm py-2 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                    className="mt-6 w-full flex items-center justify-center gap-2 text-[hsl(var(--selise-blue))] dark:text-[hsl(var(--sky-blue))] hover:text-[hsl(var(--gradient-dark-from))] dark:hover:text-[hsl(var(--light-blue))] font-semibold text-sm py-2 hover:bg-[hsl(var(--selise-blue))]/10 dark:hover:bg-[hsl(var(--selise-blue))]/20 rounded-lg transition-colors"
                   >
                     <Edit className="w-4 h-4" />
                     Start Over

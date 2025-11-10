@@ -7,7 +7,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="relative border-t border-border bg-gray-50 py-12 dark:bg-gray-950 overflow-hidden">
+    <footer className="relative overflow-hidden border-t border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] py-12">
       {/* Subtle texture background */}
       <div className="absolute inset-0">
         <Image
@@ -19,9 +19,9 @@ export default function Footer() {
       </div>
       <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
         {/* Legal Disclaimer - Site-wide */}
-        <div className="mb-10 pb-10 border-b border-border">
+        <div className="mb-10 pb-10 border-b border-[hsl(var(--brand-border))]">
           <div className="mx-auto max-w-5xl">
-            <LegalDisclaimer variant="compact" className="px-4 py-4 rounded-lg bg-amber-50/50 dark:bg-amber-950/10 border border-amber-200/50 dark:border-amber-900/30" />
+            <LegalDisclaimer variant="compact" />
           </div>
         </div>
 
@@ -40,7 +40,7 @@ export default function Footer() {
               href="https://selisesignature.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center gap-3 rounded-lg border border-border bg-white px-5 py-3 transition-all hover:border-blue-400 hover:shadow-lg dark:bg-gray-900 dark:hover:border-blue-600"
+              className="group flex items-center gap-3 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface-strong))] px-5 py-3 text-sm transition-all shadow-sm hover:border-[hsl(var(--brand-primary))] hover:shadow-lg hover:shadow-[hsl(var(--brand-primary))/0.2]"
             >
               <Image
                 src="/signature-black.svg"
@@ -49,12 +49,12 @@ export default function Footer() {
                 height={28}
                 className="h-7 w-auto transition-opacity group-hover:opacity-80 dark:invert"
               />
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-[hsl(var(--brand-primary))]" />
             </Link>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-6 border-t border-border pt-8 text-xs text-muted-foreground">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-6 border-t border-[hsl(var(--brand-border))] pt-8 text-xs text-muted-foreground">
           <Link
             href="https://selisegroup.com/privacy-policy/"
             target="_blank"

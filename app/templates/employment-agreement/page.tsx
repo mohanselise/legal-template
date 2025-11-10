@@ -19,7 +19,7 @@ export default function EmploymentAgreementPage() {
   return (
     <div className="bg-background">
       {/* Hero Section - Above the Fold */}
-      <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[hsl(var(--gradient-dark-from))] via-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] text-white overflow-hidden">
         {/* Background texture/image */}
         <div className="absolute inset-0">
           <Image
@@ -30,10 +30,10 @@ export default function EmploymentAgreementPage() {
             priority
           />
         </div>
-        
+
         {/* Decorative gradient orbs */}
-        <div className="absolute left-0 top-0 h-96 w-96 rounded-full bg-purple-500/20 blur-3xl" />
-        <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
+        <div className="absolute left-0 top-0 h-96 w-96 rounded-full bg-[hsl(var(--sky-blue))]/20 blur-3xl" />
+        <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-[hsl(var(--light-blue))]/20 blur-3xl" />
         
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
@@ -161,8 +161,8 @@ export default function EmploymentAgreementPage() {
           </div>
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
-            <div className="group bg-card border border-border rounded-2xl p-8 hover:border-blue-300 hover:shadow-xl transition-all">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:scale-110 transition-transform">
+            <div className="group bg-card border border-border rounded-2xl p-8 hover:border-[hsl(var(--sky-blue))] hover:shadow-xl transition-all">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
                 <Shield className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Legal Protection</h3>
@@ -171,8 +171,8 @@ export default function EmploymentAgreementPage() {
               </p>
             </div>
 
-            <div className="group bg-card border border-border rounded-2xl p-8 hover:border-blue-300 hover:shadow-xl transition-all">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:scale-110 transition-transform">
+            <div className="group bg-card border border-border rounded-2xl p-8 hover:border-[hsl(var(--sky-blue))] hover:shadow-xl transition-all">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
                 <Users className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Clear Expectations</h3>
@@ -181,8 +181,8 @@ export default function EmploymentAgreementPage() {
               </p>
             </div>
 
-            <div className="group bg-card border border-border rounded-2xl p-8 hover:border-blue-300 hover:shadow-xl transition-all">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:scale-110 transition-transform">
+            <div className="group bg-card border border-border rounded-2xl p-8 hover:border-[hsl(var(--sky-blue))] hover:shadow-xl transition-all">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
                 <Briefcase className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Professional Image</h3>
@@ -191,8 +191,8 @@ export default function EmploymentAgreementPage() {
               </p>
             </div>
 
-            <div className="group bg-card border border-border rounded-2xl p-8 hover:border-blue-300 hover:shadow-xl transition-all">
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:scale-110 transition-transform">
+            <div className="group bg-card border border-border rounded-2xl p-8 hover:border-[hsl(var(--sky-blue))] hover:shadow-xl transition-all">
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
                 <Scale className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Compliance</h3>
@@ -235,9 +235,9 @@ export default function EmploymentAgreementPage() {
               {/* Connection line (desktop only) */}
               {/* Step 1 */}
               <div className="relative">
-                <div className="absolute left-1/2 top-16 hidden h-0.5 w-full bg-gradient-to-r from-blue-400 to-purple-400 md:block" />
-                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-2xl shadow-blue-600/30 group-hover:scale-110 transition-transform">
-                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-blue-600 shadow-lg dark:bg-gray-900">
+                <div className="absolute left-1/2 top-16 hidden h-0.5 w-full bg-gradient-to-r from-[hsl(var(--sky-blue))] to-[hsl(var(--selise-blue))] md:block" />
+                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 group-hover:scale-110 transition-transform">
+                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-gray-900">
                     1
                   </div>
                   <FileText className="h-9 w-9 text-white" />
@@ -254,9 +254,9 @@ export default function EmploymentAgreementPage() {
             <div className="relative text-center group">
               {/* Step 2 */}
               <div className="relative">
-                <div className="absolute left-1/2 top-16 hidden h-0.5 w-full bg-gradient-to-r from-blue-400 to-purple-400 md:block" />
-                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-2xl shadow-blue-600/30 group-hover:scale-110 transition-transform">
-                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-blue-600 shadow-lg dark:bg-gray-900">
+                <div className="absolute left-1/2 top-16 hidden h-0.5 w-full bg-gradient-to-r from-[hsl(var(--sky-blue))] to-[hsl(var(--selise-blue))] md:block" />
+                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 group-hover:scale-110 transition-transform">
+                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-gray-900">
                     2
                   </div>
                   <Sparkles className="h-9 w-9 text-white" />
@@ -273,8 +273,8 @@ export default function EmploymentAgreementPage() {
             <div className="relative text-center group">
               {/* Step 3 */}
               <div className="relative">
-                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-2xl shadow-blue-600/30 group-hover:scale-110 transition-transform">
-                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-blue-600 shadow-lg dark:bg-gray-900">
+                <div className="relative z-10 mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 group-hover:scale-110 transition-transform">
+                  <div className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-lg font-bold text-[hsl(var(--selise-blue))] shadow-lg dark:bg-gray-900">
                     3
                   </div>
                   <CheckCircle2 className="h-9 w-9 text-white" />
@@ -292,7 +292,7 @@ export default function EmploymentAgreementPage() {
           <div className="mt-16 text-center">
             <Link
               href="/templates/employment-agreement/generate"
-              className="group inline-flex items-center justify-center rounded-xl bg-blue-600 px-10 py-5 text-lg font-semibold text-white shadow-2xl hover:bg-blue-700 transition-all transform hover:scale-105 hover:shadow-blue-600/50"
+              className="group inline-flex items-center justify-center rounded-xl bg-[hsl(var(--selise-blue))] px-10 py-5 text-lg font-semibold text-white shadow-2xl hover:bg-[hsl(var(--gradient-dark-from))] transition-all transform hover:scale-105 hover:shadow-[hsl(var(--selise-blue))]/50"
             >
               Start Creating Your Agreement
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -354,9 +354,9 @@ export default function EmploymentAgreementPage() {
                 description: 'Establishes how conflicts will be resolved—through arbitration, mediation, or court. Includes jurisdiction and governing law.'
               }
             ].map((clause, index) => (
-              <div key={index} className="group bg-card border-2 border-border rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all">
+              <div key={index} className="group bg-card border-2 border-border rounded-xl p-6 hover:border-[hsl(var(--sky-blue))] hover:shadow-lg transition-all">
                 <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 group-hover:scale-110 transition-transform">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] group-hover:scale-110 transition-transform">
                     <FileText className="h-5 w-5 text-white" />
                   </div>
                   {clause.title}
@@ -369,7 +369,7 @@ export default function EmploymentAgreementPage() {
       </section>
 
       {/* Use Cases */}
-      <section className="bg-gradient-to-b from-blue-50 to-purple-50 dark:from-blue-950/10 dark:to-purple-950/10 py-20 sm:py-28">
+      <section className="bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-[hsl(var(--gradient-light-to))] dark:from-blue-950/10 dark:to-gray-950 py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
@@ -391,8 +391,8 @@ export default function EmploymentAgreementPage() {
             ].map((useCase, index) => {
               const Icon = useCase.icon;
               return (
-                <div key={index} className="group bg-white dark:bg-gray-900 border-2 border-border rounded-2xl p-6 hover:border-blue-300 hover:shadow-xl transition-all">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:scale-110 transition-transform">
+                <div key={index} className="group bg-white dark:bg-gray-900 border-2 border-border rounded-2xl p-6 hover:border-[hsl(var(--sky-blue))] hover:shadow-xl transition-all">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
                     <Icon className="h-6 w-6 text-white" />
                   </div>
                   <h3 className="text-lg font-bold text-foreground mb-2">{useCase.title}</h3>
@@ -571,7 +571,7 @@ export default function EmploymentAgreementPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white py-24 sm:py-32 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-[hsl(var(--gradient-dark-from))] via-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] text-white py-24 sm:py-32 overflow-hidden">
         {/* Background texture */}
         <div className="absolute inset-0">
           <Image
@@ -581,10 +581,10 @@ export default function EmploymentAgreementPage() {
             className="object-cover opacity-[0.08] mix-blend-overlay"
           />
         </div>
-        
+
         {/* Decorative elements */}
-        <div className="absolute left-0 bottom-0 h-96 w-96 rounded-full bg-purple-500/20 blur-3xl" />
-        <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
+        <div className="absolute left-0 bottom-0 h-96 w-96 rounded-full bg-[hsl(var(--sky-blue))]/20 blur-3xl" />
+        <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-[hsl(var(--light-blue))]/20 blur-3xl" />
         
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="mb-6">

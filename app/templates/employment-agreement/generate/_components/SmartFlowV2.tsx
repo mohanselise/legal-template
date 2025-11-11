@@ -362,6 +362,8 @@ function SmartFlowContent() {
 
     let progressInterval: NodeJS.Timeout;
     let stepTimeout: NodeJS.Timeout;
+    let pollInterval: NodeJS.Timeout;
+    let isNavigating = false;
 
     const currentStage = GENERATION_STEPS[generationStepIndex];
 
@@ -381,50 +383,80 @@ function SmartFlowContent() {
       });
     }, 50);
 
-    // Move to next stage after duration
-    stepTimeout = setTimeout(async () => {
-      if (generationStepIndex < GENERATION_STEPS.length - 1) {
-        setGenerationStepIndex((prev) => prev + 1);
-      } else {
-        try {
-          const task = generationTaskRef.current;
-          if (!task) {
-            throw new Error('No generation task provided.');
-          }
+    // Poll for result availability - check every 500ms
+    const navigateWithResult = async (result: BackgroundGenerationResult) => {
+      if (isNavigating) return;
+      isNavigating = true;
 
-          const result = await task();
-          if (!result || !result.document) {
-            throw new Error('Generation task did not return a document.');
-          }
+      const persisted = saveEmploymentAgreementReview({
+        document: result.document,
+        formData: result.formDataSnapshot,
+        storedAt: new Date().toISOString(),
+      });
 
-          const persisted = saveEmploymentAgreementReview({
-            document: result.document,
-            formData: result.formDataSnapshot,
-            storedAt: new Date().toISOString(),
-          });
+      resetLoadingState();
 
-          resetLoadingState();
+      if (persisted) {
+        router.push('/templates/employment-agreement/generate/review');
+        return;
+      }
 
-          if (persisted) {
-            router.push('/templates/employment-agreement/generate/review');
-            return;
-          }
+      const params = new URLSearchParams({
+        document: JSON.stringify(result.document),
+        data: JSON.stringify(result.formDataSnapshot),
+      });
+      router.push(`/templates/employment-agreement/generate/review?${params.toString()}`);
+    };
 
-          const params = new URLSearchParams({
-            document: JSON.stringify(result.document),
-            data: JSON.stringify(result.formDataSnapshot),
-          });
-          router.push(`/templates/employment-agreement/generate/review?${params.toString()}`);
-        } catch (error) {
-          console.error('Generation error:', error);
+    pollInterval = setInterval(async () => {
+      if (isNavigating) return;
+
+      const task = generationTaskRef.current;
+      if (!task) return;
+
+      try {
+        const result = await task();
+        if (result && result.document) {
+          // Result is ready! Navigate immediately, don't wait for animation
+          console.log('✅ [Loading] Generation complete! Navigating to review...');
+          clearInterval(pollInterval);
+          clearInterval(progressInterval);
+          clearTimeout(stepTimeout);
+          await navigateWithResult(result);
+        }
+      } catch (error) {
+        // Task not ready yet or error - continue polling
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        // Only log if it's not a "still generating" message
+        if (!errorMessage.includes('Still generating') && !errorMessage.includes('Generation starting')) {
+          console.log('[Loading] Poll check:', errorMessage);
+        }
+        
+        // Only show error if we're on the last animation step and it's a real error
+        if (generationStepIndex >= GENERATION_STEPS.length - 1 && 
+            !errorMessage.includes('Still generating') && 
+            !errorMessage.includes('Generation starting')) {
+          console.error('❌ [Loading] Generation error:', error);
+          clearInterval(pollInterval);
+          clearInterval(progressInterval);
+          clearTimeout(stepTimeout);
           alert('Failed to generate agreement. Please try again.');
           resetLoadingState();
         }
+      }
+    }, 500);
+
+    // Move to next stage after duration (for visual feedback)
+    stepTimeout = setTimeout(() => {
+      if (!isNavigating && generationStepIndex < GENERATION_STEPS.length - 1) {
+        setGenerationStepIndex((prev) => prev + 1);
       }
     }, currentStage.duration);
 
     return () => {
       clearInterval(progressInterval);
+      clearInterval(pollInterval);
       clearTimeout(stepTimeout);
     };
   }, [isGenerating, generationStepIndex, resetLoadingState, router]);

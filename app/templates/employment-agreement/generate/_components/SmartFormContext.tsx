@@ -80,6 +80,7 @@ interface SmartFormContextType {
     snapshotHash: string,
     timeoutMs?: number
   ) => Promise<BackgroundGenerationResult | null>;
+  getBackgroundGenerationState: () => BackgroundGenerationState;
 }
 
 const SmartFormContext = createContext<SmartFormContextType | undefined>(undefined);
@@ -341,7 +342,7 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
   }, [computeSnapshotHash, formData, enrichment]);
 
   const awaitBackgroundGeneration = useCallback(
-    async (snapshotHash: string, timeoutMs = 20000): Promise<BackgroundGenerationResult | null> => {
+    async (snapshotHash: string, timeoutMs = 60000): Promise<BackgroundGenerationResult | null> => {
       const current = backgroundStateRef.current;
 
       if (current.status === 'ready' && current.snapshotHash === snapshotHash) {
@@ -702,6 +703,10 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const getBackgroundGenerationState = useCallback(() => {
+    return backgroundStateRef.current;
+  }, []);
+
   const value: SmartFormContextType = {
     formData,
     updateFormData,
@@ -724,6 +729,7 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     cancelBackgroundGeneration,
     computeSnapshotHash,
     awaitBackgroundGeneration,
+    getBackgroundGenerationState,
   };
 
   return <SmartFormContext.Provider value={value}>{children}</SmartFormContext.Provider>;

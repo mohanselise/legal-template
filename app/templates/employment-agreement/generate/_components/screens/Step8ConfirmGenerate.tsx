@@ -20,6 +20,7 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
     computeSnapshotHash,
     awaitBackgroundGeneration,
     startBackgroundGeneration,
+    getBackgroundGenerationState,
   } = useSmartForm();
   const router = useRouter();
 
@@ -27,7 +28,6 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
   const [acknowledgeAi, setAcknowledgeAi] = useState(false);
   const [isHumanVerified, setIsHumanVerified] = useState(false);
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
-  const [manualGenerating, setManualGenerating] = useState(false);
 
   const formSnapshotHash = useMemo(
     () => computeSnapshotHash(formData),
@@ -39,7 +39,6 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
     setAcknowledgeAi(false);
     setIsHumanVerified(false);
     setVerificationToken(null);
-    setManualGenerating(false);
   }, [formSnapshotHash]);
 
   const backgroundMatches = backgroundGeneration.snapshotHash === formSnapshotHash;
@@ -58,7 +57,7 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
   if (!acceptedDisclaimer) pendingActions.push('Accept legal disclaimer');
   if (!acknowledgeAi) pendingActions.push('Confirm AI review');
   if (!isHumanVerified) pendingActions.push('Verify you are human');
-  const showPendingActions = !manualGenerating && pendingActions.length > 0;
+  const showPendingActions = pendingActions.length > 0;
 
   const shouldAutoPrefetch =
     formSnapshotHash &&
@@ -155,60 +154,83 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
     }
 
     const snapshotHash = formSnapshotHash;
-    const resolveBackgroundDraft = async (): Promise<BackgroundGenerationResult> => {
+    
+    // This function will be called repeatedly by the polling mechanism
+    // It returns the result when ready, or throws if not ready yet
+    const checkBackgroundStatus = async (): Promise<BackgroundGenerationResult | null> => {
       if (!snapshotHash) {
         throw new Error('We could not verify your latest answers. Please return to the Legal step and try again.');
       }
 
-      if (backgroundReady && backgroundGeneration.result) {
-        const readyResult = backgroundGeneration.result;
-        cancelBackgroundGeneration('consumed');
-        return readyResult;
+      // Get the LATEST state from the ref (not stale component state)
+      const currentBgState = getBackgroundGenerationState();
+      const stateMatches = currentBgState.snapshotHash === snapshotHash;
+      const isReady = stateMatches && currentBgState.status === 'ready' && Boolean(currentBgState.result);
+
+      // Debug logging (only on first few checks)
+      if (Math.random() < 0.1) { // Log 10% of checks to avoid spam
+        console.log('[Status Check]', {
+          status: currentBgState.status,
+          stateMatches,
+          isReady,
+          hasResult: Boolean(currentBgState.result),
+        });
       }
 
+      // Check if result is already ready
+      if (isReady && currentBgState.result) {
+        console.log('✅ [Status Check] Result is ready!');
+        cancelBackgroundGeneration('consumed');
+        return currentBgState.result;
+      }
+
+      // If not started or errored, start it
       if (
-        backgroundGeneration.status === 'idle' ||
-        backgroundGeneration.status === 'error' ||
-        !backgroundMatches ||
-        backgroundGeneration.status === 'stale'
+        currentBgState.status === 'idle' ||
+        currentBgState.status === 'error' ||
+        !stateMatches ||
+        currentBgState.status === 'stale'
       ) {
-        try {
-          await startBackgroundGeneration();
-        } catch (error) {
-          throw new Error(
-            error instanceof Error
-              ? error.message
-              : 'We could not start preparing your draft. Please try again.'
-          );
+        // Start background generation (non-blocking)
+        if (currentBgState.status === 'idle') {
+          console.log('🚀 [Status Check] Starting background generation...');
         }
+        startBackgroundGeneration().catch(() => {
+          // Error will be caught by polling mechanism
+        });
+        throw new Error('Generation starting...');
       }
 
-      const awaited = await awaitBackgroundGeneration(snapshotHash, 20000);
-      if (awaited && awaited.document) {
-        cancelBackgroundGeneration('consumed');
-        return awaited;
+      // If pending, check if it's ready now
+      if (currentBgState.status === 'pending') {
+        const awaited = await awaitBackgroundGeneration(snapshotHash, 100); // Short timeout for polling
+        if (awaited && awaited.document) {
+          console.log('✅ [Status Check] Result retrieved from await!');
+          cancelBackgroundGeneration('consumed');
+          return awaited;
+        }
+        throw new Error('Still generating...');
       }
 
-      throw new Error('Still finalizing your draft. Give it another moment and try again.');
+      throw new Error('Unexpected state');
     };
 
     if (onStartGeneration) {
-      setManualGenerating(true);
-      onStartGeneration(async () => {
-        try {
-          const result = await resolveBackgroundDraft();
-          return result;
-        } finally {
-          setManualGenerating(false);
-        }
-      });
+      // Pass the status checker to the parent component for polling
+      onStartGeneration(checkBackgroundStatus);
       return;
     }
 
-    setManualGenerating(true);
+    // Fallback: direct navigation (shouldn't happen in SmartFlowV2)
     try {
-      const result = await resolveBackgroundDraft();
-      navigateWithResult(result);
+      // Try to get result with longer timeout
+      const awaited = await awaitBackgroundGeneration(snapshotHash, 60000);
+      if (awaited && awaited.document) {
+        cancelBackgroundGeneration('consumed');
+        navigateWithResult(awaited);
+      } else {
+        throw new Error('Failed to generate agreement. Please try again.');
+      }
     } catch (error) {
       console.error('Generation error:', error);
       alert(
@@ -216,15 +238,13 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
           ? error.message
           : 'Failed to open your draft. Please return to the Legal step and try again.'
       );
-    } finally {
-      setManualGenerating(false);
     }
   };
 
-  const buttonLabel = manualGenerating
-    ? 'Generating your agreement...'
-    : backgroundReady
-      ? 'Review Prefetched Draft'
+  const buttonLabel = backgroundReady
+    ? 'Review Your Agreement'
+    : backgroundPending
+      ? 'Continue to Review'
       : 'Generate Employment Agreement';
 
   return (
@@ -333,7 +353,7 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
       <div className="pt-2">
         <Button
           onClick={handleGenerate}
-          disabled={!acceptedDisclaimer || !acknowledgeAi || !verificationToken || manualGenerating}
+          disabled={!acceptedDisclaimer || !acknowledgeAi || !verificationToken}
           className="w-full py-6 text-lg font-semibold"
           size="lg"
         >

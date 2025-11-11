@@ -502,7 +502,7 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
   }, [computeSnapshotHash, formData, enrichment]);
 
   const awaitBackgroundGeneration = useCallback(
-    async (snapshotHash: string, timeoutMs = 60000): Promise<BackgroundGenerationResult | null> => {
+    async (snapshotHash: string, timeoutMs = 300000): Promise<BackgroundGenerationResult | null> => {
       const current = backgroundStateRef.current;
 
       if (current.status === 'ready' && current.snapshotHash === snapshotHash) {

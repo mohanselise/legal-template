@@ -1,21 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { openai } from '@/lib/openai';
 import { CompanyIntelligence, JurisdictionIntelligence } from '@/lib/types/smart-form';
-import { safeValidateJurisdictionResponse } from '@/lib/validation/jurisdiction-schema';
+import { safeValidateJurisdictionResponse, getValidationErrorMessage } from '@/lib/validation/jurisdiction-schema';
 
 interface CompanyAnalysisRequest {
   companyName: string;
   companyAddress: string;
 }
 
+/**
+ * Sanitize user input to remove potentially malicious content
+ */
+function sanitizeInput(input: string): string {
+  return input
+    .trim()
+    // Remove HTML tags
+    .replace(/<[^>]*>/g, '')
+    // Remove script content
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    // Limit length to prevent abuse
+    .slice(0, 500);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: CompanyAnalysisRequest = await request.json();
-    const { companyName, companyAddress } = body;
+    let { companyName, companyAddress } = body;
 
     if (!companyName || !companyAddress) {
       return NextResponse.json(
         { error: 'Company name and address are required' },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize inputs before sending to AI
+    companyName = sanitizeInput(companyName);
+    companyAddress = sanitizeInput(companyAddress);
+
+    // Validate sanitized inputs aren't empty
+    if (!companyName || !companyAddress) {
+      return NextResponse.json(
+        { error: 'Invalid company name or address after sanitization' },
         { status: 400 }
       );
     }
@@ -165,19 +191,32 @@ Always research the specific jurisdiction based on the address provided. Use you
     const parsed = JSON.parse(result);
 
     // Validate AI response against schema
-    const validated = safeValidateJurisdictionResponse(parsed);
+    const validationResult = safeValidateJurisdictionResponse(parsed);
 
-    if (!validated) {
-      // Validation failed - return a safe fallback with error
+    if (!validationResult) {
+      // Validation failed - return actionable error message
       console.error('AI response validation failed for:', { companyName, companyAddress });
+
+      // Try to parse validation result to get specific errors
+      const zodResult = (await import('zod')).z.object({
+        jurisdiction: (await import('@/lib/validation/jurisdiction-schema')).jurisdictionIntelligenceSchema,
+        company: (await import('@/lib/validation/jurisdiction-schema')).companyIntelligenceSchema,
+      }).safeParse(parsed);
+
+      const errorDetails = !zodResult.success
+        ? getValidationErrorMessage(zodResult.error)
+        : 'AI response did not match expected schema';
+
       return NextResponse.json(
         {
-          error: 'Invalid jurisdiction data received',
-          details: 'AI response did not match expected schema',
+          error: 'Unable to detect jurisdiction',
+          details: `Please provide a more complete address with city and country. ${errorDetails}`,
         },
         { status: 422 }
       );
     }
+
+    const validated = validationResult;
 
     return NextResponse.json({
       jurisdiction: validated.jurisdiction as JurisdictionIntelligence,

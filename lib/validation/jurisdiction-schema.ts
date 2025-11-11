@@ -53,7 +53,9 @@ const CA_PROVINCE_CODES = [
 
 export const jurisdictionIntelligenceSchema = z.object({
   country: z.string().min(1, 'Country is required'),
-  countryCode: z.string().length(2).transform(val => val.toUpperCase()), // Accept any 2-letter code, transform to uppercase
+  countryCode: z.enum(VALID_COUNTRY_CODES, {
+    errorMap: () => ({ message: 'Invalid country code. Must be a valid ISO 3166-1 alpha-2 code.' })
+  }),
   state: z.string().optional(),
   city: z.string().optional(),
 
@@ -64,8 +66,10 @@ export const jurisdictionIntelligenceSchema = z.object({
 
   // Legal defaults
   minimumWage: z.number().min(0).optional(),
-  currency: z.string().length(3).transform(val => val.toUpperCase()), // Accept any 3-letter code, transform to uppercase
-  currencySymbol: z.string().min(1).max(5),
+  currency: z.enum(VALID_CURRENCIES, {
+    errorMap: () => ({ message: 'Invalid currency code. Must be a valid ISO 4217 code.' })
+  }),
+  currencySymbol: z.string().min(1).max(5).optional(),
   overtimeThreshold: z.number().min(0).max(100).optional(),
 
   // Common practices
@@ -80,7 +84,33 @@ export const jurisdictionIntelligenceSchema = z.object({
   defaultNoticePeriodDays: z.number().min(0).max(180).optional(),
 
   confidence: z.enum(['high', 'medium', 'low']),
-});
+}).refine(
+  (data) => {
+    // Validate US states
+    if (data.countryCode === 'US' && data.state) {
+      const stateUpper = data.state.toUpperCase();
+      return US_STATE_CODES.includes(stateUpper as typeof US_STATE_CODES[number]);
+    }
+    return true;
+  },
+  {
+    message: 'Invalid US state code. Must be a valid 2-letter state abbreviation.',
+    path: ['state'],
+  }
+).refine(
+  (data) => {
+    // Validate Canadian provinces
+    if (data.countryCode === 'CA' && data.state) {
+      const provinceUpper = data.state.toUpperCase();
+      return CA_PROVINCE_CODES.includes(provinceUpper as typeof CA_PROVINCE_CODES[number]);
+    }
+    return true;
+  },
+  {
+    message: 'Invalid Canadian province code. Must be a valid 2-letter province abbreviation.',
+    path: ['state'],
+  }
+);
 
 export const companyIntelligenceSchema = z.object({
   industryDetected: z.string().optional(),
@@ -120,6 +150,32 @@ export function safeValidateJurisdictionResponse(data: unknown) {
   console.error('Specific issues:', result.error.issues);
 
   return null;
+}
+
+/**
+ * Extract user-friendly error messages from Zod validation errors
+ */
+export function getValidationErrorMessage(error: unknown): string {
+  if (!error || typeof error !== 'object') {
+    return 'Validation failed';
+  }
+
+  const zodError = error as { issues?: Array<{ path: string[]; message: string }> };
+  if (!zodError.issues || zodError.issues.length === 0) {
+    return 'Invalid data format';
+  }
+
+  // Group errors by field
+  const fieldErrors = zodError.issues.map((issue) => {
+    const field = issue.path.join('.') || 'data';
+    return `${field}: ${issue.message}`;
+  });
+
+  // Return first 3 errors to keep message concise
+  const errorList = fieldErrors.slice(0, 3).join('; ');
+  const hasMore = fieldErrors.length > 3 ? ` (+${fieldErrors.length - 3} more)` : '';
+
+  return `${errorList}${hasMore}`;
 }
 
 /**

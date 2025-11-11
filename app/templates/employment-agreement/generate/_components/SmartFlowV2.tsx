@@ -16,6 +16,7 @@ import { Step6LegalTerms } from './screens/Step6LegalTerms';
 import { Step7Review } from './screens/Step7Review';
 import { Step8ConfirmGenerate } from './screens/Step8ConfirmGenerate';
 import { Button } from '@/components/ui/button';
+import { getJurisdictionShortName } from './utils/jurisdiction';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -113,15 +114,21 @@ function NavigationButtons({
     startBackgroundGeneration,
   } = useSmartForm();
   const [showSalaryWarning, setShowSalaryWarning] = useState(false);
+  const [isApplyingStandards, setIsApplyingStandards] = useState(false);
+  const [showSuccessFeedback, setShowSuccessFeedback] = useState(false);
 
   const marketStandards = enrichment.marketStandards;
-  const jurisdictionName =
-    enrichment.jurisdictionData?.state ||
-    enrichment.jurisdictionData?.country ||
-    'market';
+  const jurisdictionName = getJurisdictionShortName(enrichment.jurisdictionData);
 
   const showMarketStandardButton =
     MARKET_STANDARD_STEPS.includes(currentStep) && marketStandards;
+
+  // Show loading placeholder if we have jurisdiction but no standards yet (still loading)
+  const showLoadingPlaceholder =
+    MARKET_STANDARD_STEPS.includes(currentStep) &&
+    !marketStandards &&
+    enrichment.jurisdictionData &&
+    enrichment.jobTitleData;
 
   const isCompensationStep = currentStep === 3; // Step 4 is index 3
   const isLegalStep = STEPS[currentStep]?.id === 'legal';
@@ -135,14 +142,19 @@ function NavigationButtons({
     }
 
     if (marketStandards) {
+      setIsApplyingStandards(true);
       applyMarketStandards(marketStandards);
       if (isLegalStep) {
         void startBackgroundGeneration();
       }
-      // Auto-advance to next step after applying
+
+      // Show success feedback briefly
+      setShowSuccessFeedback(true);
       setTimeout(() => {
+        setShowSuccessFeedback(false);
+        setIsApplyingStandards(false);
         onNext();
-      }, 300);
+      }, 800);
     }
   };
 
@@ -199,14 +211,33 @@ function NavigationButtons({
 
         {/* Right side - Market Standard + Continue buttons */}
         <div className="flex items-center gap-3">
+          {/* Loading placeholder */}
+          {showLoadingPlaceholder && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
+              <div className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+              <span>Preparing standards...</span>
+            </div>
+          )}
+
+          {/* Market standard button */}
           {showMarketStandardButton && (
             <Button
               variant="ghost"
               onClick={handleUseMarketStandard}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              disabled={isApplyingStandards}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground relative"
             >
-              <Zap className="w-4 h-4" />
-              Use {jurisdictionName} standard
+              {showSuccessFeedback ? (
+                <>
+                  <Check className="w-4 h-4 text-green-600" />
+                  <span className="text-green-600">Applied!</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Use {jurisdictionName} standard
+                </>
+              )}
             </Button>
           )}
 

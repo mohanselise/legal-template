@@ -134,6 +134,7 @@ export function Step4Compensation() {
     }
   };
 
+  // Allow continue if salary amount is filled (including placeholders) and currency is set
   const canContinue = formData.salaryAmount && formData.salaryCurrency;
 
   return (
@@ -248,7 +249,7 @@ export function Step4Compensation() {
             <SmartInput
               label="Currency"
               name="salaryCurrency"
-              value={formData.salaryCurrency || 'USD'}
+              value={formData.salaryCurrency || ''}
               onChange={handleCurrencyChange}
               placeholder="USD"
               required
@@ -270,6 +271,55 @@ export function Step4Compensation() {
             />
           </div>
         </div>
+
+        {/* Salary Placeholder Options */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm text-muted-foreground">Or:</span>
+          <button
+            type="button"
+            onClick={() => {
+              updateFormData({
+                salaryAmount: '[TO BE DETERMINED]',
+                salaryCurrency: enrichment.jurisdictionData?.currency || formData.salaryCurrency || 'USD'
+              });
+            }}
+            className="text-sm px-3 py-1.5 rounded-lg border border-[hsl(var(--border))] hover:border-[hsl(var(--brand-primary))] hover:bg-[hsl(var(--brand-primary))/0.05] transition-colors"
+          >
+            Mark as "To be determined"
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              updateFormData({
+                salaryAmount: '[OMITTED]',
+                salaryCurrency: enrichment.jurisdictionData?.currency || formData.salaryCurrency || 'USD'
+              });
+            }}
+            className="text-sm px-3 py-1.5 rounded-lg border border-[hsl(var(--border))] hover:border-[hsl(var(--brand-primary))] hover:bg-[hsl(var(--brand-primary))/0.05] transition-colors"
+          >
+            No salary mentioned
+          </button>
+        </div>
+
+        {/* Show current selection if placeholder is used */}
+        {(formData.salaryAmount === '[TO BE DETERMINED]' || formData.salaryAmount === '[OMITTED]') && (
+          <div className="rounded-lg border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-3">
+            <p className="text-sm text-[hsl(var(--brand-muted))]">
+              {formData.salaryAmount === '[TO BE DETERMINED]' ? (
+                <>✓ Salary will show as <strong className="text-[hsl(var(--fg))]">"[TO BE DETERMINED]"</strong> in the document</>
+              ) : (
+                <>✓ Salary will be <strong className="text-[hsl(var(--fg))]">omitted</strong> from the document</>
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={() => updateFormData({ salaryAmount: '' })}
+              className="text-xs text-[hsl(var(--brand-primary))] underline decoration-dotted underline-offset-2 hover:decoration-solid mt-1"
+            >
+              Clear and enter amount
+            </button>
+          </div>
+        )}
 
         {/* Pay Frequency */}
         <div>

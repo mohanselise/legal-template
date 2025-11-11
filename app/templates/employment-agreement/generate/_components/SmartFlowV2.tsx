@@ -133,9 +133,11 @@ function NavigationButtons({
   const isCompensationStep = currentStep === 3; // Step 4 is index 3
   const isLegalStep = STEPS[currentStep]?.id === 'legal';
   const hasSalaryAmount = formData.salaryAmount && formData.salaryAmount.trim() !== '';
+  const isPlaceholderSalary = formData.salaryAmount === '[TO BE DETERMINED]' || formData.salaryAmount === '[OMITTED]';
+  const isNumericSalary = hasSalaryAmount && !isPlaceholderSalary;
 
   const handleUseMarketStandard = () => {
-    // Show warning if on compensation step and no salary entered
+    // Show warning if on compensation step and no salary entered (and no placeholder set)
     if (isCompensationStep && !hasSalaryAmount) {
       setShowSalaryWarning(true);
       return;

@@ -770,18 +770,8 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
         }
 
         updates.salaryAmount = formatSalaryForStorage(converted, resolvedFrequency);
-      } else if (jobTitleRange?.median) {
-        const annualMedian = convertCurrency(
-          jobTitleRange.median,
-          jobTitleRange.currency,
-          resolvedCurrency
-        );
-        const converted = convertAnnualSalary(annualMedian, resolvedFrequency);
-        updates.salaryAmount = formatSalaryForStorage(converted, resolvedFrequency);
-        if (!updates.salaryCurrency) {
-          updates.salaryCurrency = resolvedCurrency;
-        }
       }
+      // Note: We don't auto-fill salary amount - user must enter it explicitly or choose placeholder/skip
 
       if (!formData.paidTimeOff) {
         updates.paidTimeOff = standards.ptodays.toString();

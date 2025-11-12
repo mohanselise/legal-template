@@ -56,7 +56,12 @@ interface SmartFormContextType {
 
   // Actions
   analyzeCompany: (companyName: string, companyAddress: string) => Promise<void>;
-  analyzeJobTitle: (jobTitle: string, location?: string, industry?: string) => Promise<void>;
+  analyzeJobTitle: (
+    jobTitle: string,
+    location?: string,
+    companyIndustry?: string,
+    companyAddress?: string
+  ) => Promise<void>;
   generateMarketStandards: () => Promise<void>;
   applyMarketStandards: (standards: MarketStandards) => void;
 
@@ -675,7 +680,12 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
   }, [updateFormData]);
 
   const analyzeJobTitle = useCallback(
-    async (jobTitle: string, location?: string, industry?: string) => {
+    async (
+      jobTitle: string,
+      location?: string,
+      companyIndustry?: string,
+      companyAddress?: string
+    ) => {
       setEnrichment((prev) => ({
         ...prev,
         jobTitleLoading: true,
@@ -686,7 +696,12 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch('/api/intelligence/job-title', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobTitle, location, industry }),
+          body: JSON.stringify({
+            jobTitle,
+            location,
+            companyIndustry,
+            companyAddress,
+          }),
         });
 
         if (!response.ok) {

@@ -6,14 +6,32 @@ interface JobTitleAnalysisRequest {
   jobTitle: string;
   location?: string;
   companyIndustry?: string;
+  companyAddress?: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: JobTitleAnalysisRequest = await request.json();
-    const { jobTitle, location, companyIndustry } = body;
+    const {
+      jobTitle,
+      location,
+      companyIndustry,
+      companyAddress,
+    } = body;
 
     if (!jobTitle) {
+      return NextResponse.json(
+        { error: 'Job title is required' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedJobTitle = jobTitle.trim();
+    const normalizedLocation = location?.trim();
+    const normalizedIndustry = companyIndustry?.trim();
+    const normalizedAddress = companyAddress?.trim();
+
+    if (!normalizedJobTitle) {
       return NextResponse.json(
         { error: 'Job title is required' },
         { status: 400 }
@@ -80,6 +98,14 @@ Sign-on bonus common for:
 - Director+ any department
 - Competitive hires
 
+Location calibration:
+- Use the company address (preferred) or provided location to determine the most relevant labor market.
+- Factor in regional cost-of-living and compensation trends when proposing salary and incentive benchmarks.
+
+Currency requirements:
+- Convert all compensation figures to USD when necessary.
+- The "currency" field in typicalSalaryRange must ALWAYS be "USD".
+
 Adjust salary for location if provided.
 US tech hubs (SF, NYC, Seattle): +30-50% premium
 Europe: Lower base, higher benefits
@@ -87,7 +113,7 @@ Asia-Pacific: Varies widely`,
         },
         {
           role: 'user',
-          content: `Job Title: ${jobTitle}${location ? `\nLocation: ${location}` : ''}${companyIndustry ? `\nIndustry: ${companyIndustry}` : ''}`,
+          content: `Job Title: ${normalizedJobTitle}${normalizedLocation ? `\nLocation: ${normalizedLocation}` : ''}${normalizedAddress ? `\nCompany Address: ${normalizedAddress}` : ''}${normalizedIndustry ? `\nIndustry: ${normalizedIndustry}` : ''}`,
         },
       ],
       temperature: 0.3,
@@ -101,6 +127,10 @@ Asia-Pacific: Varies widely`,
     }
 
     const parsed: JobTitleAnalysis = JSON.parse(result);
+
+    if (parsed.typicalSalaryRange) {
+      parsed.typicalSalaryRange.currency = 'USD';
+    }
 
     return NextResponse.json(parsed);
   } catch (error) {

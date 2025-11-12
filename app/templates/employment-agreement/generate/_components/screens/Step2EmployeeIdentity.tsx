@@ -23,11 +23,13 @@ export function Step2EmployeeIdentity() {
       analyzeJobTitle(
         formData.jobTitle,
         enrichment.jurisdictionData?.city || enrichment.jurisdictionData?.country,
-        enrichment.companyData?.industryDetected
+        enrichment.companyData?.industryDetected,
+        formData.companyAddress
       );
     }
   }, [
     formData.jobTitle,
+    formData.companyAddress,
     hasAnalyzedJob,
     enrichment.jobTitleLoading,
     enrichment.jurisdictionData,

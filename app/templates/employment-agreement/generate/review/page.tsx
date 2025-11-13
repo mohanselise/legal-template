@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ActionButtons } from '../_components/ActionButtons';
-import { DocumentRendererJSON } from '../_components/DocumentRendererJSON';
+import { EditableDocumentRenderer } from '../_components/EditableDocumentRenderer';
 import { Loader2, CheckCircle2, Edit, Download, Send, Sparkles, FileText } from 'lucide-react';
 import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
 import {
@@ -16,6 +16,7 @@ function ReviewContent() {
   const searchParams = useSearchParams();
   const [formData, setFormData] = useState<any>(null);
   const [generatedDocument, setGeneratedDocument] = useState<EmploymentAgreement | null>(null);
+  const [editedDocument, setEditedDocument] = useState<EmploymentAgreement | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,6 +26,7 @@ function ReviewContent() {
 
     if (hasSessionDocument) {
       setGeneratedDocument(sessionPayload!.document);
+      setEditedDocument(sessionPayload!.document);
       setFormData(sessionPayload!.formData);
       setIsGenerating(false);
       setError(null);
@@ -37,6 +39,7 @@ function ReviewContent() {
       try {
         const parsedDocument = JSON.parse(docParam);
         setGeneratedDocument(parsedDocument);
+        setEditedDocument(parsedDocument);
         setIsGenerating(false);
         setError(null);
         console.log('✅ Document parsed successfully:', parsedDocument);
@@ -67,20 +70,26 @@ function ReviewContent() {
     }
   }, [searchParams]);
 
+  const handleDocumentChange = (updatedDocument: EmploymentAgreement) => {
+    setEditedDocument(updatedDocument);
+  };
+
   const handleSendToSignature = async () => {
-    if (!generatedDocument) return;
+    // Use edited document if available, otherwise fall back to generated document
+    const documentToSend = editedDocument || generatedDocument;
+    if (!documentToSend) return;
 
     try {
       const response = await fetch('/api/signature/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          document: generatedDocument, // Send the full JSON document
+          document: documentToSend, // Send the edited or original document
           formData,
           signatories: [
             {
-              name: generatedDocument.parties.employee.legalName,
-              email: generatedDocument.parties.employee.email || 'employee@company.com',
+              name: documentToSend.parties.employee.legalName,
+              email: documentToSend.parties.employee.email || 'employee@company.com',
             },
           ],
         }),
@@ -99,14 +108,16 @@ function ReviewContent() {
   };
 
   const handleDownloadDocx = async () => {
-    if (!generatedDocument) return;
+    // Use edited document if available, otherwise fall back to generated document
+    const documentToDownload = editedDocument || generatedDocument;
+    if (!documentToDownload) return;
 
     try {
       const response = await fetch('/api/documents/generate-docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          document: generatedDocument, // Send the full JSON document
+          document: documentToDownload, // Send the edited or original document
           formData,
         }),
       });
@@ -117,7 +128,7 @@ function ReviewContent() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const employeeName = generatedDocument.parties.employee.legalName.replace(/\s+/g, '_');
+      const employeeName = documentToDownload.parties.employee.legalName.replace(/\s+/g, '_');
       a.download = `Employment_Agreement_${employeeName}_${Date.now()}.docx`;
       document.body.appendChild(a);
       a.click();
@@ -282,7 +293,13 @@ function ReviewContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Document Preview - Takes up 2 columns */}
           <div className="lg:col-span-2">
-            {generatedDocument && <DocumentRendererJSON document={generatedDocument} />}
+            {generatedDocument && (
+              <EditableDocumentRenderer
+                document={generatedDocument}
+                onDocumentChange={handleDocumentChange}
+                isEditable={true}
+              />
+            )}
           </div>
 
           {/* Actions Sidebar */}

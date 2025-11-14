@@ -28,6 +28,7 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
   const [isHumanVerified, setIsHumanVerified] = useState(false);
   const [verificationToken, setVerificationToken] = useState<string | null>(null);
   const [manualGenerating, setManualGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const formSnapshotHash = useMemo(
     () => computeSnapshotHash(formData),
@@ -40,6 +41,7 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
     setIsHumanVerified(false);
     setVerificationToken(null);
     setManualGenerating(false);
+    setGenerationError(null);
   }, [formSnapshotHash]);
 
   const backgroundMatches = backgroundGeneration.snapshotHash === formSnapshotHash;
@@ -60,29 +62,9 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
   if (!isHumanVerified) pendingActions.push('Verify you are human');
   const showPendingActions = !manualGenerating && pendingActions.length > 0;
 
-  const shouldAutoPrefetch =
-    formSnapshotHash &&
-    (backgroundGeneration.status === 'idle' ||
-      backgroundStale ||
-      (!backgroundGeneration.snapshotHash && backgroundGeneration.status !== 'pending'));
-
-  const prefetchedRef = useRef(false);
-
-  useEffect(() => {
-    if (!shouldAutoPrefetch || prefetchedRef.current) {
-      return;
-    }
-
-    prefetchedRef.current = true;
-    const promise = startBackgroundGeneration();
-    promise
-      .catch(() => {
-        // error state handled via context status; no-op here
-      })
-      .finally(() => {
-        prefetchedRef.current = false;
-      });
-  }, [shouldAutoPrefetch, startBackgroundGeneration]);
+  // REMOVED auto-prefetch logic to prevent double API calls
+  // Generation should only be triggered from Step 6 "Continue" button
+  // This component will consume the result that was started in Step 6
 
   const backgroundStatusMeta = useMemo(() => {
     if (backgroundReady && backgroundGeneration.result) {
@@ -154,24 +136,46 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
       return;
     }
 
+    // Clear previous errors
+    setGenerationError(null);
+
     const snapshotHash = formSnapshotHash;
     const resolveBackgroundDraft = async (): Promise<BackgroundGenerationResult> => {
       if (!snapshotHash) {
         throw new Error('We could not verify your latest answers. Please return to the Legal step and try again.');
       }
 
+      console.log('[Step8] Resolving background draft. Status:', backgroundGeneration.status, 'Matches:', backgroundMatches);
+
+      // Case 1: Background generation already completed successfully
       if (backgroundReady && backgroundGeneration.result) {
+        console.log('[Step8] Using ready background result');
         const readyResult = backgroundGeneration.result;
         cancelBackgroundGeneration('consumed');
         return readyResult;
       }
 
+      // Case 2: Background generation is still pending with matching hash - just wait for it
+      if (backgroundGeneration.status === 'pending' && backgroundMatches) {
+        console.log('[Step8] Background generation in progress, waiting...');
+        // Just await the existing generation, don't start a new one
+        const awaited = await awaitBackgroundGeneration(snapshotHash, 90000);
+        if (awaited && awaited.document) {
+          console.log('[Step8] Background generation completed successfully');
+          cancelBackgroundGeneration('consumed');
+          return awaited;
+        }
+        throw new Error('The draft is taking longer than expected. Please try again or contact support if this persists.');
+      }
+
+      // Case 3: No generation or stale/error state - start a new one
       if (
         backgroundGeneration.status === 'idle' ||
         backgroundGeneration.status === 'error' ||
         !backgroundMatches ||
         backgroundGeneration.status === 'stale'
       ) {
+        console.log('[Step8] Starting new generation');
         try {
           await startBackgroundGeneration();
         } catch (error) {
@@ -181,15 +185,20 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
               : 'We could not start preparing your draft. Please try again.'
           );
         }
+
+        // Wait for the newly started generation
+        console.log('[Step8] Awaiting newly started generation...');
+        const awaited = await awaitBackgroundGeneration(snapshotHash, 90000);
+        if (awaited && awaited.document) {
+          console.log('[Step8] Background generation completed successfully');
+          cancelBackgroundGeneration('consumed');
+          return awaited;
+        }
+        throw new Error('The draft is taking longer than expected. Please try again or contact support if this persists.');
       }
 
-      const awaited = await awaitBackgroundGeneration(snapshotHash, 20000);
-      if (awaited && awaited.document) {
-        cancelBackgroundGeneration('consumed');
-        return awaited;
-      }
-
-      throw new Error('Still finalizing your draft. Give it another moment and try again.');
+      // Case 4: Fallback - this shouldn't happen
+      throw new Error('Unexpected state. Please try again.');
     };
 
     if (onStartGeneration) {
@@ -198,6 +207,11 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
         try {
           const result = await resolveBackgroundDraft();
           return result;
+        } catch (error) {
+          console.error('[Step8] Generation error in onStartGeneration:', error);
+          // Re-throw the error so the loading screen can handle it
+          // Don't set generationError here because we're not on Step8 anymore
+          throw error;
         } finally {
           setManualGenerating(false);
         }
@@ -210,8 +224,8 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
       const result = await resolveBackgroundDraft();
       navigateWithResult(result);
     } catch (error) {
-      console.error('Generation error:', error);
-      alert(
+      console.error('[Step8] Generation error:', error);
+      setGenerationError(
         error instanceof Error
           ? error.message
           : 'Failed to open your draft. Please return to the Legal step and try again.'
@@ -329,6 +343,29 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
           TODO: swap this placeholder for the Cloudflare Turnstile widget.
         </p>
       </div>
+
+      {generationError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-red-900 mb-1">Generation failed</p>
+              <p className="text-sm text-red-800">{generationError}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setGenerationError(null);
+                  handleGenerate();
+                }}
+                className="mt-3 border-red-300 text-red-700 hover:bg-red-100"
+              >
+                Try again
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="pt-2">
         <Button

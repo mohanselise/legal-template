@@ -193,6 +193,8 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
 
   const cancelBackgroundGeneration = useCallback(
     (reason: BackgroundCancellationReason = 'manual') => {
+      console.log('[BackgroundGen] Cancelling generation. Reason:', reason);
+
       if (backgroundControllerRef.current) {
         backgroundControllerRef.current.abort();
         backgroundControllerRef.current = null;
@@ -202,20 +204,25 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
 
       setBackgroundGeneration((prev) => {
         if (prev.status === 'idle') {
+          console.log('[BackgroundGen] Already idle, skipping cancellation');
           return prev;
         }
 
+        // For form-updated cancellations, fully reset to idle instead of marking stale
+        // This prevents the old result from being used when the form has changed
         const nextStatus: BackgroundGenerationStatus =
-          reason === 'consumed' ? 'idle' : reason === 'manual' ? 'idle' : 'stale';
+          reason === 'consumed' || reason === 'manual' || reason === 'form-updated' ? 'idle' : 'stale';
+
+        console.log('[BackgroundGen] Status transition:', prev.status, '→', nextStatus);
 
         return {
           status: nextStatus,
           snapshotHash: nextStatus === 'idle' ? undefined : prev.snapshotHash,
-          startedAt: prev.startedAt,
-          completedAt: prev.completedAt,
+          startedAt: nextStatus === 'idle' ? undefined : prev.startedAt,
+          completedAt: nextStatus === 'idle' ? undefined : prev.completedAt,
           result: nextStatus === 'idle' ? undefined : prev.result,
           error: nextStatus === 'idle' ? undefined : prev.error,
-          staleReason: reason,
+          staleReason: nextStatus === 'stale' ? reason : undefined,
         };
       });
     },
@@ -226,22 +233,29 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     const snapshotHash = computeSnapshotHash(formData);
 
     if (!snapshotHash) {
+      console.log('[BackgroundGen] No snapshot hash, skipping generation');
       return;
     }
 
     const currentState = backgroundStateRef.current;
+
+    console.log('[BackgroundGen] Start requested. Current status:', currentState.status, 'Hash match:', currentState.snapshotHash === snapshotHash);
+
     if (
       currentState.status === 'pending' &&
       currentState.snapshotHash === snapshotHash
     ) {
+      console.log('[BackgroundGen] Already pending with same hash, skipping');
       return;
     }
 
     if (currentState.status === 'ready' && currentState.snapshotHash === snapshotHash) {
+      console.log('[BackgroundGen] Already ready with same hash, skipping');
       return;
     }
 
     if (backgroundControllerRef.current) {
+      console.log('[BackgroundGen] Aborting previous request');
       backgroundControllerRef.current.abort();
     }
 
@@ -252,6 +266,8 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
 
     const formDataSnapshot = { ...formData };
 
+    console.log('[BackgroundGen] Starting generation with hash:', snapshotHash.substring(0, 20) + '...');
+
     setBackgroundGeneration({
       status: 'pending',
       snapshotHash,
@@ -260,6 +276,7 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
 
     const runGeneration = async (): Promise<BackgroundGenerationResult | null> => {
       try {
+        console.log('[BackgroundGen] Fetching from API...');
         const response = await fetch('/api/templates/employment-agreement/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -280,6 +297,7 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
 
         if (!response.ok) {
           const message = await parseErrorMessage(response, 'Failed to generate employment agreement.');
+          console.error('[BackgroundGen] API error:', response.status, message);
           throw new Error(message);
         }
 
@@ -289,11 +307,20 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
           formDataSnapshot,
         };
 
+        console.log('[BackgroundGen] API response received. Document articles:', result.document?.articles?.length);
+
         setBackgroundGeneration((prev) => {
-          if (controller.signal.aborted || prev.snapshotHash !== snapshotHash) {
+          if (controller.signal.aborted) {
+            console.log('[BackgroundGen] Request was aborted, not updating state');
             return prev;
           }
 
+          if (prev.snapshotHash !== snapshotHash) {
+            console.log('[BackgroundGen] Hash mismatch, not updating state. Expected:', snapshotHash.substring(0, 20), 'Got:', prev.snapshotHash?.substring(0, 20));
+            return prev;
+          }
+
+          console.log('[BackgroundGen] State updated to ready');
           return {
             status: 'ready',
             snapshotHash,
@@ -306,14 +333,18 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
         return result;
       } catch (error) {
         if (controller.signal.aborted) {
+          console.log('[BackgroundGen] Request aborted');
           return null;
         }
+
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error during background generation.';
+        console.error('[BackgroundGen] Error:', errorMessage);
 
         setBackgroundGeneration({
           status: 'error',
           snapshotHash,
           startedAt,
-          error: error instanceof Error ? error.message : 'Unknown error during background generation.',
+          error: errorMessage,
         });
 
         throw error;
@@ -375,12 +406,17 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
       const next = { ...prev, ...updates };
       const current = backgroundStateRef.current;
 
-      if (
-        current.status !== 'idle' &&
-        current.snapshotHash &&
-        computeSnapshotHash(next) !== current.snapshotHash
-      ) {
-        cancelBackgroundGeneration('form-updated');
+      // Only cancel if there's an active generation AND the hash actually changed
+      if (current.status !== 'idle' && current.snapshotHash) {
+        const prevHash = computeSnapshotHash(prev);
+        const nextHash = computeSnapshotHash(next);
+
+        if (nextHash !== current.snapshotHash && prevHash !== nextHash) {
+          console.log('[FormData] Form changed, cancelling background generation');
+          cancelBackgroundGeneration('form-updated');
+        } else if (nextHash === current.snapshotHash) {
+          console.log('[FormData] Form matches background generation hash, keeping generation');
+        }
       }
 
       return next;
@@ -543,9 +579,15 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
 
   const generateMarketStandards = useCallback(async () => {
     if (!enrichment.jurisdictionData) {
-      console.warn('Cannot generate market standards without jurisdiction data');
+      console.warn('[MarketStandards] Cannot generate market standards without jurisdiction data');
       return;
     }
+
+    console.log('[MarketStandards] Generating market standards...', {
+      jurisdiction: enrichment.jurisdictionData?.country,
+      jobTitle: enrichment.jobTitleData?.title,
+      industry: enrichment.companyData?.industryDetected,
+    });
 
     try {
       const response = await fetch('/api/intelligence/market-standards', {
@@ -559,17 +601,21 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[MarketStandards] API error:', response.status, errorText);
         throw new Error('Failed to generate market standards');
       }
 
       const standards: MarketStandards = await response.json();
+
+      console.log('[MarketStandards] Successfully generated:', standards);
 
       setEnrichment((prev) => ({
         ...prev,
         marketStandards: standards,
       }));
     } catch (error) {
-      console.error('Market standards generation failed:', error);
+      console.error('[MarketStandards] Generation failed:', error);
     }
   }, [enrichment.jurisdictionData, enrichment.jobTitleData, enrichment.companyData]);
 

@@ -123,6 +123,11 @@ function NavigationButtons({
   const showMarketStandardButton =
     MARKET_STANDARD_STEPS.includes(currentStep) && marketStandards;
 
+  // Debug logging for market standards
+  if (MARKET_STANDARD_STEPS.includes(currentStep)) {
+    console.log('[NavigationButtons] Current step:', currentStep, 'Has marketStandards:', !!marketStandards);
+  }
+
   const isCompensationStep = currentStep === 3; // Step 4 is index 3
   const isLegalStep = STEPS[currentStep]?.id === 'legal';
   const hasSalaryAmount = formData.salaryAmount && formData.salaryAmount.trim() !== '';
@@ -168,6 +173,12 @@ function NavigationButtons({
   };
 
   const handleContinue = () => {
+    // If on compensation step without salary, show warning dialog
+    if (isCompensationStep && !hasSalaryAmount) {
+      setShowSalaryWarning(true);
+      return;
+    }
+
     // If on company step (step 0), trigger analysis in background (don't wait for it)
     if (currentStep === 0 && formData.companyName && formData.companyAddress) {
       analyzeCompany(formData.companyName, formData.companyAddress);
@@ -294,6 +305,7 @@ function SmartFlowContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStepIndex, setGenerationStepIndex] = useState(0);
   const [fakeProgress, setFakeProgress] = useState(0);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const generationTaskRef = useRef<(() => Promise<BackgroundGenerationResult | null>) | null>(null);
 
   const CurrentStepComponent = STEPS[currentStep].component;
@@ -303,6 +315,7 @@ function SmartFlowContent() {
     setIsGenerating(false);
     setGenerationStepIndex(0);
     setFakeProgress(0);
+    setGenerationError(null);
     generationTaskRef.current = null;
   }, []);
 
@@ -311,6 +324,7 @@ function SmartFlowContent() {
       generationTaskRef.current = task;
       setGenerationStepIndex(0);
       setFakeProgress(0);
+      setGenerationError(null);
       setIsGenerating(true);
     },
     []
@@ -328,7 +342,8 @@ function SmartFlowContent() {
         const workLocationValid = formData.workArrangement === 'remote' || formData.workLocation;
         return !!(workLocationValid && formData.workHoursPerWeek);
       case 3: // Compensation
-        return !!(formData.salaryAmount && formData.salaryCurrency);
+        // Currency is required, but salary can be empty (will show dialog)
+        return !!formData.salaryCurrency;
       case 4: // Benefits (optional)
         return true;
       case 5: // Legal
@@ -392,11 +407,15 @@ function SmartFlowContent() {
             throw new Error('No generation task provided.');
           }
 
+          console.log('[SmartFlow] Executing generation task...');
           const result = await task();
+
           if (!result || !result.document) {
+            console.error('[SmartFlow] Generation task did not return a document. Result:', result);
             throw new Error('Generation task did not return a document.');
           }
 
+          console.log('[SmartFlow] Generation successful, saving and navigating...');
           const persisted = saveEmploymentAgreementReview({
             document: result.document,
             formData: result.formDataSnapshot,
@@ -416,9 +435,10 @@ function SmartFlowContent() {
           });
           router.push(`/templates/employment-agreement/generate/review?${params.toString()}`);
         } catch (error) {
-          console.error('Generation error:', error);
-          alert('Failed to generate agreement. Please try again.');
-          resetLoadingState();
+          console.error('[SmartFlow] Generation error:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Failed to generate agreement. Please try again.';
+          setGenerationError(errorMessage);
+          setIsGenerating(false);
         }
       }
     }, currentStage.duration);
@@ -430,7 +450,7 @@ function SmartFlowContent() {
   }, [isGenerating, generationStepIndex, resetLoadingState, router]);
 
   // Loading Screen
-  if (isGenerating) {
+  if (isGenerating || generationError) {
     const currentStage = GENERATION_STEPS[generationStepIndex];
 
     return (
@@ -478,16 +498,63 @@ function SmartFlowContent() {
             </div>
           </div>
 
-          {/* Current Stage Info */}
-          <AnimatePresence mode="wait">
+          {/* Error Display */}
+          {generationError && (
             <motion.div
-              key={generationStepIndex}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.4 }}
-              className="rounded-2xl border border-[hsl(var(--brand-border))] bg-background p-8 shadow-sm"
+              className="mb-8 rounded-2xl border border-red-200 bg-red-50 p-6 shadow-sm"
             >
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-red-100">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="mb-2 text-xl font-semibold text-red-900">
+                    Generation failed
+                  </h3>
+                  <p className="mb-4 leading-relaxed text-red-800">
+                    {generationError}
+                  </p>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => {
+                        setGenerationError(null);
+                        previousStep();
+                      }}
+                      variant="outline"
+                      className="border-red-300 text-red-700 hover:bg-red-100"
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Go back
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        resetLoadingState();
+                        // Re-trigger generation from Step 8
+                        nextStep();
+                      }}
+                      className="bg-red-600 text-white hover:bg-red-700"
+                    >
+                      Try again
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Current Stage Info */}
+          {!generationError && (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={generationStepIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4 }}
+                className="rounded-2xl border border-[hsl(var(--brand-border))] bg-background p-8 shadow-sm"
+              >
               <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[hsl(var(--brand-border))] bg-muted">
                   <motion.div
@@ -542,11 +609,14 @@ function SmartFlowContent() {
               </div>
             </motion.div>
           </AnimatePresence>
+          )}
 
           {/* Bottom hint */}
-          <p className="mt-8 text-center text-sm text-[hsl(var(--brand-muted))]">
-            This typically takes 12-15 seconds
-          </p>
+          {!generationError && (
+            <p className="mt-8 text-center text-sm text-[hsl(var(--brand-muted))]">
+              This typically takes 12-15 seconds
+            </p>
+          )}
         </div>
       </div>
     );

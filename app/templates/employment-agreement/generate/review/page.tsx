@@ -261,25 +261,25 @@ function ReviewContent() {
   const showSuccessModal = (data: { trackingId: string }) => {
     // Create a beautiful modal overlay
     const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in';
+    modal.className = 'fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in';
     modal.innerHTML = `
-      <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md mx-4 shadow-2xl animate-slide-up">
+      <div class="bg-white rounded-2xl p-10 max-w-md mx-4 shadow-2xl border-2 border-[hsl(var(--border))] animate-slide-up">
         <div class="text-center">
-          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          <div class="w-16 h-16 bg-gradient-to-br from-[hsl(var(--lime-green))] to-[hsl(var(--poly-green))] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
             </svg>
           </div>
-          <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Invitations Sent!</h3>
-          <p class="text-gray-600 dark:text-gray-300 mb-6">
+          <h3 class="font-heading text-2xl font-bold text-[hsl(var(--fg))] mb-3">Invitations Sent!</h3>
+          <p class="font-body text-[hsl(var(--brand-muted))] text-base leading-relaxed mb-6">
             Signature invitations have been sent to all parties via SELISE Signature.
           </p>
-          <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6 text-left">
-            <p class="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">Tracking ID:</p>
-            <code class="text-xs text-blue-700 dark:text-blue-300">${data.trackingId}</code>
+          <div class="bg-[hsl(var(--brand-surface))] border border-[hsl(var(--brand-border))] rounded-xl p-4 mb-6 text-left">
+            <p class="font-body text-sm font-semibold text-[hsl(var(--brand-primary))] mb-2">Tracking ID:</p>
+            <code class="font-body text-xs text-[hsl(var(--fg))] break-all">${data.trackingId}</code>
           </div>
           <button onclick="this.closest('.fixed').remove(); window.location.href='/templates/employment-agreement';"
-            class="w-full py-3 bg-gradient-to-r from-[hsl(var(--gradient-mid-from))] to-[hsl(var(--gradient-mid-to))] text-white rounded-lg font-semibold hover:from-[hsl(var(--selise-blue))] hover:to-[hsl(var(--gradient-dark-to))] transition-all">
+            class="w-full py-4 bg-[hsl(var(--brand-primary))] text-white rounded-xl font-bold text-base shadow-md hover:shadow-xl hover:bg-[hsl(222,89%,45%)] transition-all">
             Done
           </button>
         </div>
@@ -310,37 +310,32 @@ function ReviewContent() {
 
   if (isGenerating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(var(--gradient-dark-from))] via-[hsl(var(--oxford-blue))] to-[hsl(var(--gradient-dark-to))] overflow-hidden relative">
-        {/* Animated background gradients */}
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-[hsl(var(--sky-blue))]/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[hsl(var(--selise-blue))]/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[hsl(var(--light-blue))]/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--bg))] overflow-hidden relative">
+        {/* Subtle background effect */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_hsl(var(--brand-surface))_0%,_transparent_70%)]" />
 
         <div className="relative z-10 text-center space-y-8 px-6 max-w-2xl">
           {/* Animated icon */}
-          <div className="relative w-28 h-28 mx-auto">
-            <div className="absolute inset-0 border-4 border-[hsl(var(--sky-blue))]/30 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-[hsl(var(--selise-blue))] border-t-transparent rounded-full animate-spin"></div>
-            <div className="absolute inset-2 border-4 border-[hsl(var(--light-blue))]/30 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '3s' }}></div>
+          <div className="relative w-24 h-24 mx-auto">
+            <div className="absolute inset-0 border-4 border-[hsl(var(--brand-border))] rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-[hsl(var(--brand-primary))] border-t-transparent rounded-full animate-spin"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles className="w-12 h-12 text-[hsl(var(--sky-blue))] animate-pulse" />
+              <Sparkles className="w-10 h-10 text-[hsl(var(--brand-primary))] animate-pulse" />
             </div>
           </div>
 
           {/* Title */}
           <div className="space-y-3">
-            <h2 className="text-4xl md:text-5xl font-bold text-white">
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-[hsl(var(--fg))]">
               Crafting Your Agreement
             </h2>
-            <p className="text-lg text-[hsl(var(--light-blue))]/90 max-w-xl mx-auto leading-relaxed">
+            <p className="font-body text-base text-[hsl(var(--brand-muted))] max-w-xl mx-auto leading-relaxed">
               Our AI is generating a professional, legally-sound employment agreement tailored to your specifications. This usually takes 10-20 seconds.
             </p>
           </div>
 
           {/* Loading steps */}
-          <div className="space-y-3 bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
+          <div className="space-y-3 bg-white rounded-2xl p-6 border-2 border-[hsl(var(--border))] shadow-lg">
             {[
               'Analyzing your requirements',
               'Drafting core provisions',
@@ -349,20 +344,20 @@ function ReviewContent() {
             ].map((step, index) => (
               <div
                 key={step}
-                className="flex items-center gap-3 text-[hsl(var(--light-blue))]/80 text-sm"
+                className="flex items-center gap-3 text-[hsl(var(--brand-muted))] text-sm font-medium"
                 style={{
                   animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`
                 }}
               >
-                <div className="w-1.5 h-1.5 bg-[hsl(var(--sky-blue))] rounded-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
-                <span>{step}</span>
+                <div className="w-2 h-2 bg-[hsl(var(--brand-primary))] rounded-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
+                <span className="font-body">{step}</span>
               </div>
             ))}
           </div>
 
-          {/* Fun fact */}
-          <p className="text-xs text-[hsl(var(--sky-blue))]/60 italic">
-            ⚖️ Did you know? Employment agreements help protect both employer and employee by clearly defining expectations and obligations.
+          {/* Info */}
+          <p className="font-body text-xs text-[hsl(var(--brand-muted))] italic">
+            ⚖️ Employment agreements help protect both employer and employee by clearly defining expectations and obligations.
           </p>
         </div>
 
@@ -383,23 +378,24 @@ function ReviewContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
-      {/* Premium Header */}
-      <div className="bg-gradient-to-r from-[hsl(var(--gradient-dark-from))] via-[hsl(var(--oxford-blue))] to-[hsl(var(--gradient-dark-to))] text-white shadow-2xl">
-        <div className="container mx-auto px-6 py-16">
+    <div className="min-h-screen bg-[hsl(var(--bg))]">
+      {/* Header - Clean and Professional */}
+      <div className="bg-white border-b-2 border-[hsl(var(--brand-border))] shadow-sm">
+        <div className="container mx-auto px-6 py-8">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-[hsl(var(--lime-green))] to-[hsl(var(--poly-green))] rounded-2xl flex items-center justify-center shadow-lg shadow-[hsl(var(--lime-green))]/30">
-              <CheckCircle2 className="w-9 h-9 text-white" strokeWidth={2.5} />
+            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] rounded-xl flex items-center justify-center shadow-md">
+              <CheckCircle2 className="w-7 h-7 text-white" strokeWidth={2.5} />
             </div>
             <div className="flex-1">
-              <div className="inline-block px-3 py-1 bg-[hsl(var(--lime-green))]/20 border border-[hsl(var(--lime-green))]/30 rounded-full text-[hsl(var(--lime-green))] text-xs font-semibold uppercase tracking-wider mb-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--brand-surface))] border border-[hsl(var(--brand-border))] rounded-full text-[hsl(var(--brand-primary))] text-xs font-bold uppercase tracking-wider mb-3">
+                <CheckCircle2 className="w-3 h-3" />
                 Document Ready
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 leading-tight">
-                Your Employment Agreement is Ready
+              <h1 className="font-heading text-3xl md:text-4xl font-bold text-[hsl(var(--fg))] mb-2 leading-tight">
+                Review Your Employment Agreement
               </h1>
-              <p className="text-slate-300 text-lg leading-relaxed max-w-2xl">
-                A professionally crafted legal document tailored to your specifications. Review carefully before proceeding to signature.
+              <p className="font-body text-[hsl(var(--brand-muted))] text-base leading-relaxed max-w-2xl">
+                Your professionally crafted legal document is ready. Review the details carefully before proceeding to signature.
               </p>
             </div>
           </div>
@@ -407,8 +403,8 @@ function ReviewContent() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="container mx-auto px-6 py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Document Preview - Takes up 2 columns */}
           <div className="lg:col-span-2">
             {generatedDocument && (
@@ -424,12 +420,12 @@ function ReviewContent() {
           <div className="lg:col-span-1">
             <div className="sticky top-8 space-y-6">
               {/* Quick Actions */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-slate-200 dark:border-gray-700 p-8">
+              <div className="bg-white rounded-2xl shadow-xl border-2 border-[hsl(var(--border))] p-8">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] rounded-lg flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 bg-[hsl(var(--brand-surface))] rounded-xl flex items-center justify-center border border-[hsl(var(--brand-border))]">
+                    <Sparkles className="w-5 h-5 text-[hsl(var(--brand-primary))]" />
                   </div>
-                  <h3 className="font-bold text-slate-900 dark:text-gray-100 text-lg">
+                  <h3 className="font-heading font-bold text-[hsl(var(--fg))] text-xl">
                     Next Steps
                   </h3>
                 </div>
@@ -439,14 +435,13 @@ function ReviewContent() {
                   <button
                     onClick={handleSendToSignature}
                     disabled={isPreparingContract}
-                    className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-[hsl(var(--gradient-mid-from))] via-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-mid-to))] text-white px-6 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:from-[hsl(var(--selise-blue))] hover:via-[hsl(var(--gradient-dark-from))] hover:to-[hsl(var(--gradient-dark-to))] transition-all duration-200 group relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center gap-3 bg-[hsl(var(--brand-primary))] text-white px-6 py-4 rounded-xl font-bold text-base shadow-md hover:shadow-xl hover:bg-[hsl(222,89%,45%)] transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-primary))] focus:ring-offset-2"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                    <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
-                    <span className="relative z-10">Preview Signature Fields</span>
+                    <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    <span>Send via SELISE Signature</span>
                   </button>
-                  <div className="bg-[hsl(var(--selise-blue))]/10 dark:bg-[hsl(var(--selise-blue))]/20 border border-[hsl(var(--selise-blue))]/30 dark:border-[hsl(var(--selise-blue))]/40 rounded-lg p-3">
-                    <p className="text-xs text-center text-[hsl(var(--selise-blue))] dark:text-[hsl(var(--sky-blue))] font-medium">
+                  <div className="bg-[hsl(var(--brand-surface))] border border-[hsl(var(--brand-border))] rounded-lg p-3">
+                    <p className="text-xs text-center text-[hsl(var(--brand-primary))] font-semibold">
                       ✨ Recommended for fast, secure execution
                     </p>
                   </div>
@@ -454,10 +449,10 @@ function ReviewContent() {
                   {/* Divider */}
                   <div className="relative py-4">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t-2 border-slate-200 dark:border-gray-700"></div>
+                      <div className="w-full border-t border-[hsl(var(--border))]"></div>
                     </div>
                     <div className="relative flex justify-center">
-                      <span className="bg-white dark:bg-gray-800 px-4 text-sm font-semibold text-slate-500 dark:text-gray-400">
+                      <span className="bg-white px-4 text-sm font-semibold text-[hsl(var(--brand-muted))]">
                         OR
                       </span>
                     </div>
@@ -466,7 +461,7 @@ function ReviewContent() {
                   {/* Secondary: Download */}
                   <button
                     onClick={handleDownloadDocx}
-                    className="w-full flex items-center justify-center gap-3 border-2 border-slate-300 dark:border-gray-600 text-slate-900 dark:text-gray-100 px-6 py-4 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-gray-700 hover:border-slate-400 dark:hover:border-gray-500 transition-all duration-200 group"
+                    className="w-full flex items-center justify-center gap-3 border-2 border-[hsl(var(--border))] text-[hsl(var(--fg))] px-6 py-4 rounded-xl font-bold text-base hover:bg-[hsl(var(--brand-surface))] hover:border-[hsl(var(--brand-border))] transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-primary))] focus:ring-offset-2"
                   >
                     <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
                     Download as DOCX
@@ -476,18 +471,18 @@ function ReviewContent() {
 
               {/* Document Info */}
               {formData && (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-slate-200 dark:border-gray-700 p-8">
-                  <h3 className="font-bold text-slate-900 dark:text-gray-100 text-lg mb-5 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-slate-600 dark:text-gray-400" />
+                <div className="bg-white rounded-2xl shadow-xl border-2 border-[hsl(var(--border))] p-8">
+                  <h3 className="font-heading font-bold text-[hsl(var(--fg))] text-lg mb-5 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-[hsl(var(--brand-muted))]" />
                     Document Details
                   </h3>
-                  <dl className="space-y-4 text-sm border-t border-slate-200 dark:border-gray-700 pt-5">
+                  <dl className="space-y-4 text-sm border-t border-[hsl(var(--border))] pt-5">
                     {Object.entries(formData).slice(0, 5).map(([key, value]: [string, any]) => (
-                      <div key={key} className="pb-3 border-b border-slate-100 dark:border-gray-800 last:border-0">
-                        <dt className="text-slate-500 dark:text-gray-500 capitalize text-xs font-semibold uppercase tracking-wider mb-1.5">
+                      <div key={key} className="pb-3 border-b border-[hsl(var(--border))] last:border-0">
+                        <dt className="font-body text-[hsl(var(--brand-muted))] capitalize text-xs font-semibold uppercase tracking-wider mb-1.5">
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </dt>
-                        <dd className="font-semibold text-slate-900 dark:text-gray-100">
+                        <dd className="font-body font-semibold text-[hsl(var(--fg))]">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
                       </div>
@@ -495,7 +490,7 @@ function ReviewContent() {
                   </dl>
                   <button
                     onClick={() => window.location.href = '/templates/employment-agreement/generate'}
-                    className="mt-6 w-full flex items-center justify-center gap-2 text-[hsl(var(--selise-blue))] dark:text-[hsl(var(--sky-blue))] hover:text-[hsl(var(--gradient-dark-from))] dark:hover:text-[hsl(var(--light-blue))] font-semibold text-sm py-2 hover:bg-[hsl(var(--selise-blue))]/10 dark:hover:bg-[hsl(var(--selise-blue))]/20 rounded-lg transition-colors"
+                    className="mt-6 w-full flex items-center justify-center gap-2 text-[hsl(var(--brand-primary))] hover:text-[hsl(222,89%,45%)] font-bold text-sm py-3 hover:bg-[hsl(var(--brand-surface))] rounded-xl transition-colors"
                   >
                     <Edit className="w-4 h-4" />
                     Start Over

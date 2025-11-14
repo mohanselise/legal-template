@@ -1,5 +1,7 @@
+import React from 'react';
 import { NextRequest, NextResponse } from 'next/server';
-import { generateEmploymentAgreementDocx } from '@/lib/document-generator';
+import { renderToBuffer } from '@react-pdf/renderer';
+import { EmploymentAgreementPDF } from '@/lib/pdf/EmploymentAgreementPDF';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,28 +14,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate DOCX buffer
-    const docxBuffer = await generateEmploymentAgreementDocx({
-      document,
-      formData,
-    });
+    // Generate a unique document ID
+    const docId = `DOC-${Date.now().toString(36).toUpperCase().slice(-8)}`;
 
-    // Return the DOCX file
+    // Generate PDF buffer using @react-pdf/renderer
+    const pdfBuffer = await renderToBuffer(
+      <EmploymentAgreementPDF document={document} docId={docId} />
+    );
+
+    // Return the PDF file
+    const sanitizedEmployeeName = sanitizeForFilename(
+      document.parties?.employee?.legalName || formData.employeeName
+    );
+    const filename = `Employment_Agreement_${sanitizedEmployeeName}.pdf`;
+
     // Convert Buffer to Uint8Array for NextResponse compatibility
-    const uint8Array = new Uint8Array(docxBuffer);
-    const sanitizedEmployeeName = sanitizeForFilename(formData.employeeName);
-    const filename = `Employment_Agreement_${sanitizedEmployeeName}.docx`;
+    const uint8Array = new Uint8Array(pdfBuffer);
 
     return new NextResponse(uint8Array, {
       headers: {
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,
       },
     });
   } catch (error) {
-    console.error('Error generating DOCX:', error);
+    console.error('Error generating PDF:', error);
     return NextResponse.json(
-      { error: 'Failed to generate DOCX document', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to generate PDF document',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }

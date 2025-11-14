@@ -99,7 +99,7 @@ function ReviewContent() {
     if (!documentToSend) return;
 
     try {
-      const uploadResponse = await fetch('/api/signature/upload-docx', {
+      const uploadResponse = await fetch('/api/signature/upload-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -225,13 +225,13 @@ function ReviewContent() {
     }
   };
 
-  const handleDownloadDocx = async () => {
+  const handleDownloadPdf = async () => {
     // Use edited document if available, otherwise fall back to generated document
     const documentToDownload = editedDocument || generatedDocument;
     if (!documentToDownload) return;
 
     try {
-      const response = await fetch('/api/documents/generate-docx', {
+      const response = await fetch('/api/documents/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -240,20 +240,20 @@ function ReviewContent() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to generate DOCX');
+      if (!response.ok) throw new Error('Failed to generate PDF');
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       const employeeName = documentToDownload.parties.employee.legalName.replace(/\s+/g, '_');
-      a.download = `Employment_Agreement_${employeeName}_${Date.now()}.docx`;
+      a.download = `Employment_Agreement_${employeeName}_${Date.now()}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('Error downloading DOCX:', error);
+      console.error('Error downloading PDF:', error);
       alert('Failed to download document. Please try again.');
     }
   };
@@ -460,11 +460,11 @@ function ReviewContent() {
 
                   {/* Secondary: Download */}
                   <button
-                    onClick={handleDownloadDocx}
+                    onClick={handleDownloadPdf}
                     className="w-full flex items-center justify-center gap-3 border-2 border-[hsl(var(--border))] text-[hsl(var(--fg))] px-6 py-4 rounded-xl font-bold text-base hover:bg-[hsl(var(--brand-surface))] hover:border-[hsl(var(--brand-border))] transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-primary))] focus:ring-offset-2"
                   >
                     <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
-                    Download as DOCX
+                    Download as PDF
                   </button>
                 </div>
               </div>

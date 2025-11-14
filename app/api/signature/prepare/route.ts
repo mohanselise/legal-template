@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Step 1: Get access token
+      console.log('🔐 Step 1: Authenticating with SELISE Identity API...');
       const tokenResponse = await fetch('https://selise.app/api/identity/v100/identity/token', {
         method: 'POST',
         headers: {
@@ -45,32 +46,41 @@ export async function POST(request: NextRequest) {
         }).toString(),
       });
 
+      const identityResponseText = await tokenResponse.clone().text();
+      console.log('🔍 Identity API response status:', tokenResponse.status, tokenResponse.statusText);
+      console.log('🔍 Identity API response body:', identityResponseText || '(empty body)');
+
       if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error('Token request failed:', errorText);
-        throw new Error(`Authentication failed: ${tokenResponse.status}`);
+        console.error('❌ Token request failed:', identityResponseText);
+        throw new Error(`Authentication failed: ${tokenResponse.status} ${tokenResponse.statusText}\n${identityResponseText}`);
       }
 
-      const tokenData = await tokenResponse.json();
+      const tokenData = JSON.parse(identityResponseText);
       access_token = tokenData.access_token;
+      console.log('✅ Access token received');
 
-      // Step 2: Generate DOCX from document data
-      const docxResponse = await fetch(`${request.nextUrl.origin}/api/documents/generate-docx`, {
+      // Step 2: Generate PDF from document data
+      console.log('📄 Step 2: Generating PDF document...');
+      const pdfResponse = await fetch(`${request.nextUrl.origin}/api/documents/generate-pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ document, formData }),
       });
 
-      if (!docxResponse.ok) {
-        throw new Error('Failed to generate DOCX');
+      if (!pdfResponse.ok) {
+        throw new Error('Failed to generate PDF');
       }
 
-      const docxBlob = await docxResponse.blob();
-      const docxBuffer = Buffer.from(await docxBlob.arrayBuffer());
+      const pdfBlob = await pdfResponse.blob();
+      const pdfBuffer = Buffer.from(await pdfBlob.arrayBuffer());
+      console.log(`✅ PDF generated (${pdfBuffer.length} bytes)`);
 
       // Step 3: Upload to SELISE Storage
+      console.log('📤 Step 3: Uploading to SELISE Storage...');
       const newFileId = crypto.randomUUID();
-      const fileName = `Employment_Agreement_${document.parties.employee.legalName.replace(/\s+/g, '_')}_${Date.now()}.docx`;
+      const fileName = `Employment_Agreement_${document.parties.employee.legalName.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+      console.log(`   FileId: ${newFileId}`);
+      console.log(`   FileName: ${fileName}`);
 
       const storageResponse = await fetch('https://selise.app/api/storageservice/v100/StorageService/StorageQuery/GetPreSignedUrlForUpload', {
         method: 'POST',
@@ -88,35 +98,53 @@ export async function POST(request: NextRequest) {
         }),
       });
 
+      const preSignResponseText = await storageResponse.clone().text();
+      console.log('🔍 Storage pre-sign response status:', storageResponse.status, storageResponse.statusText);
+      console.log('🔍 Storage pre-sign response body:', preSignResponseText || '(empty body)');
+
       if (!storageResponse.ok) {
-        const errorText = await storageResponse.text();
-        console.error('Storage URL request failed:', errorText);
-        throw new Error(`Storage upload failed: ${storageResponse.status}`);
+        console.error('❌ Storage URL request failed:', preSignResponseText);
+        throw new Error(`Storage upload failed: ${storageResponse.status} ${storageResponse.statusText}\n${preSignResponseText}`);
       }
 
-      const { UploadUrl, FileId } = await storageResponse.json();
+      const { UploadUrl, FileId } = JSON.parse(preSignResponseText);
+      console.log('✅ Pre-signed URL received');
 
       // Step 4: Upload file to Azure Blob
+      console.log('☁️  Step 4: Uploading to Azure Blob Storage...');
       const blobUploadResponse = await fetch(UploadUrl, {
         method: 'PUT',
         headers: {
           'x-ms-blob-type': 'BlockBlob',
-          'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'Content-Length': docxBuffer.length.toString(),
+          'Content-Type': 'application/pdf',
+          'Content-Length': pdfBuffer.length.toString(),
         },
-        body: docxBuffer,
+        body: pdfBuffer,
       });
 
+      const blobUploadResponseText = await blobUploadResponse.clone().text();
+      console.log('🔍 Blob upload response status:', blobUploadResponse.status, blobUploadResponse.statusText);
+      console.log('🔍 Blob upload response body:', blobUploadResponseText || '(empty body)');
+
       if (!blobUploadResponse.ok) {
-        throw new Error(`Blob upload failed: ${blobUploadResponse.status}`);
+        console.error('❌ Blob upload failed:', blobUploadResponseText);
+        throw new Error(`Blob upload failed: ${blobUploadResponse.status} ${blobUploadResponse.statusText}\n${blobUploadResponseText}`);
       }
 
       uploadedFileId = FileId;
+      console.log('✅ File uploaded to blob storage');
     }
 
     // Step 5: Prepare contract
+    console.log('📝 Step 5: Preparing contract draft...');
     const trackingId = crypto.randomUUID();
     const title = `Employment Agreement - ${document.parties.employee.legalName}`;
+    
+    console.log(`   TrackingId: ${trackingId}`);
+    console.log(`   Title: ${title}`);
+    console.log(`   FileId: ${uploadedFileId}`);
+    console.log(`   Owner: ${signatories[0].email}`);
+    console.log(`   Signatories: ${signatories.length}`);
 
     const prepareResponse = await fetch('https://selise.app/api/selisign/s1/SeliSign/ExternalApp/PrepareContract', {
       method: 'POST',
@@ -157,21 +185,42 @@ export async function POST(request: NextRequest) {
       }),
     });
 
+    const prepareResponseText = await prepareResponse.clone().text();
+    console.log('🔍 Prepare API response status:', prepareResponse.status, prepareResponse.statusText);
+    console.log('🔍 Prepare API response body:', prepareResponseText || '(empty body)');
+
     if (!prepareResponse.ok) {
-      const errorText = await prepareResponse.text();
-      console.error('Prepare contract failed:', errorText);
-      throw new Error(`Prepare contract failed: ${prepareResponse.status}`);
+      console.error('❌ Prepare contract failed:', prepareResponseText);
+      throw new Error(`Prepare contract failed: ${prepareResponse.status} ${prepareResponse.statusText}\n${prepareResponseText}`);
     }
 
-    const prepareResult = await prepareResponse.json();
+    const prepareResult = JSON.parse(prepareResponseText);
     const documentId = prepareResult.Result?.DocumentId || prepareResult.DocumentId;
 
     if (!documentId) {
+      console.error('❌ No DocumentId in response:', prepareResult);
       throw new Error('No DocumentId returned from prepare API');
     }
 
+    // Validate DocumentId format (should be a valid GUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(documentId)) {
+      console.error('❌ Invalid DocumentId format:', documentId);
+      throw new Error(`Invalid DocumentId format: ${documentId}`);
+    }
+
+    console.log('✅ Contract prepared');
+    console.log(`   DocumentId: ${documentId}`);
+
     // Step 6: Wait for preparation success
+    console.log('⏳ Step 6: Waiting for preparation_success event...');
     await waitForPreparationSuccess(access_token, documentId);
+    console.log('✅ Preparation confirmed by API events');
+
+    console.log('\n🎉 SUCCESS! Contract preparation complete');
+    console.log(`   DocumentId: ${documentId}`);
+    console.log(`   TrackingId: ${trackingId}`);
+    console.log(`   Title: ${title}`);
 
     return NextResponse.json({
       success: true,
@@ -216,23 +265,30 @@ async function waitForPreparationSuccess(accessToken: string, documentId: string
       }),
     });
 
+    const eventsResponseText = await response.clone().text();
+    console.log(`🔍 GetEvents attempt ${attempt}/${maxAttempts} status:`, response.status, response.statusText);
+    console.log(`🔍 GetEvents attempt ${attempt}/${maxAttempts} body:`, eventsResponseText || '(empty body)');
+
     if (response.ok) {
-      const events = await response.json();
+      const events = eventsResponseText ? JSON.parse(eventsResponseText) : null;
       if (Array.isArray(events) && events.length > 0) {
         const prepSuccessEvent = events.find(
           (e: { Status?: string; Success?: boolean }) =>
             e.Status === 'preparation_success' && e.Success === true
         );
         if (prepSuccessEvent) {
+          console.log(`   ✓ Found preparation_success event (attempt ${attempt})`);
           return true;
         }
       }
     }
 
     if (attempt < maxAttempts) {
+      console.log(`   ⌛ Waiting for preparation_success (attempt ${attempt}/${maxAttempts})...`);
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
 
+  console.warn('⚠️  No preparation_success event found after max attempts');
   return false;
 }

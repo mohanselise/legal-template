@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Upload DOCX to SELISE Storage (background process)
+ * Upload PDF to SELISE Storage (background process)
  * This starts immediately when user clicks "Send via SELISE Signature"
  */
 export async function POST(request: NextRequest) {
@@ -48,23 +48,23 @@ export async function POST(request: NextRequest) {
 
     const { access_token } = await tokenResponse.json();
 
-    // Step 2: Generate DOCX from document data
-    const docxResponse = await fetch(`${request.nextUrl.origin}/api/documents/generate-docx`, {
+    // Step 2: Generate PDF from document data
+    const pdfResponse = await fetch(`${request.nextUrl.origin}/api/documents/generate-pdf`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ document, formData }),
     });
 
-    if (!docxResponse.ok) {
-      throw new Error('Failed to generate DOCX');
+    if (!pdfResponse.ok) {
+      throw new Error('Failed to generate PDF');
     }
 
-    const docxBlob = await docxResponse.blob();
-    const docxBuffer = Buffer.from(await docxBlob.arrayBuffer());
+    const pdfBlob = await pdfResponse.blob();
+    const pdfBuffer = Buffer.from(await pdfBlob.arrayBuffer());
 
     // Step 3: Upload to SELISE Storage
     const fileId = crypto.randomUUID();
-    const fileName = `Employment_Agreement_${document.parties.employee.legalName.replace(/\s+/g, '_')}_${Date.now()}.docx`;
+    const fileName = `Employment_Agreement_${document.parties.employee.legalName.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
 
     const storageResponse = await fetch('https://selise.app/api/storageservice/v100/StorageService/StorageQuery/GetPreSignedUrlForUpload', {
       method: 'POST',
@@ -95,10 +95,10 @@ export async function POST(request: NextRequest) {
       method: 'PUT',
       headers: {
         'x-ms-blob-type': 'BlockBlob',
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'Content-Length': docxBuffer.length.toString(),
+        'Content-Type': 'application/pdf',
+        'Content-Length': pdfBuffer.length.toString(),
       },
-      body: docxBuffer,
+      body: pdfBuffer,
     });
 
     if (!blobUploadResponse.ok) {

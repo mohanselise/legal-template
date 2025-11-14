@@ -15,6 +15,7 @@ import {
   convertSalaryToAnnual,
   convertCurrency,
   formatSalaryForStorage,
+  validateSalaryRange,
   type PayFrequency,
 } from './utils/compensation';
 
@@ -55,7 +56,12 @@ interface SmartFormContextType {
 
   // Actions
   analyzeCompany: (companyName: string, companyAddress: string) => Promise<void>;
-  analyzeJobTitle: (jobTitle: string, location?: string, industry?: string) => Promise<void>;
+  analyzeJobTitle: (
+    jobTitle: string,
+    location?: string,
+    companyIndustry?: string,
+    companyAddress?: string
+  ) => Promise<void>;
   generateMarketStandards: () => Promise<void>;
   applyMarketStandards: (standards: MarketStandards) => void;
 
@@ -80,6 +86,7 @@ interface SmartFormContextType {
     snapshotHash: string,
     timeoutMs?: number
   ) => Promise<BackgroundGenerationResult | null>;
+  getBackgroundGenerationState: () => BackgroundGenerationState;
 }
 
 const SmartFormContext = createContext<SmartFormContextType | undefined>(undefined);
@@ -169,14 +176,173 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
   const [backgroundGeneration, setBackgroundGeneration] = useState<BackgroundGenerationState>(
     BACKGROUND_DEFAULT_STATE
   );
+  const [marketStandardsInputHash, setMarketStandardsInputHash] = useState<string | undefined>();
+  const [hasGeneratedStandards, setHasGeneratedStandards] = useState(false);
 
   const backgroundControllerRef = useRef<AbortController | null>(null);
   const backgroundStateRef = useRef<BackgroundGenerationState>(BACKGROUND_DEFAULT_STATE);
   const backgroundPromiseRef = useRef<Promise<BackgroundGenerationResult | null> | null>(null);
+  const enrichmentRef = useRef<EnrichmentState>(enrichment);
 
   useEffect(() => {
     backgroundStateRef.current = backgroundGeneration;
   }, [backgroundGeneration]);
+
+  // Keep enrichment ref updated
+  useEffect(() => {
+    enrichmentRef.current = enrichment;
+  }, [enrichment]);
+
+  // Define generateMarketStandards early so useEffects can reference it
+  const generateMarketStandards = useCallback(async () => {
+    // Get latest enrichment state from ref to avoid stale closure
+    const currentEnrichment = enrichmentRef.current;
+    const jurisdiction = currentEnrichment.jurisdictionData;
+    const jobTitle = currentEnrichment.jobTitleData;
+    const industry = currentEnrichment.companyData?.industryDetected;
+
+    if (!jurisdiction) {
+      console.warn('[Market Standards] Cannot generate without jurisdiction data');
+      return;
+    }
+
+    console.log('[Market Standards] Starting generation API call...');
+
+    try {
+      const response = await fetch('/api/intelligence/market-standards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jurisdiction,
+          jobTitle,
+          industry,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API failed (${response.status}): ${errorText}`);
+      }
+
+      const standards: MarketStandards = await response.json();
+
+      console.log('[Market Standards] Generation successful:', {
+        workArrangement: standards.workArrangement,
+        currency: standards.currency,
+        ptodays: standards.ptodays,
+      });
+
+      setEnrichment((prev) => ({
+        ...prev,
+        marketStandards: standards,
+      }));
+    } catch (error) {
+      console.error('[Market Standards] Generation failed:', error);
+      // Don't throw - just log the error and continue
+    }
+  }, []); // Empty deps - reads latest state via closure
+
+  // Detect stale market standards when inputs change
+  useEffect(() => {
+    const inputHash = JSON.stringify({
+      countryCode: enrichment.jurisdictionData?.countryCode,
+      state: enrichment.jurisdictionData?.state,
+      jobTitle: formData.jobTitle,
+      industry: enrichment.companyData?.industryDetected,
+    });
+
+    // Initialize hash on first run (when no hash exists yet)
+    if (marketStandardsInputHash === undefined) {
+      setMarketStandardsInputHash(inputHash);
+      return;
+    }
+
+    // Skip if hash hasn't actually changed (avoid unnecessary updates)
+    if (marketStandardsInputHash === inputHash) {
+      return;
+    }
+
+    // Hash changed - check if we need to clear standards
+    if (enrichment.marketStandards) {
+      console.log('[Market Standards] Inputs changed, clearing stale standards', {
+        old: marketStandardsInputHash,
+        new: inputHash,
+      });
+
+      // Clear stale standards and update hash in same batch
+      setEnrichment((prev) => ({
+        ...prev,
+        marketStandards: undefined,
+      }));
+    }
+
+    // Always update hash when it changes (whether we cleared standards or not)
+    setMarketStandardsInputHash(inputHash);
+  }, [
+    // Only react to input changes, NOT to marketStandards or hash updates
+    enrichment.jurisdictionData?.countryCode,
+    enrichment.jurisdictionData?.state,
+    enrichment.companyData?.industryDetected,
+    formData.jobTitle,
+  ]);
+
+  // Auto-generate market standards when prerequisites are met
+  // Use specific fields instead of full objects to avoid infinite loops
+  useEffect(() => {
+    const hasJobTitle = Boolean(enrichment.jobTitleData?.jobTitle);
+    const hasJurisdiction = Boolean(enrichment.jurisdictionData?.country);
+    const hasStandards = Boolean(enrichment.marketStandards);
+
+    if (
+      hasJobTitle &&
+      hasJurisdiction &&
+      !hasGeneratedStandards &&
+      !hasStandards
+    ) {
+      console.log('[Market Standards] Triggering generation with:', {
+        jobTitle: enrichment.jobTitleData?.jobTitle,
+        jurisdiction: enrichment.jurisdictionData?.country,
+      });
+      setHasGeneratedStandards(true);
+      generateMarketStandards();
+    }
+  }, [
+    // Only depend on primitive values, not objects (avoid reference changes)
+    enrichment.jobTitleData?.jobTitle,
+    enrichment.jurisdictionData?.country,
+    hasGeneratedStandards,
+    Boolean(enrichment.marketStandards),
+    generateMarketStandards,
+  ]);
+
+  // Note: We don't need to reset hasGeneratedStandards when standards are cleared
+  // because the auto-generation effect (above) already checks !hasStandards condition
+  // and the flag prevents duplicate generation attempts
+
+  // Define saveProgress early so auto-save effect can reference it
+  const saveProgress = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      // Capture enrichment at call time (not in dependencies to avoid infinite loops)
+      const currentEnrichment = enrichment;
+
+      const state = {
+        formData,
+        currentStep,
+        enrichment: {
+          jurisdictionData: currentEnrichment.jurisdictionData,
+          companyData: currentEnrichment.companyData,
+          jobTitleData: currentEnrichment.jobTitleData,
+          marketStandards: currentEnrichment.marketStandards,
+        },
+        timestamp: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (error) {
+      console.error('Failed to save progress:', error);
+    }
+  }, [formData, currentStep]); // Don't include enrichment - read via closure
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -185,7 +351,7 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     }, 1000); // Debounce saves
 
     return () => clearTimeout(timer);
-  }, [formData, currentStep]);
+  }, [formData, currentStep, saveProgress]);
 
   const computeSnapshotHash = useCallback((data: Partial<EmploymentAgreementFormData>) => {
     return stableStringify(data);
@@ -372,7 +538,7 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
   }, [computeSnapshotHash, formData, enrichment]);
 
   const awaitBackgroundGeneration = useCallback(
-    async (snapshotHash: string, timeoutMs = 20000): Promise<BackgroundGenerationResult | null> => {
+    async (snapshotHash: string, timeoutMs = 300000): Promise<BackgroundGenerationResult | null> => {
       const current = backgroundStateRef.current;
 
       if (current.status === 'ready' && current.snapshotHash === snapshotHash) {
@@ -436,12 +602,19 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
       companyError: undefined,
     }));
 
+    // Create AbortController with 15 second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
       const response = await fetch('/api/intelligence/company', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ companyName, companyAddress }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const fallbackMessage =
@@ -455,13 +628,20 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
 
       const data = await response.json();
 
+      // Check confidence level and add warning for low confidence
+      const jurisdictionData = data.jurisdiction as JurisdictionIntelligence;
+      const lowConfidence = jurisdictionData.confidence === 'low';
+      const confidenceWarning = lowConfidence
+        ? 'Jurisdiction detection has low confidence. Please verify the detected location is correct.'
+        : undefined;
+
       setEnrichment((prev) => ({
         ...prev,
         jurisdictionLoading: false,
         companyLoading: false,
-        jurisdictionData: data.jurisdiction as JurisdictionIntelligence,
+        jurisdictionData,
         companyData: data.company as CompanyIntelligence,
-        jurisdictionError: undefined,
+        jurisdictionError: confidenceWarning,
         companyError: undefined,
       }));
 
@@ -512,10 +692,14 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Company analysis failed:', error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Failed to analyze company information. Please try again.';
+
+      // Handle timeout specifically
+      const isTimeout = error instanceof Error && error.name === 'AbortError';
+      const message = isTimeout
+        ? 'Request timed out. Please check your connection and try again.'
+        : error instanceof Error
+        ? error.message
+        : 'Failed to analyze company information. Please try again.';
 
       setEnrichment((prev) => ({
         ...prev,
@@ -526,11 +710,18 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
         jurisdictionError: message,
         companyError: message,
       }));
+    } finally {
+      clearTimeout(timeoutId);
     }
   }, [updateFormData]);
 
   const analyzeJobTitle = useCallback(
-    async (jobTitle: string, location?: string, industry?: string) => {
+    async (
+      jobTitle: string,
+      location?: string,
+      companyIndustry?: string,
+      companyAddress?: string
+    ) => {
       setEnrichment((prev) => ({
         ...prev,
         jobTitleLoading: true,
@@ -541,7 +732,12 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch('/api/intelligence/job-title', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobTitle, location, industry }),
+          body: JSON.stringify({
+            jobTitle,
+            location,
+            companyIndustry,
+            companyAddress,
+          }),
         });
 
         if (!response.ok) {
@@ -576,48 +772,6 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     },
     []
   );
-
-  const generateMarketStandards = useCallback(async () => {
-    if (!enrichment.jurisdictionData) {
-      console.warn('[MarketStandards] Cannot generate market standards without jurisdiction data');
-      return;
-    }
-
-    console.log('[MarketStandards] Generating market standards...', {
-      jurisdiction: enrichment.jurisdictionData?.country,
-      jobTitle: enrichment.jobTitleData?.title,
-      industry: enrichment.companyData?.industryDetected,
-    });
-
-    try {
-      const response = await fetch('/api/intelligence/market-standards', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jurisdiction: enrichment.jurisdictionData,
-          jobTitle: enrichment.jobTitleData,
-          industry: enrichment.companyData?.industryDetected,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[MarketStandards] API error:', response.status, errorText);
-        throw new Error('Failed to generate market standards');
-      }
-
-      const standards: MarketStandards = await response.json();
-
-      console.log('[MarketStandards] Successfully generated:', standards);
-
-      setEnrichment((prev) => ({
-        ...prev,
-        marketStandards: standards,
-      }));
-    } catch (error) {
-      console.error('[MarketStandards] Generation failed:', error);
-    }
-  }, [enrichment.jurisdictionData, enrichment.jobTitleData, enrichment.companyData]);
 
   const applyMarketStandards = useCallback(
     (standards: MarketStandards) => {
@@ -658,28 +812,36 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
           annualEquivalent = convertCurrency(annualEquivalent, currentCurrency, resolvedCurrency);
         }
         const converted = convertAnnualSalary(annualEquivalent, resolvedFrequency);
-        updates.salaryAmount = formatSalaryForStorage(converted, resolvedFrequency);
-      } else if (jobTitleRange?.median) {
-        const annualMedian = convertCurrency(
-          jobTitleRange.median,
-          jobTitleRange.currency,
-          resolvedCurrency
-        );
-        const converted = convertAnnualSalary(annualMedian, resolvedFrequency);
-        updates.salaryAmount = formatSalaryForStorage(converted, resolvedFrequency);
-        if (!updates.salaryCurrency) {
-          updates.salaryCurrency = resolvedCurrency;
+
+        // Validate the converted salary
+        const validation = validateSalaryRange(converted, resolvedFrequency, resolvedCurrency);
+        if (!validation.valid) {
+          console.warn('[Salary Validation]', validation.warning);
+          // Still apply but log the warning - user can review in UI
         }
+
+        updates.salaryAmount = formatSalaryForStorage(converted, resolvedFrequency);
       }
+      // Note: We don't auto-fill salary amount - user must enter it explicitly or choose placeholder/skip
 
       if (!formData.paidTimeOff) {
         updates.paidTimeOff = standards.ptodays.toString();
       }
 
-      updates.includeConfidentiality = standards.confidentialityRequired;
-      updates.includeIpAssignment = standards.ipAssignmentRequired;
-      updates.includeNonCompete = standards.nonCompeteEnforceable;
-      updates.includeNonSolicitation = standards.nonSolicitationCommon;
+      // Only apply legal clause defaults if user hasn't explicitly set them
+      // (preserve user intent if they've already made choices)
+      if (formData.includeConfidentiality === undefined) {
+        updates.includeConfidentiality = standards.confidentialityRequired;
+      }
+      if (formData.includeIpAssignment === undefined) {
+        updates.includeIpAssignment = standards.ipAssignmentRequired;
+      }
+      if (formData.includeNonCompete === undefined) {
+        updates.includeNonCompete = standards.nonCompeteEnforceable;
+      }
+      if (formData.includeNonSolicitation === undefined) {
+        updates.includeNonSolicitation = standards.nonSolicitationCommon;
+      }
 
       if (standards.probationPeriodMonths && !formData.probationPeriod) {
         updates.probationPeriod = `${standards.probationPeriodMonths} months`;
@@ -708,21 +870,6 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   }, []);
 
-  const saveProgress = useCallback(() => {
-    if (typeof window === 'undefined') return;
-
-    try {
-      const state = {
-        formData,
-        currentStep,
-        timestamp: new Date().toISOString(),
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch (error) {
-      console.error('Failed to save progress:', error);
-    }
-  }, [formData, currentStep]);
-
   const loadProgress = useCallback(() => {
     if (typeof window === 'undefined') return;
 
@@ -732,6 +879,21 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
         const state = JSON.parse(saved);
         setFormDataState(state.formData || {});
         setCurrentStep(state.currentStep || 0);
+
+        // Restore enrichment state if available
+        if (state.enrichment) {
+          setEnrichment((prev) => ({
+            ...prev,
+            jurisdictionData: state.enrichment.jurisdictionData,
+            companyData: state.enrichment.companyData,
+            jobTitleData: state.enrichment.jobTitleData,
+            marketStandards: state.enrichment.marketStandards,
+            // Keep loading states as false (don't restore those)
+            jurisdictionLoading: false,
+            companyLoading: false,
+            jobTitleLoading: false,
+          }));
+        }
       }
     } catch (error) {
       console.error('Failed to load progress:', error);
@@ -746,6 +908,10 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to clear progress:', error);
     }
+  }, []);
+
+  const getBackgroundGenerationState = useCallback(() => {
+    return backgroundStateRef.current;
   }, []);
 
   const value: SmartFormContextType = {
@@ -770,6 +936,7 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     cancelBackgroundGeneration,
     computeSnapshotHash,
     awaitBackgroundGeneration,
+    getBackgroundGenerationState,
   };
 
   return <SmartFormContext.Provider value={value}>{children}</SmartFormContext.Provider>;

@@ -5,12 +5,6 @@ import { useDebounce } from 'use-debounce';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { Sparkles, HelpCircle, AlertCircle, CheckCircle2, Loader2, MapPin } from 'lucide-react';
 import { SmartFieldSuggestion, ValidationWarning } from '@/lib/types/smart-form';
 import { cn } from '@/lib/utils';
@@ -84,7 +78,8 @@ export function SmartInput({
       clearSuggestions();
       setShowSuggestions(false);
     }
-  }, [debouncedValue, enableAddressAutocomplete, inputIsFocused, fetchSuggestions, clearSuggestions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedValue, enableAddressAutocomplete, inputIsFocused]);
 
   // Reset userIsTyping when searchQuery changes
   useEffect(() => {
@@ -140,6 +135,7 @@ export function SmartInput({
   };
 
   const isLoading = loading || suggestionsLoading;
+  const [showTooltip, setShowTooltip] = useState(false);
 
   return (
     <div className="space-y-2" ref={wrapperRef}>
@@ -151,21 +147,25 @@ export function SmartInput({
         </Label>
 
         {helpText && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p className="text-sm">{helpText}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="relative">
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+              onFocus={() => setShowTooltip(true)}
+              onBlur={() => setShowTooltip(false)}
+              aria-label={helpText}
+            >
+              <HelpCircle className="h-4 w-4" />
+            </button>
+            {showTooltip && (
+              <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-md bg-foreground px-3 py-1.5 text-xs text-background shadow-lg">
+                {helpText}
+                <div className="absolute -top-1 right-2 h-2 w-2 rotate-45 bg-foreground" />
+              </div>
+            )}
+          </div>
         )}
       </div>
 

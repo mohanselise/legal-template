@@ -13,7 +13,6 @@ export function Step2EmployeeIdentity() {
     updateFormData,
     analyzeJobTitle,
     enrichment,
-    generateMarketStandards,
   } = useSmartForm();
   const [hasAnalyzedJob, setHasAnalyzedJob] = useState(false);
 
@@ -24,21 +23,22 @@ export function Step2EmployeeIdentity() {
       analyzeJobTitle(
         formData.jobTitle,
         enrichment.jurisdictionData?.city || enrichment.jurisdictionData?.country,
-        enrichment.companyData?.industryDetected
-      ).then(() => {
-        // Generate market standards after job analysis completes
-        generateMarketStandards();
-      });
+        enrichment.companyData?.industryDetected,
+        formData.companyAddress
+      );
     }
   }, [
     formData.jobTitle,
+    formData.companyAddress,
     hasAnalyzedJob,
     enrichment.jobTitleLoading,
     enrichment.jurisdictionData,
     enrichment.companyData,
     analyzeJobTitle,
-    generateMarketStandards,
   ]);
+
+  // Note: Market standards generation now handled by SmartFormContext
+  // It triggers automatically when enrichment.jobTitleData is set
 
   const canContinue =
     formData.employeeName && formData.employeeAddress && formData.jobTitle && formData.startDate;

@@ -278,7 +278,15 @@ function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string
     data.employeePostalCode,
     data.employeeCountry
   );
-  const salaryAmount = data.salaryAmount ? formatNumber(data.salaryAmount) : '[Amount]';
+  // Handle salary amount - preserve placeholder values, format numbers
+  let salaryAmount = '[Amount]';
+  if (data.salaryAmount) {
+    if (data.salaryAmount === '[TO BE DETERMINED]' || data.salaryAmount === '[OMITTED]') {
+      salaryAmount = data.salaryAmount; // Preserve placeholder as-is
+    } else {
+      salaryAmount = formatNumber(data.salaryAmount);
+    }
+  }
   const salaryPeriodLabel = formatLabel(data.salaryPeriod) || 'Annual';
   const paymentFrequency = derivePaymentFrequency(data.salaryPeriod);
   const workArrangementLabel = formatLabel(data.workArrangement) || 'On-site';
@@ -326,9 +334,21 @@ function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string
   prompt += `\n**Key Responsibilities:** Draft appropriate duties and responsibilities for a ${data.jobTitle || 'position'} role including core functions, reporting obligations, and performance expectations.\n\n`;
 
   prompt += `# COMPENSATION STRUCTURE\n\n`;
-  prompt += `**Base Compensation:**\n`;
-  prompt += `- Base Salary: ${data.salaryCurrency || 'USD'} ${salaryAmount} (${salaryPeriodLabel})\n`;
-  prompt += `- Payment Schedule: ${paymentFrequency}\n`;
+
+  // Handle different salary scenarios
+  if (salaryAmount === '[OMITTED]') {
+    prompt += `**Base Compensation:**\n`;
+    prompt += `- Base Salary: OMIT THIS SECTION ENTIRELY from the document. Do not include any mention of base salary amount.\n`;
+    prompt += `- Payment Schedule: ${paymentFrequency}\n`;
+  } else {
+    prompt += `**Base Compensation:**\n`;
+    if (salaryAmount === '[TO BE DETERMINED]') {
+      prompt += `- Base Salary: Use the exact phrase "[TO BE DETERMINED]" as the amount. Example format: "EMPLOYEE shall receive a base salary of [TO BE DETERMINED], payable ${salaryPeriodLabel.toLowerCase()}..."\n`;
+    } else {
+      prompt += `- Base Salary: ${data.salaryCurrency || 'USD'} ${salaryAmount} (${salaryPeriodLabel})\n`;
+    }
+    prompt += `- Payment Schedule: ${paymentFrequency}\n`;
+  }
   if (data.signOnBonus) prompt += `- Sign-On Bonus: ${data.signOnBonus}\n`;
 
   if (data.bonusStructure) {

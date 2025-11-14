@@ -16,6 +16,7 @@ import { Step6LegalTerms } from './screens/Step6LegalTerms';
 import { Step7Review } from './screens/Step7Review';
 import { Step8ConfirmGenerate } from './screens/Step8ConfirmGenerate';
 import { Button } from '@/components/ui/button';
+import { getJurisdictionShortName } from './utils/jurisdiction';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -113,41 +114,49 @@ function NavigationButtons({
     startBackgroundGeneration,
   } = useSmartForm();
   const [showSalaryWarning, setShowSalaryWarning] = useState(false);
+  const [isApplyingStandards, setIsApplyingStandards] = useState(false);
+  const [showSuccessFeedback, setShowSuccessFeedback] = useState(false);
 
   const marketStandards = enrichment.marketStandards;
-  const jurisdictionName =
-    enrichment.jurisdictionData?.state ||
-    enrichment.jurisdictionData?.country ||
-    'market';
+  const jurisdictionName = getJurisdictionShortName(enrichment.jurisdictionData);
 
   const showMarketStandardButton =
     MARKET_STANDARD_STEPS.includes(currentStep) && marketStandards;
 
-  // Debug logging for market standards
-  if (MARKET_STANDARD_STEPS.includes(currentStep)) {
-    console.log('[NavigationButtons] Current step:', currentStep, 'Has marketStandards:', !!marketStandards);
-  }
+  // Show loading placeholder if we have jurisdiction but no standards yet (still loading)
+  const showLoadingPlaceholder =
+    MARKET_STANDARD_STEPS.includes(currentStep) &&
+    !marketStandards &&
+    enrichment.jurisdictionData &&
+    enrichment.jobTitleData;
 
   const isCompensationStep = currentStep === 3; // Step 4 is index 3
   const isLegalStep = STEPS[currentStep]?.id === 'legal';
   const hasSalaryAmount = formData.salaryAmount && formData.salaryAmount.trim() !== '';
+  const isPlaceholderSalary = formData.salaryAmount === '[TO BE DETERMINED]' || formData.salaryAmount === '[OMITTED]';
+  const isNumericSalary = hasSalaryAmount && !isPlaceholderSalary;
 
   const handleUseMarketStandard = () => {
-    // Show warning if on compensation step and no salary entered
+    // Show warning if on compensation step and no salary entered (and no placeholder set)
     if (isCompensationStep && !hasSalaryAmount) {
       setShowSalaryWarning(true);
       return;
     }
 
     if (marketStandards) {
+      setIsApplyingStandards(true);
       applyMarketStandards(marketStandards);
       if (isLegalStep) {
         void startBackgroundGeneration();
       }
-      // Auto-advance to next step after applying
+
+      // Show success feedback briefly
+      setShowSuccessFeedback(true);
       setTimeout(() => {
+        setShowSuccessFeedback(false);
+        setIsApplyingStandards(false);
         onNext();
-      }, 300);
+      }, 800);
     }
   };
 
@@ -210,14 +219,33 @@ function NavigationButtons({
 
         {/* Right side - Market Standard + Continue buttons */}
         <div className="flex items-center gap-3">
+          {/* Loading placeholder */}
+          {showLoadingPlaceholder && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
+              <div className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+              <span>Preparing standards...</span>
+            </div>
+          )}
+
+          {/* Market standard button */}
           {showMarketStandardButton && (
             <Button
               variant="ghost"
               onClick={handleUseMarketStandard}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              disabled={isApplyingStandards}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground relative"
             >
-              <Zap className="w-4 h-4" />
-              Use {jurisdictionName} standard
+              {showSuccessFeedback ? (
+                <>
+                  <Check className="w-4 h-4 text-green-600" />
+                  <span className="text-green-600">Applied!</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Use {jurisdictionName} standard
+                </>
+              )}
             </Button>
           )}
 
@@ -377,6 +405,8 @@ function SmartFlowContent() {
 
     let progressInterval: NodeJS.Timeout;
     let stepTimeout: NodeJS.Timeout;
+    let pollInterval: NodeJS.Timeout;
+    let isNavigating = false;
 
     const currentStage = GENERATION_STEPS[generationStepIndex];
 
@@ -396,55 +426,80 @@ function SmartFlowContent() {
       });
     }, 50);
 
-    // Move to next stage after duration
-    stepTimeout = setTimeout(async () => {
-      if (generationStepIndex < GENERATION_STEPS.length - 1) {
-        setGenerationStepIndex((prev) => prev + 1);
-      } else {
-        try {
-          const task = generationTaskRef.current;
-          if (!task) {
-            throw new Error('No generation task provided.');
-          }
+    // Poll for result availability - check every 500ms
+    const navigateWithResult = async (result: BackgroundGenerationResult) => {
+      if (isNavigating) return;
+      isNavigating = true;
 
-          console.log('[SmartFlow] Executing generation task...');
-          const result = await task();
+      const persisted = saveEmploymentAgreementReview({
+        document: result.document,
+        formData: result.formDataSnapshot,
+        storedAt: new Date().toISOString(),
+      });
 
-          if (!result || !result.document) {
-            console.error('[SmartFlow] Generation task did not return a document. Result:', result);
-            throw new Error('Generation task did not return a document.');
-          }
+      resetLoadingState();
 
-          console.log('[SmartFlow] Generation successful, saving and navigating...');
-          const persisted = saveEmploymentAgreementReview({
-            document: result.document,
-            formData: result.formDataSnapshot,
-            storedAt: new Date().toISOString(),
-          });
+      if (persisted) {
+        router.push('/templates/employment-agreement/generate/review');
+        return;
+      }
 
-          resetLoadingState();
+      const params = new URLSearchParams({
+        document: JSON.stringify(result.document),
+        data: JSON.stringify(result.formDataSnapshot),
+      });
+      router.push(`/templates/employment-agreement/generate/review?${params.toString()}`);
+    };
 
-          if (persisted) {
-            router.push('/templates/employment-agreement/generate/review');
-            return;
-          }
+    pollInterval = setInterval(async () => {
+      if (isNavigating) return;
 
-          const params = new URLSearchParams({
-            document: JSON.stringify(result.document),
-            data: JSON.stringify(result.formDataSnapshot),
-          });
-          router.push(`/templates/employment-agreement/generate/review?${params.toString()}`);
-        } catch (error) {
-          console.error('[SmartFlow] Generation error:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Failed to generate agreement. Please try again.';
-          setGenerationError(errorMessage);
-          setIsGenerating(false);
+      const task = generationTaskRef.current;
+      if (!task) return;
+
+      try {
+        const result = await task();
+        if (result && result.document) {
+          // Result is ready! Navigate immediately, don't wait for animation
+          console.log('✅ [Loading] Generation complete! Navigating to review...');
+          clearInterval(pollInterval);
+          clearInterval(progressInterval);
+          clearTimeout(stepTimeout);
+          await navigateWithResult(result);
         }
+      } catch (error) {
+        // Task not ready yet or error - continue polling
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        // Only log if it's not a "still generating" message
+        if (!errorMessage.includes('Still generating') && !errorMessage.includes('Generation starting')) {
+          console.log('[Loading] Poll check:', errorMessage);
+        }
+
+        // Only show error if we're on the last animation step and it's a real error
+        if (generationStepIndex >= GENERATION_STEPS.length - 1 &&
+            !errorMessage.includes('Still generating') &&
+            !errorMessage.includes('Generation starting')) {
+          console.error('❌ [Loading] Generation error:', error);
+          clearInterval(pollInterval);
+          clearInterval(progressInterval);
+          clearTimeout(stepTimeout);
+          alert('Failed to generate agreement. Please try again.');
+          resetLoadingState();
+        }
+      }
+    }, 500);
+
+    // Move to next stage after duration (for visual feedback)
+    stepTimeout = setTimeout(() => {
+      if (!isNavigating && generationStepIndex < GENERATION_STEPS.length - 1) {
+        setGenerationStepIndex((prev) => prev + 1);
       }
     }, currentStage.duration);
 
     return () => {
       clearInterval(progressInterval);
+      clearInterval(pollInterval);
       clearTimeout(stepTimeout);
     };
   }, [isGenerating, generationStepIndex, resetLoadingState, router]);

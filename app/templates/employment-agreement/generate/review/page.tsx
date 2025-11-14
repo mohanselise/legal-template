@@ -11,6 +11,7 @@ import {
   loadEmploymentAgreementReview,
 } from '../reviewStorage';
 import { LegalDisclaimer } from '@/components/legal-disclaimer';
+import { SignatureDialog, type SignatureFormData } from '@/components/signature-dialog';
 
 function ReviewContent() {
   const searchParams = useSearchParams();
@@ -19,6 +20,7 @@ function ReviewContent() {
   const [editedDocument, setEditedDocument] = useState<EmploymentAgreement | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
 
   useEffect(() => {
     const sessionPayload = loadEmploymentAgreementReview();
@@ -74,7 +76,12 @@ function ReviewContent() {
     setEditedDocument(updatedDocument);
   };
 
-  const handleSendToSignature = async () => {
+  const handleSendToSignature = () => {
+    // Open the signature dialog
+    setIsSignatureDialogOpen(true);
+  };
+
+  const handleSignatureSubmit = async (signatureData: SignatureFormData) => {
     // Use edited document if available, otherwise fall back to generated document
     const documentToSend = editedDocument || generatedDocument;
     if (!documentToSend) return;
@@ -84,26 +91,38 @@ function ReviewContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          document: documentToSend, // Send the edited or original document
+          document: documentToSend,
           formData,
           signatories: [
             {
+              name: signatureData.companyRepresentative.name,
+              email: signatureData.companyRepresentative.email,
+              title: signatureData.companyRepresentative.title,
+              role: 'Company Representative',
+            },
+            {
               name: documentToSend.parties.employee.legalName,
-              email: documentToSend.parties.employee.email || 'employee@company.com',
+              email: signatureData.employee.email,
+              role: 'Employee',
             },
           ],
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to send to signature');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send to signature');
+      }
 
       const data = await response.json();
 
-      // Show beautiful success modal
+      // Close dialog and show success modal
+      setIsSignatureDialogOpen(false);
       showSuccessModal(data);
     } catch (error) {
       console.error('Error sending to signature:', error);
-      alert('Failed to send document. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to send document. Please try again.');
+      throw error; // Re-throw so dialog knows submission failed
     }
   };
 
@@ -390,6 +409,17 @@ function ReviewContent() {
           </div>
         </div>
       </div>
+
+      {/* Signature Dialog */}
+      {generatedDocument && (
+        <SignatureDialog
+          open={isSignatureDialogOpen}
+          onOpenChange={setIsSignatureDialogOpen}
+          employeeName={generatedDocument.parties.employee.legalName}
+          companyName={generatedDocument.parties.company.legalName}
+          onSubmit={handleSignatureSubmit}
+        />
+      )}
 
       <style jsx global>{`
         @keyframes fade-in {

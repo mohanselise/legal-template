@@ -416,7 +416,7 @@ function ReviewContent() {
           open={isSignatureDialogOpen}
           onOpenChange={setIsSignatureDialogOpen}
           employeeName={generatedDocument.parties.employee.legalName}
-          companyName={generatedDocument.parties.company.legalName}
+          companyName={generatedDocument.parties.employer.legalName}
           onSubmit={handleSignatureSubmit}
         />
       )}

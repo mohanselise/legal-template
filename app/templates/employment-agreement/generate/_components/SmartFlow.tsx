@@ -8,6 +8,8 @@ import { ChevronRight, ArrowRight, Check, Building2, User, Briefcase, DollarSign
 import { EmploymentAgreementFormData } from '../schema';
 import { cn } from '@/lib/utils';
 import { saveEmploymentAgreementReview } from '../reviewStorage';
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 
 type ScreenType = 'single' | 'group' | 'cards';
 
@@ -583,19 +585,19 @@ export function SmartFlow() {
               transition={{ duration: 0.3 }}
             >
               {/* Card Container */}
-              <div className="bg-white rounded-3xl shadow-lg border border-[hsl(var(--border))] p-8 md:p-12">
+              <div className="bg-white rounded-2xl shadow-xl border border-[hsl(var(--border))] p-8 md:p-12">
                 {/* Header */}
-                <div className="mb-8">
+                <div className="mb-10">
                   {currentScreen.icon && (
-                    <div className="w-14 h-14 bg-[hsl(var(--brand-primary))/0.1] rounded-2xl flex items-center justify-center text-[hsl(var(--brand-primary))] mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-[hsl(var(--brand-primary))/0.15] to-[hsl(var(--brand-primary))/0.05] rounded-2xl flex items-center justify-center text-[hsl(var(--brand-primary))] mb-6 shadow-sm">
                       {currentScreen.icon}
                     </div>
                   )}
-                  <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))] mb-3">
+                  <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--fg))] mb-3 leading-tight">
                     {currentScreen.title}
                   </h2>
                   {currentScreen.subtitle && (
-                    <p className="text-lg text-[hsl(var(--brand-muted))]">{currentScreen.subtitle}</p>
+                    <p className="text-lg text-[hsl(var(--brand-muted))] leading-relaxed">{currentScreen.subtitle}</p>
                   )}
                 </div>
 
@@ -606,23 +608,32 @@ export function SmartFlow() {
                       <button
                         key={option.value}
                         onClick={() => handleCardSelect(option.value)}
-                        className={`relative p-6 rounded-2xl border-2 transition-all text-center hover:border-[hsl(var(--brand-primary))] hover:shadow-md ${
+                        className={cn(
+                          "relative p-6 rounded-xl border-2 transition-all text-center group",
+                          "hover:border-[hsl(var(--brand-primary))] hover:shadow-lg hover:-translate-y-0.5",
+                          "focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-primary))] focus:ring-offset-2",
                           formData[currentScreen.field!] === option.value
-                            ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.05] shadow-md'
+                            ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.08] shadow-lg'
                             : 'border-[hsl(var(--border))] bg-white'
-                        }`}
+                        )}
                       >
                         {option.recommended && (
-                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-3 py-1 bg-[hsl(var(--brand-primary))] text-white text-xs font-semibold rounded-full">
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[hsl(var(--brand-primary))] text-white text-xs font-semibold rounded-full shadow-md">
                             Recommended
                           </div>
                         )}
-                        <div className="font-semibold text-lg text-[hsl(var(--fg))] mb-2">{option.label}</div>
+                        <div className="font-semibold text-lg text-[hsl(var(--fg))] mb-2 group-hover:text-[hsl(var(--brand-primary))] transition-colors">
+                          {option.label}
+                        </div>
                         {option.description && (
-                          <div className="text-sm text-[hsl(var(--brand-muted))]">{option.description}</div>
+                          <div className="text-sm text-[hsl(var(--brand-muted))] leading-relaxed">
+                            {option.description}
+                          </div>
                         )}
                         {formData[currentScreen.field!] === option.value && (
-                          <Check className="w-5 h-5 text-[hsl(var(--brand-primary))] absolute top-4 right-4" />
+                          <div className="absolute top-4 right-4 w-6 h-6 bg-[hsl(var(--brand-primary))] rounded-full flex items-center justify-center">
+                            <Check className="w-4 h-4 text-white" />
+                          </div>
                         )}
                       </button>
                     ))}
@@ -631,45 +642,56 @@ export function SmartFlow() {
 
                 {/* Group Type */}
                 {currentScreen.type === 'group' && (
-                  <div className="space-y-6 mb-8">
-                    {currentScreen.fields?.map((field) => (
-                      <div key={field.key}>
-                        <label className="block text-sm font-medium text-[hsl(var(--fg))] mb-2">
-                          {field.label}
-                          {field.required && <span className="text-[hsl(var(--brand-primary))] ml-1">*</span>}
-                        </label>
-                        <input
-                          type={field.type}
-                          value={(formData[field.key] as string) || ''}
-                          onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                          placeholder={field.placeholder}
-                          className="w-full px-4 py-3 text-base border-2 border-[hsl(var(--border))] rounded-xl focus:border-[hsl(var(--brand-primary))] focus:ring-2 focus:ring-[hsl(var(--brand-primary))/0.2] outline-none transition-all"
-                        />
-                        {field.helper && (
-                          <p className="text-sm text-[hsl(var(--brand-muted))] mt-1">{field.helper}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <FieldSet className="mb-8">
+                    <FieldGroup>
+                      {currentScreen.fields?.map((field) => (
+                        <Field key={field.key}>
+                          <FieldLabel htmlFor={`field-${field.key}`}>
+                            {field.label}
+                            {field.required && <span className="text-[hsl(var(--brand-primary))] ml-1">*</span>}
+                          </FieldLabel>
+                          {field.helper && (
+                            <FieldDescription>{field.helper}</FieldDescription>
+                          )}
+                          <Input
+                            id={`field-${field.key}`}
+                            type={field.type}
+                            value={(formData[field.key] as string) || ''}
+                            onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                            placeholder={field.placeholder}
+                            className="text-base"
+                          />
+                        </Field>
+                      ))}
+                    </FieldGroup>
+                  </FieldSet>
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-4 pt-4 border-t border-[hsl(var(--border))]">
                   {currentScreen.skippable ? (
                     <button
                       onClick={handleSkip}
-                      className="text-[hsl(var(--brand-muted))] hover:text-[hsl(var(--brand-primary))] font-medium transition-colors text-base"
+                      className="text-[hsl(var(--brand-muted))] hover:text-[hsl(var(--brand-primary))] font-medium transition-colors text-base underline underline-offset-4 decoration-transparent hover:decoration-current"
                     >
                       {currentScreen.skipLabel || 'Skip this step'}
                     </button>
                   ) : (
-                    <div></div>
+                    <div className="text-sm text-[hsl(var(--brand-muted))]">
+                      {currentIndex + 1} of {SCREENS.length}
+                    </div>
                   )}
 
                   <button
                     onClick={handleNext}
                     disabled={!canContinue()}
-                    className="flex items-center gap-3 bg-[hsl(var(--brand-primary))] text-white px-8 py-4 rounded-xl font-semibold text-base shadow-lg hover:shadow-xl hover:bg-[hsl(222,89%,45%)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className={cn(
+                      "flex items-center gap-3 px-8 py-3.5 rounded-xl font-semibold text-base shadow-md transition-all",
+                      "bg-[hsl(var(--brand-primary))] text-white",
+                      "hover:shadow-xl hover:bg-[hsl(222,89%,45%)] hover:-translate-y-0.5",
+                      "focus:outline-none focus:ring-2 focus:ring-[hsl(var(--brand-primary))] focus:ring-offset-2",
+                      "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-md"
+                    )}
                   >
                     {currentIndex === SCREENS.length - 1 ? 'Generate agreement' : 'Continue'}
                     <ArrowRight className="w-5 h-5" />

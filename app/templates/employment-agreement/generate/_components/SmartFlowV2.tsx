@@ -265,43 +265,47 @@ function NavigationButtons({
 
       {/* Salary Warning Dialog */}
       <AlertDialog open={showSalaryWarning} onOpenChange={setShowSalaryWarning}>
-        <AlertDialogContent className="max-w-lg">
-          <AlertDialogHeader className="space-y-3">
+        <AlertDialogContent className="max-w-md sm:max-w-lg">
+          <AlertDialogHeader className="space-y-4">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-6 h-6 text-amber-600" />
+              <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <AlertTriangle className="w-7 h-7 text-amber-600 dark:text-amber-500" />
               </div>
-              <div className="flex-1 min-w-0">
-                <AlertDialogTitle className="text-lg font-semibold mb-2">
+              <div className="flex-1 min-w-0 space-y-2">
+                <AlertDialogTitle className="text-xl font-bold text-foreground">
                   Salary amount missing
                 </AlertDialogTitle>
-                <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
+                <AlertDialogDescription className="text-base text-muted-foreground leading-relaxed">
                   The final agreement will be generated without salary information. Choose how you&apos;d like to proceed:
                 </AlertDialogDescription>
               </div>
             </div>
           </AlertDialogHeader>
 
-          <div className="space-y-2 py-2">
+          <div className="space-y-3 pt-2">
             <Button
               variant="outline"
               onClick={() => setShowSalaryWarning(false)}
-              className="w-full justify-start h-auto py-3 px-4 border-2 hover:border-primary hover:bg-primary/5"
+              className="w-full justify-start h-auto py-4 px-5 border-2 hover:border-primary hover:bg-primary/5 transition-all group"
             >
               <div className="text-left flex-1 min-w-0">
-                <div className="font-semibold text-sm">← Go back and enter salary</div>
-                <div className="text-xs text-muted-foreground mt-0.5 truncate">Recommended for complete agreement</div>
+                <div className="font-semibold text-base mb-1 group-hover:text-primary transition-colors">
+                  ← Go back and enter salary
+                </div>
+                <div className="text-sm text-muted-foreground leading-relaxed">
+                  Recommended for a complete agreement
+                </div>
               </div>
             </Button>
 
             <Button
               variant="outline"
               onClick={handleUsePlaceholder}
-              className="w-full justify-start h-auto py-3 px-4 hover:bg-muted"
+              className="w-full justify-start h-auto py-4 px-5 border-2 hover:border-muted-foreground/30 hover:bg-muted/50 transition-all"
             >
               <div className="text-left flex-1 min-w-0">
-                <div className="font-semibold text-sm">Add placeholder</div>
-                <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                <div className="font-semibold text-base mb-1">Add placeholder</div>
+                <div className="text-sm text-muted-foreground leading-relaxed">
                   Shows &quot;[TO BE DETERMINED]&quot; in document
                 </div>
               </div>
@@ -310,11 +314,11 @@ function NavigationButtons({
             <Button
               variant="ghost"
               onClick={handleProceedWithoutSalary}
-              className="w-full justify-start h-auto py-3 px-4 text-muted-foreground hover:text-foreground hover:bg-muted"
+              className="w-full justify-start h-auto py-4 px-5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
             >
               <div className="text-left flex-1 min-w-0">
-                <div className="font-medium text-sm">Skip salary entirely</div>
-                <div className="text-xs opacity-75 mt-0.5 truncate">
+                <div className="font-medium text-base mb-1">Skip salary entirely</div>
+                <div className="text-sm opacity-75 leading-relaxed">
                   No salary mention in final document
                 </div>
               </div>

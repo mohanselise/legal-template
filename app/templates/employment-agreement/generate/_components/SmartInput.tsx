@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDebounce } from 'use-debounce';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Field, FieldLabel, FieldDescription, FieldError } from '@/components/ui/field';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, HelpCircle, AlertCircle, CheckCircle2, Loader2, MapPin } from 'lucide-react';
 import { SmartFieldSuggestion, ValidationWarning } from '@/lib/types/smart-form';
@@ -136,21 +136,26 @@ export function SmartInput({
 
   const isLoading = loading || suggestionsLoading;
   const [showTooltip, setShowTooltip] = useState(false);
+  const hasError = validation?.severity === 'error';
 
   return (
-    <div className="space-y-2" ref={wrapperRef}>
+    <Field 
+      className="space-y-2" 
+      ref={wrapperRef}
+      data-invalid={hasError}
+    >
       {/* Label with help icon */}
-      <div className="flex items-center justify-between">
-        <Label htmlFor={name} className="text-sm font-medium">
+      <div className="flex items-center justify-between gap-2">
+        <FieldLabel htmlFor={name}>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
-        </Label>
+        </FieldLabel>
 
         {helpText && (
           <div className="relative">
             <button
               type="button"
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors p-1"
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
               onFocus={() => setShowTooltip(true)}
@@ -160,7 +165,7 @@ export function SmartInput({
               <HelpCircle className="h-4 w-4" />
             </button>
             {showTooltip && (
-              <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-md bg-foreground px-3 py-1.5 text-xs text-background shadow-lg">
+              <div className="absolute right-0 top-full mt-2 z-50 w-64 rounded-lg bg-foreground px-3 py-2 text-xs text-background shadow-xl border border-background/10">
                 {helpText}
                 <div className="absolute -top-1 right-2 h-2 w-2 rotate-45 bg-foreground" />
               </div>
@@ -180,8 +185,9 @@ export function SmartInput({
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
           placeholder={placeholder}
+          aria-invalid={hasError}
           className={cn(
-            'transition-all focus-visible:border-[hsl(var(--brand-primary))] focus-visible:ring-[hsla(var(--brand-primary)_/_0.25)]',
+            'text-base transition-all',
             validation?.severity === 'error' &&
               'border-[hsla(var(--destructive)_/_0.45)] focus-visible:border-[hsla(var(--destructive)_/_0.7)] focus-visible:ring-[hsla(var(--destructive)_/_0.35)]',
             validation?.severity === 'warning' &&
@@ -198,13 +204,13 @@ export function SmartInput({
 
         {/* Address suggestions dropdown */}
         {enableAddressAutocomplete && showSuggestions && suggestions.length > 0 && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+          <div className="absolute z-50 w-full mt-2 bg-white border border-border rounded-xl shadow-xl max-h-60 overflow-auto">
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion.place_id}
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b last:border-b-0 transition-colors flex items-start gap-2"
+                className="w-full px-4 py-3 text-left hover:bg-accent/50 border-b last:border-b-0 transition-colors flex items-start gap-3 focus:outline-none focus:bg-accent/60"
               >
                 <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -213,7 +219,7 @@ export function SmartInput({
                       <div className="text-sm font-medium text-foreground truncate">
                         {suggestion.structured_formatting.main_text}
                       </div>
-                      <div className="text-xs text-muted-foreground truncate">
+                      <div className="text-xs text-muted-foreground truncate leading-relaxed">
                         {suggestion.structured_formatting.secondary_text}
                       </div>
                     </>
@@ -231,27 +237,29 @@ export function SmartInput({
 
       {/* AI Suggestion badge */}
       {suggestion && !isSuggestionApplied && (
-        <div className="flex items-start gap-2 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-3 shadow-sm">
-          <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-[hsl(var(--brand-primary))]" />
-          <div className="flex-1 space-y-1">
+        <div className="flex items-start gap-3 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
+          <div className="w-8 h-8 rounded-lg bg-[hsl(var(--brand-primary))/0.15] flex items-center justify-center flex-shrink-0">
+            <Sparkles className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
+          </div>
+          <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-medium text-[hsl(var(--fg))]">AI Suggestion</p>
+              <p className="text-sm font-semibold text-[hsl(var(--fg))]">AI Suggestion</p>
               <Badge
                 variant="outline"
-                className="text-xs border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
+                className="text-xs border-[hsl(var(--brand-border))] bg-white text-[hsl(var(--brand-muted))]"
               >
                 {suggestion.confidence} confidence
               </Badge>
             </div>
-            <p className="text-sm text-[hsl(var(--brand-muted))]">
-              <strong>{suggestion.value}</strong>
+            <p className="text-sm text-[hsl(var(--fg))] font-medium">
+              {suggestion.value}
             </p>
-            <p className="text-xs text-[hsl(var(--brand-muted))]">{suggestion.reason}</p>
+            <p className="text-xs text-[hsl(var(--brand-muted))] leading-relaxed">{suggestion.reason}</p>
             {onApplySuggestion && (
               <button
                 type="button"
                 onClick={onApplySuggestion}
-                className="text-xs font-medium text-[hsl(var(--brand-primary))] underline decoration-dotted underline-offset-4 hover:decoration-solid"
+                className="text-sm font-medium text-[hsl(var(--brand-primary))] underline decoration-dotted underline-offset-4 hover:decoration-solid transition-all"
               >
                 Apply suggestion
               </button>
@@ -263,40 +271,44 @@ export function SmartInput({
       {/* Applied suggestion indicator */}
       {isSuggestionApplied && (
         <div className="flex items-center gap-2 text-sm text-[hsl(var(--brand-muted))]">
-          <CheckCircle2 className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
-          <span>Using {suggestion.source} standard</span>
+          <div className="w-5 h-5 rounded-full bg-[hsl(var(--brand-primary))/0.15] flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 className="h-3 w-3 text-[hsl(var(--brand-primary))]" />
+          </div>
+          <span className="font-medium">Using {suggestion.source} standard</span>
         </div>
       )}
 
       {/* Validation messages */}
       {validation && (
-        <div
-          className={cn(
-            'flex items-start gap-2 rounded-xl border p-3 shadow-sm',
-            validation.severity === 'error' &&
-              'border-[hsla(var(--destructive)_/_0.35)] bg-[hsla(var(--destructive)_/_0.08)] text-[hsl(var(--destructive))]',
-            validation.severity === 'warning' &&
-              'border-[hsla(var(--warning)_/_0.4)] bg-[hsla(var(--warning)_/_0.12)] text-[hsla(var(--warning)_/_0.9)]',
-            validation.severity === 'info' &&
-              'border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]'
-          )}
-        >
-          <AlertCircle
+        <FieldError>
+          <div
             className={cn(
-              'h-4 w-4 mt-0.5 flex-shrink-0',
-              validation.severity === 'error' && 'text-[hsl(var(--destructive))]',
-              validation.severity === 'warning' && 'text-[hsla(var(--warning)_/_0.9)]',
-              validation.severity === 'info' && 'text-[hsl(var(--brand-primary))]'
+              'flex items-start gap-3 rounded-xl border p-4 shadow-sm',
+              validation.severity === 'error' &&
+                'border-[hsla(var(--destructive)_/_0.35)] bg-[hsla(var(--destructive)_/_0.08)] text-[hsl(var(--destructive))]',
+              validation.severity === 'warning' &&
+                'border-[hsla(var(--warning)_/_0.4)] bg-[hsla(var(--warning)_/_0.12)] text-[hsla(var(--warning)_/_0.9)]',
+              validation.severity === 'info' &&
+                'border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]'
             )}
-          />
-          <div className="flex-1 space-y-1">
-            <p className="text-sm font-medium">{validation.message}</p>
-            {validation.suggestion && (
-              <p className="text-xs opacity-90">{validation.suggestion}</p>
-            )}
+          >
+            <AlertCircle
+              className={cn(
+                'h-5 w-5 mt-0.5 flex-shrink-0',
+                validation.severity === 'error' && 'text-[hsl(var(--destructive))]',
+                validation.severity === 'warning' && 'text-[hsla(var(--warning)_/_0.9)]',
+                validation.severity === 'info' && 'text-[hsl(var(--brand-primary))]'
+              )}
+            />
+            <div className="flex-1 space-y-1.5">
+              <p className="text-sm font-semibold leading-relaxed">{validation.message}</p>
+              {validation.suggestion && (
+                <p className="text-xs opacity-90 leading-relaxed">{validation.suggestion}</p>
+              )}
+            </div>
           </div>
-        </div>
+        </FieldError>
       )}
-    </div>
+    </Field>
   );
 }

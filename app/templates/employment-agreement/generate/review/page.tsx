@@ -3,8 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ActionButtons } from '../_components/ActionButtons';
-import { EditableDocumentRenderer } from '../_components/EditableDocumentRenderer';
-import { Loader2, CheckCircle2, Edit, Download, Send, Sparkles, FileText } from 'lucide-react';
+import { Loader2, CheckCircle2, Edit, Download, Send, Sparkles, FileText, ZoomIn, ZoomOut } from 'lucide-react';
 import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
 import {
   clearEmploymentAgreementReview,
@@ -12,6 +11,20 @@ import {
 } from '../reviewStorage';
 import { LegalDisclaimer } from '@/components/legal-disclaimer';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+// Dynamically import react-pdf components to avoid SSR issues
+const Document = dynamic(
+  () => import('react-pdf').then((mod) => mod.Document),
+  { 
+    ssr: false,
+    loading: () => <div className="flex items-center justify-center py-20"><div className="text-[hsl(var(--brand-muted))]">Loading PDF viewer...</div></div>
+  }
+);
+const Page = dynamic(
+  () => import('react-pdf').then((mod) => mod.Page),
+  { ssr: false }
+);
 
 function ReviewContent() {
   const searchParams = useSearchParams();
@@ -22,6 +35,23 @@ function ReviewContent() {
   const [isGenerating, setIsGenerating] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPreparingContract, setIsPreparingContract] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [scale, setScale] = useState(1.0);
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+
+  // Configure PDF.js worker on client side only
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('react-pdf').then((mod) => {
+        mod.pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${mod.pdfjs.version}/build/pdf.worker.min.mjs`;
+      });
+      // Import CSS
+      import('react-pdf/dist/Page/AnnotationLayer.css');
+      import('react-pdf/dist/Page/TextLayer.css');
+    }
+  }, []);
 
   useEffect(() => {
     const sessionPayload = loadEmploymentAgreementReview();
@@ -33,6 +63,8 @@ function ReviewContent() {
       setFormData(sessionPayload!.formData);
       setIsGenerating(false);
       setError(null);
+      // Generate PDF from the loaded document
+      generatePdfPreview(sessionPayload!.document, sessionPayload!.formData);
     }
 
     const docParam = searchParams.get('document');
@@ -46,6 +78,25 @@ function ReviewContent() {
         setIsGenerating(false);
         setError(null);
         console.log('✅ Document parsed successfully:', parsedDocument);
+        
+        // Parse formData if available and generate PDF
+        let parsedFormData = null;
+        if (dataParam) {
+          let dataContent = dataParam;
+          try {
+            dataContent = decodeURIComponent(dataParam);
+          } catch (err) {
+            dataContent = dataParam;
+          }
+          try {
+            parsedFormData = JSON.parse(dataContent);
+            setFormData(parsedFormData);
+          } catch (e) {
+            console.error('Failed to parse form data');
+          }
+        }
+        
+        generatePdfPreview(parsedDocument, parsedFormData);
       } catch (err) {
         console.error('❌ Failed to parse document JSON:', err);
         setError('Failed to load document. Please try generating again.');
@@ -73,8 +124,44 @@ function ReviewContent() {
     }
   }, [searchParams]);
 
+  // Cleanup PDF URL on unmount
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        window.URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
+
+  const generatePdfPreview = async (document: EmploymentAgreement, formData: any) => {
+    setIsLoadingPdf(true);
+    try {
+      const response = await fetch('/api/documents/generate-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          document,
+          formData,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to generate PDF preview');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      setPdfUrl(url);
+    } catch (error) {
+      console.error('Error generating PDF preview:', error);
+      setError('Failed to generate PDF preview. Please try again.');
+    } finally {
+      setIsLoadingPdf(false);
+    }
+  };
+
   const handleDocumentChange = (updatedDocument: EmploymentAgreement) => {
     setEditedDocument(updatedDocument);
+    // Regenerate PDF with updated document
+    generatePdfPreview(updatedDocument, formData);
   };
 
   const handleSendToSignature = async () => {
@@ -154,6 +241,27 @@ function ReviewContent() {
       console.error('Error downloading PDF:', error);
       alert('Failed to download document. Please try again.');
     }
+  };
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    setPageNumber(1);
+  };
+
+  const handleZoomIn = () => {
+    setScale((prev) => Math.min(prev + 0.2, 2.0));
+  };
+
+  const handleZoomOut = () => {
+    setScale((prev) => Math.max(prev - 0.2, 0.6));
+  };
+
+  const handlePreviousPage = () => {
+    setPageNumber((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setPageNumber((prev) => Math.min(prev + 1, numPages || 1));
   };
 
   // Show full-screen loading overlay during contract preparation
@@ -320,15 +428,104 @@ function ReviewContent() {
       {/* Main Content */}
       <div className="container mx-auto px-6 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Document Preview - Takes up 2 columns */}
+          {/* PDF Preview - Takes up 2 columns */}
           <div className="lg:col-span-2">
-            {generatedDocument && (
-              <EditableDocumentRenderer
-                document={generatedDocument}
-                onDocumentChange={handleDocumentChange}
-                isEditable={true}
-              />
-            )}
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-[hsl(var(--border))] overflow-hidden">
+              {/* PDF Controls */}
+              <div className="bg-[hsl(var(--brand-surface))] border-b-2 border-[hsl(var(--border))] px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-[hsl(var(--brand-primary))]" />
+                  <h3 className="font-heading font-bold text-[hsl(var(--fg))]">
+                    Document Preview
+                  </h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  {/* Page Navigation */}
+                  {numPages && (
+                    <div className="flex items-center gap-2 mr-4">
+                      <button
+                        onClick={handlePreviousPage}
+                        disabled={pageNumber <= 1}
+                        className="px-3 py-1.5 text-sm font-semibold text-[hsl(var(--fg))] border border-[hsl(var(--border))] rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        ←
+                      </button>
+                      <span className="text-sm font-semibold text-[hsl(var(--brand-muted))]">
+                        Page {pageNumber} of {numPages}
+                      </span>
+                      <button
+                        onClick={handleNextPage}
+                        disabled={pageNumber >= numPages}
+                        className="px-3 py-1.5 text-sm font-semibold text-[hsl(var(--fg))] border border-[hsl(var(--border))] rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        →
+                      </button>
+                    </div>
+                  )}
+                  {/* Zoom Controls */}
+                  <button
+                    onClick={handleZoomOut}
+                    disabled={scale <= 0.6}
+                    className="p-2 text-[hsl(var(--fg))] border border-[hsl(var(--border))] rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Zoom Out"
+                  >
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+                  <span className="text-sm font-semibold text-[hsl(var(--brand-muted))] min-w-[4rem] text-center">
+                    {Math.round(scale * 100)}%
+                  </span>
+                  <button
+                    onClick={handleZoomIn}
+                    disabled={scale >= 2.0}
+                    className="p-2 text-[hsl(var(--fg))] border border-[hsl(var(--border))] rounded-lg hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Zoom In"
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* PDF Viewer */}
+              <div className="bg-[hsl(var(--brand-surface))] p-6 overflow-auto" style={{ maxHeight: '80vh' }}>
+                {isLoadingPdf ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="text-center">
+                      <Loader2 className="w-10 h-10 animate-spin text-[hsl(var(--brand-primary))] mx-auto mb-4" />
+                      <p className="text-[hsl(var(--brand-muted))] font-semibold">Loading PDF preview...</p>
+                    </div>
+                  </div>
+                ) : pdfUrl ? (
+                  <div className="flex justify-center">
+                    <Document
+                      file={pdfUrl}
+                      onLoadSuccess={onDocumentLoadSuccess}
+                      loading={
+                        <div className="flex items-center justify-center py-20">
+                          <Loader2 className="w-10 h-10 animate-spin text-[hsl(var(--brand-primary))]" />
+                        </div>
+                      }
+                      error={
+                        <div className="flex items-center justify-center py-20">
+                          <p className="text-red-600 font-semibold">Failed to load PDF. Please try again.</p>
+                        </div>
+                      }
+                    >
+                      <Page
+                        pageNumber={pageNumber}
+                        scale={scale}
+                        renderTextLayer={true}
+                        renderAnnotationLayer={true}
+                        className="shadow-lg"
+                      />
+                    </Document>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center py-20">
+                    <p className="text-[hsl(var(--brand-muted))] font-semibold">No PDF available</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Actions Sidebar */}

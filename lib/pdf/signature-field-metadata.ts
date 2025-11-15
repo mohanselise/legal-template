@@ -30,6 +30,17 @@ export interface SignatureFieldMetadata {
 }
 
 /**
+ * Signatory contact information for sending signature requests
+ */
+export interface SignatoryInfo {
+  party: 'employer' | 'employee';
+  name: string;
+  email: string;
+  role?: string;
+  phone?: string;
+}
+
+/**
  * Calculate the Y position for signature section
  * This should match the actual position in the PDF template
  */
@@ -173,11 +184,15 @@ export function generateSignatureFieldMetadata(
  * Embed metadata as a JSON string in the PDF
  * This can be stored in the PDF's metadata or as a hidden annotation
  */
-export function createMetadataPayload(fields: SignatureFieldMetadata[]): string {
+export function createMetadataPayload(
+  fields: SignatureFieldMetadata[],
+  signatories?: SignatoryInfo[]
+): string {
   return JSON.stringify({
     version: '1.0',
     generatedAt: new Date().toISOString(),
     signatureFields: fields,
+    signatories: signatories || [],
   });
 }
 

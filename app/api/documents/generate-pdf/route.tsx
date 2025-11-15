@@ -28,13 +28,31 @@ export async function POST(request: NextRequest) {
     const estimatedPages = Math.ceil(document.articles?.length || 5);
     
     // Generate signature field metadata
-    const employerName = document.parties?.employer?.legalName || 'Company';
-    const employeeName = document.parties?.employee?.legalName || 'Employee';
+    const employerName = document.parties?.employer?.legalName || formData.companyName || 'Company';
+    const employeeName = document.parties?.employee?.legalName || formData.employeeName || 'Employee';
     const signatureFields = generateSignatureFieldMetadata(
       employerName,
       employeeName,
       estimatedPages
     );
+
+    // Extract signatory information from formData (Step 3 of SmartFlow)
+    const signatories = [
+      {
+        party: 'employer' as const,
+        name: formData.companyRepName || employerName,
+        email: formData.companyRepEmail || document.parties?.employer?.email || '',
+        role: formData.companyRepTitle || 'Authorized Representative',
+        phone: formData.companyRepPhone,
+      },
+      {
+        party: 'employee' as const,
+        name: employeeName,
+        email: formData.employeeEmail || document.parties?.employee?.email || '',
+        role: formData.jobTitle || 'Employee',
+        phone: formData.employeePhone,
+      },
+    ];
 
     // Check if client wants metadata (for signature editor)
     const url = new URL(request.url);
@@ -47,6 +65,7 @@ export async function POST(request: NextRequest) {
         success: true,
         pdfBase64: base64Pdf,
         signatureFields,
+        signatories, // Include signatory contact info
         metadata: {
           docId,
           pages: estimatedPages,
@@ -69,7 +88,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,
-        'X-Signature-Fields': createMetadataPayload(signatureFields), // Include metadata in header
+        'X-Signature-Fields': createMetadataPayload(signatureFields, signatories), // Include metadata + signatory info in header
       },
     });
   } catch (error) {

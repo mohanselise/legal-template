@@ -23,8 +23,8 @@ const styles = StyleSheet.create({
     size: 'LETTER', // US Letter (8.5" x 11")
     padding: 72, // 1 inch margins
     fontFamily: 'Helvetica',
-    fontSize: 11,
-    lineHeight: 1.8, // More breathing room
+    fontSize: 10.5, // Slightly smaller for more content per page
+    lineHeight: 1.6, // Comfortable reading, not too loose
     backgroundColor: '#ffffff',
   },
 
@@ -124,84 +124,107 @@ const styles = StyleSheet.create({
   },
   recitalParagraph: {
     marginBottom: 16,
-    textAlign: 'justify',
-    textIndent: 24,
+    textAlign: 'left', // Ragged-right prevents rivers
+    paddingLeft: 0, // No hard indent
   },
 
-  // Articles
+  // Articles - Strong visual hierarchy
   articleHeading: {
     fontSize: 13,
     fontFamily: 'Helvetica-Bold',
-    marginTop: 32,
-    marginBottom: 16,
-    paddingBottom: 8,
-    borderBottom: '0.5pt solid #d1d5db',
+    marginTop: 36, // Extra space for major sections
+    marginBottom: 18,
+    paddingBottom: 10,
+    paddingTop: 6,
+    borderBottom: '1pt solid #3b82f6', // Stronger blue line for articles
     letterSpacing: 0.5,
     textTransform: 'uppercase',
-    color: '#1f2937',
+    color: '#111827', // Darkest for top-level headings
+    backgroundColor: '#f8fafc', // Very subtle background
+    paddingLeft: 8,
+    paddingRight: 8,
   },
   
-  // Sections
+  // Sections - Enhanced for better scanning
   sectionHeading: {
     fontSize: 11.5,
     fontFamily: 'Helvetica-Bold',
-    marginTop: 20,
-    marginBottom: 10,
-    color: '#374151',
+    marginTop: 24, // More space above for visual separation
+    marginBottom: 12,
+    color: '#1f2937', // Darker for better contrast
+    paddingBottom: 4,
+    borderBottom: '0.5pt solid #e5e7eb', // Subtle underline for scanning
   },
   sectionNumber: {
-    color: '#6b7280',
+    color: '#3b82f6', // Blue number for visual cue
+    marginRight: 8,
   },
 
   // Content Blocks
   paragraph: {
-    marginBottom: 14,
-    textAlign: 'justify',
+    marginBottom: 16, // Increased spacing between paragraphs
+    textAlign: 'left', // Ragged-right for easier skimming
+    lineHeight: 1.8, // Generous line spacing
   },
   paragraphIndent: {
-    textIndent: 36,
+    // Remove hard indents - use spacing instead
+    marginLeft: 0,
+    marginTop: 8, // Visual separation without indent
+  },
+  // First paragraph after heading - no extra space
+  paragraphFirst: {
+    marginTop: 0,
   },
 
-  // Definitions
+  // Definitions - Highlighted for easy reference
   definitionContainer: {
-    marginBottom: 14,
-    paddingLeft: 16,
-    padding: 10,
-    borderLeft: '2pt solid #60a5fa',
-    backgroundColor: '#eff6ff',
+    marginBottom: 16,
+    padding: 12,
+    borderLeft: '3pt solid #3b82f6', // Stronger left border for scanning
+    backgroundColor: '#f0f9ff', // Very light blue background
+    marginLeft: 12,
   },
   definitionTerm: {
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 6,
+    marginBottom: 8,
     color: '#1e40af',
+    fontSize: 11,
   },
   definitionText: {
-    textAlign: 'justify',
+    textAlign: 'left', // Ragged-right
+    lineHeight: 1.7,
+    color: '#374151',
   },
   
-  // Lists
+  // Lists - Clear hierarchy and spacing
   listItem: {
-    marginBottom: 10,
-    marginLeft: 36,
+    marginBottom: 12, // More space between list items
+    marginLeft: 24, // Less aggressive indent
     flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   listNumber: {
-    width: 28,
+    width: 32,
     fontFamily: 'Helvetica-Bold',
-    color: '#3b82f6',
+    color: '#3b82f6', // Blue numbers for visual cue
+    marginRight: 8,
   },
   listContent: {
     flex: 1,
-    textAlign: 'justify',
+    textAlign: 'left', // Ragged-right for lists
+    lineHeight: 1.7,
   },
   subListItem: {
-    marginLeft: 24,
-    marginTop: 8,
+    marginLeft: 32, // Consistent with main list
+    marginTop: 10,
+    marginBottom: 10,
     flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   subListLetter: {
-    width: 24,
+    width: 28,
     color: '#6b7280',
+    marginRight: 8,
   },
   
   // Signatures
@@ -559,21 +582,17 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
           ))}
         </View>
 
-        {/* Footer */}
+        {/* Footer - Production Ready */}
         <View style={styles.footer} fixed>
           <View style={styles.footerContent}>
             <Text>
-              {employmentAgreement.metadata.title} • Prepared for{' '}
-              {employmentAgreement.parties.employee.legalName}
+              {employmentAgreement.metadata.title}
             </Text>
             <Text>
               Page <Text render={({ pageNumber }) => `${pageNumber}`} /> of{' '}
               <Text render={({ totalPages }) => `${totalPages}`} />
             </Text>
           </View>
-          <Text style={{ fontSize: 7, marginTop: 4, textAlign: 'center' }}>
-            Generated: {formatDate(employmentAgreement.metadata.generatedAt)} • Doc ID: {docId} • Confidential & Proprietary
-          </Text>
         </View>
       </Page>
     </Document>

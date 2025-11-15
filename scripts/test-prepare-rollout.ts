@@ -1,13 +1,14 @@
 #!/usr/bin/env tsx
 
 /**
- * SELISE Signature - Prepare + Preview Test
+ * SELISE Signature - Prepare + Rollout Test (Automatic Send)
  *
  * This script performs the automated workflow:
  * 1. Authenticates with SELISE Identity API
  * 2. Uploads test-pdf.pdf to SELISE Storage
  * 3. Prepares contract with signatories (Prepare API)
- * 4. Gets the PDF download URL for preview (instead of sending)
+ * 4. Places signature fields (Rollout API)
+ * 5. Sends the contract automatically and fetches document events
  */
 
 import { readFile } from 'fs/promises';
@@ -23,9 +24,9 @@ const SELISE_CLIENT_SECRET = process.env.SELISE_CLIENT_SECRET;
 // SELISE API endpoints
 const IDENTITY_API = 'https://selise.app/api/identity/v100/identity/token';
 const STORAGE_API = 'https://selise.app/api/storageservice/v100/StorageService/StorageQuery/GetPreSignedUrlForUpload';
-const GET_FILE_API = 'https://selise.app/api/storageservice/v100/StorageService/StorageQuery/GetFile';
 const PREPARE_API = 'https://selise.app/api/selisign/s1/SeliSign/ExternalApp/PrepareContract';
 const GET_EVENTS_API = 'https://selise.app/api/selisign/s1/SeliSign/ExternalApp/GetEvents';
+const ROLL_OUT_API = 'https://selise.app/api/selisign/s1/SeliSign/ExternalApp/RolloutContract';
 
 // Test signatories (you can change these)
 const COMPANY_REP = {
@@ -42,8 +43,25 @@ const EMPLOYEE = {
   phone: '',
 };
 
+// Signature field coordinates
+const SIGNATURE_POSITIONS = {
+  lastPage: 0, // Page 0 for testing
+
+  companyRep: {
+    signature: { x: 80, y: 600, width: 180, height: 70 },
+    nameField: { x: 80, y: 550, width: 180, height: 25 },
+    dateStamp: { x: 80, y: 680, width: 120, height: 20 },
+  },
+
+  employee: {
+    signature: { x: 350, y: 600, width: 180, height: 70 },
+    nameField: { x: 350, y: 550, width: 180, height: 25 },
+    dateStamp: { x: 350, y: 680, width: 120, height: 20 },
+  },
+};
+
 async function main() {
-  console.log('🚀 SELISE Signature - Prepare + Preview Test\n');
+  console.log('🚀 SELISE Signature - Prepare + Rollout Test (Review Before Sending)\n');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   // Validate environment variables
@@ -57,7 +75,7 @@ async function main() {
   console.log('   Document: test-pdf.pdf');
   console.log(`   Company Rep: ${COMPANY_REP.firstName} ${COMPANY_REP.lastName} <${COMPANY_REP.email}>`);
   console.log(`   Employee: ${EMPLOYEE.firstName} ${EMPLOYEE.lastName} <${EMPLOYEE.email}>`);
-  console.log('   Workflow: Prepare → Get PDF Preview URL (NO SEND)');
+  console.log('   Workflow: Prepare → Rollout → Auto Send');
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   try {
@@ -95,33 +113,34 @@ async function main() {
       console.warn('⚠️  No preparation_success event found, proceeding anyway...\n');
     }
 
-    // Step 4: Get PDF download URL for preview
-    console.log('� Step 4: Getting PDF download URL...');
-    const pdfUrl = await getPdfDownloadUrl(accessToken, fileId);
-    console.log('✅ PDF download URL retrieved\n');
+    console.log('📐 Step 4: Rolling out with signature fields...');
+    await rolloutContract(accessToken, prepareResult.documentId, fileId);
+    console.log('✅ Rollout completed and invitations sent\n');
+
+    console.log('📊 Step 5: Fetching document events...');
+    const events = await getDocumentEvents(accessToken, prepareResult.documentId);
+    console.log('📦 GetEvents response:', JSON.stringify(events, null, 2));
 
     // Output results
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🎉 SUCCESS! Contract prepared and ready for preview\n');
+    console.log('🎉 SUCCESS! Contract prepared, rolled out, and invitations sent\n');
     console.log('📋 Contract Details:');
     console.log(`   Document ID: ${prepareResult.documentId}`);
     console.log(`   Tracking ID: ${prepareResult.trackingId}`);
-    console.log(`   Title: ${prepareResult.title}`);
-    console.log(`   File ID: ${fileId}\n`);
+    console.log(`   Title: ${prepareResult.title}\n`);
 
     console.log('👥 Signatories (in signing order):');
     console.log(`   1️⃣  ${COMPANY_REP.firstName} ${COMPANY_REP.lastName} (${COMPANY_REP.email})`);
-    console.log(`       Role: Contract Owner (will sign first)`);
+    console.log(`       Role: Contract Owner (signs first)`);
     console.log(`   2️⃣  ${EMPLOYEE.firstName} ${EMPLOYEE.lastName} (${EMPLOYEE.email})`);
-    console.log(`       Role: Employee (will sign after owner)\n`);
+    console.log(`       Role: Employee (signs after owner)\n`);
 
-    console.log('📄 PDF Preview URL:');
-    console.log(`   ${pdfUrl}\n`);
-    console.log('   ⚠️  Note: This URL requires authentication with the same Bearer token');
-    console.log('   ⚠️  You can use this URL to download/preview the PDF before sending for signatures\n');
+    console.log('🧭 Signature Field Positions (auto-placed):');
+    console.log(`   Owner signature: Page ${SIGNATURE_POSITIONS.lastPage}, X=${SIGNATURE_POSITIONS.companyRep.signature.x}, Y=${SIGNATURE_POSITIONS.companyRep.signature.y}`);
+    console.log(`   Employee signature: Page ${SIGNATURE_POSITIONS.lastPage}, X=${SIGNATURE_POSITIONS.employee.signature.x}, Y=${SIGNATURE_POSITIONS.employee.signature.y}`);
+    console.log('   Names and timestamps positioned near respective signatures\n');
 
-    console.log('� Contract is prepared but NOT sent to signatories.');
-    console.log('   To send for signatures, call the RolloutContract API with signature field coordinates.\n');
+    console.log('🚀 Contract has been sent to signatories. No manual review step required.\n');
 
   } catch (error) {
     console.error('\n❌ Test failed!');
@@ -323,40 +342,109 @@ async function prepareContract(
 }
 
 /**
- * Get PDF download URL for preview
+ * Rollout contract with signature fields and send to signatories
  */
-async function getPdfDownloadUrl(accessToken: string, fileId: string): Promise<string> {
-  console.log(`🔍 Fetching file metadata for FileId: ${fileId}`);
+async function rolloutContract(accessToken: string, documentId: string, fileId: string): Promise<void> {
+  // Validate DocumentId before attempting rollout
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(documentId)) {
+    throw new Error(`Invalid DocumentId format for rollout: ${documentId}`);
+  }
 
-  const response = await fetch(`${GET_FILE_API}?FileId=${fileId}&Verb=READ`, {
+  console.log(`🔍 Rolling out DocumentId: ${documentId}`);
+
+  const stampCoordinates = [
+    {
+      FileId: fileId,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
+      Width: SIGNATURE_POSITIONS.companyRep.signature.width,
+      Height: SIGNATURE_POSITIONS.companyRep.signature.height,
+      X: SIGNATURE_POSITIONS.companyRep.signature.x,
+      Y: SIGNATURE_POSITIONS.companyRep.signature.y,
+      SignatoryEmail: COMPANY_REP.email,
+    },
+    {
+      FileId: fileId,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
+      Width: SIGNATURE_POSITIONS.employee.signature.width,
+      Height: SIGNATURE_POSITIONS.employee.signature.height,
+      X: SIGNATURE_POSITIONS.employee.signature.x,
+      Y: SIGNATURE_POSITIONS.employee.signature.y,
+      SignatoryEmail: EMPLOYEE.email,
+    },
+  ];
+
+  const textFieldCoordinates = [
+    {
+      FileId: fileId,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
+      Width: SIGNATURE_POSITIONS.companyRep.nameField.width,
+      Height: SIGNATURE_POSITIONS.companyRep.nameField.height,
+      X: SIGNATURE_POSITIONS.companyRep.nameField.x,
+      Y: SIGNATURE_POSITIONS.companyRep.nameField.y,
+      SignatoryEmail: COMPANY_REP.email,
+      Value: `${COMPANY_REP.firstName} ${COMPANY_REP.lastName}`,
+    },
+    {
+      FileId: fileId,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
+      Width: SIGNATURE_POSITIONS.employee.nameField.width,
+      Height: SIGNATURE_POSITIONS.employee.nameField.height,
+      X: SIGNATURE_POSITIONS.employee.nameField.x,
+      Y: SIGNATURE_POSITIONS.employee.nameField.y,
+      SignatoryEmail: EMPLOYEE.email,
+      Value: `${EMPLOYEE.firstName} ${EMPLOYEE.lastName}`,
+    },
+  ];
+
+  const stampPostInfoCoordinates = [
+    {
+      FileId: fileId,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
+      Width: SIGNATURE_POSITIONS.companyRep.dateStamp.width,
+      Height: SIGNATURE_POSITIONS.companyRep.dateStamp.height,
+      X: SIGNATURE_POSITIONS.companyRep.dateStamp.x,
+      Y: SIGNATURE_POSITIONS.companyRep.dateStamp.y,
+      EntityName: 'AuditLog',
+      PropertyName: '{StampTime}',
+      SignatoryEmail: COMPANY_REP.email,
+    },
+    {
+      FileId: fileId,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
+      Width: SIGNATURE_POSITIONS.employee.dateStamp.width,
+      Height: SIGNATURE_POSITIONS.employee.dateStamp.height,
+      X: SIGNATURE_POSITIONS.employee.dateStamp.x,
+      Y: SIGNATURE_POSITIONS.employee.dateStamp.y,
+      EntityName: 'AuditLog',
+      PropertyName: '{StampTime}',
+      SignatoryEmail: EMPLOYEE.email,
+    },
+  ];
+
+  const rolloutPayload = {
+    DocumentId: documentId,
+    StampCoordinates: stampCoordinates,
+    TextFieldCoordinates: textFieldCoordinates,
+    StampPostInfoCoordinates: stampPostInfoCoordinates,
+  };
+
+  const response = await fetch(ROLL_OUT_API, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${accessToken}`,
     },
-    body: '',
+    body: JSON.stringify(rolloutPayload),
   });
 
-  const fileResponseText = await response.clone().text();
-  console.log('🔍 GetFile API response status:', response.status, response.statusText);
-  console.log('🔍 GetFile API response body:', fileResponseText || '(empty body)');
+  const rolloutResponseText = await response.clone().text();
+  console.log('🔍 Rollout API response status:', response.status, response.statusText);
+  console.log('🔍 Rollout API response body:', rolloutResponseText || '(empty body)');
 
   if (!response.ok) {
-    throw new Error(`GetFile failed: ${response.status} ${response.statusText}\n${fileResponseText}`);
+    throw new Error(`Rollout failed: ${response.status} ${response.statusText}\n${rolloutResponseText}`);
   }
-
-  const fileInfo = await response.json();
-  
-  if (!fileInfo.Url) {
-    throw new Error(`No download URL in file metadata. Got: ${JSON.stringify(fileInfo)}`);
-  }
-
-  console.log('✅ File metadata retrieved');
-  console.log(`   File Name: ${fileInfo.Name || 'N/A'}`);
-  console.log(`   File Size: ${fileInfo.Size || 'N/A'} bytes`);
-  console.log(`   Content Type: ${fileInfo.ContentType || 'N/A'}`);
-
-  return fileInfo.Url;
 }
 
 /**
@@ -413,6 +501,47 @@ async function waitForPreparationSuccess(
   }
 
   return false;
+}
+
+async function getDocumentEvents(accessToken: string, documentId: string): Promise<unknown> {
+  const maxAttempts = 5;
+  const delayMs = 5000;
+  let lastParsed: unknown = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const response = await fetch(GET_EVENTS_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        DocumentId: documentId,
+      }),
+    });
+
+    const eventsResponseText = await response.clone().text();
+    console.log(`🔍 GetEvents attempt ${attempt}/${maxAttempts} status:`, response.status, response.statusText);
+    console.log('🔍 GetEvents attempt body:', eventsResponseText || '(empty body)');
+
+    if (!response.ok) {
+      throw new Error(`GetEvents failed: ${response.status} ${response.statusText}\n${eventsResponseText}`);
+    }
+
+    const parsed = eventsResponseText ? JSON.parse(eventsResponseText) : null;
+    lastParsed = parsed;
+
+    const isEmptyArray = Array.isArray(parsed) && parsed.length === 0;
+    if (isEmptyArray && attempt < maxAttempts) {
+      console.log(`⌛ No events yet; waiting ${delayMs / 1000}s before retrying...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      continue;
+    }
+
+    return parsed;
+  }
+
+  return lastParsed;
 }
 
 // Run the test

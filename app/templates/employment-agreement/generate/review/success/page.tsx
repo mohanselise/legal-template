@@ -74,9 +74,9 @@ export default function SignatureSuccessPage() {
     }
   }, []);
 
-  const employeeName =
-    payload?.document?.parties?.employee?.legalName ||
-    payload?.formData?.employeeName ||
+  const employeeName: string =
+    (payload?.document?.parties?.employee?.legalName as string) ||
+    (payload?.formData?.employeeName as string) ||
     'the employee';
 
   const signatories = payload?.signatories

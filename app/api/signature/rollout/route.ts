@@ -269,7 +269,7 @@ async function uploadPdfToStorage(
       'Content-Type': 'application/pdf',
       'Content-Length': pdfBuffer.length.toString(),
     },
-    body: pdfBuffer,
+    body: new Uint8Array(pdfBuffer),
   });
 
   const uploadText = await uploadResponse.clone().text();
@@ -298,7 +298,6 @@ function buildPrepareAndSendPayload({
   const trackingId = randomUUID();
   const employeeName =
     document?.parties?.employee?.legalName ||
-    document?.parties?.employee?.name ||
     document?.metadata?.title ||
     'Employee';
   const title = `Employment Agreement - ${employeeName}`;
@@ -498,7 +497,6 @@ function buildPrepareAndSendPayload({
         SignatoryGroupId: null,
         Order: signatory.resolvedOrder,
         SignatoryId: null,
-        SignatoryName: signatory.name || 'Signatory',
         FontDetails: {
           FontName: 'Arial',
           FontSize: 12,

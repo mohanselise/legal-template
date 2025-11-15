@@ -684,9 +684,9 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
 
                 {dateFields.length > 0 && (
                   <View style={styles.signatureDateRow}>
-                    {dateFields.map((dateField) => (
+                    {dateFields.map((dateField, dateIndex) => (
                       <View
-                        key={dateField.id}
+                        key={`${signature.party}-date-${dateIndex}`}
                         style={[
                           styles.signatureDateBox,
                           {

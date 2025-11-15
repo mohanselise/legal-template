@@ -8,7 +8,6 @@ import {
   ZoomIn,
   ZoomOut,
   Signature,
-  Type,
   Calendar,
   Trash2,
   User,
@@ -22,6 +21,8 @@ import {
   Info,
   CheckCircle2
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { SIGNATURE_LAYOUT, SIGNATURE_FIELD_DEFAULTS } from '@/lib/pdf/signature-field-metadata';
 
 // Dynamic imports for react-pdf to avoid SSR issues
 const Document = dynamic(
@@ -87,11 +88,47 @@ const SIGNATORY_COLORS = [
   '#dc2626', // Red for fourth (if needed)
 ];
 
-const FIELD_TYPES = [
-  { type: 'signature' as const, label: 'Signature', icon: Signature, defaultWidth: 200, defaultHeight: 50, color: '#fbbf24' },
-  { type: 'text' as const, label: 'Full Name', icon: Type, defaultWidth: 200, defaultHeight: 36, color: '#60a5fa' },
-  { type: 'date' as const, label: 'Date Signed', icon: Calendar, defaultWidth: 140, defaultHeight: 36, color: '#34d399' },
+type FieldTypeConfig = {
+  type: 'signature' | 'date';
+  label: string;
+  icon: LucideIcon;
+  defaultWidth: number;
+  defaultHeight: number;
+  color: string;
+};
+
+const FIELD_TYPES: FieldTypeConfig[] = [
+  { type: 'signature' as const, label: 'Signature', icon: Signature, defaultWidth: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_WIDTH, defaultHeight: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_HEIGHT, color: '#facc15' },
+  { type: 'date' as const, label: 'Date Signed', icon: Calendar, defaultWidth: SIGNATURE_FIELD_DEFAULTS.DATE_WIDTH, defaultHeight: SIGNATURE_FIELD_DEFAULTS.DATE_HEIGHT, color: '#38bdf8' },
 ];
+
+const resolveFieldVisual = (type: SignatureField['type']): FieldTypeConfig => {
+  const config = FIELD_TYPES.find((field) => field.type === type);
+
+  if (config) {
+    return config;
+  }
+
+  if (type === 'date') {
+    return {
+      type: 'date',
+      label: 'Date Signed',
+      icon: Calendar,
+      defaultWidth: SIGNATURE_FIELD_DEFAULTS.DATE_WIDTH,
+      defaultHeight: SIGNATURE_FIELD_DEFAULTS.DATE_HEIGHT,
+      color: '#38bdf8',
+    };
+  }
+
+  return {
+    type: 'signature',
+    label: 'Signature',
+    icon: Signature,
+    defaultWidth: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_WIDTH,
+    defaultHeight: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_HEIGHT,
+    color: '#facc15',
+  };
+};
 
 export function PDFSignatureEditor({
   pdfUrl,
@@ -106,7 +143,7 @@ export function PDFSignatureEditor({
   const [fields, setFields] = useState<SignatureField[]>([]);
   const [selectedField, setSelectedField] = useState<string | null>(null);
   const [selectedSignatoryIndex, setSelectedSignatoryIndex] = useState(0);
-  const [selectedFieldType, setSelectedFieldType] = useState<'signature' | 'text' | 'date'>('signature');
+  const [selectedFieldType, setSelectedFieldType] = useState<'signature' | 'date'>('signature');
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -140,47 +177,51 @@ export function PDFSignatureEditor({
       const lastPage = numPages;
 
       signatories.forEach((sig, index) => {
-        const xOffset = index === 0 ? 80 : 350;
-        const baseY = 600;
+        const layout =
+          index === 0
+            ? SIGNATURE_LAYOUT.EMPLOYER
+            : index === 1
+            ? SIGNATURE_LAYOUT.EMPLOYEE
+            : null;
 
-        // Signature field
-        defaultFields.push({
-          id: `sig-${index}-signature`,
-          type: 'signature',
-          signatoryIndex: index,
-          pageNumber: lastPage,
-          x: xOffset,
-          y: baseY,
-          width: 180,
-          height: 60,
-          label: `${sig.name} - Signature`,
-        });
+        const signatureLayout = layout?.SIGNATURE ?? {
+          x: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.x,
+          y: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.y + index * 96,
+          width: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_WIDTH,
+          height: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_HEIGHT,
+        };
 
-        // Name field
-        defaultFields.push({
-          id: `sig-${index}-name`,
-          type: 'text',
-          signatoryIndex: index,
-          pageNumber: lastPage,
-          x: xOffset,
-          y: baseY - 60,
-          width: 180,
-          height: 30,
-          label: `${sig.name} - Name`,
-        });
+        const dateLayout = layout?.DATE ?? {
+          x: signatureLayout.x + signatureLayout.width + 24,
+          y: signatureLayout.y + 8,
+          width: SIGNATURE_FIELD_DEFAULTS.DATE_WIDTH,
+          height: SIGNATURE_FIELD_DEFAULTS.DATE_HEIGHT,
+        };
 
-        // Date field
-        defaultFields.push({
-          id: `sig-${index}-date`,
-          type: 'date',
-          signatoryIndex: index,
-          pageNumber: lastPage,
-          x: xOffset,
-          y: baseY + 70,
-          width: 120,
-          height: 25,
-          label: `${sig.name} - Date`,
-        });
+        defaultFields.push(
+          {
+            id: `sig-${index}-signature`,
+            type: 'signature',
+            signatoryIndex: index,
+            pageNumber: lastPage,
+            x: signatureLayout.x,
+            y: signatureLayout.y,
+            width: signatureLayout.width,
+            height: signatureLayout.height,
+            label: `${sig.name} - Signature`,
+          },
+          {
+            id: `sig-${index}-date`,
+            type: 'date',
+            signatoryIndex: index,
+            pageNumber: lastPage,
+            x: dateLayout.x,
+            y: dateLayout.y,
+            width: dateLayout.width,
+            height: dateLayout.height,
+            label: `${sig.name} - Date`,
+          }
+        );
       });
 
       setFields(defaultFields);
@@ -199,8 +240,7 @@ export function PDFSignatureEditor({
     const x = (event.clientX - rect.left) / scale;
     const y = (event.clientY - rect.top) / scale;
 
-    const fieldType = FIELD_TYPES.find(f => f.type === selectedFieldType);
-    if (!fieldType) return;
+    const fieldType = resolveFieldVisual(selectedFieldType);
 
     const newField: SignatureField = {
       id: `field-${Date.now()}-${Math.random()}`,
@@ -260,44 +300,51 @@ export function PDFSignatureEditor({
       const lastPage = numPages;
 
       signatories.forEach((sig, index) => {
-        const xOffset = index === 0 ? 80 : 350;
-        const baseY = 600;
+        const layout =
+          index === 0
+            ? SIGNATURE_LAYOUT.EMPLOYER
+            : index === 1
+            ? SIGNATURE_LAYOUT.EMPLOYEE
+            : null;
 
-        defaultFields.push({
-          id: `sig-${index}-signature-reset`,
-          type: 'signature',
-          signatoryIndex: index,
-          pageNumber: lastPage,
-          x: xOffset,
-          y: baseY,
-          width: 180,
-          height: 60,
-          label: `${sig.name} - Signature`,
-        });
+        const signatureLayout = layout?.SIGNATURE ?? {
+          x: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.x,
+          y: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.y + index * 96,
+          width: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_WIDTH,
+          height: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_HEIGHT,
+        };
 
-        defaultFields.push({
-          id: `sig-${index}-name-reset`,
-          type: 'text',
-          signatoryIndex: index,
-          pageNumber: lastPage,
-          x: xOffset,
-          y: baseY - 60,
-          width: 180,
-          height: 30,
-          label: `${sig.name} - Name`,
-        });
+        const dateLayout = layout?.DATE ?? {
+          x: signatureLayout.x + signatureLayout.width + 24,
+          y: signatureLayout.y + 8,
+          width: SIGNATURE_FIELD_DEFAULTS.DATE_WIDTH,
+          height: SIGNATURE_FIELD_DEFAULTS.DATE_HEIGHT,
+        };
 
-        defaultFields.push({
-          id: `sig-${index}-date-reset`,
-          type: 'date',
-          signatoryIndex: index,
-          pageNumber: lastPage,
-          x: xOffset,
-          y: baseY + 70,
-          width: 120,
-          height: 25,
-          label: `${sig.name} - Date`,
-        });
+        defaultFields.push(
+          {
+            id: `sig-${index}-signature-reset`,
+            type: 'signature',
+            signatoryIndex: index,
+            pageNumber: lastPage,
+            x: signatureLayout.x,
+            y: signatureLayout.y,
+            width: signatureLayout.width,
+            height: signatureLayout.height,
+            label: `${sig.name} - Signature`,
+          },
+          {
+            id: `sig-${index}-date-reset`,
+            type: 'date',
+            signatoryIndex: index,
+            pageNumber: lastPage,
+            x: dateLayout.x,
+            y: dateLayout.y,
+            width: dateLayout.width,
+            height: dateLayout.height,
+            label: `${sig.name} - Date`,
+          }
+        );
       });
 
       setFields(defaultFields);
@@ -313,11 +360,6 @@ export function PDFSignatureEditor({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const getFieldIcon = (type: SignatureField['type']) => {
-    const fieldType = FIELD_TYPES.find(f => f.type === type);
-    return fieldType?.icon || Signature;
   };
 
   const fieldsByPage = fields.reduce((acc, field) => {
@@ -650,10 +692,10 @@ export function PDFSignatureEditor({
                 .filter(field => field.pageNumber === currentPage)
                 .map(field => {
                   const signatory = signatories[field.signatoryIndex];
-                  const Icon = getFieldIcon(field.type);
+                  const fieldType = resolveFieldVisual(field.type);
+                  const Icon = fieldType.icon;
                   const isSelected = selectedField === field.id;
                   const isHovered = hoveredField === field.id;
-                  const fieldType = FIELD_TYPES.find(f => f.type === field.type);
 
                   return (
                     <div

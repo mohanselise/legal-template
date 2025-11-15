@@ -11,6 +11,7 @@ import type {
   ContentBlock,
   ListItem,
   DefinitionItem,
+  SignatureField,
 } from '@/app/api/templates/employment-agreement/schema';
 
 // You can register custom fonts here if needed:
@@ -58,6 +59,16 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     textAlign: 'center',
     marginTop: 8,
+  },
+  headerMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  headerMetaItem: {
+    fontSize: 8.5,
+    color: '#6b7280',
+    letterSpacing: 0.5,
   },
   
   // Document Body
@@ -236,9 +247,9 @@ const styles = StyleSheet.create({
   witnessClause: {
     textAlign: 'center',
     fontFamily: 'Helvetica-Bold',
-    fontSize: 10.5,
-    marginBottom: 48,
-    letterSpacing: 1.2,
+    fontSize: 10,
+    marginBottom: 40,
+    letterSpacing: 1,
     textTransform: 'uppercase',
     color: '#1e293b',
     lineHeight: 1.5,
@@ -248,36 +259,41 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#fafbfc',
     border: '1pt solid #e2e8f0',
+    borderRadius: 6,
   },
   signaturePartyLabel: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 8.5,
-    marginBottom: 6,
-    paddingBottom: 6,
-    letterSpacing: 1.3,
+    fontSize: 9,
+    marginBottom: 8,
+    paddingBottom: 8,
+    letterSpacing: 1.1,
     textTransform: 'uppercase',
-    color: '#2563eb',
-    borderBottom: '2pt solid #2563eb',
+    color: '#1d4ed8',
+    borderBottom: '1.5pt solid #2563eb',
   },
   signaturePartyName: {
     fontFamily: 'Helvetica-Bold',
     fontSize: 12,
-    marginTop: 12,
-    marginBottom: 24,
+    marginTop: 10,
+    marginBottom: 18,
     color: '#0f172a',
   },
   signatureFieldsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 20,
-    marginBottom: 16,
+    marginBottom: 18,
   },
   signatureFieldColumn: {
     flex: 1,
     minWidth: 0, // Prevent flex items from overflowing
+    marginRight: 16,
+    marginBottom: 16,
+  },
+  signatureFieldColumnLast: {
+    marginRight: 0,
   },
   signatureField: {
-    marginBottom: 16,
+    marginBottom: 18,
   },
   signatureLabel: {
     fontSize: 8,
@@ -287,41 +303,22 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
+  signaturePrimaryLine: {
+    borderBottom: '1.5pt solid #334155',
+    minHeight: 36,
+  },
   signatureLine: {
-    borderBottom: '1pt solid #64748b',
-    paddingTop: 24,
-    minHeight: 30,
-  },
-  signatureBox: {
-    border: '2pt dashed #cbd5e1',
-    padding: 20,
-    minHeight: 70,
-    backgroundColor: '#ffffff',
-    marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  signatureBoxText: {
-    fontSize: 9,
-    color: '#94a3b8',
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  signatureDate: {
-    fontSize: 8,
-    color: '#64748b',
-    marginTop: 8,
-    fontStyle: 'italic',
+    borderBottom: '1pt solid #cbd5e1',
+    minHeight: 26,
   },
   signaturePreFilledValue: {
     fontSize: 10.5,
     fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
-    paddingTop: 6,
-    paddingBottom: 10,
+    paddingTop: 4,
+    paddingBottom: 8,
     borderBottom: '1pt solid #cbd5e1',
-    minHeight: 30,
+    minHeight: 24,
   },
   
   // Footer
@@ -372,11 +369,31 @@ const formatAddress = (address: {
 };
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  const parsedDate = new Date(dateString);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return dateString;
+  }
+
+  return parsedDate.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
+};
+
+const getFieldDisplayValue = (field: SignatureField) => {
+  const rawValue = typeof field.value === 'string' ? field.value.trim() : '';
+
+  if (!rawValue) {
+    return undefined;
+  }
+
+  if (field.type === 'date') {
+    return formatDate(rawValue);
+  }
+
+  return rawValue;
 };
 
 const ContentBlockRenderer: React.FC<{
@@ -456,8 +473,9 @@ const ContentBlockRenderer: React.FC<{
 
 export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
   document: employmentAgreement,
+  docId,
 }) => {
-  const docId = `DOC-${Date.now().toString(36).toUpperCase().slice(-8)}`;
+  const documentId = docId ?? 'DOC-UNASSIGNED';
   
   return (
     <Document>
@@ -465,6 +483,32 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{employmentAgreement.metadata.title}</Text>
+          {(documentId || employmentAgreement.metadata.jurisdiction) && (
+            <View style={styles.headerMetaRow}>
+              {documentId && (
+                <Text style={styles.headerMetaItem}>
+                  Document ID:{' '}
+                  <Text style={styles.bold}>{documentId}</Text>
+                </Text>
+              )}
+              {employmentAgreement.metadata.jurisdiction && (
+                <Text
+                  style={[styles.headerMetaItem, { textAlign: 'right' }]}
+                >
+                  Governing Law:{' '}
+                  <Text style={styles.bold}>
+                    {employmentAgreement.metadata.jurisdiction}
+                  </Text>
+                </Text>
+              )}
+            </View>
+          )}
+          {employmentAgreement.metadata.generatedAt && (
+            <Text style={styles.metadata}>
+              Prepared on{' '}
+              {formatDate(employmentAgreement.metadata.generatedAt)}
+            </Text>
+          )}
         </View>
 
         {/* Effective Date */}
@@ -582,81 +626,88 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
           </Text>
 
           {employmentAgreement.signatures.map((signature, index) => {
-            // Find specific fields
-            const signatureField = signature.fields.find(f => f.label.toLowerCase().includes('signature') || f.label.toLowerCase() === 'by');
-            const nameField = signature.fields.find(f => f.type === 'name' || (f.label.toLowerCase().includes('name') && !f.label.toLowerCase().includes('by')));
-            const titleField = signature.fields.find(f => f.type === 'title' || f.label.toLowerCase().includes('title'));
-            const dateField = signature.fields.find(f => f.type === 'date' || f.label.toLowerCase().includes('date'));
+            const signatureField = signature.fields.find(
+              (field) => field.type === 'signature'
+            );
+            const metaFields = signature.fields.filter(
+              (field) => field.type !== 'signature'
+            );
+            const metaRows: SignatureField[][] = [];
+            const rowBuffer: SignatureField[] = [];
+
+            metaFields.forEach((field) => {
+              if (field.type === 'date') {
+                if (rowBuffer.length) {
+                  metaRows.push([...rowBuffer]);
+                  rowBuffer.length = 0;
+                }
+                metaRows.push([field]);
+              } else {
+                rowBuffer.push(field);
+              }
+            });
+
+            if (rowBuffer.length) {
+              metaRows.push([...rowBuffer]);
+            }
 
             return (
               <View key={index} style={styles.signatureBlock}>
                 <Text style={styles.signaturePartyLabel}>
-                  {signature.party === 'employer' ? '🏢  EMPLOYER' : '👤  EMPLOYEE'}
+                  {signature.party === 'employer' ? 'EMPLOYER' : 'EMPLOYEE'}
                 </Text>
-                
+
                 <Text style={styles.signaturePartyName}>
                   {signature.partyName}
                 </Text>
 
-                {/* Signature field - full width */}
                 {signatureField && (
                   <View style={styles.signatureField}>
-                    <Text style={styles.signatureLabel}>{signatureField.label}</Text>
-                    <View style={styles.signatureBox}>
-                      <Text style={styles.signatureBoxText}>
-                        Digital signature will appear here
-                      </Text>
-                    </View>
+                    <Text style={styles.signatureLabel}>
+                      {signatureField.label}
+                    </Text>
+                    <View style={styles.signaturePrimaryLine} />
                   </View>
                 )}
 
-                {/* NAME and TITLE fields side by side (for employer) */}
-                {signature.party === 'employer' && (nameField || titleField) && (
-                  <View style={styles.signatureFieldsRow}>
-                    {nameField && (
-                      <View style={styles.signatureFieldColumn}>
-                        <Text style={styles.signatureLabel}>{nameField.label}</Text>
-                        {nameField.value ? (
-                          <Text style={styles.signaturePreFilledValue}>{nameField.value}</Text>
-                        ) : (
-                          <View style={styles.signatureLine} />
-                        )}
-                      </View>
-                    )}
-                    {titleField && (
-                      <View style={styles.signatureFieldColumn}>
-                        <Text style={styles.signatureLabel}>{titleField.label}</Text>
-                        {titleField.value ? (
-                          <Text style={styles.signaturePreFilledValue}>{titleField.value}</Text>
-                        ) : (
-                          <View style={styles.signatureLine} />
-                        )}
-                      </View>
-                    )}
-                  </View>
-                )}
+                {metaRows.map((row, rowIndex) => (
+                  <View
+                    key={`${signature.party}-row-${rowIndex}`}
+                    style={[
+                      styles.signatureFieldsRow,
+                      rowIndex === metaRows.length - 1 && { marginBottom: 0 },
+                    ]}
+                  >
+                    {row.map((field, fieldIndex) => {
+                      const displayValue = getFieldDisplayValue(field);
 
-                {/* NAME field (for employee) */}
-                {signature.party === 'employee' && nameField && (
-                  <View style={styles.signatureField}>
-                    <Text style={styles.signatureLabel}>{nameField.label}</Text>
-                    {nameField.value ? (
-                      <Text style={styles.signaturePreFilledValue}>{nameField.value}</Text>
-                    ) : (
-                      <View style={styles.signatureLine} />
-                    )}
+                      return (
+                        <View
+                          key={`${signature.party}-${field.label}-${fieldIndex}`}
+                          style={[
+                            styles.signatureFieldColumn,
+                            fieldIndex === row.length - 1 &&
+                              styles.signatureFieldColumnLast,
+                            rowIndex === metaRows.length - 1 && {
+                              marginBottom: 0,
+                            },
+                          ]}
+                        >
+                          <Text style={styles.signatureLabel}>
+                            {field.label}
+                          </Text>
+                          {displayValue ? (
+                            <Text style={styles.signaturePreFilledValue}>
+                              {displayValue}
+                            </Text>
+                          ) : (
+                            <View style={styles.signatureLine} />
+                          )}
+                        </View>
+                      );
+                    })}
                   </View>
-                )}
-
-                {/* DATE field */}
-                {dateField && (
-                  <View style={styles.signatureField}>
-                    <Text style={styles.signatureLabel}>{dateField.label}</Text>
-                    <View style={styles.signatureLine}>
-                      <Text style={styles.signatureDate}>Date: _______________</Text>
-                    </View>
-                  </View>
-                )}
+                ))}
               </View>
             );
           })}

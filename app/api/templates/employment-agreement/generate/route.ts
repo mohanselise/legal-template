@@ -487,18 +487,28 @@ function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string
   prompt += `6. Uses sophisticated legal language appropriate for a professional contract\n`;
   
   // Signature block instructions with actual representative info
-  prompt += `7. Includes proper signature blocks for both parties:\n`;
+  prompt += `7. Includes proper signature blocks for both parties with PRE-FILLED VALUES:\n`;
   if (data.companyRepName && data.companyRepTitle) {
-    prompt += `   - EMPLOYER signature block must show:\n`;
-    prompt += `     * Name: ${data.companyRepName}\n`;
-    prompt += `     * Title: ${data.companyRepTitle}\n`;
-    prompt += `     * Date line\n`;
+    prompt += `   - EMPLOYER signature block (all fields except signature and date must have "value" pre-filled):\n`;
+    prompt += `     * By (signature): leave empty (type: "signature")\n`;
+    prompt += `     * Name: "${data.companyRepName}" (type: "name", value: "${data.companyRepName}")\n`;
+    prompt += `     * Title: "${data.companyRepTitle}" (type: "title", value: "${data.companyRepTitle}")\n`;
+    prompt += `     * Date: leave empty (type: "date")\n`;
   } else {
-    prompt += `   - EMPLOYER signature block with name line, title line, and date line\n`;
+    prompt += `   - EMPLOYER signature block with fields:\n`;
+    prompt += `     * By (type: "signature")\n`;
+    prompt += `     * Name (type: "name")\n`;
+    prompt += `     * Title (type: "title")\n`;
+    prompt += `     * Date (type: "date")\n`;
   }
-  prompt += `   - EMPLOYEE signature block must show:\n`;
-  prompt += `     * Name: ${data.employeeName || '[Employee Name]'}\n`;
-  prompt += `     * Date line\n`;
+  prompt += `   - EMPLOYEE signature block (all fields except signature and date must have "value" pre-filled):\n`;
+  prompt += `     * Signature: leave empty (type: "signature")\n`;
+  if (data.employeeName) {
+    prompt += `     * Name: "${data.employeeName}" (type: "name", value: "${data.employeeName}") - MUST be pre-filled\n`;
+  }
+  prompt += `     * Date: leave empty (type: "date")\n`;
+  prompt += `\n`;
+  prompt += `   ⚠️ IMPORTANT: Pre-fill "value" property for name and title fields using the actual data provided above. Leave signature and date fields empty.\n`;
   
   prompt += `8. Is formatted in clean markdown for professional presentation\n\n`;
   prompt += `⚠️ CRITICAL: This is a legally binding document. Never use dummy/placeholder contact information (like "john.doe@company.com", "555-1234", etc.). Use ONLY the exact information provided above. If information is missing, use "[To Be Completed]" format.\n\n`;

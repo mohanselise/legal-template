@@ -227,70 +227,101 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   
-  // Signatures
+  // Signatures - DocuSign-style Professional Design
   signatureSection: {
-    marginTop: 48,
-    paddingTop: 24,
-    borderTop: '0.5pt solid #d1d5db',
+    marginTop: 60,
+    paddingTop: 32,
+    borderTop: '3pt solid #2563eb',
   },
   witnessClause: {
     textAlign: 'center',
     fontFamily: 'Helvetica-Bold',
-    fontSize: 10,
-    marginBottom: 32,
-    letterSpacing: 1,
+    fontSize: 10.5,
+    marginBottom: 48,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
-    color: '#374151',
+    color: '#1e293b',
+    lineHeight: 1.5,
   },
   signatureBlock: {
-    marginTop: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-    padding: 16,
-    backgroundColor: '#f9fafb',
-    borderTop: '0.5pt solid #e5e7eb',
+    marginBottom: 40,
+    padding: 20,
+    backgroundColor: '#fafbfc',
+    border: '1pt solid #e2e8f0',
   },
   signaturePartyLabel: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 10,
-    marginBottom: 12,
-    letterSpacing: 0.5,
+    fontSize: 8.5,
+    marginBottom: 6,
+    paddingBottom: 6,
+    letterSpacing: 1.3,
     textTransform: 'uppercase',
-    color: '#6b7280',
+    color: '#2563eb',
+    borderBottom: '2pt solid #2563eb',
   },
   signaturePartyName: {
     fontFamily: 'Helvetica-Bold',
-    fontSize: 11.5,
+    fontSize: 12,
+    marginTop: 12,
+    marginBottom: 24,
+    color: '#0f172a',
+  },
+  signatureFieldsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 20,
     marginBottom: 16,
-    color: '#111827',
+  },
+  signatureFieldColumn: {
+    flex: 1,
+    minWidth: 0, // Prevent flex items from overflowing
   },
   signatureField: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   signatureLabel: {
     fontSize: 8,
-    fontFamily: 'Helvetica',
-    color: '#6b7280',
+    fontFamily: 'Helvetica-Bold',
+    color: '#475569',
     marginBottom: 6,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   signatureLine: {
-    borderBottom: '1pt solid #374151',
-    paddingBottom: 8,
-    minHeight: 50,
+    borderBottom: '1pt solid #64748b',
+    paddingTop: 24,
+    minHeight: 30,
   },
   signatureBox: {
-    border: '1pt solid #d1d5db',
-    padding: 12,
-    minHeight: 80,
-    backgroundColor: '#fafafa',
+    border: '2pt dashed #cbd5e1',
+    padding: 20,
+    minHeight: 70,
+    backgroundColor: '#ffffff',
     marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  signatureBoxText: {
+    fontSize: 9,
+    color: '#94a3b8',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   signatureDate: {
-    fontSize: 9,
-    color: '#6b7280',
-    marginTop: 4,
+    fontSize: 8,
+    color: '#64748b',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  signaturePreFilledValue: {
+    fontSize: 10.5,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1e293b',
+    paddingTop: 6,
+    paddingBottom: 10,
+    borderBottom: '1pt solid #cbd5e1',
+    minHeight: 30,
   },
   
   // Footer
@@ -433,13 +464,7 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
       <Page size="LETTER" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.badge}>
-            <Text>LEGAL DOCUMENT</Text>
-          </View>
           <Text style={styles.title}>{employmentAgreement.metadata.title}</Text>
-          <Text style={styles.metadata}>
-            AI-Enhanced Draft • {formatDate(employmentAgreement.metadata.effectiveDate)} • Doc ID: {docId}
-          </Text>
         </View>
 
         {/* Effective Date */}
@@ -549,37 +574,92 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
           </View>
         ))}
 
-        {/* Signature Section */}
+        {/* Signature Section - DocuSign-style Layout */}
         <View style={styles.signatureSection} wrap={false}>
           <Text style={styles.witnessClause}>
-            IN WITNESS WHEREOF, the parties have executed this Agreement as of the date
-            first written above.
+            IN WITNESS WHEREOF, THE PARTIES HAVE EXECUTED THIS AGREEMENT
+            {'\n'}AS OF THE DATE FIRST WRITTEN ABOVE.
           </Text>
 
-          {employmentAgreement.signatures.map((signature, index) => (
-            <View key={index} style={styles.signatureBlock}>
-              <Text style={styles.signaturePartyLabel}>
-                {signature.party === 'employer' ? 'EMPLOYER SIGNATURE' : 'EMPLOYEE SIGNATURE'}
-              </Text>
-              <Text style={styles.signaturePartyName}>{signature.partyName}</Text>
+          {employmentAgreement.signatures.map((signature, index) => {
+            // Find specific fields
+            const signatureField = signature.fields.find(f => f.label.toLowerCase().includes('signature') || f.label.toLowerCase() === 'by');
+            const nameField = signature.fields.find(f => f.type === 'name' || (f.label.toLowerCase().includes('name') && !f.label.toLowerCase().includes('by')));
+            const titleField = signature.fields.find(f => f.type === 'title' || f.label.toLowerCase().includes('title'));
+            const dateField = signature.fields.find(f => f.type === 'date' || f.label.toLowerCase().includes('date'));
 
-              {signature.fields.map((field, fieldIndex) => (
-                <View key={fieldIndex} style={styles.signatureField}>
-                  <Text style={styles.signatureLabel}>{field.label}</Text>
-                  {field.label.toLowerCase().includes('signature') ? (
+            return (
+              <View key={index} style={styles.signatureBlock}>
+                <Text style={styles.signaturePartyLabel}>
+                  {signature.party === 'employer' ? '🏢  EMPLOYER' : '👤  EMPLOYEE'}
+                </Text>
+                
+                <Text style={styles.signaturePartyName}>
+                  {signature.partyName}
+                </Text>
+
+                {/* Signature field - full width */}
+                {signatureField && (
+                  <View style={styles.signatureField}>
+                    <Text style={styles.signatureLabel}>{signatureField.label}</Text>
                     <View style={styles.signatureBox}>
-                      {/* Signature box - intentionally empty for e-signature */}
+                      <Text style={styles.signatureBoxText}>
+                        Digital signature will appear here
+                      </Text>
                     </View>
-                  ) : (
-                    <View style={styles.signatureLine} />
-                  )}
-                  {field.label.toLowerCase().includes('date') && (
-                    <Text style={styles.signatureDate}>Date: ___________________________</Text>
-                  )}
-                </View>
-              ))}
-            </View>
-          ))}
+                  </View>
+                )}
+
+                {/* NAME and TITLE fields side by side (for employer) */}
+                {signature.party === 'employer' && (nameField || titleField) && (
+                  <View style={styles.signatureFieldsRow}>
+                    {nameField && (
+                      <View style={styles.signatureFieldColumn}>
+                        <Text style={styles.signatureLabel}>{nameField.label}</Text>
+                        {nameField.value ? (
+                          <Text style={styles.signaturePreFilledValue}>{nameField.value}</Text>
+                        ) : (
+                          <View style={styles.signatureLine} />
+                        )}
+                      </View>
+                    )}
+                    {titleField && (
+                      <View style={styles.signatureFieldColumn}>
+                        <Text style={styles.signatureLabel}>{titleField.label}</Text>
+                        {titleField.value ? (
+                          <Text style={styles.signaturePreFilledValue}>{titleField.value}</Text>
+                        ) : (
+                          <View style={styles.signatureLine} />
+                        )}
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* NAME field (for employee) */}
+                {signature.party === 'employee' && nameField && (
+                  <View style={styles.signatureField}>
+                    <Text style={styles.signatureLabel}>{nameField.label}</Text>
+                    {nameField.value ? (
+                      <Text style={styles.signaturePreFilledValue}>{nameField.value}</Text>
+                    ) : (
+                      <View style={styles.signatureLine} />
+                    )}
+                  </View>
+                )}
+
+                {/* DATE field */}
+                {dateField && (
+                  <View style={styles.signatureField}>
+                    <Text style={styles.signatureLabel}>{dateField.label}</Text>
+                    <View style={styles.signatureLine}>
+                      <Text style={styles.signatureDate}>Date: _______________</Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </View>
 
         {/* Footer - Production Ready */}

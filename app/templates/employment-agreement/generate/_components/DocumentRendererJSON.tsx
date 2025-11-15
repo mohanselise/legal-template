@@ -134,22 +134,6 @@ export function DocumentRendererJSON({ document }: DocumentRendererJSONProps) {
               style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
             {document.metadata.title}
           </h1>
-
-          {/* Document Metadata */}
-          <div className="flex flex-col md:flex-row items-center justify-center gap-3 text-sm text-slate-600 dark:text-gray-400 pt-4 font-medium">
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-sm shadow-emerald-500/50"></div>
-              <span className="tracking-wide">AI-Enhanced Draft</span>
-            </div>
-            <span className="hidden md:inline text-slate-400 dark:text-gray-600">|</span>
-            <span className="tracking-wide">{new Date(document.metadata.effectiveDate).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}</span>
-            <span className="hidden md:inline text-slate-400 dark:text-gray-600">|</span>
-            <span className="font-mono text-xs tracking-wider">Doc ID: {docId}</span>
-          </div>
         </div>
       </div>
 

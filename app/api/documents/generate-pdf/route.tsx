@@ -43,14 +43,14 @@ export async function POST(request: NextRequest) {
         name: formData.companyRepName || employerName,
         email: formData.companyRepEmail || document.parties?.employer?.email || '',
         role: formData.companyRepTitle || 'Authorized Representative',
-        phone: formData.companyRepPhone,
+        ...(formData.companyRepPhone && { phone: formData.companyRepPhone }),
       },
       {
         party: 'employee' as const,
         name: employeeName,
         email: formData.employeeEmail || document.parties?.employee?.email || '',
         role: formData.jobTitle || 'Employee',
-        phone: formData.employeePhone,
+        ...(formData.employeePhone && { phone: formData.employeePhone }),
       },
     ];
 

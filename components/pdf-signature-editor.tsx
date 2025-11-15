@@ -74,11 +74,17 @@ interface PDFSignatureEditorProps {
   onCancel: () => void;
 }
 
+// Distinct colors for each party (SELISE brand-compliant)
+const PARTY_COLORS = {
+  employer: '#0066B2', // SELISE Blue - for employer/company
+  employee: '#2A4D14', // Poly Green - for employee
+};
+
 const SIGNATORY_COLORS = [
-  '#2563eb', // Professional Blue for first signatory
-  '#059669', // Emerald Green for second signatory
-  '#7c3aed', // Purple for third signatory
-  '#dc2626', // Red for fourth
+  PARTY_COLORS.employer, // First signatory = employer (blue)
+  PARTY_COLORS.employee, // Second signatory = employee (green)
+  '#7c3aed', // Purple for third (if needed)
+  '#dc2626', // Red for fourth (if needed)
 ];
 
 const FIELD_TYPES = [
@@ -118,16 +124,11 @@ export function PDFSignatureEditor({
   // Initialize default fields on last page
   useEffect(() => {
     if (numPages > 0 && fields.length === 0) {
-      // Use initialFields if provided, otherwise create default
+      // Use initialFields if provided (already in correct format from page)
       if (initialFields.length > 0) {
-        // Update page numbers to use the actual last page
-        const updatedFields = initialFields.map(field => ({
-          ...field,
-          pageNumber: field.pageNumber === 1 ? numPages : field.pageNumber,
-        }));
-        setFields(updatedFields);
+        setFields(initialFields);
         setCurrentPage(numPages);
-        
+
         // Show auto-placed message
         setShowAutoPlacedMessage(true);
         setTimeout(() => setShowAutoPlacedMessage(false), 5000);
@@ -349,16 +350,16 @@ export function PDFSignatureEditor({
         {/* Header */}
         <div className="p-5 border-b border-gray-200">
           <h2 className="font-semibold text-lg text-gray-900 mb-1">
-            Add Signature Fields
+            Place Signature Fields
           </h2>
           <p className="text-xs text-gray-500">
-            Click to place fields on the document
+            Fields auto-placed - drag to adjust
           </p>
         </div>
 
         {/* Signatories */}
         <div className="p-5 border-b border-gray-200">
-          <h3 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Recipients</h3>
+          <h3 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Signature Parties</h3>
           <div className="space-y-2">
             {signatories.map((sig, index) => {
               const fieldCount = fields.filter(f => f.signatoryIndex === index).length;
@@ -385,7 +386,9 @@ export function PDFSignatureEditor({
                   </div>
                   <div className="flex-1 text-left min-w-0">
                     <div className="font-semibold text-xs text-gray-900 truncate">{sig.name}</div>
-                    <div className="text-[10px] text-gray-500 truncate">{sig.role}</div>
+                    <div className="text-[10px] text-gray-500 truncate">
+                      {index === 0 ? '🏢 Employer' : '👤 Employee'} · {sig.role}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {!hasSignature && (

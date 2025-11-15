@@ -327,31 +327,47 @@ export function PDFSignatureEditor({
 
   const hasFieldsOnPage = (page: number) => fieldsByPage[page]?.length > 0;
 
+  // Field validation
+  const getValidationStatus = () => {
+    const missingFields: string[] = [];
+    signatories.forEach((sig, idx) => {
+      const sigFields = fields.filter(f => f.signatoryIndex === idx);
+      const hasSignature = sigFields.some(f => f.type === 'signature');
+      if (!hasSignature) {
+        missingFields.push(`${sig.name} - Missing signature field`);
+      }
+    });
+    return { isValid: missingFields.length === 0, missingFields };
+  };
+
+  const validation = getValidationStatus();
+
   return (
     <div className="flex h-full bg-gray-50">
-      {/* Left Sidebar - Tools Panel */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-sm">
+      {/* Left Sidebar - Tools Panel (narrower for more PDF space) */}
+      <div className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="font-semibold text-xl text-gray-900 mb-1">
+        <div className="p-5 border-b border-gray-200">
+          <h2 className="font-semibold text-lg text-gray-900 mb-1">
             Add Signature Fields
           </h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs text-gray-500">
             Click to place fields on the document
           </p>
         </div>
 
         {/* Signatories */}
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Recipients</h3>
+        <div className="p-5 border-b border-gray-200">
+          <h3 className="text-xs font-semibold text-gray-700 mb-3 uppercase tracking-wide">Recipients</h3>
           <div className="space-y-2">
             {signatories.map((sig, index) => {
               const fieldCount = fields.filter(f => f.signatoryIndex === index).length;
+              const hasSignature = fields.some(f => f.signatoryIndex === index && f.type === 'signature');
               return (
                 <button
                   key={index}
                   onClick={() => setSelectedSignatoryIndex(index)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                  className={`w-full flex items-center gap-2 p-2.5 rounded-lg border transition-all ${
                     selectedSignatoryIndex === index
                       ? 'border-current shadow-sm'
                       : 'border-gray-200 hover:border-gray-300'
@@ -362,20 +378,25 @@ export function PDFSignatureEditor({
                   }}
                 >
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold shrink-0"
                     style={{ backgroundColor: sig.color }}
                   >
-                    {index === 0 ? <Briefcase className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                    {index === 0 ? <Briefcase className="w-4 h-4" /> : <User className="w-4 h-4" />}
                   </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-semibold text-sm text-gray-900">{sig.name}</div>
-                    <div className="text-xs text-gray-500">{sig.role}</div>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="font-semibold text-xs text-gray-900 truncate">{sig.name}</div>
+                    <div className="text-[10px] text-gray-500 truncate">{sig.role}</div>
                   </div>
-                  {fieldCount > 0 && (
-                    <div className="text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-700">
-                      {fieldCount}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {!hasSignature && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500" title="Missing signature field" />
+                    )}
+                    {fieldCount > 0 && (
+                      <div className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                        {fieldCount}
+                      </div>
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -383,64 +404,88 @@ export function PDFSignatureEditor({
         </div>
 
         {/* Field Types */}
-        <div className="p-6 border-b border-gray-200 flex-1 overflow-y-auto">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            <MousePointer2 className="w-4 h-4" />
+        <div className="p-5 border-b border-gray-200 flex-1 overflow-y-auto">
+          <h3 className="text-xs font-semibold text-gray-700 mb-3 flex items-center gap-2 uppercase tracking-wide">
+            <MousePointer2 className="w-3.5 h-3.5" />
             Field Types
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {FIELD_TYPES.map(({ type, label, icon: Icon, color }) => (
               <button
                 key={type}
                 onClick={() => setSelectedFieldType(type)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-all ${
                   selectedFieldType === type
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
+                  className="w-7 h-7 rounded flex items-center justify-center text-white shrink-0"
                   style={{ backgroundColor: color }}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-3.5 h-3.5" />
                 </div>
                 <div className="flex-1 text-left">
-                  <div className="font-semibold text-sm text-gray-900">{label}</div>
-                  <div className="text-xs text-gray-500">Click to place</div>
+                  <div className="font-semibold text-xs text-gray-900">{label}</div>
+                  <div className="text-[10px] text-gray-500">Click to place</div>
                 </div>
               </button>
             ))}
           </div>
 
           {/* Instructions */}
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
             <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-              <div className="text-xs text-blue-900">
-                <p className="font-semibold mb-1">✨ Auto-placed fields:</p>
-                <ul className="space-y-1 text-blue-800">
-                  <li>• Fields are positioned automatically</li>
-                  <li>• Drag any field to adjust</li>
-                  <li>• Add more fields as needed</li>
-                  <li>• Delete unwanted fields</li>
-                </ul>
+              <Info className="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" />
+              <div className="text-[10px] text-blue-900 leading-relaxed">
+                <p className="font-semibold mb-1">✨ Auto-placed fields</p>
+                <p className="text-blue-800">Drag to adjust • Add more • Delete unwanted</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="p-6 border-t border-gray-200 space-y-3">
+        {/* Validation Summary & Actions */}
+        <div className="p-5 border-t border-gray-200 space-y-3">
+          {/* Validation Status */}
+          {!validation.isValid && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">!</span>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-amber-900 mb-1">Missing Required Fields</p>
+                  <ul className="text-[10px] text-amber-800 space-y-0.5">
+                    {validation.missingFields.map((msg, idx) => (
+                      <li key={idx}>• {msg}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {validation.isValid && fields.length > 0 && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <p className="text-xs font-semibold text-green-900">All required fields placed</p>
+              </div>
+            </div>
+          )}
+
           <Button
             onClick={handleResetFields}
             variant="outline"
-            className="w-full justify-center gap-2"
+            size="sm"
+            className="w-full justify-center gap-2 text-xs"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
             Reset All Fields
           </Button>
-          <div className="text-xs text-center text-gray-500">
+          <div className="text-[10px] text-center text-gray-500">
             <strong className="text-gray-900">{fields.length}</strong> field{fields.length !== 1 ? 's' : ''} added
           </div>
         </div>
@@ -758,9 +803,10 @@ export function PDFSignatureEditor({
               </Button>
               <Button
                 onClick={handleConfirm}
-                disabled={isSubmitting || fields.length === 0}
+                disabled={isSubmitting || !validation.isValid}
                 size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 shadow-sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!validation.isValid ? 'Please add all required signature fields' : ''}
               >
                 {isSubmitting ? (
                   <>

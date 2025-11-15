@@ -17,39 +17,41 @@ import type {
 // import { Font } from '@react-pdf/renderer';
 // Font.register({ family: 'CustomFont', src: '/fonts/custom.ttf' });
 
-// Professional Legal Document Styles
+// Professional Legal Document Styles - DocuSign-inspired clean design
 const styles = StyleSheet.create({
   page: {
     size: 'LETTER', // US Letter (8.5" x 11")
     padding: 72, // 1 inch margins
-    fontFamily: 'Times-Roman',
+    fontFamily: 'Helvetica',
     fontSize: 11,
-    lineHeight: 1.6,
+    lineHeight: 1.8, // More breathing room
+    backgroundColor: '#ffffff',
   },
-  
+
   // Header
   header: {
-    marginBottom: 36,
-    paddingBottom: 24,
-    borderBottom: '3pt solid #1e3a8a', // Oxford blue
+    marginBottom: 48, // More whitespace
+    paddingBottom: 16,
+    borderBottom: '0.5pt solid #e5e7eb', // Subtle border
   },
   badge: {
-    backgroundColor: '#1e3a8a',
-    color: 'white',
-    fontSize: 8,
-    fontFamily: 'Times-Bold',
-    padding: '6pt 12pt',
+    backgroundColor: '#f3f4f6', // Soft gray
+    color: '#374151',
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold',
+    padding: '4pt 8pt',
     textAlign: 'center',
     marginBottom: 12,
-    letterSpacing: 1.5,
+    letterSpacing: 1,
   },
   title: {
-    fontSize: 20,
-    fontFamily: 'Times-Bold',
+    fontSize: 18, // Slightly smaller, less aggressive
+    fontFamily: 'Helvetica-Bold',
     textAlign: 'center',
     marginBottom: 12,
-    letterSpacing: 2,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
+    color: '#111827',
   },
   metadata: {
     fontSize: 9,
@@ -67,26 +69,28 @@ const styles = StyleSheet.create({
   
   // Parties Section
   partiesIntro: {
-    marginBottom: 16,
-    textAlign: 'justify',
+    marginBottom: 20,
+    textAlign: 'left', // Ragged-right for better readability
   },
   partyBox: {
-    marginBottom: 12,
+    marginBottom: 16,
     marginLeft: 24,
-    paddingLeft: 12,
-    borderLeft: '3pt solid #1e40af',
+    paddingLeft: 16,
+    borderLeft: '2pt solid #3b82f6', // Softer blue
+    backgroundColor: '#f8fafc',
+    padding: 12,
   },
   partyBoxEmployee: {
-    borderLeft: '3pt solid #65a30d',
+    borderLeft: '2pt solid #10b981', // Softer green
   },
   partyName: {
-    fontSize: 14,
-    fontFamily: 'Times-Bold',
+    fontSize: 13,
+    fontFamily: 'Helvetica-Bold',
     marginBottom: 8,
-    color: '#1e3a8a',
+    color: '#1e293b',
   },
   partyNameEmployee: {
-    color: '#65a30d',
+    color: '#1e293b',
   },
   partyDetails: {
     fontSize: 9,
@@ -107,63 +111,69 @@ const styles = StyleSheet.create({
   
   // Recitals
   recitalsHeading: {
-    fontSize: 14,
-    fontFamily: 'Times-Bold',
+    fontSize: 13,
+    fontFamily: 'Helvetica-Bold',
     textAlign: 'center',
-    marginTop: 24,
-    marginBottom: 16,
+    marginTop: 32,
+    marginBottom: 20,
     paddingBottom: 8,
-    borderBottom: '2pt solid #1e40af',
-    letterSpacing: 2,
+    borderBottom: '0.5pt solid #d1d5db',
+    letterSpacing: 1,
     textTransform: 'uppercase',
+    color: '#374151',
   },
   recitalParagraph: {
-    marginBottom: 12,
+    marginBottom: 16,
     textAlign: 'justify',
     textIndent: 24,
   },
-  
+
   // Articles
   articleHeading: {
-    fontSize: 14,
-    fontFamily: 'Times-Bold',
-    marginTop: 24,
-    marginBottom: 12,
+    fontSize: 13,
+    fontFamily: 'Helvetica-Bold',
+    marginTop: 32,
+    marginBottom: 16,
     paddingBottom: 8,
-    borderBottom: '3pt solid #1e40af',
-    letterSpacing: 1.5,
+    borderBottom: '0.5pt solid #d1d5db',
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
+    color: '#1f2937',
   },
   
   // Sections
   sectionHeading: {
-    fontSize: 12,
-    fontFamily: 'Times-Bold',
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: 11.5,
+    fontFamily: 'Helvetica-Bold',
+    marginTop: 20,
+    marginBottom: 10,
+    color: '#374151',
   },
   sectionNumber: {
     color: '#6b7280',
   },
-  
+
   // Content Blocks
   paragraph: {
-    marginBottom: 12,
+    marginBottom: 14,
     textAlign: 'justify',
   },
   paragraphIndent: {
     textIndent: 36,
   },
-  
+
   // Definitions
   definitionContainer: {
-    marginBottom: 12,
-    paddingLeft: 12,
-    borderLeft: '3pt solid #1e40af',
+    marginBottom: 14,
+    paddingLeft: 16,
+    padding: 10,
+    borderLeft: '2pt solid #60a5fa',
+    backgroundColor: '#eff6ff',
   },
   definitionTerm: {
-    fontFamily: 'Times-Bold',
-    marginBottom: 4,
+    fontFamily: 'Helvetica-Bold',
+    marginBottom: 6,
+    color: '#1e40af',
   },
   definitionText: {
     textAlign: 'justify',
@@ -171,14 +181,14 @@ const styles = StyleSheet.create({
   
   // Lists
   listItem: {
-    marginBottom: 8,
+    marginBottom: 10,
     marginLeft: 36,
     flexDirection: 'row',
   },
   listNumber: {
-    width: 24,
-    fontFamily: 'Times-Bold',
-    color: '#1e40af',
+    width: 28,
+    fontFamily: 'Helvetica-Bold',
+    color: '#3b82f6',
   },
   listContent: {
     flex: 1,
@@ -186,59 +196,78 @@ const styles = StyleSheet.create({
   },
   subListItem: {
     marginLeft: 24,
-    marginTop: 6,
+    marginTop: 8,
     flexDirection: 'row',
   },
   subListLetter: {
-    width: 20,
+    width: 24,
     color: '#6b7280',
   },
   
   // Signatures
   signatureSection: {
-    marginTop: 32,
-    paddingTop: 16,
-    borderTop: '3pt solid #1e3a8a',
+    marginTop: 48,
+    paddingTop: 24,
+    borderTop: '0.5pt solid #d1d5db',
   },
   witnessClause: {
     textAlign: 'center',
-    fontFamily: 'Times-Bold',
+    fontFamily: 'Helvetica-Bold',
     fontSize: 10,
-    marginBottom: 24,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-  },
-  signatureBlock: {
-    marginTop: 16,
-    paddingTop: 12,
-    borderTop: '1pt solid #d1d5db',
-  },
-  signaturePartyLabel: {
-    fontFamily: 'Times-Bold',
-    fontSize: 11,
-    marginBottom: 12,
+    marginBottom: 32,
     letterSpacing: 1,
     textTransform: 'uppercase',
+    color: '#374151',
   },
-  signaturePartyName: {
-    fontFamily: 'Times-Bold',
-    fontSize: 12,
-    marginBottom: 12,
+  signatureBlock: {
+    marginTop: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
+    padding: 16,
+    backgroundColor: '#f9fafb',
+    borderTop: '0.5pt solid #e5e7eb',
   },
-  signatureField: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  signatureLabel: {
+  signaturePartyLabel: {
+    fontFamily: 'Helvetica-Bold',
     fontSize: 10,
-    fontFamily: 'Times-Bold',
-    width: 80,
+    marginBottom: 12,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
     color: '#6b7280',
   },
+  signaturePartyName: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 11.5,
+    marginBottom: 16,
+    color: '#111827',
+  },
+  signatureField: {
+    marginBottom: 20,
+  },
+  signatureLabel: {
+    fontSize: 8,
+    fontFamily: 'Helvetica',
+    color: '#6b7280',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   signatureLine: {
-    flex: 1,
-    borderBottom: '1pt solid #1e3a8a',
-    minHeight: 20,
+    borderBottom: '1pt solid #374151',
+    paddingBottom: 8,
+    minHeight: 50,
+  },
+  signatureBox: {
+    border: '1pt solid #d1d5db',
+    padding: 12,
+    minHeight: 80,
+    backgroundColor: '#fafafa',
+    marginBottom: 8,
+  },
+  signatureDate: {
+    fontSize: 9,
+    color: '#6b7280',
+    marginTop: 4,
   },
   
   // Footer
@@ -247,22 +276,22 @@ const styles = StyleSheet.create({
     bottom: 36,
     left: 72,
     right: 72,
-    borderTop: '1pt solid #d1d5db',
+    borderTop: '0.5pt solid #e5e7eb',
     paddingTop: 8,
-    fontSize: 8,
-    color: '#6b7280',
+    fontSize: 7.5,
+    color: '#9ca3af',
   },
   footerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  
+
   // Text formatting
   bold: {
-    fontFamily: 'Times-Bold',
+    fontFamily: 'Helvetica-Bold',
   },
   italic: {
-    fontFamily: 'Times-Italic',
+    fontFamily: 'Helvetica-Oblique',
   },
 });
 
@@ -507,13 +536,23 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
           {employmentAgreement.signatures.map((signature, index) => (
             <View key={index} style={styles.signatureBlock}>
               <Text style={styles.signaturePartyLabel}>
-                {signature.party === 'employer' ? 'EMPLOYER:' : 'EMPLOYEE:'}
+                {signature.party === 'employer' ? 'EMPLOYER SIGNATURE' : 'EMPLOYEE SIGNATURE'}
               </Text>
               <Text style={styles.signaturePartyName}>{signature.partyName}</Text>
+
               {signature.fields.map((field, fieldIndex) => (
                 <View key={fieldIndex} style={styles.signatureField}>
-                  <Text style={styles.signatureLabel}>{field.label}:</Text>
-                  <View style={styles.signatureLine} />
+                  <Text style={styles.signatureLabel}>{field.label}</Text>
+                  {field.label.toLowerCase().includes('signature') ? (
+                    <View style={styles.signatureBox}>
+                      {/* Signature box - intentionally empty for e-signature */}
+                    </View>
+                  ) : (
+                    <View style={styles.signatureLine} />
+                  )}
+                  {field.label.toLowerCase().includes('date') && (
+                    <Text style={styles.signatureDate}>Date: ___________________________</Text>
+                  )}
                 </View>
               ))}
             </View>

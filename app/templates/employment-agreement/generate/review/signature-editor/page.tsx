@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { PDFSignatureEditor } from '@/components/pdf-signature-editor';
+import { EmployerInfoModal } from '@/components/employer-info-modal';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 interface SignatureField {
@@ -31,6 +32,12 @@ interface SignatoryInfo {
   order: number;
 }
 
+interface EmployerInfo {
+  signerName: string;
+  signerEmail: string;
+  signerTitle: string;
+}
+
 function SignatureEditorContent() {
   const router = useRouter();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -39,10 +46,9 @@ function SignatureEditorContent() {
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [signatories, setSignatories] = useState<SignatoryInfo[]>([]);
-  const [showEmailForm, setShowEmailForm] = useState(false);
-  const [companyEmail, setCompanyEmail] = useState('');
-  const [companyTitle, setCompanyTitle] = useState('');
-  const [employeeEmail, setEmployeeEmail] = useState('');
+  const [showEmployerModal, setShowEmployerModal] = useState(false);
+  const [employerInfo, setEmployerInfo] = useState<EmployerInfo | null>(null);
+  const [initialFields, setInitialFields] = useState<SignatureField[]>([]);
 
   useEffect(() => {
     // Get PDF and contract data from sessionStorage
@@ -82,6 +88,11 @@ function SignatureEditorContent() {
 
       console.log('📄 Loading PDF from sessionStorage');
       loadPdfFromBase64(storedPdfBase64);
+      
+      // Show employer modal after PDF loads
+      setTimeout(() => {
+        setShowEmployerModal(true);
+      }, 500);
     } catch (err) {
       console.error('Error loading contract data:', err);
       setError('Invalid contract data. Please start the signature process again.');
@@ -112,44 +123,182 @@ function SignatureEditorContent() {
     }
   };
 
-  const handleConfirm = async (fields: SignatureField[]) => {
-    if (!contractData) return;
-
-    // Show email form first
-    setShowEmailForm(true);
-
-    // Store fields for later use
-    sessionStorage.setItem('signature-fields', JSON.stringify(fields));
+  const handleEmployerInfoSubmit = (info: EmployerInfo) => {
+    setEmployerInfo(info);
+    
+    // Update signatories with actual info
+    if (contractData?.document?.parties) {
+      const updatedSignatories: SignatoryInfo[] = [
+        {
+          name: info.signerName,
+          email: info.signerEmail,
+          title: info.signerTitle,
+          phone: '',
+          role: 'Company Representative',
+          order: 1,
+        },
+        {
+          name: contractData.document.parties.employee.legalName,
+          email: contractData.formData?.personalInfo?.email || '',
+          phone: '',
+          role: 'Employee',
+          order: 2,
+        },
+      ];
+      setSignatories(updatedSignatories);
+      
+      // Generate smart field placements
+      generateSmartFieldPlacements(updatedSignatories);
+    }
+    
+    setShowEmployerModal(false);
   };
 
-  const handleSendForSignature = async () => {
-    if (!contractData || !companyEmail || !employeeEmail) {
-      alert('Please fill in all required email addresses');
-      return;
+  const generateSmartFieldPlacements = (sigs: SignatoryInfo[]) => {
+    if (!contractData) return;
+
+    // First, try to load metadata from sessionStorage
+    const metadataJson = sessionStorage.getItem('signature-field-metadata');
+    
+    if (metadataJson) {
+      try {
+        const metadata = JSON.parse(metadataJson);
+        console.log('📍 Using PDF-embedded signature field metadata:', metadata);
+        
+        // Convert metadata to our field format
+        const fields = metadata.map((field: any, index: number) => ({
+          id: field.id,
+          type: field.type,
+          signatoryIndex: field.party === 'employer' ? 0 : 1,
+          pageNumber: field.pageNumber,
+          x: field.x,
+          y: field.y,
+          width: field.width,
+          height: field.height,
+          label: field.label,
+        }));
+        
+        setInitialFields(fields);
+        return;
+      } catch (error) {
+        console.warn('Failed to parse signature field metadata, using fallback:', error);
+      }
     }
 
-    // Get stored fields
-    const fieldsJson = sessionStorage.getItem('signature-fields');
-    if (!fieldsJson) return;
-    const fields: SignatureField[] = JSON.parse(fieldsJson);
+    // Fallback: Use hardcoded coordinates if metadata not available
+    console.log('⚠️  No metadata found, using fallback coordinates');
+    
+    const fields: SignatureField[] = [];
+    const lastPage = 1; // Will be updated when PDF loads
+    
+    // Fallback coordinates (original hardcoded values)
+    const employerX = 165;
+    const employerSigY = 230;
+    const employerNameY = 258;
+    const employerTitleY = 286;
+    const employerDateY = 314;
+    
+    // EMPLOYER fields
+    fields.push({
+      id: 'employer-signature',
+      type: 'signature',
+      signatoryIndex: 0,
+      pageNumber: lastPage,
+      x: employerX,
+      y: employerSigY,
+      width: 200,
+      height: 35,
+      label: `${sigs[0].name} - Signature`,
+    });
+    
+    fields.push({
+      id: 'employer-name',
+      type: 'text',
+      signatoryIndex: 0,
+      pageNumber: lastPage,
+      x: employerX,
+      y: employerNameY,
+      width: 200,
+      height: 28,
+      label: `${sigs[0].name}`,
+    });
+    
+    fields.push({
+      id: 'employer-title',
+      type: 'text',
+      signatoryIndex: 0,
+      pageNumber: lastPage,
+      x: employerX,
+      y: employerTitleY,
+      width: 200,
+      height: 28,
+      label: `${sigs[0].title || 'Title'}`,
+    });
+    
+    fields.push({
+      id: 'employer-date',
+      type: 'date',
+      signatoryIndex: 0,
+      pageNumber: lastPage,
+      x: employerX,
+      y: employerDateY,
+      width: 140,
+      height: 28,
+      label: 'Date',
+    });
+    
+    // EMPLOYEE fields
+    const employeeX = 165;
+    const employeeSigY = 431;
+    const employeeDateY = 459;
+    
+    fields.push({
+      id: 'employee-signature',
+      type: 'signature',
+      signatoryIndex: 1,
+      pageNumber: lastPage,
+      x: employeeX,
+      y: employeeSigY,
+      width: 200,
+      height: 35,
+      label: `${sigs[1].name} - Signature`,
+    });
+    
+    fields.push({
+      id: 'employee-date',
+      type: 'date',
+      signatoryIndex: 1,
+      pageNumber: lastPage,
+      x: employeeX,
+      y: employeeDateY,
+      width: 140,
+      height: 28,
+      label: 'Date',
+    });
+    
+    console.log('📍 Smart fields placed (fallback mode):', fields);
+    setInitialFields(fields);
+  };
+
+  const handleConfirm = async (fields: SignatureField[]) => {
+    if (!contractData || !employerInfo) return;
 
     setIsSending(true);
-    setShowEmailForm(false);
 
     try {
       // Prepare signatories
       const signatoryList: SignatoryInfo[] = [
         {
-          name: contractData.document.parties.employer.legalName,
-          email: companyEmail,
-          title: companyTitle,
+          name: employerInfo.signerName,
+          email: employerInfo.signerEmail,
+          title: employerInfo.signerTitle,
           phone: '',
           role: 'Company Representative',
           order: 0,
         },
         {
           name: contractData.document.parties.employee.legalName,
-          email: employeeEmail,
+          email: contractData.formData?.personalInfo?.email || '',
           phone: '',
           role: 'Employee',
           order: 1,
@@ -285,6 +434,33 @@ function SignatureEditorContent() {
     );
   }
 
+  // Show employer modal first
+  if (showEmployerModal && contractData) {
+    return (
+      <>
+        {/* Backdrop with PDF preview */}
+        <div className="h-screen bg-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-2" />
+            <p className="text-sm text-gray-600">Loading signature editor...</p>
+          </div>
+        </div>
+        
+        <EmployerInfoModal
+          isOpen={showEmployerModal}
+          onClose={() => {
+            // Don't allow closing without filling
+            // setShowEmployerModal(false);
+          }}
+          onSubmit={handleEmployerInfoSubmit}
+          companyName={contractData.document?.parties?.employer?.legalName || 'the company'}
+          employeeName={contractData.document?.parties?.employee?.legalName || ''}
+          employeeEmail={contractData.formData?.personalInfo?.email || ''}
+        />
+      </>
+    );
+  }
+
   if (isLoadingPdf || !pdfUrl || !contractData || signatories.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[hsl(var(--bg))]">
@@ -311,6 +487,7 @@ function SignatureEditorContent() {
         <PDFSignatureEditor
           pdfUrl={pdfUrl}
           signatories={signatories}
+          initialFields={initialFields}
           onConfirm={handleConfirm}
           onCancel={handleCancel}
         />

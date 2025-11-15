@@ -69,6 +69,7 @@ interface PDFSignatureEditorProps {
     role: string;
     order: number;
   }>;
+  initialFields?: SignatureField[];
   onConfirm: (fields: SignatureField[]) => Promise<void>;
   onCancel: () => void;
 }
@@ -89,6 +90,7 @@ const FIELD_TYPES = [
 export function PDFSignatureEditor({
   pdfUrl,
   signatories: rawSignatories,
+  initialFields = [],
   onConfirm,
   onCancel
 }: PDFSignatureEditorProps) {
@@ -105,6 +107,7 @@ export function PDFSignatureEditor({
   const [hoveredField, setHoveredField] = useState<string | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showAutoPlacedMessage, setShowAutoPlacedMessage] = useState(false);
 
   // Add colors to signatories - with safety check
   const signatories: Signatory[] = (rawSignatories || []).map((s, i) => ({
@@ -115,6 +118,23 @@ export function PDFSignatureEditor({
   // Initialize default fields on last page
   useEffect(() => {
     if (numPages > 0 && fields.length === 0) {
+      // Use initialFields if provided, otherwise create default
+      if (initialFields.length > 0) {
+        // Update page numbers to use the actual last page
+        const updatedFields = initialFields.map(field => ({
+          ...field,
+          pageNumber: field.pageNumber === 1 ? numPages : field.pageNumber,
+        }));
+        setFields(updatedFields);
+        setCurrentPage(numPages);
+        
+        // Show auto-placed message
+        setShowAutoPlacedMessage(true);
+        setTimeout(() => setShowAutoPlacedMessage(false), 5000);
+        return;
+      }
+
+      // Fallback to default field generation
       const defaultFields: SignatureField[] = [];
       const lastPage = numPages;
 
@@ -165,7 +185,7 @@ export function PDFSignatureEditor({
       setFields(defaultFields);
       setCurrentPage(lastPage);
     }
-  }, [numPages, signatories, fields.length]);
+  }, [numPages, signatories, fields.length, initialFields]);
 
   const handleDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -329,7 +349,7 @@ export function PDFSignatureEditor({
               const fieldCount = fields.filter(f => f.signatoryIndex === index).length;
               return (
                 <button
-                  key={sig.email}
+                  key={index}
                   onClick={() => setSelectedSignatoryIndex(index)}
                   className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
                     selectedSignatoryIndex === index
@@ -398,12 +418,12 @@ export function PDFSignatureEditor({
             <div className="flex items-start gap-2">
               <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
               <div className="text-xs text-blue-900">
-                <p className="font-semibold mb-1">How to use:</p>
+                <p className="font-semibold mb-1">✨ Auto-placed fields:</p>
                 <ul className="space-y-1 text-blue-800">
-                  <li>• Select a recipient</li>
-                  <li>• Choose a field type</li>
-                  <li>• Click on the document</li>
-                  <li>• Drag to reposition</li>
+                  <li>• Fields are positioned automatically</li>
+                  <li>• Drag any field to adjust</li>
+                  <li>• Add more fields as needed</li>
+                  <li>• Delete unwanted fields</li>
                 </ul>
               </div>
             </div>
@@ -529,11 +549,24 @@ export function PDFSignatureEditor({
         {/* PDF Viewer Area */}
         <div 
           ref={containerRef}
-          className="flex-1 overflow-auto bg-gray-100 p-8"
+          className="flex-1 overflow-auto bg-gray-100 p-8 relative"
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         >
+          {/* Auto-placed notification */}
+          {showAutoPlacedMessage && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
+              <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5" />
+                <div>
+                  <p className="font-semibold">Fields Auto-Placed!</p>
+                  <p className="text-sm text-green-100">Drag to adjust positions if needed</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="max-w-5xl mx-auto">
             <div
               ref={pageRef}

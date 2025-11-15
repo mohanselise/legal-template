@@ -2,6 +2,7 @@ import React from 'react';
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { EmploymentAgreementPDF } from '@/lib/pdf/EmploymentAgreementPDF';
+import { generateSignatureFieldMetadata, createMetadataPayload } from '@/lib/pdf/signature-field-metadata';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,8 +22,41 @@ export async function POST(request: NextRequest) {
     const pdfBuffer = await renderToBuffer(
       <EmploymentAgreementPDF document={document} docId={docId} />
     );
+    
+    // Calculate number of pages (approximate - can be refined)
+    // For now, we'll assume signature is on last page
+    const estimatedPages = Math.ceil(document.articles?.length || 5);
+    
+    // Generate signature field metadata
+    const employerName = document.parties?.employer?.legalName || 'Company';
+    const employeeName = document.parties?.employee?.legalName || 'Employee';
+    const signatureFields = generateSignatureFieldMetadata(
+      employerName,
+      employeeName,
+      estimatedPages
+    );
 
-    // Return the PDF file
+    // Check if client wants metadata (for signature editor)
+    const url = new URL(request.url);
+    const includeMetadata = url.searchParams.get('metadata') === 'true';
+    
+    if (includeMetadata) {
+      // Return JSON with PDF and metadata
+      const base64Pdf = pdfBuffer.toString('base64');
+      return NextResponse.json({
+        success: true,
+        pdfBase64: base64Pdf,
+        signatureFields,
+        metadata: {
+          docId,
+          pages: estimatedPages,
+          employerName,
+          employeeName,
+        },
+      });
+    }
+
+    // Return the PDF file (original behavior)
     const sanitizedEmployeeName = sanitizeForFilename(
       document.parties?.employee?.legalName || formData.employeeName
     );
@@ -35,6 +69,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,
+        'X-Signature-Fields': createMetadataPayload(signatureFields), // Include metadata in header
       },
     });
   } catch (error) {

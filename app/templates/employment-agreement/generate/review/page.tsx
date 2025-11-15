@@ -84,8 +84,8 @@ function ReviewContent() {
     setIsPreparingContract(true);
 
     try {
-      // Generate PDF locally first
-      const pdfResponse = await fetch('/api/documents/generate-pdf', {
+      // Generate PDF with metadata
+      const pdfResponse = await fetch('/api/documents/generate-pdf?metadata=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,25 +98,21 @@ function ReviewContent() {
         throw new Error('Failed to generate PDF');
       }
 
-      // Convert PDF blob to base64
-      const pdfBlob = await pdfResponse.blob();
-      const pdfBase64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = reader.result as string;
-          // Remove data:application/pdf;base64, prefix
-          resolve(base64.split(',')[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(pdfBlob);
-      });
+      const responseData = await pdfResponse.json();
+      
+      if (!responseData.success) {
+        throw new Error('PDF generation failed');
+      }
 
-      // Store PDF and document data in sessionStorage
-      sessionStorage.setItem('signature-editor-pdf', pdfBase64);
+      // Store PDF, document data, AND signature field metadata in sessionStorage
+      sessionStorage.setItem('signature-editor-pdf', responseData.pdfBase64);
       sessionStorage.setItem('signature-editor-data', JSON.stringify({
         document: documentToSend,
         formData,
       }));
+      sessionStorage.setItem('signature-field-metadata', JSON.stringify(responseData.signatureFields));
+
+      console.log('✅ PDF generated with signature field metadata:', responseData.signatureFields);
 
       // Navigate to signature editor
       router.push('/templates/employment-agreement/generate/review/signature-editor');

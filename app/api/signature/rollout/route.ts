@@ -3,18 +3,31 @@ import { NextRequest, NextResponse } from 'next/server';
 /**
  * Rollout contract with signature fields and send to signatories
  */
+interface SignatureField {
+  id: string;
+  type: 'signature' | 'text' | 'date';
+  signatoryIndex: number;
+  pageNumber: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label?: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📐 Starting Rollout Process');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-    const { documentId, fileId, signatories, signaturePositions } = await request.json();
+    const { documentId, fileId, signatories, signatureFields } = await request.json();
 
     console.log('📋 Rollout Request Details:');
     console.log(`   DocumentId: ${documentId}`);
     console.log(`   FileId: ${fileId}`);
     console.log(`   Signatories: ${signatories?.length || 0}`);
+    console.log(`   Signature Fields: ${signatureFields?.length || 0}`);
 
     if (!documentId || !fileId || !signatories) {
       console.error('❌ Missing required fields');
@@ -73,74 +86,164 @@ export async function POST(request: NextRequest) {
     const { access_token } = JSON.parse(tokenResponseText);
     console.log('✅ Access token received');
 
-    // Default signature positions (last page of document)
-    console.log('\n📐 Step 2: Setting up signature field positions...');
-    const defaultPositions = signaturePositions || {
-      lastPage: 0,
-      companyRep: {
-        signature: { x: 80, y: 600, width: 180, height: 70 },
-        nameField: { x: 80, y: 550, width: 180, height: 25 },
-        dateStamp: { x: 80, y: 680, width: 120, height: 20 },
-      },
-      employee: {
-        signature: { x: 350, y: 600, width: 180, height: 70 },
-        nameField: { x: 350, y: 550, width: 180, height: 25 },
-        dateStamp: { x: 350, y: 680, width: 120, height: 20 },
-      },
-    };
+    // Process signature fields - use custom fields if provided, otherwise use defaults
+    console.log('\n📐 Step 2: Processing signature field positions...');
 
-    console.log(`   Page: ${defaultPositions.lastPage}`);
-    console.log(`   Signature 1: X=${defaultPositions.companyRep.signature.x}, Y=${defaultPositions.companyRep.signature.y}`);
-    console.log(`   Signature 2: X=${defaultPositions.employee.signature.x}, Y=${defaultPositions.employee.signature.y}`);
+    let stampCoordinates: Array<{
+      FileId: string;
+      PageNumber: number;
+      Width: number;
+      Height: number;
+      X: number;
+      Y: number;
+      SignatoryEmail: string;
+    }> = [];
 
-    // Build stamp coordinates (signature boxes)
-    console.log('\n📝 Step 3: Building field coordinates...');
-    const stampCoordinates = signatories.map((s: { email: string }, index: number) => {
-      const position = index === 0 ? defaultPositions.companyRep : defaultPositions.employee;
-      console.log(`   Signature ${index + 1}: ${s.email}`);
-      return {
-        FileId: fileId,
-        PageNumber: defaultPositions.lastPage,
-        Width: position.signature.width,
-        Height: position.signature.height,
-        X: position.signature.x,
-        Y: position.signature.y,
-        SignatoryEmail: s.email,
+    let textFieldCoordinates: Array<{
+      FileId: string;
+      PageNumber: number;
+      Width: number;
+      Height: number;
+      X: number;
+      Y: number;
+      SignatoryEmail: string;
+      Value: string;
+    }> = [];
+
+    let stampPostInfoCoordinates: Array<{
+      FileId: string;
+      PageNumber: number;
+      Width: number;
+      Height: number;
+      X: number;
+      Y: number;
+      EntityName: string;
+      PropertyName: string;
+      SignatoryEmail: string;
+    }> = [];
+
+    if (signatureFields && signatureFields.length > 0) {
+      // Use custom signature fields from the editor
+      console.log(`   Using ${signatureFields.length} custom signature fields`);
+
+      const fields = signatureFields as SignatureField[];
+
+      // Group fields by signatory
+      fields.forEach((field: SignatureField) => {
+        const signatory = signatories[field.signatoryIndex];
+        if (!signatory) return;
+
+        console.log(`   Field: ${field.type} for ${signatory.email} on page ${field.pageNumber}`);
+
+        if (field.type === 'signature') {
+          stampCoordinates.push({
+            FileId: fileId,
+            PageNumber: field.pageNumber - 1, // PDF.js is 1-indexed, API is 0-indexed
+            Width: field.width,
+            Height: field.height,
+            X: field.x,
+            Y: field.y,
+            SignatoryEmail: signatory.email,
+          });
+        } else if (field.type === 'text') {
+          textFieldCoordinates.push({
+            FileId: fileId,
+            PageNumber: field.pageNumber - 1,
+            Width: field.width,
+            Height: field.height,
+            X: field.x,
+            Y: field.y,
+            SignatoryEmail: signatory.email,
+            Value: signatory.name,
+          });
+        } else if (field.type === 'date') {
+          stampPostInfoCoordinates.push({
+            FileId: fileId,
+            PageNumber: field.pageNumber - 1,
+            Width: field.width,
+            Height: field.height,
+            X: field.x,
+            Y: field.y,
+            EntityName: 'AuditLog',
+            PropertyName: '{StampTime}',
+            SignatoryEmail: signatory.email,
+          });
+        }
+      });
+    } else {
+      // Use default positions (last page)
+      console.log('   Using default signature field positions');
+      const defaultPositions = {
+        lastPage: 0,
+        companyRep: {
+          signature: { x: 80, y: 600, width: 180, height: 70 },
+          nameField: { x: 80, y: 550, width: 180, height: 25 },
+          dateStamp: { x: 80, y: 680, width: 120, height: 20 },
+        },
+        employee: {
+          signature: { x: 350, y: 600, width: 180, height: 70 },
+          nameField: { x: 350, y: 550, width: 180, height: 25 },
+          dateStamp: { x: 350, y: 680, width: 120, height: 20 },
+        },
       };
-    });
 
-    // Build text field coordinates (name fields)
-    const textFieldCoordinates = signatories.map((s: { email: string; name: string }, index: number) => {
-      const position = index === 0 ? defaultPositions.companyRep : defaultPositions.employee;
-      console.log(`   Name field ${index + 1}: ${s.name}`);
-      return {
-        FileId: fileId,
-        PageNumber: defaultPositions.lastPage,
-        Width: position.nameField.width,
-        Height: position.nameField.height,
-        X: position.nameField.x,
-        Y: position.nameField.y,
-        SignatoryEmail: s.email,
-        Value: s.name,
-      };
-    });
+      console.log(`   Page: ${defaultPositions.lastPage}`);
+      console.log(`   Signature 1: X=${defaultPositions.companyRep.signature.x}, Y=${defaultPositions.companyRep.signature.y}`);
+      console.log(`   Signature 2: X=${defaultPositions.employee.signature.x}, Y=${defaultPositions.employee.signature.y}`);
 
-    // Build stamp post info coordinates (date stamps)
-    const stampPostInfoCoordinates = signatories.map((s: { email: string }, index: number) => {
-      const position = index === 0 ? defaultPositions.companyRep : defaultPositions.employee;
-      console.log(`   Date stamp ${index + 1}: ${s.email}`);
-      return {
-        FileId: fileId,
-        PageNumber: defaultPositions.lastPage,
-        Width: position.dateStamp.width,
-        Height: position.dateStamp.height,
-        X: position.dateStamp.x,
-        Y: position.dateStamp.y,
-        EntityName: 'AuditLog',
-        PropertyName: '{StampTime}',
-        SignatoryEmail: s.email,
-      };
-    });
+      // Build stamp coordinates (signature boxes)
+      stampCoordinates = signatories.map((s: { email: string }, index: number) => {
+        const position = index === 0 ? defaultPositions.companyRep : defaultPositions.employee;
+        console.log(`   Signature ${index + 1}: ${s.email}`);
+        return {
+          FileId: fileId,
+          PageNumber: defaultPositions.lastPage,
+          Width: position.signature.width,
+          Height: position.signature.height,
+          X: position.signature.x,
+          Y: position.signature.y,
+          SignatoryEmail: s.email,
+        };
+      });
+
+      // Build text field coordinates (name fields)
+      textFieldCoordinates = signatories.map((s: { email: string; name: string }, index: number) => {
+        const position = index === 0 ? defaultPositions.companyRep : defaultPositions.employee;
+        console.log(`   Name field ${index + 1}: ${s.name}`);
+        return {
+          FileId: fileId,
+          PageNumber: defaultPositions.lastPage,
+          Width: position.nameField.width,
+          Height: position.nameField.height,
+          X: position.nameField.x,
+          Y: position.nameField.y,
+          SignatoryEmail: s.email,
+          Value: s.name,
+        };
+      });
+
+      // Build stamp post info coordinates (date stamps)
+      stampPostInfoCoordinates = signatories.map((s: { email: string }, index: number) => {
+        const position = index === 0 ? defaultPositions.companyRep : defaultPositions.employee;
+        console.log(`   Date stamp ${index + 1}: ${s.email}`);
+        return {
+          FileId: fileId,
+          PageNumber: defaultPositions.lastPage,
+          Width: position.dateStamp.width,
+          Height: position.dateStamp.height,
+          X: position.dateStamp.x,
+          Y: position.dateStamp.y,
+          EntityName: 'AuditLog',
+          PropertyName: '{StampTime}',
+          SignatoryEmail: s.email,
+        };
+      });
+    }
+
+    console.log('\n📝 Step 3: Field summary:');
+    console.log(`   Signature fields: ${stampCoordinates.length}`);
+    console.log(`   Text fields: ${textFieldCoordinates.length}`);
+    console.log(`   Date fields: ${stampPostInfoCoordinates.length}`);
 
     // Rollout contract
     console.log('\n🚀 Step 4: Calling Rollout API...');

@@ -11,30 +11,17 @@ import {
   loadEmploymentAgreementReview,
 } from '../reviewStorage';
 import { LegalDisclaimer } from '@/components/legal-disclaimer';
-import { SignatureDialog, type SignatureFormData } from '@/components/signature-dialog';
-import { SignaturePreviewDialog } from '@/components/signature-preview-dialog';
+import { useRouter } from 'next/navigation';
 
 function ReviewContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [formData, setFormData] = useState<any>(null);
   const [generatedDocument, setGeneratedDocument] = useState<EmploymentAgreement | null>(null);
   const [editedDocument, setEditedDocument] = useState<EmploymentAgreement | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
   const [isPreparingContract, setIsPreparingContract] = useState(false);
-  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
-  const [preparedContractData, setPreparedContractData] = useState<{
-    documentId: string;
-    trackingId: string;
-    fileId: string;
-    title: string;
-    signatories: Array<{ name: string; email: string; role: string; order: number }>;
-  } | null>(null);
-  const [uploadedFileData, setUploadedFileData] = useState<{
-    fileId: string;
-    accessToken: string;
-  } | null>(null);
 
   useEffect(() => {
     const sessionPayload = loadEmploymentAgreementReview();
@@ -91,15 +78,14 @@ function ReviewContent() {
   };
 
   const handleSendToSignature = async () => {
-    // Open the signature dialog
-    setIsSignatureDialogOpen(true);
-    
-    // Start background upload
     const documentToSend = editedDocument || generatedDocument;
     if (!documentToSend) return;
 
+    setIsPreparingContract(true);
+
     try {
-      const uploadResponse = await fetch('/api/signature/upload-pdf', {
+      // Generate PDF locally first
+      const pdfResponse = await fetch('/api/documents/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -108,120 +94,36 @@ function ReviewContent() {
         }),
       });
 
-      if (uploadResponse.ok) {
-        const data = await uploadResponse.json();
-        setUploadedFileData({
-          fileId: data.fileId,
-          accessToken: data.accessToken,
-        });
-        console.log('✅ Document uploaded in background:', data.fileId);
+      if (!pdfResponse.ok) {
+        throw new Error('Failed to generate PDF');
       }
-    } catch (error) {
-      console.error('Background upload failed:', error);
-      // Don't block the user, they can still proceed
-    }
-  };
 
-  const handleSignatureSubmit = async (signatureData: SignatureFormData) => {
-    // Use edited document if available, otherwise fall back to generated document
-    const documentToSend = editedDocument || generatedDocument;
-    if (!documentToSend) return;
+      // Convert PDF blob to base64
+      const pdfBlob = await pdfResponse.blob();
+      const pdfBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
+          // Remove data:application/pdf;base64, prefix
+          resolve(base64.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(pdfBlob);
+      });
 
-    setIsPreparingContract(true);
-
-    try {
-      // Step 1: Prepare contract (upload + create draft)
-      const preparePayload: {
-        document: typeof documentToSend;
-        formData: typeof formData;
-        signatories: Array<{
-          name: string;
-          email: string;
-          title?: string;
-          phone: string;
-          role: string;
-        }>;
-        fileId?: string;
-        accessToken?: string;
-      } = {
+      // Store PDF and document data in sessionStorage
+      sessionStorage.setItem('signature-editor-pdf', pdfBase64);
+      sessionStorage.setItem('signature-editor-data', JSON.stringify({
         document: documentToSend,
         formData,
-        signatories: [
-          {
-            name: signatureData.companyRepresentative.name,
-            email: signatureData.companyRepresentative.email,
-            title: signatureData.companyRepresentative.title,
-            phone: '',
-            role: 'Company Representative',
-          },
-          {
-            name: documentToSend.parties.employee.legalName,
-            email: signatureData.employee.email,
-            phone: '',
-            role: 'Employee',
-          },
-        ],
-      };
+      }));
 
-      // If we already uploaded the file, include it
-      if (uploadedFileData) {
-        preparePayload.fileId = uploadedFileData.fileId;
-        preparePayload.accessToken = uploadedFileData.accessToken;
-      }
-
-      const prepareResponse = await fetch('/api/signature/prepare', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(preparePayload),
-      });
-
-      if (!prepareResponse.ok) {
-        const errorData = await prepareResponse.json();
-        throw new Error(errorData.error || 'Failed to prepare contract');
-      }
-
-      const preparedData = await prepareResponse.json();
-
-      // Close signature dialog and show preview
-      setIsSignatureDialogOpen(false);
-      setPreparedContractData(preparedData);
-      setIsPreviewDialogOpen(true);
+      // Navigate to signature editor
+      router.push('/templates/employment-agreement/generate/review/signature-editor');
     } catch (error) {
-      console.error('Error preparing contract:', error);
+      console.error('Error preparing for signature:', error);
       alert(error instanceof Error ? error.message : 'Failed to prepare document. Please try again.');
-      throw error; // Re-throw so dialog knows submission failed
-    } finally {
       setIsPreparingContract(false);
-    }
-  };
-
-  const handleConfirmSend = async () => {
-    if (!preparedContractData) return;
-
-    try {
-      // Step 2: Rollout contract with signature fields
-      const rolloutResponse = await fetch('/api/signature/rollout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          documentId: preparedContractData.documentId,
-          fileId: preparedContractData.fileId,
-          signatories: preparedContractData.signatories,
-        }),
-      });
-
-      if (!rolloutResponse.ok) {
-        const errorData = await rolloutResponse.json();
-        throw new Error(errorData.error || 'Failed to send invitations');
-      }
-
-      // Close preview dialog and show success
-      setIsPreviewDialogOpen(false);
-      showSuccessModal(preparedContractData);
-    } catch (error) {
-      console.error('Error sending invitations:', error);
-      alert(error instanceof Error ? error.message : 'Failed to send invitations. Please try again.');
-      throw error;
     }
   };
 
@@ -258,39 +160,56 @@ function ReviewContent() {
     }
   };
 
-  const showSuccessModal = (data: { trackingId: string }) => {
-    // Create a beautiful modal overlay
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in';
-    modal.innerHTML = `
-      <div class="bg-white rounded-2xl p-10 max-w-md mx-4 shadow-2xl border-2 border-[hsl(var(--border))] animate-slide-up">
-        <div class="text-center">
-          <div class="w-16 h-16 bg-gradient-to-br from-[hsl(var(--lime-green))] to-[hsl(var(--poly-green))] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
-            </svg>
+  // Show full-screen loading overlay during contract preparation
+  if (isPreparingContract) {
+    return (
+      <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+        <div className="relative w-24 h-24 mb-6">
+          <div className="absolute inset-0 border-4 border-[hsl(var(--brand-border))] rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-[hsl(var(--selise-blue))] border-t-transparent rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="w-10 h-10 text-[hsl(var(--selise-blue))] animate-pulse" />
           </div>
-          <h3 class="font-heading text-2xl font-bold text-[hsl(var(--fg))] mb-3">Invitations Sent!</h3>
-          <p class="font-body text-[hsl(var(--brand-muted))] text-base leading-relaxed mb-6">
-            Signature invitations have been sent to all parties via SELISE Signature.
-          </p>
-          <div class="bg-[hsl(var(--brand-surface))] border border-[hsl(var(--brand-border))] rounded-xl p-4 mb-6 text-left">
-            <p class="font-body text-sm font-semibold text-[hsl(var(--brand-primary))] mb-2">Tracking ID:</p>
-            <code class="font-body text-xs text-[hsl(var(--fg))] break-all">${data.trackingId}</code>
-          </div>
-          <button onclick="this.closest('.fixed').remove(); window.location.href='/templates/employment-agreement';"
-            class="w-full py-4 bg-[hsl(var(--brand-primary))] text-white rounded-xl font-bold text-base shadow-md hover:shadow-xl hover:bg-[hsl(222,89%,45%)] transition-all">
-            Done
-          </button>
         </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
+        <h2 className="font-heading text-2xl font-bold text-[hsl(var(--fg))] mb-2">
+          Preparing Contract
+        </h2>
+        <p className="font-body text-[hsl(var(--brand-muted))] text-center max-w-md mb-4">
+          Uploading document and setting up signature workflow...
+        </p>
+        <div className="space-y-2 bg-white rounded-xl p-6 border-2 border-[hsl(var(--border))]">
+          {[
+            'Generating PDF document',
+            'Preparing signature editor',
+          ].map((step, index) => (
+            <div
+              key={step}
+              className="flex items-center gap-3 text-[hsl(var(--brand-muted))] text-sm font-medium"
+              style={{
+                animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`
+              }}
+            >
+              <div className="w-2 h-2 bg-[hsl(var(--selise-blue))] rounded-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
+              <span className="font-body">{step}</span>
+            </div>
+          ))}
+        </div>
 
-    // Clear saved data
-    localStorage.removeItem('employment-agreement-conversation');
-    clearEmploymentAgreementReview();
-  };
+        <style jsx>{`
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -504,33 +423,6 @@ function ReviewContent() {
           </div>
         </div>
       </div>
-
-      {/* Signature Dialog */}
-      {generatedDocument && (
-        <>
-          <SignatureDialog
-            open={isSignatureDialogOpen}
-            onOpenChange={setIsSignatureDialogOpen}
-            employeeName={generatedDocument.parties.employee.legalName}
-            companyName={generatedDocument.parties.employer.legalName}
-            onSubmit={handleSignatureSubmit}
-            isSubmitting={isPreparingContract}
-          />
-
-          {preparedContractData && (
-            <SignaturePreviewDialog
-              open={isPreviewDialogOpen}
-              onOpenChange={setIsPreviewDialogOpen}
-              documentId={preparedContractData.documentId}
-              fileId={preparedContractData.fileId}
-              trackingId={preparedContractData.trackingId}
-              title={preparedContractData.title}
-              signatories={preparedContractData.signatories}
-              onConfirmSend={handleConfirmSend}
-            />
-          )}
-        </>
-      )}
 
       <style jsx global>{`
         @keyframes fade-in {

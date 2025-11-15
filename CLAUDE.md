@@ -450,3 +450,139 @@ Runtime notes
 - audit_events: id, actor, action, entity, entity_id, created_at, meta_json
 
 These will be finalized alongside the MCP tool contracts and migrations.
+
+## SELISE Signature Integration
+
+This application integrates with SELISE Signature API for electronic document signing. The integration includes a full-page PDF signature field editor similar to DocuSign.
+
+### Environment Variables
+
+Required environment variables in `.env.local`:
+- `SELISE_CLIENT_ID` - Client ID from SELISE Developer Portal
+- `SELISE_CLIENT_SECRET` - Client secret from SELISE Developer Portal
+
+### API Endpoints
+
+**Base URLs:**
+- Production: `https://selise.app/api`
+- Staging: `https://app.selisestage.com/api`
+
+**Service Versions (Production):**
+- Identity Service: `/identity/v100`
+- Signature Service: `/selisign/s1`
+- Storage Service: `/storageservice/v100`
+
+### Signature Workflow
+
+1. **Prepare Contract** (`/api/signature/prepare`)
+   - Generates PDF from document data
+   - Uploads to SELISE Storage
+   - Creates signature workflow with signatories
+   - Returns `documentId`, `fileId`, `trackingId`
+
+2. **Position Signature Fields** (Full-page editor)
+   - User navigates to `/templates/employment-agreement/generate/review/signature-editor`
+   - PDF loaded from storage via `/api/signature/get-pdf`
+   - Interactive editor allows drag-and-drop field placement
+   - Supports 3 field types: signature, text (name), date
+   - Multi-signatory support with color-coded fields
+
+3. **Rollout Contract** (`/api/signature/rollout`)
+   - Accepts custom signature field positions from editor
+   - Falls back to default positions if none provided
+   - Sends invitation emails to all signatories
+   - Returns rollout status and events
+
+### Signature Field Editor
+
+**Component:** `PDFSignatureEditor` ([components/pdf-signature-editor.tsx](components/pdf-signature-editor.tsx))
+
+Features:
+- PDF rendering using `react-pdf` library
+- Click to add fields, drag to reposition
+- Page navigation and zoom controls (50%-200%)
+- Field types: Signature (180x60px), Text (180x30px), Date (120x25px)
+- Color-coded fields per signatory (SELISE Blue, Poly Green, Mauveine)
+- Reset to default positions
+- Real-time field count display
+
+**Field Positioning:**
+- Coordinates are in PDF points (72 DPI)
+- Page numbers are 1-indexed in UI, converted to 0-indexed for API
+- Default positions place fields on last page
+
+### API Integration Notes
+
+**Storage Service:**
+- Upload requires 2-step process: Get pre-signed URL, then PUT file
+- Download requires: Get pre-signed URL with `Verb: 'GET'`, then fetch file
+- All storage operations require Bearer token authentication
+
+**Signature Service:**
+- Token obtained via client credentials flow (`grant_type: client_credentials`)
+- Tokens expire in 420 seconds (7 minutes)
+- All requests require `Authorization: Bearer {token}` header
+- Document events can be polled via `/SeliSign/ExternalApp/GetEvents`
+
+**Events:**
+- `preparation_success` - Contract prepared successfully
+- `rollout_success` / `rollout_failed` - Rollout status
+- `signatory_signed_success` - Signatory completed signing
+- `document_completed` - All signatures collected
+- `document_cancelled` / `document_declined` - Workflow terminated
+
+### File Structure
+
+```
+app/
+├── api/
+│   └── signature/
+│       ├── prepare/route.ts          # Prepare contract workflow
+│       ├── rollout/route.ts          # Rollout with field positions
+│       ├── get-pdf/route.ts          # Fetch PDF from storage
+│       └── upload-pdf/route.ts       # Background PDF upload
+├── templates/
+│   └── employment-agreement/
+│       └── generate/
+│           └── review/
+│               ├── page.tsx                    # Review page with loading states
+│               └── signature-editor/
+│                   └── page.tsx                # Full-page signature editor
+components/
+├── pdf-signature-editor.tsx                    # Main PDF editor component
+├── signature-field-editor-dialog.tsx           # Dialog wrapper (deprecated)
+└── signature-dialog.tsx                        # Signatory input form
+```
+
+### Dependencies
+
+- `react-pdf` v10.2.0 - PDF rendering
+- `pdfjs-dist` v5.4.394 - PDF.js worker
+- PDF.js worker loaded from CDN: `unpkg.com/pdfjs-dist@{version}/build/pdf.worker.min.mjs`
+
+### Usage Example
+
+```typescript
+// Prepare contract
+const response = await fetch('/api/signature/prepare', {
+  method: 'POST',
+  body: JSON.stringify({
+    document, formData, signatories, fileId, accessToken
+  })
+});
+const { documentId, fileId, trackingId } = await response.json();
+
+// Navigate to editor
+router.push(`/signature-editor?data=${encodeURIComponent(JSON.stringify(preparedData))}`);
+
+// Rollout with custom fields
+await fetch('/api/signature/rollout', {
+  method: 'POST',
+  body: JSON.stringify({
+    documentId, fileId, signatories,
+    signatureFields: [
+      { type: 'signature', signatoryIndex: 0, pageNumber: 1, x: 100, y: 500, width: 180, height: 60 }
+    ]
+  })
+});
+```

@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
 
     let access_token = accessToken;
     let uploadedFileId = fileId;
+    let pdfBuffer: Buffer | null = null;
 
     // If fileId and accessToken not provided, upload first
     if (!uploadedFileId || !access_token) {
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
       }
 
       const pdfBlob = await pdfResponse.blob();
-      const pdfBuffer = Buffer.from(await pdfBlob.arrayBuffer());
+      pdfBuffer = Buffer.from(await pdfBlob.arrayBuffer());
       console.log(`✅ PDF generated (${pdfBuffer.length} bytes)`);
 
       // Step 3: Upload to SELISE Storage
@@ -112,6 +113,9 @@ export async function POST(request: NextRequest) {
 
       // Step 4: Upload file to Azure Blob
       console.log('☁️  Step 4: Uploading to Azure Blob Storage...');
+      if (!pdfBuffer) {
+        throw new Error('PDF buffer is null - this should not happen');
+      }
       const blobUploadResponse = await fetch(UploadUrl, {
         method: 'PUT',
         headers: {
@@ -222,12 +226,20 @@ export async function POST(request: NextRequest) {
     console.log(`   TrackingId: ${trackingId}`);
     console.log(`   Title: ${title}`);
 
+    // Return PDF as base64 for preview (if we generated it in this request)
+    let pdfBase64: string | undefined;
+    if (!fileId && pdfBuffer) {
+      pdfBase64 = pdfBuffer.toString('base64');
+      console.log(`   PDF size: ${pdfBuffer.length} bytes`);
+    }
+
     return NextResponse.json({
       success: true,
       documentId,
       trackingId,
       fileId: uploadedFileId,
       title,
+      pdfBase64, // Include PDF data for preview
       signatories: signatories.map((s: { name: string; email: string; role?: string }, index: number) => ({
         name: s.name,
         email: s.email,

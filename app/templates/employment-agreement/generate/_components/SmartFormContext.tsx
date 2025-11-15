@@ -56,6 +56,12 @@ interface SmartFormContextType {
 
   // Actions
   analyzeCompany: (companyName: string, companyAddress: string) => Promise<void>;
+  analyzeCompanyAndRole: (
+    companyName: string,
+    companyAddress: string,
+    jobTitle: string,
+    jobResponsibilities?: string
+  ) => Promise<void>;
   analyzeJobTitle: (
     jobTitle: string,
     location?: string,
@@ -715,6 +721,153 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     }
   }, [updateFormData]);
 
+  const analyzeCompanyAndRole = useCallback(async (
+    companyName: string,
+    companyAddress: string,
+    jobTitle: string,
+    jobResponsibilities?: string
+  ) => {
+    console.log('[CompanyAndRole] Starting combined analysis...');
+    
+    setEnrichment((prev) => ({
+      ...prev,
+      jurisdictionLoading: true,
+      companyLoading: true,
+      jobTitleLoading: true,
+      jurisdictionError: undefined,
+      companyError: undefined,
+      jobTitleError: undefined,
+    }));
+
+    // Create AbortController with 20 second timeout (slightly longer for combined call)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+    try {
+      const response = await fetch('/api/intelligence/company-and-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          companyName, 
+          companyAddress, 
+          jobTitle, 
+          jobResponsibilities 
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const fallbackMessage =
+          response.status === 422
+            ? 'Address is too vague. Please provide a complete address including city and country.'
+            : `Failed to analyze company and role (status ${response.status})`;
+
+        const message = await parseErrorMessage(response, fallbackMessage);
+        throw new Error(message);
+      }
+
+      const data = await response.json();
+
+      console.log('[CompanyAndRole] Analysis successful:', {
+        jurisdiction: data.jurisdiction?.country,
+        company: data.company?.industryDetected,
+        jobTitle: data.jobTitle?.jobTitle,
+      });
+
+      // Check confidence level and add warning for low confidence
+      const jurisdictionData = data.jurisdiction as JurisdictionIntelligence;
+      const lowConfidence = jurisdictionData.confidence === 'low';
+      const confidenceWarning = lowConfidence
+        ? 'Jurisdiction detection has low confidence. Please verify the detected location is correct.'
+        : undefined;
+
+      setEnrichment((prev) => ({
+        ...prev,
+        jurisdictionLoading: false,
+        companyLoading: false,
+        jobTitleLoading: false,
+        jurisdictionData,
+        companyData: data.company as CompanyIntelligence,
+        jobTitleData: data.jobTitle as JobTitleAnalysis,
+        jurisdictionError: confidenceWarning,
+        companyError: undefined,
+        jobTitleError: undefined,
+      }));
+
+      // Auto-populate fields based on intelligence
+      const updates: Partial<EmploymentAgreementFormData> = {};
+
+      // Currency
+      if (data.jurisdiction?.currency) {
+        updates.salaryCurrency = data.jurisdiction.currency;
+      }
+
+      // Pay frequency (only if still at default 'annual')
+      if (data.jurisdiction?.typicalPayFrequency && formData.salaryPeriod === 'annual') {
+        const payFrequencyMap: Record<string, EmploymentAgreementFormData['salaryPeriod']> = {
+          'weekly': 'weekly',
+          'bi-weekly': 'bi-weekly',
+          'monthly': 'monthly',
+          'annual': 'annual',
+        };
+        const mappedFrequency = payFrequencyMap[data.jurisdiction.typicalPayFrequency];
+        if (mappedFrequency) {
+          updates.salaryPeriod = mappedFrequency;
+        }
+      }
+
+      // Governing law
+      if (data.jurisdiction?.state && data.jurisdiction?.country) {
+        updates.governingLaw = `${data.jurisdiction.state}, ${data.jurisdiction.country}`;
+      } else if (data.jurisdiction?.country) {
+        updates.governingLaw = data.jurisdiction.country;
+      }
+
+      // Notice period (if required by jurisdiction)
+      if (data.jurisdiction?.defaultNoticePeriodDays && !formData.noticePeriod) {
+        updates.noticePeriod = `${data.jurisdiction.defaultNoticePeriodDays} days`;
+      }
+
+      // Probation period (if common in jurisdiction)
+      if (data.jurisdiction?.probationDurationMonths &&
+          data.jurisdiction?.probationPeriodCommon &&
+          !formData.probationPeriod) {
+        updates.probationPeriod = `${data.jurisdiction.probationDurationMonths} months`;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        updateFormData(updates);
+      }
+    } catch (error) {
+      console.error('[CompanyAndRole] Analysis failed:', error);
+
+      // Handle timeout specifically
+      const isTimeout = error instanceof Error && error.name === 'AbortError';
+      const message = isTimeout
+        ? 'Request timed out. Please check your connection and try again.'
+        : error instanceof Error
+        ? error.message
+        : 'Failed to analyze company and role information. Please try again.';
+
+      setEnrichment((prev) => ({
+        ...prev,
+        jurisdictionLoading: false,
+        companyLoading: false,
+        jobTitleLoading: false,
+        jurisdictionData: undefined,
+        companyData: undefined,
+        jobTitleData: undefined,
+        jurisdictionError: message,
+        companyError: message,
+        jobTitleError: message,
+      }));
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }, [updateFormData, formData.salaryPeriod, formData.noticePeriod, formData.probationPeriod]);
+
   const analyzeJobTitle = useCallback(
     async (
       jobTitle: string,
@@ -920,6 +1073,7 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     setFormData,
     enrichment,
     analyzeCompany,
+    analyzeCompanyAndRole,
     analyzeJobTitle,
     generateMarketStandards,
     applyMarketStandards,

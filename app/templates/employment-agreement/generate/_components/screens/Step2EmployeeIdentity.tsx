@@ -1,47 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { User, Briefcase } from 'lucide-react';
+import React from 'react';
+import { User } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
 import { SmartInput } from '../SmartInput';
-import { Badge } from '@/components/ui/badge';
-import { getFlagEmoji } from '@/lib/utils/flag-emoji';
 
 export function Step2EmployeeIdentity() {
-  const {
-    formData,
-    updateFormData,
-    analyzeJobTitle,
-    enrichment,
-  } = useSmartForm();
-  const [hasAnalyzedJob, setHasAnalyzedJob] = useState(false);
-
-  // Auto-trigger job title analysis when title is filled
-  useEffect(() => {
-    if (formData.jobTitle && !hasAnalyzedJob && !enrichment.jobTitleLoading) {
-      setHasAnalyzedJob(true);
-      analyzeJobTitle(
-        formData.jobTitle,
-        enrichment.jurisdictionData?.city || enrichment.jurisdictionData?.country,
-        enrichment.companyData?.industryDetected,
-        formData.companyAddress
-      );
-    }
-  }, [
-    formData.jobTitle,
-    formData.companyAddress,
-    hasAnalyzedJob,
-    enrichment.jobTitleLoading,
-    enrichment.jurisdictionData,
-    enrichment.companyData,
-    analyzeJobTitle,
-  ]);
-
-  // Note: Market standards generation now handled by SmartFormContext
-  // It triggers automatically when enrichment.jobTitleData is set
+  const { formData, updateFormData, enrichment } = useSmartForm();
 
   const canContinue =
-    formData.employeeName && formData.employeeAddress && formData.jobTitle && formData.startDate;
+    formData.employeeName && formData.employeeAddress && formData.startDate;
 
   return (
     <div className="space-y-6">
@@ -54,35 +22,29 @@ export function Step2EmployeeIdentity() {
           Now for the employee
         </h2>
         <p className="text-lg text-[hsl(var(--brand-muted))]">
-          Basic information about the new hire
+          Personal information about the new hire
         </p>
       </div>
 
-      {/* Jurisdiction detection - show when loading OR when data arrives */}
-      {enrichment.jurisdictionLoading && !enrichment.jurisdictionData && (
+      {/* Background analysis in progress */}
+      {(enrichment.jurisdictionLoading || enrichment.companyLoading || enrichment.jobTitleLoading) && (
         <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-3 shadow-sm">
           <p className="flex items-center gap-2 text-sm text-[hsl(var(--brand-muted))]">
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-[hsl(var(--brand-primary))]" />
-            Analyzing jurisdiction requirements in the background...
+            Still analyzing jurisdiction and role in the background...
           </p>
         </div>
       )}
 
-      {/* Show jurisdiction data when it arrives (even if user navigated away quickly) */}
-      {enrichment.jurisdictionData && (
-        <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-3 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="text-xl">{getFlagEmoji(enrichment.jurisdictionData.countryCode)}</div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-[hsl(var(--fg))]">
-                Jurisdiction: {enrichment.jurisdictionData.country}
-                {enrichment.jurisdictionData.state && `, ${enrichment.jurisdictionData.state}`}
-              </p>
-              <p className="text-xs text-[hsl(var(--brand-muted))]">
-                {enrichment.jurisdictionData.currency} • {enrichment.jurisdictionData.typicalPTO} days PTO • {enrichment.jurisdictionData.typicalPayFrequency} pay
-              </p>
-            </div>
-          </div>
+      {/* Analysis complete - show summary */}
+      {!enrichment.jurisdictionLoading && !enrichment.companyLoading && !enrichment.jobTitleLoading && enrichment.jurisdictionData && (
+        <div className="rounded-xl border border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800 p-3 shadow-sm">
+          <p className="flex items-center gap-2 text-sm text-green-800 dark:text-green-200">
+            <span className="inline-block h-2 w-2 rounded-full bg-green-600" />
+            Analysis complete: {enrichment.jurisdictionData.country}
+            {enrichment.companyData?.industryDetected && ` • ${enrichment.companyData.industryDetected}`}
+            {enrichment.jobTitleData?.department && ` • ${enrichment.jobTitleData.department}`}
+          </p>
         </div>
       )}
 
@@ -111,20 +73,6 @@ export function Step2EmployeeIdentity() {
         />
 
         <SmartInput
-          label="Job title"
-          name="jobTitle"
-          value={formData.jobTitle || ''}
-          onChange={(value) => {
-            updateFormData({ jobTitle: value });
-            setHasAnalyzedJob(false); // Reset to re-analyze on change
-          }}
-          placeholder="Senior Software Engineer"
-          required
-          helpText="Official job title for this position"
-          loading={enrichment.jobTitleLoading}
-        />
-
-        <SmartInput
           label="Reports to (optional)"
           name="reportsTo"
           value={formData.reportsTo || ''}
@@ -143,67 +91,6 @@ export function Step2EmployeeIdentity() {
           helpText="First day of employment"
         />
       </div>
-
-      {/* Job title analysis results */}
-      {enrichment.jobTitleData && (
-        <div className="space-y-3 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <Briefcase className="mt-0.5 h-5 w-5 text-[hsl(var(--brand-primary))]" />
-            <div className="flex-1 space-y-2">
-              <p className="text-sm font-semibold text-[hsl(var(--fg))]">
-                Role Analysis
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Badge
-                  variant="outline"
-                  className="text-xs border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
-                >
-                  {enrichment.jobTitleData.department}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="text-xs capitalize border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
-                >
-                  {enrichment.jobTitleData.seniorityLevel} level
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="text-xs capitalize border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]"
-                >
-                  {enrichment.jobTitleData.exemptStatus}
-                </Badge>
-              </div>
-
-              {enrichment.jobTitleData.typicalSalaryRange && (
-                <p className="text-xs text-[hsl(var(--brand-muted))]">
-                  Typical salary range:{' '}
-                  {enrichment.jobTitleData.typicalSalaryRange.currency}
-                  {enrichment.jobTitleData.typicalSalaryRange.min.toLocaleString()} -{' '}
-                  {enrichment.jobTitleData.typicalSalaryRange.currency}
-                  {enrichment.jobTitleData.typicalSalaryRange.max.toLocaleString()}
-                  {' '}(median: {enrichment.jobTitleData.typicalSalaryRange.currency}
-                  {enrichment.jobTitleData.typicalSalaryRange.median.toLocaleString()})
-                </p>
-              )}
-
-              {enrichment.jobTitleData.equityTypical && (
-                <p className="text-xs text-[hsl(var(--brand-muted))]">
-                  💡 Equity compensation is typical for this role
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Market standards preparation */}
-      {enrichment.marketStandards && (
-        <div className="rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-3 shadow-sm">
-          <p className="text-sm text-[hsl(var(--brand-muted))]">
-            ✓ Market standards prepared based on {enrichment.marketStandards.source}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

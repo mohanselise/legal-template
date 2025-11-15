@@ -15,6 +15,7 @@ export const employmentAgreementSchema = z.object({
   employeePhone: z.string().optional(),
 
   jobTitle: z.string().min(1, 'Job title is required'),
+  jobResponsibilities: z.string().optional(),
   department: z.string().optional(),
   reportsTo: z.string().optional(),
   startDate: z.string().min(1, 'Start date is required'),

@@ -30,7 +30,7 @@ import {
 import { LegalDisclaimer } from '@/components/legal-disclaimer';
 
 const STEPS = [
-  { id: 'company', title: 'Company', component: Step1CompanyIdentity },
+  { id: 'company', title: 'Company & Role', component: Step1CompanyIdentity },
   { id: 'employee', title: 'Employee', component: Step2EmployeeIdentity },
   { id: 'work', title: 'Work', component: Step3WorkArrangement },
   { id: 'compensation', title: 'Compensation', component: Step4Compensation },
@@ -110,7 +110,7 @@ function NavigationButtons({
     applyMarketStandards,
     formData,
     updateFormData,
-    analyzeCompany,
+    analyzeCompanyAndRole,
     startBackgroundGeneration,
   } = useSmartForm();
   const [showSalaryWarning, setShowSalaryWarning] = useState(false);
@@ -188,9 +188,14 @@ function NavigationButtons({
       return;
     }
 
-    // If on company step (step 0), trigger analysis in background (don't wait for it)
-    if (currentStep === 0 && formData.companyName && formData.companyAddress) {
-      analyzeCompany(formData.companyName, formData.companyAddress);
+    // If on company step (step 0), trigger combined analysis in background (don't wait for it)
+    if (currentStep === 0 && formData.companyName && formData.companyAddress && formData.jobTitle) {
+      analyzeCompanyAndRole(
+        formData.companyName, 
+        formData.companyAddress,
+        formData.jobTitle,
+        formData.jobResponsibilities
+      );
     }
     // If on legal step (step 5), kick off background generation before moving forward
     if (isLegalStep && canContinue) {
@@ -331,7 +336,7 @@ function NavigationButtons({
 }
 
 function SmartFlowContent() {
-  const { currentStep, totalSteps, nextStep, previousStep, formData, analyzeCompany } = useSmartForm();
+  const { currentStep, totalSteps, nextStep, previousStep, formData } = useSmartForm();
   const router = useRouter();
   const [showWelcome, setShowWelcome] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -365,10 +370,10 @@ function SmartFlowContent() {
   // Basic validation for each step
   const canContinue = (): boolean => {
     switch (currentStep) {
-      case 0: // Company
-        return !!(formData.companyName && formData.companyAddress);
+      case 0: // Company & Role
+        return !!(formData.companyName && formData.companyAddress && formData.jobTitle);
       case 1: // Employee
-        return !!(formData.employeeName && formData.employeeAddress && formData.jobTitle && formData.startDate);
+        return !!(formData.employeeName && formData.employeeAddress && formData.startDate);
       case 2: // Work
         // Work location is optional for remote workers
         const workLocationValid = formData.workArrangement === 'remote' || formData.workLocation;

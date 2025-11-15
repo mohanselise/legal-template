@@ -15,10 +15,11 @@ interface SmartInputProps {
   name: string;
   value: string;
   onChange: (value: string) => void;
-  type?: 'text' | 'number' | 'date' | 'email';
+  type?: 'text' | 'number' | 'date' | 'email' | 'textarea';
   placeholder?: string;
   required?: boolean;
   helpText?: string;
+  rows?: number; // For textarea
 
   // Smart features
   suggestion?: SmartFieldSuggestion;
@@ -44,6 +45,7 @@ export function SmartInput({
   placeholder,
   required = false,
   helpText,
+  rows = 3,
   suggestion,
   validation,
   loading = false,
@@ -137,6 +139,7 @@ export function SmartInput({
   const isLoading = loading || suggestionsLoading;
   const [showTooltip, setShowTooltip] = useState(false);
   const hasError = validation?.severity === 'error';
+  const isTextarea = type === 'textarea';
 
   return (
     <Field 
@@ -176,24 +179,45 @@ export function SmartInput({
 
       {/* Input field */}
       <div className="relative">
-        <Input
-          id={name}
-          name={name}
-          type={type}
-          value={value}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
-          placeholder={placeholder}
-          aria-invalid={hasError}
-          className={cn(
-            'text-base transition-all',
-            validation?.severity === 'error' &&
-              'border-[hsla(var(--destructive)_/_0.45)] focus-visible:border-[hsla(var(--destructive)_/_0.7)] focus-visible:ring-[hsla(var(--destructive)_/_0.35)]',
-            validation?.severity === 'warning' &&
-              'border-[hsla(var(--warning)_/_0.5)] focus-visible:border-[hsla(var(--warning)_/_0.7)] focus-visible:ring-[hsla(var(--warning)_/_0.3)]'
-          )}
-        />
+        {isTextarea ? (
+          <textarea
+            id={name}
+            name={name}
+            value={value}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+            placeholder={placeholder}
+            rows={rows}
+            aria-invalid={hasError}
+            className={cn(
+              'flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all',
+              validation?.severity === 'error' &&
+                'border-[hsla(var(--destructive)_/_0.45)] focus-visible:border-[hsla(var(--destructive)_/_0.7)] focus-visible:ring-[hsla(var(--destructive)_/_0.35)]',
+              validation?.severity === 'warning' &&
+                'border-[hsla(var(--warning)_/_0.5)] focus-visible:border-[hsla(var(--warning)_/_0.7)] focus-visible:ring-[hsla(var(--warning)_/_0.3)]'
+            )}
+          />
+        ) : (
+          <Input
+            id={name}
+            name={name}
+            type={type}
+            value={value}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+            placeholder={placeholder}
+            aria-invalid={hasError}
+            className={cn(
+              'text-base transition-all',
+              validation?.severity === 'error' &&
+                'border-[hsla(var(--destructive)_/_0.45)] focus-visible:border-[hsla(var(--destructive)_/_0.7)] focus-visible:ring-[hsla(var(--destructive)_/_0.35)]',
+              validation?.severity === 'warning' &&
+                'border-[hsla(var(--warning)_/_0.5)] focus-visible:border-[hsla(var(--warning)_/_0.7)] focus-visible:ring-[hsla(var(--warning)_/_0.3)]'
+            )}
+          />
+        )}
 
         {/* Loading indicator */}
         {isLoading && (

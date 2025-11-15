@@ -47,9 +47,6 @@ function ReviewContent() {
       import('react-pdf').then((mod) => {
         mod.pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${mod.pdfjs.version}/build/pdf.worker.min.mjs`;
       });
-      // Import CSS
-      import('react-pdf/dist/Page/AnnotationLayer.css');
-      import('react-pdf/dist/Page/TextLayer.css');
     }
   }, []);
 

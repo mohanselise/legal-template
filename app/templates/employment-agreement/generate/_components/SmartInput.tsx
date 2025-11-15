@@ -15,7 +15,7 @@ interface SmartInputProps {
   name: string;
   value: string;
   onChange: (value: string) => void;
-  type?: 'text' | 'number' | 'date' | 'email' | 'textarea';
+  type?: 'text' | 'number' | 'date' | 'email' | 'textarea' | 'tel';
   placeholder?: string;
   required?: boolean;
   helpText?: string;

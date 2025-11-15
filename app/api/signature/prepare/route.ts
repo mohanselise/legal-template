@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/pdf',
           'Content-Length': pdfBuffer.length.toString(),
         },
-        body: pdfBuffer,
+        body: pdfBuffer as unknown as BodyInit,
       });
 
       const blobUploadResponseText = await blobUploadResponse.clone().text();

@@ -19,7 +19,7 @@ import {
   MousePointer2,
   Move,
   Info,
-  CheckCircle2
+  CheckCircle2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { SIGNATURE_LAYOUT, SIGNATURE_FIELD_DEFAULTS } from '@/lib/pdf/signature-field-metadata';
@@ -102,6 +102,23 @@ const FIELD_TYPES: FieldTypeConfig[] = [
   { type: 'date' as const, label: 'Date Signed', icon: Calendar, defaultWidth: SIGNATURE_FIELD_DEFAULTS.DATE_WIDTH, defaultHeight: SIGNATURE_FIELD_DEFAULTS.DATE_HEIGHT, color: '#38bdf8' },
 ];
 
+const applyAlpha = (hex: string, alpha: number) => {
+  const normalized = hex.replace('#', '');
+  const value =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : normalized;
+  const int = Number.parseInt(value, 16);
+  const r = (int >> 16) & 255;
+  const g = (int >> 8) & 255;
+  const b = int & 255;
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 const resolveFieldVisual = (type: SignatureField['type']): FieldTypeConfig => {
   const config = FIELD_TYPES.find((field) => field.type === type);
 
@@ -130,6 +147,18 @@ const resolveFieldVisual = (type: SignatureField['type']): FieldTypeConfig => {
   };
 };
 
+const getMinimumDimensions = (type: SignatureField['type']) => {
+  switch (type) {
+    case 'signature':
+      return { width: 140, height: 48 };
+    case 'date':
+      return { width: 110, height: 34 };
+    case 'text':
+    default:
+      return { width: 140, height: 34 };
+  }
+};
+
 export function PDFSignatureEditor({
   pdfUrl,
   signatories: rawSignatories,
@@ -146,6 +175,15 @@ export function PDFSignatureEditor({
   const [selectedFieldType, setSelectedFieldType] = useState<'signature' | 'date'>('signature');
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeState, setResizeState] = useState<{
+    fieldId: string;
+    fieldType: SignatureField['type'];
+    startX: number;
+    startY: number;
+    initialWidth: number;
+    initialHeight: number;
+  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hoveredField, setHoveredField] = useState<string | null>(null);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -234,7 +272,7 @@ export function PDFSignatureEditor({
   };
 
   const handlePageClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!pageRef.current || isDragging) return;
+    if (!pageRef.current || isDragging || isResizing) return;
 
     const rect = pageRef.current.getBoundingClientRect();
     const x = (event.clientX - rect.left) / scale;
@@ -254,11 +292,13 @@ export function PDFSignatureEditor({
       label: `${signatories[selectedSignatoryIndex].name} - ${fieldType.label}`,
     };
 
-    setFields([...fields, newField]);
+    setFields((prevFields) => [...prevFields, newField]);
   };
 
   const handleFieldMouseDown = (fieldId: string, event: React.MouseEvent) => {
     event.stopPropagation();
+    setIsResizing(false);
+    setResizeState(null);
     setSelectedField(fieldId);
     setIsDragging(true);
     const field = fields.find(f => f.id === fieldId);
@@ -267,22 +307,68 @@ export function PDFSignatureEditor({
     }
   };
 
+  const handleResizeMouseDown = (
+    fieldId: string,
+    fieldType: SignatureField['type'],
+    event: React.MouseEvent
+  ) => {
+    event.stopPropagation();
+    const field = fields.find((f) => f.id === fieldId);
+    if (!field) return;
+
+    setSelectedField(fieldId);
+    setIsDragging(false);
+    setDragStart(null);
+    setIsResizing(true);
+    setResizeState({
+      fieldId,
+      fieldType,
+      startX: event.clientX,
+      startY: event.clientY,
+      initialWidth: field.width,
+      initialHeight: field.height,
+    });
+  };
+
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (isResizing && resizeState && pageRef.current) {
+      const deltaX = (event.clientX - resizeState.startX) / scale;
+      const deltaY = (event.clientY - resizeState.startY) / scale;
+      const minSize = getMinimumDimensions(resizeState.fieldType);
+
+      setFields((prevFields) =>
+        prevFields.map((field) =>
+          field.id === resizeState.fieldId
+            ? {
+                ...field,
+                width: Math.max(minSize.width, resizeState.initialWidth + deltaX),
+                height: Math.max(minSize.height, resizeState.initialHeight + deltaY),
+              }
+            : field
+        )
+      );
+      return;
+    }
+
     if (!isDragging || !selectedField || !dragStart || !pageRef.current) return;
 
     const x = (event.clientX - dragStart.x) / scale;
     const y = (event.clientY - dragStart.y) / scale;
 
-    setFields(fields.map(field =>
-      field.id === selectedField
-        ? { ...field, x, y }
-        : field
-    ));
+    setFields((prevFields) =>
+      prevFields.map((field) =>
+        field.id === selectedField
+          ? { ...field, x, y }
+          : field
+      )
+    );
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
     setDragStart(null);
+    setIsResizing(false);
+    setResizeState(null);
   };
 
   const handleDeleteField = (fieldId: string) => {
@@ -293,6 +379,11 @@ export function PDFSignatureEditor({
   };
 
   const handleResetFields = () => {
+    setIsDragging(false);
+    setIsResizing(false);
+    setDragStart(null);
+    setResizeState(null);
+    setSelectedField(null);
     setFields([]);
     // Re-trigger default field generation
     if (numPages > 0) {
@@ -693,9 +784,14 @@ export function PDFSignatureEditor({
                 .map(field => {
                   const signatory = signatories[field.signatoryIndex];
                   const fieldType = resolveFieldVisual(field.type);
-                  const Icon = fieldType.icon;
                   const isSelected = selectedField === field.id;
                   const isHovered = hoveredField === field.id;
+                  const accentColor = signatory.color || fieldType.color;
+                  const nameLine = signatory.name || 'Signatory';
+                  const secondaryLine =
+                    field.type === 'signature'
+                      ? signatory.role || 'Authorized Signature'
+                      : 'Signature Date';
 
                   return (
                     <div
@@ -712,6 +808,7 @@ export function PDFSignatureEditor({
                         top: field.y * scale,
                         width: field.width * scale,
                         height: field.height * scale,
+                        overflow: 'visible',
                       }}
                       onMouseDown={(e) => handleFieldMouseDown(field.id, e)}
                       onMouseEnter={() => setHoveredField(field.id)}
@@ -721,57 +818,50 @@ export function PDFSignatureEditor({
                         setSelectedField(field.id);
                       }}
                     >
-                      {/* Field Box */}
                       <div
-                        className={`absolute inset-0 rounded-md border-2 transition-all cursor-move ${
-                          isSelected
-                            ? 'border-blue-600 shadow-lg'
-                            : isHovered
-                            ? 'border-blue-400 shadow-md'
-                            : 'border-gray-300 shadow-sm'
-                        }`}
+                        className="absolute inset-0 rounded-lg border-2 transition-all cursor-move flex items-center justify-center"
                         style={{
-                          backgroundColor: isSelected || isHovered 
-                            ? `${fieldType?.color}20` 
-                            : `${fieldType?.color}15`,
-                          borderColor: isSelected || isHovered ? fieldType?.color : '#d1d5db',
+                          borderColor: accentColor,
+                          backgroundColor: applyAlpha(
+                            accentColor,
+                            isSelected || isHovered ? 0.25 : 0.15
+                          ),
+                          boxShadow: isSelected
+                            ? `0 16px 24px -12px ${applyAlpha(accentColor, 0.55)}`
+                            : `0 10px 24px -18px rgba(15, 23, 42, 0.45)`,
                         }}
                       >
-                        {/* Field Content */}
-                        <div className="absolute inset-0 flex items-center justify-start gap-2 px-3">
-                          <div
-                            className="flex items-center justify-center w-7 h-7 rounded-md"
-                            style={{ backgroundColor: fieldType?.color }}
+                        <div className="flex flex-col items-center justify-center px-3 text-center leading-tight">
+                          <span
+                            className="text-[11px] font-semibold tracking-wide uppercase"
+                            style={{ color: accentColor }}
                           >
-                            <Icon className="w-4 h-4 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div 
-                              className="text-xs font-semibold truncate"
-                              style={{ color: fieldType?.color }}
-                            >
-                              {field.label}
-                            </div>
-                            <div className="text-[10px] text-gray-500 truncate">
-                              {signatory.name}
-                            </div>
-                          </div>
+                            {fieldType.label}
+                          </span>
+                          <span className="text-[11px] text-slate-600">
+                            ({nameLine})
+                          </span>
                         </div>
 
-                        {/* Resize Handle - bottom right */}
-                        {isSelected && (
-                          <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-md cursor-nwse-resize" />
-                        )}
-
-                        {/* Move Icon - top left when hovered */}
                         {(isHovered || isSelected) && (
-                          <div className="absolute -top-2 -left-2 w-6 h-6 bg-gray-700 rounded-full border-2 border-white shadow-md flex items-center justify-center">
+                          <div
+                            className="absolute -top-2 -left-2 w-6 h-6 rounded-full border-2 border-white shadow-md flex items-center justify-center"
+                            style={{ backgroundColor: accentColor }}
+                          >
                             <Move className="w-3 h-3 text-white" />
                           </div>
                         )}
                       </div>
 
-                      {/* Delete Button */}
+                      <div className="absolute left-1/2 top-full -translate-x-1/2 mt-2 text-center pointer-events-none whitespace-nowrap">
+                        <div className="text-[11px] font-semibold text-slate-800">
+                          {nameLine}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          {secondaryLine}
+                        </div>
+                      </div>
+
                       {isSelected && (
                         <button
                           onClick={(e) => {
@@ -784,11 +874,17 @@ export function PDFSignatureEditor({
                         </button>
                       )}
 
-                      {/* Field Info Tooltip */}
                       {isHovered && !isSelected && (
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
                           Click to select • Drag to move
                         </div>
+                      )}
+
+                      {(isHovered || isSelected) && (
+                        <div
+                          className="absolute -bottom-2 -right-2 w-4 h-4 bg-white border border-slate-400 rounded cursor-nwse-resize shadow-sm"
+                          onMouseDown={(e) => handleResizeMouseDown(field.id, field.type, e)}
+                        />
                       )}
                     </div>
                   );

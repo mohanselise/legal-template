@@ -2,8 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ActionButtons } from '../_components/ActionButtons';
-import { Loader2, CheckCircle2, Edit, Download, Send, Sparkles, FileText, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Maximize2, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Loader2, CheckCircle2, Edit, Download, Send, Sparkles, FileText, ZoomIn, ZoomOut, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
 import {
   clearEmploymentAgreementReview,
@@ -26,10 +25,12 @@ const Page = dynamic(
   { ssr: false }
 );
 
+type FormDataState = Record<string, unknown> | null;
+
 function ReviewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [formData, setFormData] = useState<any>(null);
+  const [formData, setFormData] = useState<FormDataState>(null);
   const [generatedDocument, setGeneratedDocument] = useState<EmploymentAgreement | null>(null);
   const [editedDocument, setEditedDocument] = useState<EmploymentAgreement | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
@@ -41,7 +42,9 @@ function ReviewContent() {
   const [scale, setScale] = useState(1.0);
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showFloatingCTA, setShowFloatingCTA] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
   // Configure PDF.js worker on client side only
   useEffect(() => {
@@ -50,6 +53,26 @@ function ReviewContent() {
         mod.pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${mod.pdfjs.version}/build/pdf.worker.min.mjs`;
       });
     }
+  }, []);
+
+  // Track header visibility for floating CTA
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowFloatingCTA(!entry.isIntersecting);
+      },
+      { threshold: 0 }
+    );
+
+    if (headerRef.current) {
+      observer.observe(headerRef.current);
+    }
+
+    return () => {
+      if (headerRef.current) {
+        observer.unobserve(headerRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -71,7 +94,7 @@ function ReviewContent() {
 
     if (!hasSessionDocument && docParam) {
       try {
-        const parsedDocument = JSON.parse(docParam);
+        const parsedDocument: EmploymentAgreement = JSON.parse(docParam);
         setGeneratedDocument(parsedDocument);
         setEditedDocument(parsedDocument);
         setIsGenerating(false);
@@ -88,9 +111,9 @@ function ReviewContent() {
             dataContent = dataParam;
           }
           try {
-            parsedFormData = JSON.parse(dataContent);
+            parsedFormData = JSON.parse(dataContent) as Record<string, unknown>;
             setFormData(parsedFormData);
-          } catch (e) {
+          } catch {
             console.error('Failed to parse form data');
           }
         }
@@ -115,9 +138,9 @@ function ReviewContent() {
       }
 
       try {
-        const parsed = JSON.parse(dataContent);
+        const parsed = JSON.parse(dataContent) as Record<string, unknown>;
         setFormData(parsed);
-      } catch (e) {
+      } catch {
         console.error('Failed to parse form data');
       }
     }
@@ -132,7 +155,10 @@ function ReviewContent() {
     };
   }, [pdfUrl]);
 
-  const generatePdfPreview = async (document: EmploymentAgreement, formData: any) => {
+  const generatePdfPreview = async (
+    document: EmploymentAgreement,
+    formDataValue: FormDataState
+  ) => {
     setIsLoadingPdf(true);
     try {
       const response = await fetch('/api/documents/generate-pdf', {
@@ -140,7 +166,7 @@ function ReviewContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           document,
-          formData,
+          formData: formDataValue,
         }),
       });
 
@@ -155,12 +181,6 @@ function ReviewContent() {
     } finally {
       setIsLoadingPdf(false);
     }
-  };
-
-  const handleDocumentChange = (updatedDocument: EmploymentAgreement) => {
-    setEditedDocument(updatedDocument);
-    // Regenerate PDF with updated document
-    generatePdfPreview(updatedDocument, formData);
   };
 
   const handleSendToSignature = async () => {
@@ -190,21 +210,59 @@ function ReviewContent() {
         throw new Error('PDF generation failed');
       }
 
-      // Store PDF, document data, AND signature field metadata in sessionStorage
-      sessionStorage.setItem('signature-editor-pdf', responseData.pdfBase64);
-      sessionStorage.setItem('signature-editor-data', JSON.stringify({
-        document: documentToSend,
-        formData,
-      }));
-      sessionStorage.setItem('signature-field-metadata', JSON.stringify(responseData.signatureFields));
+      // Store session data for potential retries
+      sessionStorage.setItem(
+        'signature-last-payload',
+        JSON.stringify({
+          document: documentToSend,
+          formData,
+          signatories: responseData.signatories,
+          signatureFields: responseData.signatureFields,
+        })
+      );
 
-      console.log('✅ PDF generated with signature field metadata:', responseData.signatureFields);
+      console.log(
+        '✅ PDF generated with signature field metadata:',
+        responseData.signatureFields
+      );
 
-      // Navigate to signature editor
-      router.push('/templates/employment-agreement/generate/review/signature-editor');
+      console.log('📨 Sending contract via aggregated rollout API…');
+      const rolloutResponse = await fetch('/api/signature/rollout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          document: documentToSend,
+          formData,
+          signatories: responseData.signatories,
+          signatureFields: responseData.signatureFields,
+        }),
+      });
+
+      if (!rolloutResponse.ok) {
+        const errorBody = await rolloutResponse.json().catch(() => null);
+        throw new Error(
+          errorBody?.details ||
+            errorBody?.error ||
+            'Failed to send contract for signature'
+        );
+      }
+
+      const rolloutResult = await rolloutResponse.json();
+      console.log('✅ Contract sent successfully:', rolloutResult);
+
+      sessionStorage.setItem(
+        'signature-last-result',
+        JSON.stringify(rolloutResult)
+      );
+      setIsPreparingContract(false);
+      router.push('/templates/employment-agreement/generate/review/success');
     } catch (error) {
       console.error('Error preparing for signature:', error);
-      alert(error instanceof Error ? error.message : 'Failed to prepare document. Please try again.');
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Failed to prepare and send document. Please try again.'
+      );
       setIsPreparingContract(false);
     }
   };
@@ -267,45 +325,37 @@ function ReviewContent() {
     setScale(1.0);
   };
 
-  const handlePreviousPage = () => {
-    setPageNumber((prev) => Math.max(prev - 1, 1));
-  };
-
-  const handleNextPage = () => {
-    setPageNumber((prev) => Math.min(prev + 1, numPages || 1));
-  };
-
   // Show full-screen loading overlay during contract preparation
   if (isPreparingContract) {
     return (
       <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
-        <div className="relative w-24 h-24 mb-6">
-          <div className="absolute inset-0 border-4 border-[hsl(var(--brand-border))] rounded-full"></div>
+        <div className="relative w-20 h-20 mb-6">
+          <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
           <div className="absolute inset-0 border-4 border-[hsl(var(--selise-blue))] border-t-transparent rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <Loader2 className="w-10 h-10 text-[hsl(var(--selise-blue))] animate-pulse" />
+            <Send className="w-8 h-8 text-[hsl(var(--selise-blue))]" />
           </div>
         </div>
-        <h2 className="font-heading text-2xl font-bold text-[hsl(var(--fg))] mb-2">
-          Preparing Contract
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Preparing Your Contract
         </h2>
-        <p className="font-body text-[hsl(var(--brand-muted))] text-center max-w-md mb-4">
-          Uploading document and setting up signature workflow...
+        <p className="text-gray-600 text-center max-w-md mb-6">
+          Setting up your document for signature...
         </p>
-        <div className="space-y-2 bg-white rounded-xl p-6 border-2 border-[hsl(var(--border))]">
+        <div className="space-y-2 bg-gray-50 rounded-xl p-6 border border-gray-200">
           {[
             'Generating PDF document',
-            'Preparing signature editor',
+            'Configuring signature fields',
           ].map((step, index) => (
             <div
               key={step}
-              className="flex items-center gap-3 text-[hsl(var(--brand-muted))] text-sm font-medium"
+              className="flex items-center gap-3 text-gray-600 text-sm font-medium"
               style={{
                 animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`
               }}
             >
               <div className="w-2 h-2 bg-[hsl(var(--selise-blue))] rounded-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
-              <span className="font-body">{step}</span>
+              <span>{step}</span>
             </div>
           ))}
         </div>
@@ -326,73 +376,48 @@ function ReviewContent() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--bg))]">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <a
-            href="/templates/employment-agreement/generate"
-            className="text-[hsl(var(--brand-primary))] hover:underline"
-          >
-            Go back and try again
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   if (isGenerating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--bg))] overflow-hidden relative">
-        {/* Subtle background effect */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_hsl(var(--brand-surface))_0%,_transparent_70%)]" />
-
-        <div className="relative z-10 text-center space-y-8 px-6 max-w-2xl">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-6 px-6 max-w-md">
           {/* Animated icon */}
-          <div className="relative w-24 h-24 mx-auto">
-            <div className="absolute inset-0 border-4 border-[hsl(var(--brand-border))] rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-[hsl(var(--brand-primary))] border-t-transparent rounded-full animate-spin"></div>
+          <div className="relative w-20 h-20 mx-auto">
+            <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-[hsl(var(--selise-blue))] border-t-transparent rounded-full animate-spin"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles className="w-10 h-10 text-[hsl(var(--brand-primary))] animate-pulse" />
+              <Sparkles className="w-8 h-8 text-[hsl(var(--selise-blue))] animate-pulse" />
             </div>
           </div>
 
           {/* Title */}
-          <div className="space-y-3">
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-[hsl(var(--fg))]">
-              Crafting Your Agreement
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Creating Your Agreement
             </h2>
-            <p className="font-body text-base text-[hsl(var(--brand-muted))] max-w-xl mx-auto leading-relaxed">
-              Our AI is generating a professional, legally-sound employment agreement tailored to your specifications. This usually takes 10-20 seconds.
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Our AI is generating a professional employment agreement tailored to your specifications.
             </p>
           </div>
 
           {/* Loading steps */}
-          <div className="space-y-3 bg-white rounded-2xl p-6 border-2 border-[hsl(var(--border))] shadow-lg">
+          <div className="space-y-2 bg-white rounded-xl p-5 border border-gray-200">
             {[
-              'Analyzing your requirements',
-              'Drafting core provisions',
-              'Building protective clauses',
-              'Finalizing document structure'
+              'Analyzing requirements',
+              'Drafting provisions',
+              'Building structure'
             ].map((step, index) => (
               <div
                 key={step}
-                className="flex items-center gap-3 text-[hsl(var(--brand-muted))] text-sm font-medium"
+                className="flex items-center gap-3 text-gray-600 text-sm font-medium"
                 style={{
                   animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`
                 }}
               >
-                <div className="w-2 h-2 bg-[hsl(var(--brand-primary))] rounded-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
-                <span className="font-body">{step}</span>
+                <div className="w-2 h-2 bg-[hsl(var(--selise-blue))] rounded-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
+                <span>{step}</span>
               </div>
             ))}
           </div>
-
-          {/* Info */}
-          <p className="font-body text-xs text-[hsl(var(--brand-muted))] italic">
-            ⚖️ Employment agreements help protect both employer and employee by clearly defining expectations and obligations.
-          </p>
         </div>
 
         <style jsx>{`
@@ -412,95 +437,136 @@ function ReviewContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--bg))]">
-      {/* Header - Clean and Professional */}
-      <div className="bg-white border-b-2 border-[hsl(var(--brand-border))] shadow-sm">
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] rounded-xl flex items-center justify-center shadow-md">
-              <CheckCircle2 className="w-7 h-7 text-white" strokeWidth={2.5} />
-            </div>
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--brand-surface))] border border-[hsl(var(--brand-border))] rounded-full text-[hsl(var(--brand-primary))] text-xs font-bold uppercase tracking-wider mb-3">
-                <CheckCircle2 className="w-3 h-3" />
-                Document Ready
+    <div className="min-h-screen flex flex-col bg-white">
+      {/* Header */}
+      <header ref={headerRef} className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] rounded-lg flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-white" strokeWidth={2.5} />
               </div>
-              <h1 className="font-heading text-3xl md:text-4xl font-bold text-[hsl(var(--fg))] mb-2 leading-tight">
-                Review Your Employment Agreement
-              </h1>
-              <p className="font-body text-[hsl(var(--brand-muted))] text-base leading-relaxed max-w-2xl">
-                Your professionally crafted legal document is ready. Review the details carefully before proceeding to signature.
-              </p>
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 border border-green-200 rounded text-green-700 text-xs font-semibold">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Ready
+                  </span>
+                </div>
+                <h1 className="text-lg font-bold text-gray-900">
+                  Employment Agreement
+                </h1>
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDownloadPdf}
+                className="flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all group"
+              >
+                <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+                Download
+              </button>
+              <button
+                onClick={handleSendToSignature}
+                disabled={isPreparingContract}
+                className="flex items-center gap-2 bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] text-white px-5 py-2 rounded-lg font-semibold text-sm hover:shadow-lg hover:shadow-[hsl(var(--selise-blue))]/25 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                Send for Signature
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Main Content - Full width with collapsible sidebar */}
-      <div className="flex h-[calc(100vh-180px)]">
-        {/* PDF Preview - Full width */}
-        <div className="flex-1 flex flex-col bg-gray-50">
-          {/* Minimal PDF Controls Bar */}
-          <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-4">
-              <FileText className="w-5 h-5 text-[hsl(var(--selise-blue))]" />
-              <h3 className="font-heading font-semibold text-[hsl(var(--fg))] text-sm">
-                Document Preview
-              </h3>
+      {/* Floating CTA Button - Shows when header is out of view */}
+      {showFloatingCTA && !isPreparingContract && (
+        <>
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] animate-slide-up">
+            <button
+              onClick={handleSendToSignature}
+              className="flex items-center gap-2 bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] text-white px-6 py-3.5 rounded-full font-semibold text-sm shadow-2xl hover:shadow-[hsl(var(--selise-blue))]/40 hover:scale-105 transition-all group"
+            >
+              <Send className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+              Send for Signature
+            </button>
+          </div>
+          <div className="fixed bottom-8 right-8 z-[60] animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <button
+              onClick={handleDownloadPdf}
+              className="flex items-center gap-2 bg-white text-gray-700 border-2 border-gray-300 px-5 py-3 rounded-full font-semibold text-sm shadow-xl hover:shadow-2xl hover:scale-105 hover:border-gray-400 transition-all group"
+            >
+              <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+              Download
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex">
+        {/* PDF Preview Area */}
+        <div className="flex-1 flex flex-col bg-gray-100">
+          {/* PDF Controls */}
+          <div className="bg-white border-b border-gray-200 px-6 py-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FileText className="w-4 h-4 text-gray-400" />
+              <span className="text-sm font-medium text-gray-700">Preview</span>
               {numPages && (
-                <span className="text-xs text-[hsl(var(--brand-muted))] bg-gray-100 px-3 py-1 rounded-full">
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded font-medium">
                   {numPages} {numPages === 1 ? 'page' : 'pages'}
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Zoom Controls */}
-              <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-2">
+              <div className="flex items-center border border-gray-300 rounded-md bg-white divide-x divide-gray-300">
                 <button
                   onClick={handleZoomOut}
                   disabled={scale <= 0.5}
-                  className="p-1.5 text-[hsl(var(--fg))] hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   title="Zoom Out"
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
-                <span className="text-xs font-semibold text-[hsl(var(--brand-muted))] min-w-[3rem] text-center">
+                <span className="text-xs font-medium text-gray-700 min-w-[3.5rem] text-center px-2">
                   {Math.round(scale * 100)}%
                 </span>
                 <button
                   onClick={handleZoomIn}
                   disabled={scale >= 2.0}
-                  className="p-1.5 text-[hsl(var(--fg))] hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   title="Zoom In"
                 >
                   <ZoomIn className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Fit presets */}
-              <div className="flex items-center gap-1 border border-gray-200 rounded-lg">
+              {/* Fit Presets */}
+              <div className="flex items-center border border-gray-300 rounded-md bg-white divide-x divide-gray-300">
                 <button
                   onClick={handleFitWidth}
-                  className="px-3 py-1.5 text-xs font-semibold text-[hsl(var(--fg))] hover:bg-gray-100 rounded-l transition-colors"
+                  className="px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                   title="Fit Width"
                 >
                   Fit Width
                 </button>
-                <div className="w-px h-5 bg-gray-200"></div>
                 <button
                   onClick={handleFitPage}
-                  className="px-3 py-1.5 text-xs font-semibold text-[hsl(var(--fg))] hover:bg-gray-100 rounded-r transition-colors"
+                  className="px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                   title="100%"
                 >
                   100%
                 </button>
               </div>
 
-              {/* Sidebar toggle */}
+              {/* Sidebar Toggle */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 text-[hsl(var(--fg))] border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-1.5 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
               >
                 {sidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
@@ -508,13 +574,13 @@ function ReviewContent() {
             </div>
           </div>
 
-          {/* PDF Viewer - Continuous Scroll */}
-          <div ref={containerRef} className="flex-1 overflow-auto bg-gray-100 p-8">
+          {/* PDF Viewer */}
+          <div ref={containerRef} className="flex-1 overflow-auto p-6">
             {isLoadingPdf ? (
-              <div className="flex items-center justify-center py-20">
+              <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <Loader2 className="w-10 h-10 animate-spin text-[hsl(var(--selise-blue))] mx-auto mb-4" />
-                  <p className="text-[hsl(var(--brand-muted))] font-semibold">Loading PDF preview...</p>
+                  <Loader2 className="w-10 h-10 animate-spin text-[hsl(var(--selise-blue))] mx-auto mb-3" />
+                  <p className="text-gray-600 text-sm font-medium">Loading preview...</p>
                 </div>
               </div>
             ) : pdfUrl ? (
@@ -533,21 +599,20 @@ function ReviewContent() {
                     </div>
                   }
                 >
-                  {/* Continuous scroll - render all pages with proper US Letter sizing */}
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {numPages && Array.from({ length: numPages }, (_, i) => i + 1).map((page) => (
                       <div
                         key={page}
-                        className="bg-white shadow-2xl mx-auto"
+                        className="bg-white shadow-lg mx-auto"
                         style={{
-                          width: 612 * scale, // US Letter: 8.5" × 72 DPI = 612pt
-                          minHeight: 792 * scale, // US Letter: 11" × 72 DPI = 792pt
+                          width: 612 * scale,
+                          minHeight: 792 * scale,
                         }}
                       >
                         <Page
                           pageNumber={page}
                           scale={scale}
-                          width={612} // Force US Letter width
+                          width={612}
                           renderTextLayer={true}
                           renderAnnotationLayer={true}
                           loading={
@@ -562,134 +627,55 @@ function ReviewContent() {
                 </Document>
               </div>
             ) : (
-              <div className="flex items-center justify-center py-20">
-                <p className="text-[hsl(var(--brand-muted))] font-semibold">No PDF available</p>
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500 font-medium">No PDF available</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Collapsible Actions Sidebar */}
-        <div className={`transition-all duration-300 ease-in-out border-l border-gray-200 bg-white ${
-          sidebarOpen ? 'w-96' : 'w-0 overflow-hidden'
-        }`}>
-          <div className="w-96">
-            <div className="h-full overflow-y-auto p-6 space-y-6">
-              {/* Quick Actions */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-[hsl(var(--selise-blue))] rounded-lg flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="font-heading font-bold text-[hsl(var(--fg))] text-lg">
-                    Next Steps
-                  </h3>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Primary: Preview & Send to Signature */}
-                  <button
-                    onClick={handleSendToSignature}
-                    disabled={isPreparingContract}
-                    className="w-full flex items-center justify-center gap-2 bg-[hsl(var(--selise-blue))] text-white px-6 py-3.5 rounded-lg font-semibold text-sm shadow-sm hover:bg-[hsl(206,100%,30%)] transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[hsl(var(--selise-blue))] focus:ring-offset-2"
-                  >
-                    <Send className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                    <span>Send for Signature</span>
-                  </button>
-                  <div className="bg-blue-50 border border-blue-100 rounded-lg p-2">
-                    <p className="text-xs text-center text-blue-700 font-medium">
-                      ✨ Powered by SELISE Signature
-                    </p>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="relative py-3">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-200"></div>
-                    </div>
-                    <div className="relative flex justify-center">
-                      <span className="bg-white px-3 text-xs font-semibold text-gray-500">
-                        OR
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Secondary: Download */}
-                  <button
-                    onClick={handleDownloadPdf}
-                    className="w-full flex items-center justify-center gap-2 border border-gray-300 text-[hsl(var(--fg))] px-6 py-3 rounded-lg font-semibold text-sm hover:bg-gray-50 transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
-                  >
-                    <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
-                    Download PDF
-                  </button>
-                </div>
-              </div>
-
-              {/* Document Info */}
+        {/* Sidebar */}
+        {sidebarOpen && (
+          <aside className="w-80 border-l border-gray-200 bg-white overflow-y-auto">
+            <div className="p-6 space-y-6">
+              {/* Document Details */}
               {formData && (
-                <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                  <h3 className="font-heading font-bold text-[hsl(var(--fg))] text-sm mb-4 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-gray-500" />
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm mb-3">
                     Document Details
                   </h3>
-                  <dl className="space-y-3 text-sm border-t border-gray-200 pt-4">
-                    {Object.entries(formData).slice(0, 5).map(([key, value]: [string, any]) => (
+                  <dl className="space-y-3 text-sm">
+                    {Object.entries(formData as Record<string, unknown>)
+                      .slice(0, 6)
+                      .map(([key, value]) => (
                       <div key={key} className="pb-3 border-b border-gray-100 last:border-0">
-                        <dt className="font-body text-gray-500 capitalize text-xs font-medium mb-1">
+                        <dt className="text-gray-500 capitalize text-xs mb-1">
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </dt>
-                        <dd className="font-body font-semibold text-[hsl(var(--fg))] text-sm">
+                        <dd className="font-medium text-gray-900 text-sm break-words">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
                       </div>
                     ))}
                   </dl>
                   <button
-                    onClick={() => window.location.href = '/templates/employment-agreement/generate'}
-                    className="mt-5 w-full flex items-center justify-center gap-2 text-[hsl(var(--selise-blue))] hover:text-[hsl(206,100%,30%)] font-semibold text-sm py-2.5 hover:bg-blue-50 rounded-lg transition-colors"
+                    onClick={() => router.push('/templates/employment-agreement/generate')}
+                    className="mt-4 w-full flex items-center justify-center gap-2 text-[hsl(var(--selise-blue))] hover:text-[hsl(206,100%,30%)] font-medium text-sm py-2 hover:bg-blue-50 rounded-lg transition-colors"
                   >
                     <Edit className="w-4 h-4" />
-                    Start Over
+                    Edit Details
                   </button>
                 </div>
               )}
 
-              {/* Comprehensive Legal Disclaimer */}
-              <LegalDisclaimer />
+              {/* Legal Disclaimer */}
+              <div className="border-t border-gray-200 pt-6">
+                <LegalDisclaimer variant="compact" />
+              </div>
             </div>
-          </div>
-        </div>
+          </aside>
+        )}
       </div>
-
-      <style jsx global>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @keyframes slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .animate-fade-in {
-          animation: fade-in 0.2s ease-out;
-        }
-
-        .animate-slide-up {
-          animation: slide-up 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
 }

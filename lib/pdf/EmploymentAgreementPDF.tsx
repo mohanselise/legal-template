@@ -54,23 +54,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: '#111827',
   },
-  metadata: {
-    fontSize: 9,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  headerMetaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  headerMetaItem: {
-    fontSize: 8.5,
-    color: '#6b7280',
-    letterSpacing: 0.5,
-  },
-  
   // Document Body
   effectiveDate: {
     fontSize: 11,
@@ -278,47 +261,69 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     color: '#0f172a',
   },
-  signatureFieldsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 18,
+  signatureOverlayBox: {
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#2563eb',
+    backgroundColor: '#eef2ff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  signatureFieldColumn: {
-    flex: 1,
-    minWidth: 0, // Prevent flex items from overflowing
-    marginRight: 16,
-    marginBottom: 16,
-  },
-  signatureFieldColumnLast: {
-    marginRight: 0,
-  },
-  signatureField: {
-    marginBottom: 18,
-  },
-  signatureLabel: {
-    fontSize: 8,
+  signatureOverlayLabel: {
+    fontSize: 10,
     fontFamily: 'Helvetica-Bold',
-    color: '#475569',
-    marginBottom: 6,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1,
+    marginBottom: 4,
+    color: '#1d4ed8',
   },
-  signaturePrimaryLine: {
-    borderBottom: '1.5pt solid #334155',
-    minHeight: 36,
+  signatureOverlayName: {
+    fontSize: 10,
+    color: '#475569',
   },
-  signatureLine: {
-    borderBottom: '1pt solid #cbd5e1',
-    minHeight: 26,
+  signatureSummary: {
+    marginTop: 14,
+    marginBottom: 10,
   },
-  signaturePreFilledValue: {
-    fontSize: 10.5,
+  signatureSummaryName: {
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 11,
+    color: '#0f172a',
+  },
+  signatureSummaryRole: {
+    fontSize: 10,
+    color: '#475569',
+    marginTop: 4,
+  },
+  signatureDateRow: {
+    flexDirection: 'row',
+    marginTop: 16,
+  },
+  signatureDateBox: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#334155',
+    backgroundColor: '#f1f5f9',
+    minWidth: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  signatureDateLabel: {
+    fontSize: 9,
     fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
-    paddingTop: 4,
-    paddingBottom: 8,
-    borderBottom: '1pt solid #cbd5e1',
-    minHeight: 24,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  signatureDatePlaceholder: {
+    fontSize: 9,
+    color: '#475569',
+    marginTop: 4,
   },
   
   // Footer
@@ -473,42 +478,13 @@ const ContentBlockRenderer: React.FC<{
 
 export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
   document: employmentAgreement,
-  docId,
 }) => {
-  const documentId = docId ?? 'DOC-UNASSIGNED';
-  
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{employmentAgreement.metadata.title}</Text>
-          {(documentId || employmentAgreement.metadata.jurisdiction) && (
-            <View style={styles.headerMetaRow}>
-              {documentId && (
-                <Text style={styles.headerMetaItem}>
-                  Document ID:{' '}
-                  <Text style={styles.bold}>{documentId}</Text>
-                </Text>
-              )}
-              {employmentAgreement.metadata.jurisdiction && (
-                <Text
-                  style={[styles.headerMetaItem, { textAlign: 'right' }]}
-                >
-                  Governing Law:{' '}
-                  <Text style={styles.bold}>
-                    {employmentAgreement.metadata.jurisdiction}
-                  </Text>
-                </Text>
-              )}
-            </View>
-          )}
-          {employmentAgreement.metadata.generatedAt && (
-            <Text style={styles.metadata}>
-              Prepared on{' '}
-              {formatDate(employmentAgreement.metadata.generatedAt)}
-            </Text>
-          )}
         </View>
 
         {/* Effective Date */}
@@ -629,27 +605,39 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
             const signatureField = signature.fields.find(
               (field) => field.type === 'signature'
             );
-            const metaFields = signature.fields.filter(
-              (field) => field.type !== 'signature'
+            const nameField = signature.fields.find(
+              (field) => field.type === 'name'
             );
-            const metaRows: SignatureField[][] = [];
-            const rowBuffer: SignatureField[] = [];
-
-            metaFields.forEach((field) => {
-              if (field.type === 'date') {
-                if (rowBuffer.length) {
-                  metaRows.push([...rowBuffer]);
-                  rowBuffer.length = 0;
-                }
-                metaRows.push([field]);
-              } else {
-                rowBuffer.push(field);
-              }
-            });
-
-            if (rowBuffer.length) {
-              metaRows.push([...rowBuffer]);
-            }
+            const titleField = signature.fields.find(
+              (field) => field.type === 'title'
+            );
+            const dateFields = signature.fields.filter(
+              (field) => field.type === 'date'
+            );
+            const displayName =
+              (nameField?.value && nameField.value.trim()) ||
+              signature.partyName;
+            const displayRole =
+              (titleField?.value && titleField.value.trim()) ||
+              (signature.party === 'employer'
+                ? 'Authorized Signatory'
+                : 'Employee');
+            const colorScheme =
+              signature.party === 'employer'
+                ? {
+                    border: '#2563eb',
+                    background: '#eef2ff',
+                    label: '#1d4ed8',
+                    dateBorder: '#2563eb',
+                    dateBackground: '#eff6ff',
+                  }
+                : {
+                    border: '#047857',
+                    background: '#ecfdf5',
+                    label: '#047857',
+                    dateBorder: '#047857',
+                    dateBackground: '#dcfce7',
+                  };
 
             return (
               <View key={index} style={styles.signatureBlock}>
@@ -662,52 +650,67 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
                 </Text>
 
                 {signatureField && (
-                  <View style={styles.signatureField}>
-                    <Text style={styles.signatureLabel}>
+                  <View
+                    style={[
+                      styles.signatureOverlayBox,
+                      {
+                        borderColor: colorScheme.border,
+                        backgroundColor: colorScheme.background,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.signatureOverlayLabel,
+                        { color: colorScheme.label },
+                      ]}
+                    >
                       {signatureField.label}
                     </Text>
-                    <View style={styles.signaturePrimaryLine} />
+                    <Text style={styles.signatureOverlayName}>
+                      ({displayName})
+                    </Text>
                   </View>
                 )}
 
-                {metaRows.map((row, rowIndex) => (
-                  <View
-                    key={`${signature.party}-row-${rowIndex}`}
-                    style={[
-                      styles.signatureFieldsRow,
-                      rowIndex === metaRows.length - 1 && { marginBottom: 0 },
-                    ]}
-                  >
-                    {row.map((field, fieldIndex) => {
-                      const displayValue = getFieldDisplayValue(field);
+                <View style={styles.signatureSummary}>
+                  <Text style={styles.signatureSummaryName}>{displayName}</Text>
+                  {displayRole && (
+                    <Text style={styles.signatureSummaryRole}>
+                      {displayRole}
+                    </Text>
+                  )}
+                </View>
 
-                      return (
-                        <View
-                          key={`${signature.party}-${field.label}-${fieldIndex}`}
+                {dateFields.length > 0 && (
+                  <View style={styles.signatureDateRow}>
+                    {dateFields.map((dateField) => (
+                      <View
+                        key={dateField.id}
+                        style={[
+                          styles.signatureDateBox,
+                          {
+                            borderColor: colorScheme.dateBorder,
+                            backgroundColor: colorScheme.dateBackground,
+                          },
+                        ]}
+                      >
+                        <Text
                           style={[
-                            styles.signatureFieldColumn,
-                            fieldIndex === row.length - 1 &&
-                              styles.signatureFieldColumnLast,
-                            rowIndex === metaRows.length - 1 && {
-                              marginBottom: 0,
-                            },
+                            styles.signatureDateLabel,
+                            { color: colorScheme.dateBorder },
                           ]}
                         >
-                          <Text style={styles.signatureLabel}>
-                            {field.label}
-                          </Text>
-                          {displayValue ? (
-                            <Text style={styles.signaturePreFilledValue}>
-                              {displayValue}
-                            </Text>
-                          ) : (
-                            <View style={styles.signatureLine} />
-                          )}
-                        </View>
-                      );
-                    })}
+                          {dateField.label}
+                        </Text>
+                        <Text style={styles.signatureDatePlaceholder}>
+                          {getFieldDisplayValue(dateField) ||
+                            'Date: _______________'}
+                        </Text>
+                      </View>
+                    ))}
                   </View>
-                ))}
+                )}
               </View>
             );
           })}

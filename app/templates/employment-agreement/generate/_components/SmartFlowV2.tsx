@@ -9,6 +9,7 @@ import type { BackgroundGenerationResult } from './SmartFormContext';
 import { saveEmploymentAgreementReview } from '../reviewStorage';
 import { Step1CompanyIdentity } from './screens/Step1CompanyIdentity';
 import { Step2EmployeeIdentity } from './screens/Step2EmployeeIdentity';
+import { Step3SigningInfo } from './screens/Step3SigningInfo';
 import { Step3WorkArrangement } from './screens/Step3WorkArrangement';
 import { Step4Compensation } from './screens/Step4Compensation';
 import { Step5BenefitsEquity } from './screens/Step5BenefitsEquity';
@@ -32,6 +33,7 @@ import { LegalDisclaimer } from '@/components/legal-disclaimer';
 const STEPS = [
   { id: 'company', title: 'Company & Role', component: Step1CompanyIdentity },
   { id: 'employee', title: 'Employee', component: Step2EmployeeIdentity },
+  { id: 'signing', title: 'Signing', component: Step3SigningInfo },
   { id: 'work', title: 'Work', component: Step3WorkArrangement },
   { id: 'compensation', title: 'Compensation', component: Step4Compensation },
   { id: 'benefits', title: 'Benefits', component: Step5BenefitsEquity },
@@ -40,8 +42,8 @@ const STEPS = [
   { id: 'confirm', title: 'Confirm', component: Step8ConfirmGenerate },
 ];
 
-// Steps where "Use Market Standard" button should appear (screens 2-5)
-const MARKET_STANDARD_STEPS = [2, 3, 4, 5];
+// Steps where "Use Market Standard" button should appear (now screens 3-6 after adding signing step)
+const MARKET_STANDARD_STEPS = [3, 4, 5, 6];
 
 // Loading stages for document generation
 type GenerationStage = {
@@ -130,7 +132,7 @@ function NavigationButtons({
     enrichment.jurisdictionData &&
     enrichment.jobTitleData;
 
-  const isCompensationStep = currentStep === 3; // Step 4 is index 3
+  const isCompensationStep = currentStep === 4; // Step 5 (Compensation) is now index 4
   const isLegalStep = STEPS[currentStep]?.id === 'legal';
   const hasSalaryAmount = formData.salaryAmount && formData.salaryAmount.trim() !== '';
   const isPlaceholderSalary = formData.salaryAmount === '[TO BE DETERMINED]' || formData.salaryAmount === '[OMITTED]';
@@ -374,18 +376,25 @@ function SmartFlowContent() {
         return !!(formData.companyName && formData.companyAddress && formData.jobTitle);
       case 1: // Employee
         return !!(formData.employeeName && formData.employeeAddress && formData.startDate);
-      case 2: // Work
+      case 2: // Signing Info
+        return !!(
+          formData.employeeEmail &&
+          formData.companyRepName &&
+          formData.companyRepTitle &&
+          formData.companyRepEmail
+        );
+      case 3: // Work
         // Work location is optional for remote workers
         const workLocationValid = formData.workArrangement === 'remote' || formData.workLocation;
         return !!(workLocationValid && formData.workHoursPerWeek);
-      case 3: // Compensation
+      case 4: // Compensation
         // Currency is required, but salary can be empty (will show dialog)
         return !!formData.salaryCurrency;
-      case 4: // Benefits (optional)
+      case 5: // Benefits (optional)
         return true;
-      case 5: // Legal
+      case 6: // Legal
         return !!formData.governingLaw;
-      case 6: // Review
+      case 7: // Review
         return true;
       default:
         return false;
@@ -711,7 +720,7 @@ function SmartFlowContent() {
           <div className="mb-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <div className="flex items-center gap-3 text-base text-[hsl(var(--fg))]">
               <Check className="h-5 w-5 text-[hsl(var(--brand-primary))]" />
-              <span>7 smart screens</span>
+              <span>8 smart screens</span>
             </div>
             <div className="flex items-center gap-3 text-base text-[hsl(var(--fg))]">
               <Check className="h-5 w-5 text-[hsl(var(--brand-primary))]" />

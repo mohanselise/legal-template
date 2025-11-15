@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { PDFSignatureEditor } from '@/components/pdf-signature-editor';
-import { EmployerInfoModal } from '@/components/employer-info-modal';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 interface SignatureField {
@@ -32,12 +31,6 @@ interface SignatoryInfo {
   order: number;
 }
 
-interface EmployerInfo {
-  signerName: string;
-  signerEmail: string;
-  signerTitle: string;
-}
-
 function SignatureEditorContent() {
   const router = useRouter();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -46,8 +39,6 @@ function SignatureEditorContent() {
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [signatories, setSignatories] = useState<SignatoryInfo[]>([]);
-  const [showEmployerModal, setShowEmployerModal] = useState(false);
-  const [employerInfo, setEmployerInfo] = useState<EmployerInfo | null>(null);
   const [initialFields, setInitialFields] = useState<SignatureField[]>([]);
 
   useEffect(() => {
@@ -63,36 +54,44 @@ function SignatureEditorContent() {
 
     try {
       const data: ContractData = JSON.parse(storedDataJson);
+      console.log('📦 Loaded contract data from sessionStorage:', {
+        documentTitle: data.document?.metadata?.title,
+        employerName: data.document?.parties?.employer?.legalName,
+        employeeName: data.document?.parties?.employee?.legalName,
+        companyRepName: data.formData?.companyRepName,
+        companyRepEmail: data.formData?.companyRepEmail,
+        employeeEmail: data.formData?.employeeEmail,
+      });
       setContractData(data);
 
-      // Create signatories from contract data
-      if (data.document?.parties) {
+      // Create signatories from formData (source of truth for signatory contact info)
+      if (data.document?.parties && data.formData) {
         const sigs: SignatoryInfo[] = [
           {
-            name: data.document.parties.employer.legalName,
-            email: '', // Will be filled in later
-            phone: '',
+            name: data.formData.companyRepName || data.document.parties.employer.legalName,
+            email: data.formData.companyRepEmail || '',
+            title: data.formData.companyRepTitle || '',
+            phone: data.formData.companyRepPhone || '',
             role: 'Company Representative',
             order: 1,
           },
           {
             name: data.document.parties.employee.legalName,
-            email: '', // Will be filled in later
-            phone: '',
+            email: data.formData.employeeEmail || '',
+            phone: data.formData.employeePhone || '',
             role: 'Employee',
             order: 2,
           },
         ];
+        console.log('👥 Created signatories:', sigs);
         setSignatories(sigs);
+        
+        // Generate smart field placements immediately
+        generateSmartFieldPlacements(sigs);
       }
 
       console.log('📄 Loading PDF from sessionStorage');
       loadPdfFromBase64(storedPdfBase64);
-      
-      // Show employer modal after PDF loads
-      setTimeout(() => {
-        setShowEmployerModal(true);
-      }, 500);
     } catch (err) {
       console.error('Error loading contract data:', err);
       setError('Invalid contract data. Please start the signature process again.');
@@ -121,37 +120,6 @@ function SignatureEditorContent() {
     } finally {
       setIsLoadingPdf(false);
     }
-  };
-
-  const handleEmployerInfoSubmit = (info: EmployerInfo) => {
-    setEmployerInfo(info);
-    
-    // Update signatories with actual info
-    if (contractData?.document?.parties) {
-      const updatedSignatories: SignatoryInfo[] = [
-        {
-          name: info.signerName,
-          email: info.signerEmail,
-          title: info.signerTitle,
-          phone: '',
-          role: 'Company Representative',
-          order: 1,
-        },
-        {
-          name: contractData.document.parties.employee.legalName,
-          email: contractData.formData?.personalInfo?.email || '',
-          phone: '',
-          role: 'Employee',
-          order: 2,
-        },
-      ];
-      setSignatories(updatedSignatories);
-      
-      // Generate smart field placements
-      generateSmartFieldPlacements(updatedSignatories);
-    }
-    
-    setShowEmployerModal(false);
   };
 
   const generateSmartFieldPlacements = (sigs: SignatoryInfo[]) => {
@@ -281,25 +249,25 @@ function SignatureEditorContent() {
   };
 
   const handleConfirm = async (fields: SignatureField[]) => {
-    if (!contractData || !employerInfo) return;
+    if (!contractData || !signatories.length) return;
 
     setIsSending(true);
 
     try {
-      // Prepare signatories
+      // Prepare signatories from formData (source of truth for signatory contact info)
       const signatoryList: SignatoryInfo[] = [
         {
-          name: employerInfo.signerName,
-          email: employerInfo.signerEmail,
-          title: employerInfo.signerTitle,
-          phone: '',
+          name: contractData.formData.companyRepName || contractData.document.parties.employer.legalName,
+          email: contractData.formData.companyRepEmail || '',
+          title: contractData.formData.companyRepTitle || '',
+          phone: contractData.formData.companyRepPhone || '',
           role: 'Company Representative',
           order: 0,
         },
         {
           name: contractData.document.parties.employee.legalName,
-          email: contractData.formData?.personalInfo?.email || '',
-          phone: '',
+          email: contractData.formData.employeeEmail || '',
+          phone: contractData.formData.employeePhone || '',
           role: 'Employee',
           order: 1,
         },
@@ -431,33 +399,6 @@ function SignatureEditorContent() {
           </button>
         </div>
       </div>
-    );
-  }
-
-  // Show employer modal first
-  if (showEmployerModal && contractData) {
-    return (
-      <>
-        {/* Backdrop with PDF preview */}
-        <div className="h-screen bg-gray-100 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-2" />
-            <p className="text-sm text-gray-600">Loading signature editor...</p>
-          </div>
-        </div>
-        
-        <EmployerInfoModal
-          isOpen={showEmployerModal}
-          onClose={() => {
-            // Don't allow closing without filling
-            // setShowEmployerModal(false);
-          }}
-          onSubmit={handleEmployerInfoSubmit}
-          companyName={contractData.document?.parties?.employer?.legalName || 'the company'}
-          employeeName={contractData.document?.parties?.employee?.legalName || ''}
-          employeeEmail={contractData.formData?.personalInfo?.email || ''}
-        />
-      </>
     );
   }
 

@@ -189,25 +189,40 @@ Use these content block types appropriately:
 
 ## LEGAL DRAFTING STANDARDS
 
-1. **Use EXACT names and details provided** - Never use placeholders like [Company Name]
-2. **Defined terms**: Use designated titles (EMPLOYER, EMPLOYEE) consistently after definition
-3. **Modal verbs**:
+1. **Use EXACT names and details provided** - Never use placeholders like [Company Name] or dummy data
+2. **⚠️ CRITICAL - NO DUMMY DATA**: This is a legally binding document. NEVER use:
+   - Dummy email addresses (e.g., "john.doe@company.com", "employee@example.com")
+   - Dummy phone numbers (e.g., "555-1234", "+1-555-0100")
+   - Generic names (e.g., "John Doe", "Jane Smith" unless explicitly provided)
+   - Placeholder addresses (e.g., "123 Main St" unless explicitly provided)
+   - Use ONLY the exact information provided in the user prompt
+   - If specific information is missing, use "[To Be Completed]" format
+3. **Defined terms**: Use designated titles (EMPLOYER, EMPLOYEE) consistently after definition
+4. **Modal verbs**:
    - "shall" for mandatory obligations
    - "may" for permissive rights
    - "will" for future events
-4. **Precision**: Include specific amounts, dates, time periods (e.g., "thirty (30) days")
-5. **Numbered sections**: Use format "1.1", "1.2" for subsections within articles
-6. **Professional tone**: Sophisticated legal language, third person, active voice where appropriate
-7. **Balanced protections**: Fair to both employer and employee
-8. **Completeness**: Each article should have 2-4 detailed sections with substantive content
-9. **Cross-references**: Reference other articles where appropriate ("as defined in Article 1")
-10. **Lists**: Use non-exhaustive language ("including, but not limited to")
+5. **Precision**: Include specific amounts, dates, time periods (e.g., "thirty (30) days")
+6. **Numbered sections**: Use format "1.1", "1.2" for subsections within articles
+7. **Professional tone**: Sophisticated legal language, third person, active voice where appropriate
+8. **Balanced protections**: Fair to both employer and employee
+9. **Completeness**: Each article should have 2-4 detailed sections with substantive content
+10. **Cross-references**: Reference other articles where appropriate ("as defined in Article 1")
+11. **Lists**: Use non-exhaustive language ("including, but not limited to")
 
 ## SIGNATURE BLOCKS
 
 Always include signature blocks for both parties with appropriate fields:
-- Employer: By, Name, Title, Date
-- Employee: Signature, Date
+- **Employer signature block**: Must include the EXACT name and title of the company representative if provided in the user prompt
+  - If representative info provided: Use their actual name and title
+  - If not provided: Use generic "Name: ___________" and "Title: ___________" lines
+  - Always include: By (signature line), Name, Title, Date
+- **Employee signature block**: Must include the EXACT employee name as provided
+  - Signature line
+  - Name (pre-filled with actual employee name)
+  - Date line
+
+⚠️ Never use dummy/placeholder names in signature blocks. Use the actual names provided in the prompt.
 
 ## QUALITY STANDARDS
 

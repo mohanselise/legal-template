@@ -312,7 +312,17 @@ function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string
   if (companyContact) prompt += `- Primary Contact: ${companyContact}\n`;
   if (data.companyContactEmail) prompt += `- Contact Email: ${data.companyContactEmail}\n`;
   if (data.companyContactPhone) prompt += `- Contact Phone: ${data.companyContactPhone}\n`;
-  prompt += `- Referred to as: "EMPLOYER" or "COMPANY"\n\n`;
+  prompt += `- Referred to as: "EMPLOYER" or "COMPANY"\n`;
+  
+  // Add company representative signing information
+  if (data.companyRepName || data.companyRepTitle || data.companyRepEmail) {
+    prompt += `\n**Authorized Company Representative (for execution):**\n`;
+    if (data.companyRepName) prompt += `- Name: ${data.companyRepName}\n`;
+    if (data.companyRepTitle) prompt += `- Title: ${data.companyRepTitle}\n`;
+    if (data.companyRepEmail) prompt += `- Email: ${data.companyRepEmail}\n`;
+    if (data.companyRepPhone) prompt += `- Phone: ${data.companyRepPhone}\n`;
+  }
+  prompt += `\n`;
 
   prompt += `**EMPLOYEE:**\n`;
   prompt += `- Full Legal Name: ${data.employeeName || '[Employee Name Required]'}\n`;
@@ -469,14 +479,29 @@ function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string
   prompt += `---\n\n`;
   prompt += `# DRAFTING INSTRUCTIONS\n\n`;
   prompt += `Generate a complete, sophisticated employment agreement that:\n`;
-  prompt += `1. Uses the EXACT names and details provided above (no placeholders)\n`;
+  prompt += `1. Uses the EXACT names, emails, phone numbers, and details provided above (absolutely NO placeholders, dummy data, or generic information)\n`;
   prompt += `2. Follows the comprehensive structure outlined in the system prompt\n`;
   prompt += `3. Includes properly numbered articles and sections\n`;
   prompt += `4. Contains all standard legal provisions (severability, entire agreement, amendments, force majeure, notices)\n`;
   prompt += `5. Balances protections for both employer and employee\n`;
   prompt += `6. Uses sophisticated legal language appropriate for a professional contract\n`;
-  prompt += `7. Includes proper signature blocks for both parties with date lines\n`;
+  
+  // Signature block instructions with actual representative info
+  prompt += `7. Includes proper signature blocks for both parties:\n`;
+  if (data.companyRepName && data.companyRepTitle) {
+    prompt += `   - EMPLOYER signature block must show:\n`;
+    prompt += `     * Name: ${data.companyRepName}\n`;
+    prompt += `     * Title: ${data.companyRepTitle}\n`;
+    prompt += `     * Date line\n`;
+  } else {
+    prompt += `   - EMPLOYER signature block with name line, title line, and date line\n`;
+  }
+  prompt += `   - EMPLOYEE signature block must show:\n`;
+  prompt += `     * Name: ${data.employeeName || '[Employee Name]'}\n`;
+  prompt += `     * Date line\n`;
+  
   prompt += `8. Is formatted in clean markdown for professional presentation\n\n`;
+  prompt += `⚠️ CRITICAL: This is a legally binding document. Never use dummy/placeholder contact information (like "john.doe@company.com", "555-1234", etc.). Use ONLY the exact information provided above. If information is missing, use "[To Be Completed]" format.\n\n`;
   prompt += `The document should be ready for attorney review and execution.`;
 
   return prompt;

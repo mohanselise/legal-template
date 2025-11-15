@@ -14,6 +14,12 @@ export const employmentAgreementSchema = z.object({
   employeeEmail: z.string().email('Valid email is required'),
   employeePhone: z.string().optional(),
 
+  // Signing Information
+  companyRepName: z.string().optional(),
+  companyRepTitle: z.string().optional(),
+  companyRepEmail: z.string().email('Valid email is required').optional().or(z.literal('')),
+  companyRepPhone: z.string().optional(),
+
   jobTitle: z.string().min(1, 'Job title is required'),
   jobResponsibilities: z.string().optional(),
   department: z.string().optional(),

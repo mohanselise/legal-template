@@ -98,7 +98,7 @@ interface SmartFormContextType {
 const SmartFormContext = createContext<SmartFormContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'employment-agreement-smart-flow-v1';
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 9;
 const BACKGROUND_DEFAULT_STATE: BackgroundGenerationState = { status: 'idle' };
 
 function sortObject<T>(value: T): T {

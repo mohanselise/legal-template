@@ -291,19 +291,48 @@ function ReviewContent() {
         throw new Error('PDF generation failed');
       }
 
+      // Validate that we have signature fields
+      if (!signatureFields || signatureFields.length === 0) {
+        throw new Error('No signature fields have been placed. Please add signature fields before sending.');
+      }
+
       // Convert overlay fields to signature field metadata format
       // The overlay fields are already in PDF points, so we can use them directly
-      const signatureFieldsForAPI = signatureFields.map((field) => ({
-        id: field.id,
-        type: field.type,
-        signatoryIndex: field.signatoryIndex,
-        pageNumber: field.pageNumber - 1, // Convert to 0-indexed for API
-        x: field.x,
-        y: field.y,
-        width: field.width,
-        height: field.height,
-        label: field.label,
-      }));
+      // This includes any user adjustments (drag/resize) made to the fields
+      const signatureFieldsForAPI = signatureFields.map((field) => {
+        // Ensure pageNumber is valid (convert 1-indexed to 0-indexed)
+        const pageNumber = Math.max(0, (field.pageNumber || 1) - 1);
+        
+        return {
+          id: field.id,
+          type: field.type, // 'signature' | 'date'
+          signatoryIndex: field.signatoryIndex, // 0 = employer, 1 = employee
+          pageNumber, // 0-indexed for API
+          x: field.x, // PDF points
+          y: field.y, // PDF points
+          width: field.width, // PDF points
+          height: field.height, // PDF points
+          label: field.label || `${field.type === 'signature' ? 'Signature' : 'Date'}`,
+        };
+      });
+
+      // Validate converted fields
+      const invalidFields = signatureFieldsForAPI.filter(
+        (field) =>
+          typeof field.x !== 'number' ||
+          typeof field.y !== 'number' ||
+          typeof field.width !== 'number' ||
+          typeof field.height !== 'number' ||
+          field.x < 0 ||
+          field.y < 0 ||
+          field.width <= 0 ||
+          field.height <= 0
+      );
+
+      if (invalidFields.length > 0) {
+        console.error('⚠️ Invalid signature field coordinates:', invalidFields);
+        throw new Error('Some signature fields have invalid coordinates. Please check and adjust the fields.');
+      }
 
       // Store session data for potential retries
       sessionStorage.setItem(
@@ -316,10 +345,19 @@ function ReviewContent() {
         })
       );
 
-      console.log(
-        '✅ Using overlay signature fields:',
-        signatureFieldsForAPI
-      );
+      // Log the exact coordinates being sent to the API
+      console.log('✅ Sending signature fields with coordinates:', {
+        totalFields: signatureFieldsForAPI.length,
+        fields: signatureFieldsForAPI.map((field) => ({
+          id: field.id,
+          type: field.type,
+          signatoryIndex: field.signatoryIndex,
+          pageNumber: field.pageNumber,
+          position: `(${field.x.toFixed(2)}, ${field.y.toFixed(2)})`,
+          size: `${field.width.toFixed(2)}×${field.height.toFixed(2)}`,
+          label: field.label,
+        })),
+      });
 
       console.log('📨 Sending contract via aggregated rollout API…');
       const rolloutResponse = await fetch('/api/signature/rollout', {

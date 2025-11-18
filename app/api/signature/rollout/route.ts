@@ -51,6 +51,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Log signature fields received from client
+    if (Array.isArray(signatureFields) && signatureFields.length > 0) {
+      console.log('📋 Received signature fields from client:', {
+        totalFields: signatureFields.length,
+        fields: signatureFields.map((field: SignatureField) => ({
+          id: field.id,
+          type: field.type,
+          signatoryIndex: field.signatoryIndex,
+          pageNumber: field.pageNumber,
+          position: `(${field.x}, ${field.y})`,
+          size: `${field.width}×${field.height}`,
+        })),
+      });
+    } else {
+      console.log('⚠️  No signature fields provided, will use default positions');
+    }
+
     const clientId = process.env.SELISE_CLIENT_ID;
     const clientSecret = process.env.SELISE_CLIENT_SECRET;
 
@@ -401,9 +418,11 @@ function buildPrepareAndSendPayload({
   }> = [];
 
   if (Array.isArray(signatureFields) && signatureFields.length > 0) {
+    console.log(`📍 Using ${signatureFields.length} signature fields from client overlay`);
     signatureFields.forEach((field) => {
       const signatory = signatoryMeta[field.signatoryIndex];
       if (!signatory) {
+        console.warn(`⚠️  Signatory at index ${field.signatoryIndex} not found for field ${field.id}`);
         return;
       }
 
@@ -433,6 +452,7 @@ function buildPrepareAndSendPayload({
           ...common,
           SignatureImageFileId: null,
         });
+        console.log(`  ✓ Signature field: ${signatory.name} at (${field.x}, ${field.y}) on page ${pageNumber}`);
       } else if (field.type === 'date') {
         stampPostInfoCoordinates.push({
           ...common,
@@ -443,16 +463,19 @@ function buildPrepareAndSendPayload({
             FontSize: 12,
           },
         });
+        console.log(`  ✓ Date field: ${signatory.name} at (${field.x}, ${field.y}) on page ${pageNumber}`);
       } else if (field.type === 'text') {
         textFieldCoordinates.push({
           ...common,
           Value: signatory.name,
         });
+        console.log(`  ✓ Text field: ${signatory.name} at (${field.x}, ${field.y}) on page ${pageNumber}`);
       }
     });
   }
 
   if (stampCoordinates.length === 0 && signatoryMeta.length > 0) {
+    console.log('⚠️  No signature fields provided, falling back to default positions');
     const defaultPositions = {
       companyRep: {
         signature: { x: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.x, y: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.y, width: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.width, height: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.height },

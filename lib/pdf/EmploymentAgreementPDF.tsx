@@ -670,7 +670,7 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
             const isLastSignature = index === employmentAgreement.signatures.length - 1;
 
             return (
-              <View key={index} style={[styles.signatureBlock, isLastSignature && { marginBottom: 0 }]}>
+              <View key={index} style={[styles.signatureBlock, ...(isLastSignature ? [{ marginBottom: 0 }] : [])]}>
                 <Text style={styles.signaturePartyLabel}>
                   {signature.party === 'employer' ? 'EMPLOYER' : 'EMPLOYEE'}
                 </Text>

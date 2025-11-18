@@ -28,7 +28,7 @@ interface SignatureFieldOverlayProps {
   signatories: Signatory[];
   currentPage: number;
   scale: number;
-  pageRef: React.RefObject<HTMLDivElement> | null;
+  pageRef: React.RefObject<HTMLDivElement | null> | null;
   onFieldsChange: (fields: SignatureField[]) => void;
   selectedField: string | null;
   onSelectField: (fieldId: string | null) => void;

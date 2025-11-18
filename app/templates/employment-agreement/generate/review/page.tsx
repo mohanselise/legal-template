@@ -358,7 +358,6 @@ function ReviewContent() {
   // Initialize signature fields when PDF and document are ready
   useEffect(() => {
     if (numPages && numPages > 0 && signatureFields.length === 0 && generatedDocument && formData) {
-      console.log('Initializing signature fields...', { numPages, hasDocument: !!generatedDocument, hasFormData: !!formData });
       initializeSignatureFields(numPages);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -439,7 +438,6 @@ function ReviewContent() {
       },
     ];
 
-    console.log('Setting default signature fields:', defaultFields);
     setSignatureFields(defaultFields);
     saveSignatureFields(defaultFields, docId);
   };

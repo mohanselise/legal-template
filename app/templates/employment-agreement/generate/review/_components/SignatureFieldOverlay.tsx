@@ -101,6 +101,25 @@ export function SignatureFieldOverlay({
     initialHeight: number;
   } | null>(null);
   const [hoveredField, setHoveredField] = useState<string | null>(null);
+  
+  // Use refs to access latest values in global event handlers
+  const fieldsRef = useRef(fields);
+  const onFieldsChangeRef = useRef(onFieldsChange);
+  const isDraggingRef = useRef(isDragging);
+  const isResizingRef = useRef(isResizing);
+  const selectedFieldRef = useRef(selectedField);
+  const dragStartRef = useRef(dragStart);
+  const resizeStateRef = useRef(resizeState);
+  
+  useEffect(() => {
+    fieldsRef.current = fields;
+    onFieldsChangeRef.current = onFieldsChange;
+    isDraggingRef.current = isDragging;
+    isResizingRef.current = isResizing;
+    selectedFieldRef.current = selectedField;
+    dragStartRef.current = dragStart;
+    resizeStateRef.current = resizeState;
+  }, [fields, onFieldsChange, isDragging, isResizing, selectedField, dragStart, resizeState]);
 
   const handleFieldMouseDown = (fieldId: string, event: React.MouseEvent) => {
     event.stopPropagation();
@@ -211,6 +230,85 @@ export function SignatureFieldOverlay({
     setResizeState(null);
   };
 
+  // Add global mouse event listeners for smooth dragging
+  useEffect(() => {
+    if (!isDragging && !isResizing) return;
+
+    const handleGlobalMouseMove = (event: MouseEvent) => {
+      if (!pageRef.current) return;
+
+      const currentResizeState = resizeStateRef.current;
+      const currentIsResizing = isResizingRef.current;
+      const currentIsDragging = isDraggingRef.current;
+      const currentSelectedField = selectedFieldRef.current;
+      const currentDragStart = dragStartRef.current;
+
+      if (currentIsResizing && currentResizeState) {
+        const rect = pageRef.current.getBoundingClientRect();
+        const deltaXPixels = event.clientX - currentResizeState.startX;
+        const deltaYPixels = event.clientY - currentResizeState.startY;
+        const deltaX = deltaXPixels / scale;
+        const deltaY = deltaYPixels / scale;
+        
+        const field = fieldsRef.current.find((f) => f.id === currentResizeState.fieldId);
+        if (!field) return;
+
+        const minSize = getMinimumDimensions(field.type);
+
+        onFieldsChangeRef.current(
+          fieldsRef.current.map((f) =>
+            f.id === currentResizeState.fieldId
+              ? {
+                  ...f,
+                  width: Math.max(minSize.width, currentResizeState.initialWidth + deltaX),
+                  height: Math.max(minSize.height, currentResizeState.initialHeight + deltaY),
+                }
+              : f
+          )
+        );
+        return;
+      }
+
+      if (currentIsDragging && currentSelectedField && currentDragStart) {
+        const rect = pageRef.current.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        const x = (mouseX - currentDragStart.x) / scale;
+        const y = (mouseY - currentDragStart.y) / scale;
+
+        const field = fieldsRef.current.find((f) => f.id === currentSelectedField);
+        if (!field) return;
+        
+        const maxX = 612 - field.width;
+        const maxY = 792 - field.height;
+
+        onFieldsChangeRef.current(
+          fieldsRef.current.map((f) =>
+            f.id === currentSelectedField
+              ? {
+                  ...f,
+                  x: Math.max(0, Math.min(x, maxX)),
+                  y: Math.max(0, Math.min(y, maxY)),
+                }
+              : f
+          )
+        );
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      handleMouseUp();
+    };
+
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging, isResizing, scale]);
+
   const handleDeleteField = (fieldId: string) => {
     onFieldsChange(fields.filter((f) => f.id !== fieldId));
     if (selectedField === fieldId) {
@@ -221,24 +319,14 @@ export function SignatureFieldOverlay({
   // Filter fields for current page
   const pageFields = fields.filter((f) => f.pageNumber === currentPage);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('SignatureFieldOverlay render:', {
-      totalFields: fields.length,
-      pageFields: pageFields.length,
-      currentPage,
-      fields: fields.map(f => ({ id: f.id, page: f.pageNumber, type: f.type }))
-    });
-  }, [fields, currentPage, pageFields.length]);
-
   if (pageFields.length === 0) {
     return null;
   }
 
   return (
     <div
-      className="absolute inset-0 pointer-events-none"
-      style={{ zIndex: 10 }}
+      className="absolute inset-0"
+      style={{ zIndex: 10, pointerEvents: isDragging || isResizing ? 'auto' : 'none' }}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
@@ -262,10 +350,10 @@ export function SignatureFieldOverlay({
               isSelected ? 'z-50' : isHovered ? 'z-40' : 'z-30'
             }`}
             style={{
-              left: `${(field.x / 612) * (612 * scale)}px`,
-              top: `${(field.y / 792) * (792 * scale)}px`,
-              width: `${(field.width / 612) * (612 * scale)}px`,
-              height: `${(field.height / 792) * (792 * scale)}px`,
+              left: `${field.x * scale}px`,
+              top: `${field.y * scale}px`,
+              width: `${field.width * scale}px`,
+              height: `${field.height * scale}px`,
               overflow: 'visible',
             }}
             onMouseDown={(e) => handleFieldMouseDown(field.id, e)}
@@ -277,31 +365,37 @@ export function SignatureFieldOverlay({
             }}
           >
             <div
-              className="absolute inset-0 rounded-lg border-2 transition-all cursor-move flex items-center justify-center"
+              className={`absolute inset-0 rounded border-2 transition-all flex items-center justify-center ${
+                isDragging ? 'cursor-grabbing' : 'cursor-move'
+              }`}
               style={{
                 borderColor: accentColor,
+                borderStyle: isSelected ? 'solid' : 'dashed',
+                borderWidth: isSelected ? '2px' : '2px',
                 backgroundColor: applyAlpha(
                   accentColor,
-                  isSelected || isHovered ? 0.25 : 0.15
+                  isSelected ? 0.2 : isHovered ? 0.15 : 0.1
                 ),
                 boxShadow: isSelected
-                  ? `0 16px 24px -12px ${applyAlpha(accentColor, 0.55)}`
-                  : `0 10px 24px -18px rgba(15, 23, 42, 0.45)`,
+                  ? `0 4px 12px ${applyAlpha(accentColor, 0.4)}, 0 0 0 2px ${applyAlpha(accentColor, 0.2)}`
+                  : isHovered
+                  ? `0 2px 8px ${applyAlpha(accentColor, 0.3)}`
+                  : 'none',
               }}
             >
-              <div className="flex flex-col items-center justify-center px-3 text-center leading-tight">
+              <div className="flex flex-col items-center justify-center px-2 text-center leading-tight">
                 <span
-                  className="text-[11px] font-semibold tracking-wide uppercase"
+                  className="text-[10px] font-semibold tracking-wide uppercase"
                   style={{ color: accentColor }}
                 >
                   {field.type === 'signature' ? 'Signature' : 'Date'}
                 </span>
-                <span className="text-[11px] text-slate-600">({nameLine})</span>
+                <span className="text-[9px] text-slate-600 mt-0.5">{nameLine}</span>
               </div>
 
-              {(isHovered || isSelected) && (
+              {isSelected && (
                 <div
-                  className="absolute -top-2 -left-2 w-6 h-6 rounded-full border-2 border-white shadow-md flex items-center justify-center"
+                  className="absolute -top-2 -left-2 w-5 h-5 rounded-full border-2 border-white shadow-lg flex items-center justify-center"
                   style={{ backgroundColor: accentColor }}
                 >
                   <Move className="w-3 h-3 text-white" />
@@ -309,34 +403,25 @@ export function SignatureFieldOverlay({
               )}
             </div>
 
-            <div className="absolute left-1/2 top-full -translate-x-1/2 mt-2 text-center pointer-events-none whitespace-nowrap">
-              <div className="text-[11px] font-semibold text-slate-800">{nameLine}</div>
-              <div className="text-[10px] text-slate-500">{secondaryLine}</div>
-            </div>
-
             {isSelected && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteField(field.id);
-                }}
-                className="absolute -top-3 -right-3 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg border-2 border-white"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {isHovered && !isSelected && (
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
-                Click to select • Drag to move
-              </div>
-            )}
-
-            {(isHovered || isSelected) && (
-              <div
-                className="absolute -bottom-2 -right-2 w-4 h-4 bg-white border border-slate-400 rounded cursor-nwse-resize shadow-sm"
-                onMouseDown={(e) => handleResizeMouseDown(field.id, e)}
-              />
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteField(field.id);
+                  }}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg border-2 border-white z-10"
+                  title="Delete field"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+                <div
+                  className="absolute -bottom-1 -right-1 w-4 h-4 bg-white border-2 border-blue-500 rounded cursor-nwse-resize shadow-md z-10"
+                  style={{ borderColor: accentColor }}
+                  onMouseDown={(e) => handleResizeMouseDown(field.id, e)}
+                  title="Resize"
+                />
+              </>
             )}
           </div>
         );

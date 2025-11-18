@@ -226,22 +226,23 @@ const styles = StyleSheet.create({
   // Signatures - DocuSign-style Professional Design
   signatureSection: {
     marginTop: 40,
-    paddingTop: 24,
+    paddingTop: 20,
+    paddingBottom: 0,
     borderTop: '3pt solid #2563eb',
   },
   witnessClause: {
     textAlign: 'center',
     fontFamily: 'Helvetica-Bold',
     fontSize: 10,
-    marginBottom: 24,
+    marginBottom: 20,
     letterSpacing: 1,
     textTransform: 'uppercase',
     color: '#1e293b',
     lineHeight: 1.5,
   },
   signatureBlock: {
-    marginBottom: 24,
-    padding: 14,
+    marginBottom: 20,
+    padding: 12,
     backgroundColor: '#fafbfc',
     border: '1pt solid #e2e8f0',
     borderRadius: 6,
@@ -298,6 +299,64 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#475569',
     marginTop: 4,
+  },
+  signatureFieldsRow: {
+    flexDirection: 'row',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  signatureFieldBox: {
+    flex: 1,
+    minHeight: 50,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderStyle: 'dashed',
+    borderRadius: 4,
+    padding: 8,
+    backgroundColor: '#f8fafc',
+    marginRight: 16,
+  },
+  signatureFieldLabel: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  dateFieldBox: {
+    width: 140,
+    minHeight: 36,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderStyle: 'dashed',
+    borderRadius: 4,
+    padding: 8,
+    backgroundColor: '#f8fafc',
+  },
+  nameFieldBox: {
+    marginTop: 6,
+    minHeight: 28,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderStyle: 'dashed',
+    borderRadius: 4,
+    padding: 5,
+    backgroundColor: '#f8fafc',
+  },
+  nameFieldLabel: {
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  nameFieldValue: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    color: '#0f172a',
+    textTransform: 'uppercase',
   },
   signatureDateRow: {
     flexDirection: 'row',
@@ -606,8 +665,12 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
                 ? 'Authorized Signatory'
                 : 'Employee');
 
+            // Convert full name to uppercase
+            const fullName = displayName.trim().toUpperCase();
+            const isLastSignature = index === employmentAgreement.signatures.length - 1;
+
             return (
-              <View key={index} style={styles.signatureBlock}>
+              <View key={index} style={[styles.signatureBlock, isLastSignature && { marginBottom: 0 }]}>
                 <Text style={styles.signaturePartyLabel}>
                   {signature.party === 'employer' ? 'EMPLOYER' : 'EMPLOYEE'}
                 </Text>
@@ -616,17 +679,30 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
                   {signature.partyName}
                 </Text>
 
-                {/* Name and Title - shown in PDF */}
-                <View style={styles.signatureSummary}>
-                  <Text style={styles.signatureSummaryName}>{displayName}</Text>
-                  {displayRole && (
-                    <Text style={styles.signatureSummaryRole}>
-                      {displayRole}
-                    </Text>
-                  )}
+                {/* Role/Title */}
+                {displayRole && (
+                  <Text style={styles.signatureSummaryRole}>
+                    {displayRole}
+                  </Text>
+                )}
+
+                {/* Signature and Date Fields - Visual placeholders */}
+                <View style={styles.signatureFieldsRow}>
+                  <View style={styles.signatureFieldBox}>
+                    <Text style={styles.signatureFieldLabel}>Signature</Text>
+                  </View>
+                  <View style={styles.dateFieldBox}>
+                    <Text style={styles.signatureFieldLabel}>Date</Text>
+                  </View>
                 </View>
 
-                {/* Signature and Date boxes are NOT rendered - they will be overlays */}
+                {/* Full Name Field - in CAPS */}
+                <View style={styles.nameFieldBox}>
+                  <Text style={styles.nameFieldLabel}>Full Name</Text>
+                  {fullName && (
+                    <Text style={styles.nameFieldValue}>{fullName}</Text>
+                  )}
+                </View>
               </View>
             );
           })}

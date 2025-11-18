@@ -51,33 +51,36 @@ export const SIGNATURE_LAYOUT = {
   MARGIN: 72,
 
   // Signature section positioning (measured from top-left origin)
-  // Updated for compacted layout (reduced margins and padding)
+  // Updated to match visual field boxes in PDF
+  // Signature block: margin 72pt, padding 14pt, so content starts at 86pt
+  // Content width: 612 - 72*2 = 468pt, inside block: 468 - 14*2 = 440pt
+  // Signature field (flex: 1) ≈ 284pt, gap 16pt, date field 140pt
   EMPLOYER: {
     SIGNATURE: {
-      x: 86, // Left margin + signature block padding (72 + 14)
-      y: 560, // Adjusted for compacted signature section
-      width: 240,
-      height: 58,
+      x: 86, // Left margin (72) + signature block padding (14)
+      y: 570, // After party name, role, and signatureFieldsRow marginTop (12)
+      width: 284, // Calculated: 440pt available - 140pt date - 16pt gap
+      height: 50, // minHeight of signatureFieldBox
     },
     DATE: {
-      x: 340, // Positioned to the right of signature field
-      y: 568, // Slightly below signature field top
+      x: 386, // 86 + 284 (signature width) + 16 (gap)
+      y: 578, // Slightly below signature field (8pt offset for alignment)
       width: 140,
-      height: 36,
+      height: 36, // minHeight of dateFieldBox
     },
   },
   EMPLOYEE: {
     SIGNATURE: {
-      x: 86, // Left margin + signature block padding (72 + 14)
-      y: 650, // Positioned below employer signature block
-      width: 240,
-      height: 58,
+      x: 86, // Left margin (72) + signature block padding (14)
+      y: 670, // Positioned below employer block (marginBottom 24 + block height)
+      width: 284, // Same as employer
+      height: 50, // minHeight of signatureFieldBox
     },
     DATE: {
-      x: 340, // Positioned to the right of signature field
-      y: 658, // Slightly below signature field top
+      x: 386, // 86 + 284 (signature width) + 16 (gap)
+      y: 678, // Slightly below signature field (8pt offset for alignment)
       width: 140,
-      height: 36,
+      height: 36, // minHeight of dateFieldBox
     },
   },
 };

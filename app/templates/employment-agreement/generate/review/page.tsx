@@ -266,31 +266,14 @@ function ReviewContent() {
 
   const handleSendToSignature = async () => {
     const documentToSend = editedDocument || generatedDocument;
-    if (!documentToSend) return;
+    if (!documentToSend || !pdfUrl || !formData) {
+      alert('Document or form data is not ready. Please wait for the preview to load.');
+      return;
+    }
 
     setIsPreparingContract(true);
 
     try {
-      // Generate PDF with metadata to get signatories
-      const pdfResponse = await fetch('/api/documents/generate-pdf?metadata=true', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          document: documentToSend,
-          formData,
-        }),
-      });
-
-      if (!pdfResponse.ok) {
-        throw new Error('Failed to generate PDF');
-      }
-
-      const responseData = await pdfResponse.json();
-      
-      if (!responseData.success) {
-        throw new Error('PDF generation failed');
-      }
-
       // Validate that we have signature fields
       if (!signatureFields || signatureFields.length === 0) {
         throw new Error('No signature fields have been placed. Please add signature fields before sending.');
@@ -302,16 +285,16 @@ function ReviewContent() {
       const signatureFieldsForAPI = signatureFields.map((field) => {
         // Ensure pageNumber is valid (convert 1-indexed to 0-indexed)
         const pageNumber = Math.max(0, (field.pageNumber || 1) - 1);
-        
+
         return {
           id: field.id,
           type: field.type, // 'signature' | 'date'
           signatoryIndex: field.signatoryIndex, // 0 = employer, 1 = employee
           pageNumber, // 0-indexed for API
-          x: field.x, // PDF points
-          y: field.y, // PDF points
-          width: field.width, // PDF points
-          height: field.height, // PDF points
+          x: field.x, // PDF points - exact position from overlay
+          y: field.y, // PDF points - exact position from overlay
+          width: field.width, // PDF points - exact size from overlay
+          height: field.height, // PDF points - exact size from overlay
           label: field.label || `${field.type === 'signature' ? 'Signature' : 'Date'}`,
         };
       });
@@ -334,19 +317,46 @@ function ReviewContent() {
         throw new Error('Some signature fields have invalid coordinates. Please check and adjust the fields.');
       }
 
+      // Extract signatories from formData (same logic as PDF generation)
+      const employerName = documentToSend.parties?.employer?.legalName || (formData.companyName as string) || 'Company';
+      const employeeName = documentToSend.parties?.employee?.legalName || (formData.employeeName as string) || 'Employee';
+
+      const signatories = [
+        {
+          party: 'employer' as const,
+          name: (formData.companyRepName as string) || employerName,
+          email: (formData.companyRepEmail as string) || documentToSend.parties?.employer?.email || '',
+          role: (formData.companyRepTitle as string) || 'Authorized Representative',
+          ...((formData.companyRepPhone as string) && { phone: formData.companyRepPhone as string }),
+        },
+        {
+          party: 'employee' as const,
+          name: employeeName,
+          email: (formData.employeeEmail as string) || documentToSend.parties?.employee?.email || '',
+          role: (formData.jobTitle as string) || 'Employee',
+          ...((formData.employeePhone as string) && { phone: formData.employeePhone as string }),
+        },
+      ];
+
+      // Convert blob URL to blob, then to base64 for transmission
+      console.log('📄 Reusing already-generated PDF from preview...');
+      const pdfBlob = await fetch(pdfUrl).then(res => res.blob());
+      const pdfBuffer = await pdfBlob.arrayBuffer();
+      const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
+
       // Store session data for potential retries
       sessionStorage.setItem(
         'signature-last-payload',
         JSON.stringify({
           document: documentToSend,
           formData,
-          signatories: responseData.signatories,
+          signatories,
           signatureFields: signatureFieldsForAPI,
         })
       );
 
       // Log the exact coordinates being sent to the API
-      console.log('✅ Sending signature fields with coordinates:', {
+      console.log('✅ Sending signature fields with exact overlay coordinates:', {
         totalFields: signatureFieldsForAPI.length,
         fields: signatureFieldsForAPI.map((field) => ({
           id: field.id,
@@ -364,9 +374,10 @@ function ReviewContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          pdfBase64, // Send the already-generated PDF
           document: documentToSend,
           formData,
-          signatories: responseData.signatories,
+          signatories,
           signatureFields: signatureFieldsForAPI,
         }),
       });

@@ -43,10 +43,15 @@ export interface SignatoryInfo {
 /**
  * Calculate exact signature field positions based on PDF structure
  * These calculations match the styles in EmploymentAgreementPDF.tsx
+ * 
+ * Positions are calculated from the BOTTOM of the page (792pt) for reliability,
+ * since the signature section is always positioned at the bottom regardless of
+ * the amount of content above it.
  */
 function calculateSignatureFieldPositions() {
   // Page settings
   const PAGE_PADDING = 72; // Page padding on all sides
+  const PAGE_HEIGHT = 792; // US Letter page height
   const CONTENT_WIDTH = 612 - PAGE_PADDING * 2; // 468pt
   
   // Signature section styles
@@ -81,95 +86,73 @@ function calculateSignatureFieldPositions() {
   const ROLE_MARGIN_TOP = 4;
   const ROLE_TOTAL = ROLE_FONT_SIZE + ROLE_MARGIN_TOP; // ~14pt
   
-  // Signature fields row
-  const SIGNATURE_FIELDS_ROW_MARGIN_TOP = 10;
-  
-  // Calculate Y position for employer signature field
-  // Start from page top, add all elements before the signature field
-  const employerSignatureY = 
-    PAGE_PADDING + // Page padding top
-    SIGNATURE_SECTION_MARGIN_TOP + // Section margin
-    SIGNATURE_SECTION_PADDING_TOP + // Section padding
-    WITNESS_CLAUSE_TOTAL + // Witness clause
-    SIGNATURE_BLOCK_PADDING + // Block padding top
-    PARTY_LABEL_TOTAL + // Party label
-    PARTY_NAME_TOTAL + // Party name
-    ROLE_TOTAL + // Role
-    SIGNATURE_FIELDS_ROW_MARGIN_TOP; // Row margin top
-  
-  // Calculate X position (left margin + block padding)
-  const signatureX = PAGE_PADDING + SIGNATURE_BLOCK_PADDING; // 72 + 12 = 84pt
-  
-  // Calculate widths
-  // Available width inside block: CONTENT_WIDTH - SIGNATURE_BLOCK_PADDING * 2 = 468 - 24 = 444pt
-  // Date field width: 140pt
-  // Gap between fields: 16pt (marginRight on signatureFieldBox)
-  // Signature field width: 444 - 140 - 16 = 288pt
-  const availableWidth = CONTENT_WIDTH - SIGNATURE_BLOCK_PADDING * 2; // 444pt
+  // Field dimensions based on manually adjusted positions
   const dateFieldWidth = 140;
-  const fieldGap = 16;
-  const signatureFieldWidth = availableWidth - dateFieldWidth - fieldGap; // 288pt
+  const dateFieldHeight = 36;
   
-  // Date field X position
-  const dateX = signatureX + signatureFieldWidth + fieldGap; // 84 + 288 + 16 = 388pt
+  // Employer signature field (smaller)
+  const employerSignatureFieldWidth = 196;
+  const employerSignatureFieldHeight = 48;
+  const employerSignatureX = 164;
   
-  // Date field Y (aligned with signature field, accounting for height difference)
-  const signatureFieldHeight = 50; // minHeight
-  const dateFieldHeight = 36; // minHeight
-  const dateY = employerSignatureY + (signatureFieldHeight - dateFieldHeight) / 2; // Center align
+  // Employee signature field (larger)
+  const employeeSignatureFieldWidth = 240;
+  const employeeSignatureFieldHeight = 58;
+  const employeeSignatureX = 136;
   
-  // Employee signature Y (below employer block)
-  // Employer block height: signatureFieldHeight + nameFieldBox (minHeight 28 + marginTop 6) + block padding bottom
-  const nameFieldHeight = 28;
-  const nameFieldMarginTop = 6;
-  const signatureFieldsRowMarginBottom = 6;
-  const employerBlockHeight = 
-    SIGNATURE_FIELDS_ROW_MARGIN_TOP +
-    signatureFieldHeight +
-    signatureFieldsRowMarginBottom +
-    nameFieldMarginTop +
-    nameFieldHeight +
-    SIGNATURE_BLOCK_PADDING; // ~100pt
+  // Date field X positions (both align to 387pt)
+  const dateX = 387;
   
-  const employeeSignatureY = 
-    employerSignatureY +
-    employerBlockHeight +
-    SIGNATURE_BLOCK_MARGIN_BOTTOM +
-    SIGNATURE_BLOCK_PADDING + // Next block padding top
-    PARTY_LABEL_TOTAL +
-    PARTY_NAME_TOTAL +
-    ROLE_TOTAL +
-    SIGNATURE_FIELDS_ROW_MARGIN_TOP;
+  // Calculate Y positions from BOTTOM of page (792pt total height)
+  // Based on manually adjusted positions:
+  // - Employee signature Y: 556pt from top = 792 - 556 = 236pt from bottom
+  // - Employee date Y: 575pt from top = 792 - 575 = 217pt from bottom
+  // - Employer signature Y: 301pt from top = 792 - 301 = 491pt from bottom
+  // - Employer date Y: 314pt from top = 792 - 314 = 478pt from bottom
   
-  const employeeDateY = employeeSignatureY + (signatureFieldHeight - dateFieldHeight) / 2;
+  // Employee signature field Y (from bottom)
+  const employeeSignatureYFromBottom = 236; // 792 - 556
+  const employeeSignatureY = PAGE_HEIGHT - employeeSignatureYFromBottom; // 556
+  
+  // Employee date Y (from bottom)
+  const employeeDateYFromBottom = 217; // 792 - 575
+  const employeeDateY = PAGE_HEIGHT - employeeDateYFromBottom; // 575
+  
+  // Employer signature field Y (from bottom)
+  const employerSignatureYFromBottom = 491; // 792 - 301
+  const employerSignatureY = PAGE_HEIGHT - employerSignatureYFromBottom; // 301
+  
+  // Employer date Y (from bottom)
+  const employerDateYFromBottom = 478; // 792 - 314
+  const employerDateY = PAGE_HEIGHT - employerDateYFromBottom; // 314
   
   return {
     EMPLOYER: {
       SIGNATURE: {
-        x: signatureX,
-        y: employerSignatureY,
-        width: signatureFieldWidth,
-        height: signatureFieldHeight,
+        x: employerSignatureX, // 164pt
+        y: employerSignatureY, // 301pt from top (491pt from bottom)
+        width: employerSignatureFieldWidth, // 196pt
+        height: employerSignatureFieldHeight, // 48pt
       },
       DATE: {
-        x: dateX,
-        y: dateY,
-        width: dateFieldWidth,
-        height: dateFieldHeight,
+        x: dateX, // 387pt
+        y: employerDateY, // 314pt from top (478pt from bottom)
+        width: dateFieldWidth, // 140pt
+        height: dateFieldHeight, // 36pt
       },
     },
     EMPLOYEE: {
       SIGNATURE: {
-        x: signatureX,
-        y: employeeSignatureY,
-        width: signatureFieldWidth,
-        height: signatureFieldHeight,
+        x: employeeSignatureX, // 136pt
+        y: employeeSignatureY, // 556pt from top (236pt from bottom)
+        width: employeeSignatureFieldWidth, // 240pt
+        height: employeeSignatureFieldHeight, // 58pt
       },
       DATE: {
-        x: dateX,
-        y: employeeDateY,
-        width: dateFieldWidth,
-        height: dateFieldHeight,
+        x: dateX, // 387pt
+        y: employeeDateY, // 575pt from top (217pt from bottom)
+        width: dateFieldWidth, // 140pt
+        height: dateFieldHeight, // 36pt
       },
     },
   };

@@ -10,7 +10,10 @@
     "test:upload": "tsx scripts/test-upload.ts",
     "test:prepare": "tsx scripts/test-prepare-contract.ts",
     "test:send": "tsx scripts/test-prepare-and-send.ts",
-    "test:rollout": "tsx scripts/test-prepare-rollout.ts"
+    "test:rollout": "tsx scripts/test-prepare-rollout.ts",
+    "test:rollout-debug": "tsx scripts/test-rollout-flow.ts",
+    "test:aggregated": "tsx scripts/test-aggregated-rollout.ts",
+    "test:two-step": "tsx scripts/test-two-step-rollout.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "3.9.1",

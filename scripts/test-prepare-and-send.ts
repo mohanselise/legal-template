@@ -32,14 +32,14 @@ const PREPARE_AND_SEND_API = 'https://selise.app/api/selisign/s1/SeliSign/Extern
 const COMPANY_REP = {
   firstName: 'John',
   lastName: 'Smith',
-  email: 'john.smith@company.com',
+  email: 'mohan@sohanuzzaman.com',
   phone: '+1234567890',
 };
 
 const EMPLOYEE = {
   firstName: 'Jane',
   lastName: 'Doe',
-  email: 'jane.doe@company.com',
+  email: 'mohan.kst.hp@gmail.com',
   phone: '',
 };
 

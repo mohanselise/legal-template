@@ -26,20 +26,26 @@ interface SignatoryInput {
 const IDENTITY_API = 'https://selise.app/api/identity/v100/identity/token';
 const STORAGE_API =
   'https://selise.app/api/storageservice/v100/StorageService/StorageQuery/GetPreSignedUrlForUpload';
-const PREPARE_AND_SEND_API =
-  'https://selise.app/api/selisign/s1/SeliSign/ExternalApp/PrepareAndSendContract';
+const PREPARE_API =
+  'https://selise.app/api/selisign/s1/SeliSign/ExternalApp/PrepareContract';
+const ROLLOUT_API =
+  'https://selise.app/api/selisign/s1/SeliSign/ExternalApp/RolloutContract';
 const GET_EVENTS_API =
   'https://selise.app/api/selisign/s1/SeliSign/ExternalApp/GetEvents';
 
 export async function POST(request: NextRequest) {
   try {
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🚀 Starting aggregated prepare + send workflow');
+    console.log('🚀 Starting Two-Step Signature Workflow');
+    console.log('   Step 1: Prepare Contract (create draft with signatories)');
+    console.log('   Step 2: Wait for preparation_success event');
+    console.log('   Step 3: Rollout Contract (configure signature fields & send invitations)');
+    console.log('   Step 4: Wait for rollout_success event');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     const payload = await request.json();
     const document = payload.document as EmploymentAgreement | undefined;
-    const { formData, signatories, signatureFields } = payload;
+    const { formData, signatories, signatureFields, pdfBase64 } = payload;
 
     if (!document || !formData || !Array.isArray(signatories)) {
       return NextResponse.json(
@@ -53,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Log signature fields received from client
     if (Array.isArray(signatureFields) && signatureFields.length > 0) {
-      console.log('📋 Received signature fields from client:', {
+      console.log('📋 Received signature fields from client with exact overlay coordinates:', {
         totalFields: signatureFields.length,
         fields: signatureFields.map((field: SignatureField) => ({
           id: field.id,
@@ -83,14 +89,21 @@ export async function POST(request: NextRequest) {
     const token = await getAccessToken(clientId, clientSecret);
     console.log('✅ Access token acquired\n');
 
-    // Generate PDF from document + form data
-    console.log('📄 Generating PDF for contract…');
-    const pdfBuffer = await generatePdfBuffer(
-      request,
-      document,
-      formData
-    );
-    console.log(`✅ PDF generated (${pdfBuffer.length} bytes)\n`);
+    // Use provided PDF or generate new one
+    let pdfBuffer: Buffer;
+    if (pdfBase64) {
+      console.log('📄 Using pre-generated PDF from client (no regeneration needed)…');
+      pdfBuffer = Buffer.from(pdfBase64, 'base64');
+      console.log(`✅ PDF received (${pdfBuffer.length} bytes)\n`);
+    } else {
+      console.log('📄 Generating PDF for contract (fallback)…');
+      pdfBuffer = await generatePdfBuffer(
+        request,
+        document,
+        formData
+      );
+      console.log(`✅ PDF generated (${pdfBuffer.length} bytes)\n`);
+    }
 
     // Upload to storage
     console.log('☁️  Uploading PDF to SELISE Storage…');
@@ -101,74 +114,88 @@ export async function POST(request: NextRequest) {
     );
     console.log(`✅ Uploaded to storage as ${fileName} (FileId: ${fileId})\n`);
 
-    // Build Prepare and Send payload
+    // Build prepare payload
     const origin = request.nextUrl.origin;
 
-    const { prepareCommand, sendCommand } = buildPrepareAndSendPayload({
-      fileId,
-      document,
-      signatories,
-      signatureFields,
-      origin,
-    });
+    const { prepareCommand, stampCoordinates, textFieldCoordinates, stampPostInfoCoordinates } =
+      buildPreparePayload({
+        fileId,
+        document,
+        signatories,
+        signatureFields,
+        origin,
+      });
 
     console.log('🧾 PrepareCommand:', JSON.stringify(prepareCommand, null, 2));
-    console.log('🧾 SendCommand:', JSON.stringify(sendCommand, null, 2));
 
-    console.log('\n🚀 Calling PrepareAndSendContract (aggregated rollout)…');
-    const prepareAndSendResponse = await fetch(PREPARE_AND_SEND_API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        PrepareCommand: prepareCommand,
-        SendCommand: sendCommand,
-      }),
-    });
-
-    const prepareAndSendText = await prepareAndSendResponse.clone().text();
-    console.log(
-      '🔍 PrepareAndSend response status:',
-      prepareAndSendResponse.status,
-      prepareAndSendResponse.statusText
-    );
-    console.log(
-      '🔍 PrepareAndSend response body:',
-      prepareAndSendText || '(empty body)'
-    );
-
-    if (!prepareAndSendResponse.ok) {
-      throw new Error(
-        `PrepareAndSend failed: ${prepareAndSendResponse.status} ${prepareAndSendResponse.statusText}\n${prepareAndSendText}`
-      );
-    }
-
-    const prepareAndSendResult = prepareAndSendText
-      ? JSON.parse(prepareAndSendText)
-      : {};
-
-    const documentId =
-      prepareAndSendResult.Result?.DocumentId ||
-      prepareAndSendResult.DocumentId;
-    const trackingId =
-      prepareAndSendResult.Result?.TrackingId ||
-      prepareCommand.TrackingId;
-
-    if (!documentId) {
-      throw new Error(
-        `PrepareAndSend succeeded but no DocumentId in response: ${prepareAndSendText}`
-      );
-    }
-
-    console.log('✅ Aggregated rollout completed successfully');
+    // Step 1: Prepare Contract
+    console.log('\n🚀 Step 1: Calling PrepareContract API…');
+    const documentId = await prepareContract(token, prepareCommand);
+    console.log(`✅ Contract prepared successfully`);
     console.log(`   DocumentId: ${documentId}`);
-    console.log(`   TrackingId: ${trackingId}`);
+    console.log(`   TrackingId: ${prepareCommand.TrackingId}`);
 
-    console.log('\n📊 Fetching document events to confirm rollout…');
-    const events = await getDocumentEvents(token, documentId);
-    console.log('📦 GetEvents response:', JSON.stringify(events, null, 2));
+    // Step 2: Wait for preparation_success event
+    console.log('\n⏳ Step 2: Waiting for preparation_success event…');
+    const prepared = await waitForPreparationSuccess(token, documentId);
+    if (!prepared) {
+      throw new Error('Contract preparation failed or timed out');
+    }
+    console.log('✅ Preparation confirmed by API events');
+
+    // Step 3: Rollout Contract with signature field coordinates
+    console.log('\n🚀 Step 3: Calling RolloutContract API…');
+    console.log('📋 Rollout payload:', JSON.stringify({
+      StampCoordinates: stampCoordinates,
+      TextFieldCoordinates: textFieldCoordinates,
+      StampPostInfoCoordinates: stampPostInfoCoordinates,
+    }, null, 2));
+
+    await rolloutContract(token, documentId, {
+      stampCoordinates,
+      textFieldCoordinates,
+      stampPostInfoCoordinates,
+    });
+    console.log('✅ Rollout API call completed');
+
+    const trackingId = prepareCommand.TrackingId;
+
+    // Step 4: Wait for rollout_success event
+    console.log('\n⏳ Step 4: Waiting for rollout_success event…');
+    const events = await waitForRolloutSuccess(token, documentId);
+    console.log('📦 Final events:', JSON.stringify(events, null, 2));
+
+    // Check if rollout actually succeeded
+    if (Array.isArray(events)) {
+      const rolloutEvent = events.find(
+        (e: any) => e.Status === 'rollout_success' || e.Status === 'rollout_failed'
+      );
+
+      if (rolloutEvent?.Status === 'rollout_failed') {
+        console.error('❌ Rollout failed:', rolloutEvent);
+        return NextResponse.json(
+          {
+            error: 'Contract was prepared but rollout failed',
+            details: 'The document was created but invitation emails were not sent.',
+            documentId,
+            trackingId,
+            events,
+          },
+          { status: 500 }
+        );
+      }
+
+      if (rolloutEvent?.Status === 'rollout_success') {
+        console.log('✅ Rollout confirmed by API events');
+      } else {
+        console.warn(
+          '⚠️  No rollout event detected after polling. Document may still be processing.'
+        );
+        console.warn(
+          '   Check SELISE portal: https://selise.app/e-signature/contracts/'
+        );
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -299,7 +326,7 @@ async function uploadPdfToStorage(
   return { fileId: FileId as string, fileName };
 }
 
-function buildPrepareAndSendPayload({
+function buildPreparePayload({
   fileId,
   document,
   signatories,
@@ -545,18 +572,159 @@ function buildPrepareAndSendPayload({
     RedirectUrl: `${origin}/templates/employment-agreement`,
   };
 
-  const sendCommand = {
-    StampCoordinates: stampCoordinates,
-    TextFieldCoordinates: textFieldCoordinates,
-    StampPostInfoCoordinates: stampPostInfoCoordinates,
+  return {
+    prepareCommand,
+    stampCoordinates,
+    textFieldCoordinates,
+    stampPostInfoCoordinates,
   };
-
-  return { prepareCommand, sendCommand };
 }
 
-async function getDocumentEvents(accessToken: string, documentId: string) {
-  const maxAttempts = 5;
-  const delayMs = 3000;
+/**
+ * Step 1: Prepare contract with signatories
+ */
+async function prepareContract(
+  accessToken: string,
+  prepareCommand: any
+): Promise<string> {
+  const response = await fetch(PREPARE_API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(prepareCommand),
+  });
+
+  const prepareResponseText = await response.clone().text();
+  console.log('🔍 PrepareContract response status:', response.status, response.statusText);
+  console.log('🔍 PrepareContract response body:', prepareResponseText || '(empty body)');
+
+  if (!response.ok) {
+    throw new Error(
+      `PrepareContract failed: ${response.status} ${response.statusText}\n${prepareResponseText}`
+    );
+  }
+
+  const result = JSON.parse(prepareResponseText);
+
+  // The API returns DocumentId nested in Result object
+  const documentId = result.Result?.DocumentId || result.DocumentId;
+
+  if (!documentId) {
+    throw new Error(`No DocumentId in PrepareContract response: ${prepareResponseText}`);
+  }
+
+  // Validate DocumentId format (should be a valid GUID)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(documentId)) {
+    throw new Error(`Invalid DocumentId format: ${documentId}`);
+  }
+
+  return documentId;
+}
+
+/**
+ * Step 2: Wait for preparation_success event
+ */
+async function waitForPreparationSuccess(
+  accessToken: string,
+  documentId: string
+): Promise<boolean> {
+  const maxAttempts = 10;
+  const delayMs = 2000; // 2 seconds
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const response = await fetch(GET_EVENTS_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        DocumentId: documentId,
+        Type: 'DocumentStatus',
+        Status: 'preparation_success',
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️  GetEvents check failed (attempt ${attempt}/${maxAttempts}):`, response.status);
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        continue;
+      }
+      return false;
+    }
+
+    const events = await response.json();
+
+    if (Array.isArray(events) && events.length > 0) {
+      const prepSuccessEvent = events.find(
+        (e: { Status?: string; Success?: boolean }) =>
+          e.Status === 'preparation_success' && e.Success === true
+      );
+
+      if (prepSuccessEvent) {
+        console.log(`   ✓ Found preparation_success event (attempt ${attempt})`);
+        return true;
+      }
+    }
+
+    if (attempt < maxAttempts) {
+      console.log(`   ⌛ Waiting for preparation_success (attempt ${attempt}/${maxAttempts})...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Step 3: Rollout contract with signature field coordinates
+ */
+async function rolloutContract(
+  accessToken: string,
+  documentId: string,
+  coordinates: {
+    stampCoordinates: any[];
+    textFieldCoordinates: any[];
+    stampPostInfoCoordinates: any[];
+  }
+): Promise<void> {
+  const response = await fetch(ROLLOUT_API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      DocumentId: documentId,
+      StampCoordinates: coordinates.stampCoordinates,
+      TextFieldCoordinates: coordinates.textFieldCoordinates,
+      StampPostInfoCoordinates: coordinates.stampPostInfoCoordinates,
+    }),
+  });
+
+  const rolloutResponseText = await response.clone().text();
+  console.log('🔍 RolloutContract response status:', response.status, response.statusText);
+  console.log('🔍 RolloutContract response body:', rolloutResponseText || '(empty body)');
+
+  if (!response.ok) {
+    throw new Error(
+      `RolloutContract failed: ${response.status} ${response.statusText}\n${rolloutResponseText}`
+    );
+  }
+
+  console.log('✅ RolloutContract succeeded');
+}
+
+/**
+ * Step 4: Wait for rollout_success event
+ */
+async function waitForRolloutSuccess(accessToken: string, documentId: string) {
+  const maxAttempts = 10; // Poll for up to 50 seconds
+  const delayMs = 5000; // 5 second delay between attempts
   let lastParsed: unknown = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -588,9 +756,26 @@ async function getDocumentEvents(accessToken: string, documentId: string) {
     const parsed = text ? JSON.parse(text) : null;
     lastParsed = parsed;
 
-    if (Array.isArray(parsed) && parsed.length === 0 && attempt < maxAttempts) {
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-      continue;
+    // Check if we have rollout_success or rollout_failed event
+    if (Array.isArray(parsed)) {
+      const hasRolloutEvent = parsed.some(
+        (event: any) =>
+          event.Status === 'rollout_success' || event.Status === 'rollout_failed'
+      );
+
+      if (hasRolloutEvent) {
+        console.log('✅ Rollout event detected, stopping poll');
+        return parsed;
+      }
+
+      // If no rollout event yet, keep polling
+      if (attempt < maxAttempts) {
+        console.log(
+          `⏳ No rollout event yet (${parsed.length} events), waiting ${delayMs}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        continue;
+      }
     }
 
     return parsed;

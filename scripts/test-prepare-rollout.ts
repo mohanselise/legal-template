@@ -25,6 +25,7 @@ const IDENTITY_API = 'https://selise.app/api/identity/v100/identity/token';
 const STORAGE_API = 'https://selise.app/api/storageservice/v100/StorageService/StorageQuery/GetPreSignedUrlForUpload';
 const GET_FILE_API = 'https://selise.app/api/storageservice/v100/StorageService/StorageQuery/GetFile';
 const PREPARE_API = 'https://selise.app/api/selisign/s1/SeliSign/ExternalApp/PrepareContract';
+const ROLLOUT_API = 'https://selise.app/api/selisign/s1/SeliSign/ExternalApp/RolloutContract';
 const GET_EVENTS_API = 'https://selise.app/api/selisign/s1/SeliSign/ExternalApp/GetEvents';
 
 // Test signatories (you can change these)
@@ -57,7 +58,7 @@ async function main() {
   console.log('   Document: test-pdf.pdf');
   console.log(`   Company Rep: ${COMPANY_REP.firstName} ${COMPANY_REP.lastName} <${COMPANY_REP.email}>`);
   console.log(`   Employee: ${EMPLOYEE.firstName} ${EMPLOYEE.lastName} <${EMPLOYEE.email}>`);
-  console.log('   Workflow: Prepare → Get PDF Preview URL (NO SEND)');
+  console.log('   Workflow: Prepare → Wait → Rollout → Wait → Verify');
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   try {
@@ -413,6 +414,204 @@ async function waitForPreparationSuccess(
   }
 
   return false;
+}
+
+/**
+ * Rollout contract with signature field coordinates
+ */
+async function rolloutContract(
+  accessToken: string,
+  documentId: string,
+  fileId: string
+): Promise<void> {
+  // Default signature field positions (same as in route.ts)
+  const stampCoordinates = [
+    {
+      FileId: fileId,
+      Width: 180,
+      Height: 60,
+      PageNumber: 0, // First page
+      X: 72,
+      Y: 650,
+      SignatoryEmail: COMPANY_REP.email,
+      SignatureImageFileId: null,
+      CoordinateId: crypto.randomUUID(),
+      SignatoryGroupId: null,
+      Order: 1,
+      SignatoryId: null,
+      SignatoryName: `${COMPANY_REP.firstName} ${COMPANY_REP.lastName}`,
+    },
+    {
+      FileId: fileId,
+      Width: 180,
+      Height: 60,
+      PageNumber: 0,
+      X: 72,
+      Y: 500,
+      SignatoryEmail: EMPLOYEE.email,
+      SignatureImageFileId: null,
+      CoordinateId: crypto.randomUUID(),
+      SignatoryGroupId: null,
+      Order: 2,
+      SignatoryId: null,
+      SignatoryName: `${EMPLOYEE.firstName} ${EMPLOYEE.lastName}`,
+    },
+  ];
+
+  const stampPostInfoCoordinates = [
+    {
+      FileId: fileId,
+      Width: 120,
+      Height: 25,
+      PageNumber: 0,
+      X: 300,
+      Y: 650,
+      EntityName: 'AuditLog',
+      PropertyName: '{StampTime}',
+      SignatoryEmail: COMPANY_REP.email,
+      CoordinateId: crypto.randomUUID(),
+      SignatoryGroupId: null,
+      Order: 1,
+      SignatoryId: null,
+      FontDetails: {
+        FontName: 'Arial',
+        FontSize: 12,
+      },
+    },
+    {
+      FileId: fileId,
+      Width: 120,
+      Height: 25,
+      PageNumber: 0,
+      X: 300,
+      Y: 500,
+      EntityName: 'AuditLog',
+      PropertyName: '{StampTime}',
+      SignatoryEmail: EMPLOYEE.email,
+      CoordinateId: crypto.randomUUID(),
+      SignatoryGroupId: null,
+      Order: 2,
+      SignatoryId: null,
+      FontDetails: {
+        FontName: 'Arial',
+        FontSize: 12,
+      },
+    },
+  ];
+
+  const response = await fetch(ROLLOUT_API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      DocumentId: documentId,
+      StampCoordinates: stampCoordinates,
+      TextFieldCoordinates: [],
+      StampPostInfoCoordinates: stampPostInfoCoordinates,
+    }),
+  });
+
+  const rolloutResponseText = await response.clone().text();
+  console.log('🔍 RolloutContract response status:', response.status, response.statusText);
+  console.log('🔍 RolloutContract response body:', rolloutResponseText || '(empty body)');
+
+  if (!response.ok) {
+    throw new Error(
+      `RolloutContract failed: ${response.status} ${response.statusText}\n${rolloutResponseText}`
+    );
+  }
+}
+
+/**
+ * Wait for rollout_success event
+ */
+async function waitForRolloutSuccess(
+  accessToken: string,
+  documentId: string
+): Promise<boolean> {
+  const maxAttempts = 10;
+  const delayMs = 5000; // 5 seconds
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const response = await fetch(GET_EVENTS_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        DocumentId: documentId,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️  GetEvents check failed (attempt ${attempt}/${maxAttempts}):`, response.status);
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        continue;
+      }
+      return false;
+    }
+
+    const events = await response.json();
+    console.log(`🔍 GetEvents attempt ${attempt}/${maxAttempts}:`, JSON.stringify(events, null, 2));
+
+    if (Array.isArray(events) && events.length > 0) {
+      const rolloutEvent = events.find(
+        (e: { Status?: string; Success?: boolean }) =>
+          e.Status === 'rollout_success' && e.Success === true
+      );
+
+      if (rolloutEvent) {
+        console.log(`   ✓ Found rollout_success event (attempt ${attempt})`);
+        return true;
+      }
+
+      // Check for rollout_failed
+      const failedEvent = events.find(
+        (e: { Status?: string }) => e.Status === 'rollout_failed'
+      );
+      if (failedEvent) {
+        console.error('   ❌ Found rollout_failed event:', failedEvent);
+        return false;
+      }
+    }
+
+    if (attempt < maxAttempts) {
+      console.log(`   ⌛ Waiting for rollout_success (attempt ${attempt}/${maxAttempts})...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Get ALL events without any filters (for debugging)
+ */
+async function getAllEvents(accessToken: string, documentId: string): Promise<any> {
+  const response = await fetch(GET_EVENTS_API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      DocumentId: documentId,
+    }),
+  });
+
+  const eventsText = await response.clone().text();
+  console.log('🔍 GetAllEvents response status:', response.status, response.statusText);
+
+  if (!response.ok) {
+    console.error('Failed to get events:', eventsText);
+    return null;
+  }
+
+  return JSON.parse(eventsText);
 }
 
 // Run the test

@@ -357,8 +357,27 @@ function ReviewContent() {
 
   // Initialize signature fields when PDF and document are ready
   useEffect(() => {
-    if (numPages && numPages > 0 && signatureFields.length === 0 && generatedDocument && formData) {
-      initializeSignatureFields(numPages);
+    if (numPages && numPages > 0 && generatedDocument && formData) {
+      if (signatureFields.length === 0) {
+        console.log('Initializing signature fields for', numPages, 'pages');
+        initializeSignatureFields(numPages);
+      } else {
+        // Update page numbers if they don't match (e.g., if PDF page count changed)
+        const lastPage = numPages;
+        const needsUpdate = signatureFields.some(f => f.pageNumber !== lastPage);
+        if (needsUpdate) {
+          console.log('Updating signature field page numbers to', lastPage);
+          const updatedFields = signatureFields.map(f => ({
+            ...f,
+            pageNumber: lastPage
+          }));
+          setSignatureFields(updatedFields);
+          if (generatedDocument) {
+            const docId = generatedDocument.metadata?.generatedAt || Date.now().toString();
+            saveSignatureFields(updatedFields, docId);
+          }
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numPages, generatedDocument, formData]);
@@ -438,6 +457,7 @@ function ReviewContent() {
       },
     ];
 
+    console.log('Setting signature fields:', defaultFields);
     setSignatureFields(defaultFields);
     saveSignatureFields(defaultFields, docId);
   };
@@ -764,13 +784,13 @@ function ReviewContent() {
                             </div>
                           }
                         />
-                        {page === pageNumber && pdfUrl && signatureFields.length > 0 && (
+                        {pdfUrl && signatureFields.length > 0 && (
                           <SignatureFieldOverlay
                             fields={signatureFields}
                             signatories={getSignatories()}
-                            currentPage={pageNumber}
+                            currentPage={page}
                             scale={scale}
-                            pageRef={pageRef}
+                            pageRef={page === pageNumber ? pageRef : null}
                             onFieldsChange={handleSignatureFieldsChange}
                             selectedField={selectedField}
                             onSelectField={setSelectedField}
@@ -778,6 +798,11 @@ function ReviewContent() {
                             selectedFieldType={selectedFieldType}
                             onPageClick={handlePageClick}
                           />
+                        )}
+                        {pdfUrl && signatureFields.length === 0 && page === (numPages || 1) && (
+                          <div className="absolute top-4 left-4 bg-yellow-100 border border-yellow-400 text-yellow-800 px-3 py-2 rounded text-xs">
+                            No signature fields initialized. Fields: {signatureFields.length}, Pages: {numPages}
+                          </div>
                         )}
                       </div>
                     ))}

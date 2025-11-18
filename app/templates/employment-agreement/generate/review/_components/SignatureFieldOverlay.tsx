@@ -319,6 +319,11 @@ export function SignatureFieldOverlay({
   // Filter fields for current page
   const pageFields = fields.filter((f) => f.pageNumber === currentPage);
 
+  // Debug logging
+  if (fields.length > 0 && pageFields.length === 0) {
+    console.log(`[SignatureFieldOverlay] Page ${currentPage}: Found ${fields.length} total fields, but none for this page. Field page numbers:`, fields.map(f => f.pageNumber));
+  }
+
   if (pageFields.length === 0) {
     return null;
   }

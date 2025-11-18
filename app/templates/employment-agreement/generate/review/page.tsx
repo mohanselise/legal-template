@@ -12,7 +12,7 @@ import { LegalDisclaimer } from '@/components/legal-disclaimer';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { SignatureFieldOverlay, type SignatureField } from './_components/SignatureFieldOverlay';
-import { SIGNATURE_LAYOUT, SIGNATURE_FIELD_DEFAULTS } from '@/lib/pdf/signature-field-metadata';
+import { SIGNATURE_LAYOUT, SIGNATURE_FIELD_DEFAULTS, type SignatureFieldMetadata } from '@/lib/pdf/signature-field-metadata';
 
 // Dynamically import react-pdf components to avoid SSR issues
 const Document = dynamic(
@@ -51,6 +51,7 @@ function ReviewContent() {
   
   // Signature field overlay state
   const [signatureFields, setSignatureFields] = useState<SignatureField[]>([]);
+  const [apiSignatureFields, setApiSignatureFields] = useState<SignatureFieldMetadata[] | null>(null);
   const [selectedField, setSelectedField] = useState<string | null>(null);
   const [selectedSignatoryIndex, setSelectedSignatoryIndex] = useState(0);
   const [selectedFieldType, setSelectedFieldType] = useState<'signature' | 'date'>('signature');
@@ -190,13 +191,40 @@ function ReviewContent() {
     };
   }, [pdfUrl]);
 
+  // Helper function to convert SignatureFieldMetadata to SignatureField format
+  const convertMetadataToFields = (
+    metadataFields: SignatureFieldMetadata[],
+    actualPageCount: number
+  ): SignatureField[] => {
+    return metadataFields.map((field) => {
+      // Convert party to signatoryIndex (0 = employer, 1 = employee)
+      const signatoryIndex = field.party === 'employer' ? 0 : 1;
+      
+      // Ensure pageNumber matches actual PDF page count
+      const pageNumber = Math.min(field.pageNumber, actualPageCount);
+      
+      return {
+        id: field.id,
+        type: field.type === 'text' ? 'signature' : field.type, // Map 'text' to 'signature'
+        signatoryIndex,
+        pageNumber,
+        x: field.x,
+        y: field.y,
+        width: field.width,
+        height: field.height,
+        label: field.label,
+      };
+    });
+  };
+
   const generatePdfPreview = async (
     document: EmploymentAgreement,
     formDataValue: FormDataState
   ) => {
     setIsLoadingPdf(true);
     try {
-      const response = await fetch('/api/documents/generate-pdf', {
+      // Request PDF with metadata to get signature field coordinates
+      const response = await fetch('/api/documents/generate-pdf?metadata=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -207,9 +235,27 @@ function ReviewContent() {
 
       if (!response.ok) throw new Error('Failed to generate PDF preview');
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      setPdfUrl(url);
+      const responseData = await response.json();
+      
+      if (responseData.success && responseData.pdfBase64) {
+        // Convert base64 to blob
+        const binaryString = atob(responseData.pdfBase64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        setPdfUrl(url);
+        
+        // Store API-provided signature fields for later use
+        if (responseData.signatureFields && Array.isArray(responseData.signatureFields)) {
+          console.log('✅ Received signature fields from API:', responseData.signatureFields);
+          setApiSignatureFields(responseData.signatureFields);
+        }
+      } else {
+        throw new Error('Invalid response format from PDF generation API');
+      }
     } catch (error) {
       console.error('Error generating PDF preview:', error);
       setError('Failed to generate PDF preview. Please try again.');
@@ -353,13 +399,26 @@ function ReviewContent() {
     setNumPages(numPages);
     // Navigate to last page where signature fields are typically placed
     setPageNumber(numPages);
+    
+    // If we have API-provided signature fields, convert and use them now that we know the actual page count
+    if (apiSignatureFields && apiSignatureFields.length > 0 && signatureFields.length === 0) {
+      const convertedFields = convertMetadataToFields(apiSignatureFields, numPages);
+      console.log('✅ Using API-provided signature fields with actual page count:', convertedFields);
+      setSignatureFields(convertedFields);
+      
+      // Save to sessionStorage
+      if (generatedDocument) {
+        const docId = generatedDocument.metadata?.generatedAt || Date.now().toString();
+        saveSignatureFields(convertedFields, docId);
+      }
+    }
   };
 
   // Initialize signature fields when PDF and document are ready
   useEffect(() => {
     if (numPages && numPages > 0 && generatedDocument && formData) {
       if (signatureFields.length === 0) {
-        console.log('Initializing signature fields for', numPages, 'pages');
+        // Initialize fields using priority: saved -> API -> hardcoded
         initializeSignatureFields(numPages);
       } else {
         // Update page numbers if they don't match (e.g., if PDF page count changed)
@@ -380,28 +439,44 @@ function ReviewContent() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [numPages, generatedDocument, formData]);
+  }, [numPages, generatedDocument, formData, apiSignatureFields]);
 
   // Initialize default signature fields
+  // Priority: 1) Saved fields from sessionStorage, 2) API-provided fields, 3) Hardcoded coordinates
   const initializeSignatureFields = (totalPages: number) => {
     if (!generatedDocument || !formData) return;
 
     const docId = generatedDocument.metadata?.generatedAt || Date.now().toString();
     const storageKey = `employment-agreement-signature-fields-${docId}`;
     
-    // Try to load saved fields
+    // Priority 1: Try to load saved fields (user-adjusted positions)
     const savedFields = sessionStorage.getItem(storageKey);
     if (savedFields) {
       try {
         const parsed = JSON.parse(savedFields) as SignatureField[];
-        setSignatureFields(parsed);
+        // Update page numbers to match actual PDF page count
+        const updatedFields = parsed.map(f => ({
+          ...f,
+          pageNumber: Math.min(f.pageNumber, totalPages)
+        }));
+        console.log('✅ Using saved signature fields from sessionStorage:', updatedFields);
+        setSignatureFields(updatedFields);
         return;
       } catch (e) {
         console.error('Failed to parse saved signature fields:', e);
       }
     }
 
-    // Create default fields
+    // Priority 2: Use API-provided fields if available
+    if (apiSignatureFields && apiSignatureFields.length > 0) {
+      const convertedFields = convertMetadataToFields(apiSignatureFields, totalPages);
+      console.log('✅ Using API-provided signature fields:', convertedFields);
+      setSignatureFields(convertedFields);
+      saveSignatureFields(convertedFields, docId);
+      return;
+    }
+
+    // Priority 3: Fall back to hardcoded coordinates
     const lastPage = totalPages;
     const employerName = generatedDocument.parties?.employer?.legalName || (formData.companyName as string) || 'Company';
     const employeeName = generatedDocument.parties?.employee?.legalName || (formData.employeeName as string) || 'Employee';
@@ -457,7 +532,7 @@ function ReviewContent() {
       },
     ];
 
-    console.log('Setting signature fields:', defaultFields);
+    console.log('⚠️ Using hardcoded signature field coordinates (fallback):', defaultFields);
     setSignatureFields(defaultFields);
     saveSignatureFields(defaultFields, docId);
   };

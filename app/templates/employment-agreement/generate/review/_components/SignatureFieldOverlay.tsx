@@ -324,6 +324,21 @@ export function SignatureFieldOverlay({
     console.log(`[SignatureFieldOverlay] Page ${currentPage}: Found ${fields.length} total fields, but none for this page. Field page numbers:`, fields.map(f => f.pageNumber));
   }
 
+  // Debug: Log field positions for current page
+  useEffect(() => {
+    if (pageFields.length > 0 && currentPage === pageFields[0]?.pageNumber) {
+      console.log(`[SignatureFieldOverlay] Rendering ${pageFields.length} fields on page ${currentPage}:`, 
+        pageFields.map(f => ({
+          id: f.id,
+          type: f.type,
+          position: `(${f.x.toFixed(1)}, ${f.y.toFixed(1)})`,
+          size: `${f.width.toFixed(1)}×${f.height.toFixed(1)}`,
+          screenPosition: `(${(f.x * scale).toFixed(1)}px, ${(f.y * scale).toFixed(1)}px)`
+        }))
+      );
+    }
+  }, [pageFields, currentPage, scale]);
+
   if (pageFields.length === 0) {
     return null;
   }

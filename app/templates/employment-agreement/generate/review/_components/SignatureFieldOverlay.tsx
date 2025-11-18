@@ -28,7 +28,7 @@ interface SignatureFieldOverlayProps {
   signatories: Signatory[];
   currentPage: number;
   scale: number;
-  pageRef: React.RefObject<HTMLDivElement>;
+  pageRef: React.RefObject<HTMLDivElement> | null;
   onFieldsChange: (fields: SignatureField[]) => void;
   selectedField: string | null;
   onSelectField: (fieldId: string | null) => void;
@@ -128,7 +128,7 @@ export function SignatureFieldOverlay({
     onSelectField(fieldId);
     setIsDragging(true);
     const field = fields.find((f) => f.id === fieldId);
-    if (field && pageRef.current) {
+    if (field && pageRef && pageRef.current) {
       const rect = pageRef.current.getBoundingClientRect();
       // Calculate offset from mouse position to field top-left corner
       // Field position in screen pixels: field.x * scale, field.y * scale
@@ -163,7 +163,7 @@ export function SignatureFieldOverlay({
   };
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!pageRef.current) return;
+    if (!pageRef || !pageRef.current) return;
 
     if (isResizing && resizeState) {
       // Convert pixel delta to PDF points (divide by scale)
@@ -235,7 +235,7 @@ export function SignatureFieldOverlay({
     if (!isDragging && !isResizing) return;
 
     const handleGlobalMouseMove = (event: MouseEvent) => {
-      if (!pageRef.current) return;
+      if (!pageRef || !pageRef.current) return;
 
       const currentResizeState = resizeStateRef.current;
       const currentIsResizing = isResizingRef.current;

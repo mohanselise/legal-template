@@ -51,30 +51,31 @@ export const SIGNATURE_LAYOUT = {
   MARGIN: 72,
 
   // Signature section positioning (measured from top-left origin)
+  // Updated for compacted layout (reduced margins and padding)
   EMPLOYER: {
     SIGNATURE: {
-      x: 96,
-      y: 588,
+      x: 86, // Left margin + signature block padding (72 + 14)
+      y: 560, // Adjusted for compacted signature section
       width: 240,
       height: 58,
     },
     DATE: {
-      x: 360,
-      y: 596,
+      x: 340, // Positioned to the right of signature field
+      y: 568, // Slightly below signature field top
       width: 140,
       height: 36,
     },
   },
   EMPLOYEE: {
     SIGNATURE: {
-      x: 96,
-      y: 690,
+      x: 86, // Left margin + signature block padding (72 + 14)
+      y: 650, // Positioned below employer signature block
       width: 240,
       height: 58,
     },
     DATE: {
-      x: 360,
-      y: 698,
+      x: 340, // Positioned to the right of signature field
+      y: 658, // Slightly below signature field top
       width: 140,
       height: 36,
     },

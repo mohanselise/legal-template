@@ -31,8 +31,8 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    marginBottom: 48, // More whitespace
-    paddingBottom: 16,
+    marginBottom: 32, // Reduced whitespace
+    paddingBottom: 12,
     borderBottom: '0.5pt solid #e5e7eb', // Subtle border
   },
   badge: {
@@ -58,21 +58,23 @@ const styles = StyleSheet.create({
   effectiveDate: {
     fontSize: 11,
     fontFamily: 'Times-Bold',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   
   // Parties Section
   partiesIntro: {
-    marginBottom: 20,
+    marginBottom: 14,
     textAlign: 'left', // Ragged-right for better readability
   },
   partyBox: {
-    marginBottom: 16,
-    marginLeft: 24,
-    paddingLeft: 16,
+    marginBottom: 12,
+    marginLeft: 20,
+    paddingLeft: 12,
+    paddingRight: 10,
+    paddingTop: 10,
+    paddingBottom: 10,
     borderLeft: '2pt solid #3b82f6', // Softer blue
     backgroundColor: '#f8fafc',
-    padding: 12,
   },
   partyBoxEmployee: {
     borderLeft: '2pt solid #10b981', // Softer green
@@ -108,16 +110,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Helvetica-Bold',
     textAlign: 'center',
-    marginTop: 32,
-    marginBottom: 20,
-    paddingBottom: 8,
+    marginTop: 24,
+    marginBottom: 14,
+    paddingBottom: 6,
     borderBottom: '0.5pt solid #d1d5db',
     letterSpacing: 1,
     textTransform: 'uppercase',
     color: '#374151',
   },
   recitalParagraph: {
-    marginBottom: 16,
+    marginBottom: 10,
     textAlign: 'left', // Ragged-right prevents rivers
     paddingLeft: 0, // No hard indent
   },
@@ -126,10 +128,10 @@ const styles = StyleSheet.create({
   articleHeading: {
     fontSize: 13,
     fontFamily: 'Helvetica-Bold',
-    marginTop: 36, // Extra space for major sections
-    marginBottom: 18,
-    paddingBottom: 10,
-    paddingTop: 6,
+    marginTop: 24, // Reduced space for major sections
+    marginBottom: 12,
+    paddingBottom: 8,
+    paddingTop: 4,
     borderBottom: '1pt solid #3b82f6', // Stronger blue line for articles
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -143,8 +145,8 @@ const styles = StyleSheet.create({
   sectionHeading: {
     fontSize: 11.5,
     fontFamily: 'Helvetica-Bold',
-    marginTop: 24, // More space above for visual separation
-    marginBottom: 12,
+    marginTop: 16, // Reduced space above for visual separation
+    marginBottom: 8,
     color: '#1f2937', // Darker for better contrast
     paddingBottom: 4,
     borderBottom: '0.5pt solid #e5e7eb', // Subtle underline for scanning
@@ -156,14 +158,14 @@ const styles = StyleSheet.create({
 
   // Content Blocks
   paragraph: {
-    marginBottom: 16, // Increased spacing between paragraphs
+    marginBottom: 10, // Reduced spacing between paragraphs
     textAlign: 'left', // Ragged-right for easier skimming
-    lineHeight: 1.8, // Generous line spacing
+    lineHeight: 1.5, // More compact line spacing
   },
   paragraphIndent: {
     // Remove hard indents - use spacing instead
     marginLeft: 0,
-    marginTop: 8, // Visual separation without indent
+    marginTop: 6, // Reduced visual separation without indent
   },
   // First paragraph after heading - no extra space
   paragraphFirst: {
@@ -172,46 +174,46 @@ const styles = StyleSheet.create({
 
   // Definitions - Highlighted for easy reference
   definitionContainer: {
-    marginBottom: 16,
-    padding: 12,
+    marginBottom: 10,
+    padding: 8,
     borderLeft: '3pt solid #3b82f6', // Stronger left border for scanning
     backgroundColor: '#f0f9ff', // Very light blue background
-    marginLeft: 12,
+    marginLeft: 8,
   },
   definitionTerm: {
     fontFamily: 'Helvetica-Bold',
-    marginBottom: 8,
+    marginBottom: 4,
     color: '#1e40af',
     fontSize: 11,
   },
   definitionText: {
     textAlign: 'left', // Ragged-right
-    lineHeight: 1.7,
+    lineHeight: 1.5,
     color: '#374151',
   },
   
   // Lists - Clear hierarchy and spacing
   listItem: {
-    marginBottom: 12, // More space between list items
-    marginLeft: 24, // Less aggressive indent
+    marginBottom: 8, // Reduced space between list items
+    marginLeft: 20, // Less aggressive indent
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
   listNumber: {
-    width: 32,
+    width: 28,
     fontFamily: 'Helvetica-Bold',
     color: '#3b82f6', // Blue numbers for visual cue
-    marginRight: 8,
+    marginRight: 6,
   },
   listContent: {
     flex: 1,
     textAlign: 'left', // Ragged-right for lists
-    lineHeight: 1.7,
+    lineHeight: 1.5,
   },
   subListItem: {
-    marginLeft: 32, // Consistent with main list
-    marginTop: 10,
-    marginBottom: 10,
+    marginLeft: 28, // Consistent with main list
+    marginTop: 6,
+    marginBottom: 6,
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
@@ -223,23 +225,23 @@ const styles = StyleSheet.create({
   
   // Signatures - DocuSign-style Professional Design
   signatureSection: {
-    marginTop: 60,
-    paddingTop: 32,
+    marginTop: 40,
+    paddingTop: 24,
     borderTop: '3pt solid #2563eb',
   },
   witnessClause: {
     textAlign: 'center',
     fontFamily: 'Helvetica-Bold',
     fontSize: 10,
-    marginBottom: 40,
+    marginBottom: 24,
     letterSpacing: 1,
     textTransform: 'uppercase',
     color: '#1e293b',
     lineHeight: 1.5,
   },
   signatureBlock: {
-    marginBottom: 40,
-    padding: 20,
+    marginBottom: 24,
+    padding: 14,
     backgroundColor: '#fafbfc',
     border: '1pt solid #e2e8f0',
     borderRadius: 6,
@@ -257,8 +259,8 @@ const styles = StyleSheet.create({
   signaturePartyName: {
     fontFamily: 'Helvetica-Bold',
     fontSize: 12,
-    marginTop: 10,
-    marginBottom: 18,
+    marginTop: 8,
+    marginBottom: 12,
     color: '#0f172a',
   },
   signatureOverlayBox: {
@@ -284,8 +286,8 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   signatureSummary: {
-    marginTop: 14,
-    marginBottom: 10,
+    marginTop: 10,
+    marginBottom: 8,
   },
   signatureSummaryName: {
     fontFamily: 'Helvetica-Bold',
@@ -475,14 +477,14 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
         </View>
 
         {/* Effective Date */}
-        <View style={{ marginBottom: 16 }}>
+        <View style={{ marginBottom: 12 }}>
           <Text style={styles.effectiveDate}>
             Effective Date: {formatDate(employmentAgreement.metadata.effectiveDate)}
           </Text>
         </View>
 
         {/* Opening Paragraph with Parties */}
-        <View style={{ marginBottom: 24 }}>
+        <View style={{ marginBottom: 18 }}>
           <Text style={styles.partiesIntro}>
             This Employment Agreement (the &ldquo;AGREEMENT&rdquo;) is entered into as of{' '}
             {formatDate(employmentAgreement.metadata.effectiveDate)}, by and between:
@@ -541,7 +543,7 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
 
         {/* Recitals */}
         {employmentAgreement.recitals && employmentAgreement.recitals.length > 0 && (
-          <View style={{ marginBottom: 24 }}>
+          <View style={{ marginBottom: 18 }}>
             <Text style={styles.recitalsHeading}>RECITALS</Text>
             {employmentAgreement.recitals.map((recital, index) => (
               <Text key={index} style={styles.recitalParagraph}>
@@ -553,13 +555,13 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
 
         {/* Articles */}
         {employmentAgreement.articles.map((article, articleIndex) => (
-          <View key={article.number} style={{ marginBottom: 20 }} wrap={false}>
+          <View key={article.number} style={{ marginBottom: 14 }} wrap={true}>
             <Text style={styles.articleHeading}>
               ARTICLE {article.number}. {article.title}
             </Text>
 
             {article.sections.map((section, sectionIndex) => (
-              <View key={sectionIndex} style={{ marginBottom: 12 }}>
+              <View key={sectionIndex} style={{ marginBottom: 8 }}>
                 {section.title && (
                   <Text style={styles.sectionHeading}>
                     {section.number && (

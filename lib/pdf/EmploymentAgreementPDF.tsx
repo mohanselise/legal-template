@@ -387,19 +387,6 @@ const formatDate = (dateString: string) => {
   });
 };
 
-const getFieldDisplayValue = (field: SignatureField) => {
-  const rawValue = typeof field.value === 'string' ? field.value.trim() : '';
-
-  if (!rawValue) {
-    return undefined;
-  }
-
-  if (field.type === 'date') {
-    return formatDate(rawValue);
-  }
-
-  return rawValue;
-};
 
 const ContentBlockRenderer: React.FC<{
   block: ContentBlock;
@@ -594,7 +581,7 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
           </View>
         ))}
 
-        {/* Signature Section - DocuSign-style Layout */}
+        {/* Signature Section - With Party Info, but no signature/date boxes */}
         <View style={styles.signatureSection} wrap={false}>
           <Text style={styles.witnessClause}>
             IN WITNESS WHEREOF, THE PARTIES HAVE EXECUTED THIS AGREEMENT
@@ -602,17 +589,11 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
           </Text>
 
           {employmentAgreement.signatures.map((signature, index) => {
-            const signatureField = signature.fields.find(
-              (field) => field.type === 'signature'
-            );
             const nameField = signature.fields.find(
               (field) => field.type === 'name'
             );
             const titleField = signature.fields.find(
               (field) => field.type === 'title'
-            );
-            const dateFields = signature.fields.filter(
-              (field) => field.type === 'date'
             );
             const displayName =
               (nameField?.value && nameField.value.trim()) ||
@@ -622,22 +603,6 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
               (signature.party === 'employer'
                 ? 'Authorized Signatory'
                 : 'Employee');
-            const colorScheme =
-              signature.party === 'employer'
-                ? {
-                    border: '#2563eb',
-                    background: '#eef2ff',
-                    label: '#1d4ed8',
-                    dateBorder: '#2563eb',
-                    dateBackground: '#eff6ff',
-                  }
-                : {
-                    border: '#047857',
-                    background: '#ecfdf5',
-                    label: '#047857',
-                    dateBorder: '#047857',
-                    dateBackground: '#dcfce7',
-                  };
 
             return (
               <View key={index} style={styles.signatureBlock}>
@@ -649,30 +614,7 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
                   {signature.partyName}
                 </Text>
 
-                {signatureField && (
-                  <View
-                    style={[
-                      styles.signatureOverlayBox,
-                      {
-                        borderColor: colorScheme.border,
-                        backgroundColor: colorScheme.background,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.signatureOverlayLabel,
-                        { color: colorScheme.label },
-                      ]}
-                    >
-                      {signatureField.label}
-                    </Text>
-                    <Text style={styles.signatureOverlayName}>
-                      ({displayName})
-                    </Text>
-                  </View>
-                )}
-
+                {/* Name and Title - shown in PDF */}
                 <View style={styles.signatureSummary}>
                   <Text style={styles.signatureSummaryName}>{displayName}</Text>
                   {displayRole && (
@@ -682,35 +624,7 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
                   )}
                 </View>
 
-                {dateFields.length > 0 && (
-                  <View style={styles.signatureDateRow}>
-                    {dateFields.map((dateField, dateIndex) => (
-                      <View
-                        key={`${signature.party}-date-${dateIndex}`}
-                        style={[
-                          styles.signatureDateBox,
-                          {
-                            borderColor: colorScheme.dateBorder,
-                            backgroundColor: colorScheme.dateBackground,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.signatureDateLabel,
-                            { color: colorScheme.dateBorder },
-                          ]}
-                        >
-                          {dateField.label}
-                        </Text>
-                        <Text style={styles.signatureDatePlaceholder}>
-                          {getFieldDisplayValue(dateField) ||
-                            'Date: _______________'}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
+                {/* Signature and Date boxes are NOT rendered - they will be overlays */}
               </View>
             );
           })}

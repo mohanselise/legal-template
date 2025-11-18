@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Loader2, CheckCircle2, Edit, Download, Send, Sparkles, FileText, ZoomIn, ZoomOut, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { Loader2, CheckCircle2, Edit, Download, Send, Sparkles, FileText, ZoomIn, ZoomOut, PanelRightClose, PanelRightOpen, Signature, Calendar, User, Briefcase, Trash2 } from 'lucide-react';
 import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
 import {
   clearEmploymentAgreementReview,
@@ -11,6 +11,8 @@ import {
 import { LegalDisclaimer } from '@/components/legal-disclaimer';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { SignatureFieldOverlay, type SignatureField } from './_components/SignatureFieldOverlay';
+import { SIGNATURE_LAYOUT, SIGNATURE_FIELD_DEFAULTS } from '@/lib/pdf/signature-field-metadata';
 
 // Dynamically import react-pdf components to avoid SSR issues
 const Document = dynamic(
@@ -45,6 +47,13 @@ function ReviewContent() {
   const [showFloatingCTA, setShowFloatingCTA] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
+  
+  // Signature field overlay state
+  const [signatureFields, setSignatureFields] = useState<SignatureField[]>([]);
+  const [selectedField, setSelectedField] = useState<string | null>(null);
+  const [selectedSignatoryIndex, setSelectedSignatoryIndex] = useState(0);
+  const [selectedFieldType, setSelectedFieldType] = useState<'signature' | 'date'>('signature');
 
   // Configure PDF.js worker on client side only
   useEffect(() => {
@@ -87,12 +96,25 @@ function ReviewContent() {
       setError(null);
       // Generate PDF from the loaded document
       generatePdfPreview(sessionPayload!.document, sessionPayload!.formData);
+      
+      // Try to load saved signature fields
+      const docId = sessionPayload!.document.metadata?.generatedAt || Date.now().toString();
+      const storageKey = `employment-agreement-signature-fields-${docId}`;
+      const savedFields = sessionStorage.getItem(storageKey);
+      if (savedFields) {
+        try {
+          const parsed = JSON.parse(savedFields) as SignatureField[];
+          setSignatureFields(parsed);
+        } catch (e) {
+          console.error('Failed to parse saved signature fields:', e);
+        }
+      }
     }
 
     const docParam = searchParams.get('document');
     const dataParam = searchParams.get('data');
 
-    if (!hasSessionDocument && docParam) {
+        if (!hasSessionDocument && docParam) {
       try {
         const parsedDocument: EmploymentAgreement = JSON.parse(docParam);
         setGeneratedDocument(parsedDocument);
@@ -119,6 +141,19 @@ function ReviewContent() {
         }
         
         generatePdfPreview(parsedDocument, parsedFormData);
+        
+        // Try to load saved signature fields
+        const docId = parsedDocument.metadata?.generatedAt || Date.now().toString();
+        const storageKey = `employment-agreement-signature-fields-${docId}`;
+        const savedFields = sessionStorage.getItem(storageKey);
+        if (savedFields) {
+          try {
+            const parsed = JSON.parse(savedFields) as SignatureField[];
+            setSignatureFields(parsed);
+          } catch (e) {
+            console.error('Failed to parse saved signature fields:', e);
+          }
+        }
       } catch (err) {
         console.error('❌ Failed to parse document JSON:', err);
         setError('Failed to load document. Please try generating again.');
@@ -190,7 +225,7 @@ function ReviewContent() {
     setIsPreparingContract(true);
 
     try {
-      // Generate PDF with metadata
+      // Generate PDF with metadata to get signatories
       const pdfResponse = await fetch('/api/documents/generate-pdf?metadata=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -210,6 +245,20 @@ function ReviewContent() {
         throw new Error('PDF generation failed');
       }
 
+      // Convert overlay fields to signature field metadata format
+      // The overlay fields are already in PDF points, so we can use them directly
+      const signatureFieldsForAPI = signatureFields.map((field) => ({
+        id: field.id,
+        type: field.type,
+        signatoryIndex: field.signatoryIndex,
+        pageNumber: field.pageNumber - 1, // Convert to 0-indexed for API
+        x: field.x,
+        y: field.y,
+        width: field.width,
+        height: field.height,
+        label: field.label,
+      }));
+
       // Store session data for potential retries
       sessionStorage.setItem(
         'signature-last-payload',
@@ -217,13 +266,13 @@ function ReviewContent() {
           document: documentToSend,
           formData,
           signatories: responseData.signatories,
-          signatureFields: responseData.signatureFields,
+          signatureFields: signatureFieldsForAPI,
         })
       );
 
       console.log(
-        '✅ PDF generated with signature field metadata:',
-        responseData.signatureFields
+        '✅ Using overlay signature fields:',
+        signatureFieldsForAPI
       );
 
       console.log('📨 Sending contract via aggregated rollout API…');
@@ -234,7 +283,7 @@ function ReviewContent() {
           document: documentToSend,
           formData,
           signatories: responseData.signatories,
-          signatureFields: responseData.signatureFields,
+          signatureFields: signatureFieldsForAPI,
         }),
       });
 
@@ -302,7 +351,142 @@ function ReviewContent() {
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
-    setPageNumber(1);
+    // Navigate to last page where signature fields are typically placed
+    setPageNumber(numPages);
+  };
+
+  // Initialize signature fields when PDF and document are ready
+  useEffect(() => {
+    if (numPages && numPages > 0 && signatureFields.length === 0 && generatedDocument && formData) {
+      console.log('Initializing signature fields...', { numPages, hasDocument: !!generatedDocument, hasFormData: !!formData });
+      initializeSignatureFields(numPages);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numPages, generatedDocument, formData]);
+
+  // Initialize default signature fields
+  const initializeSignatureFields = (totalPages: number) => {
+    if (!generatedDocument || !formData) return;
+
+    const docId = generatedDocument.metadata?.generatedAt || Date.now().toString();
+    const storageKey = `employment-agreement-signature-fields-${docId}`;
+    
+    // Try to load saved fields
+    const savedFields = sessionStorage.getItem(storageKey);
+    if (savedFields) {
+      try {
+        const parsed = JSON.parse(savedFields) as SignatureField[];
+        setSignatureFields(parsed);
+        return;
+      } catch (e) {
+        console.error('Failed to parse saved signature fields:', e);
+      }
+    }
+
+    // Create default fields
+    const lastPage = totalPages;
+    const employerName = generatedDocument.parties?.employer?.legalName || (formData.companyName as string) || 'Company';
+    const employeeName = generatedDocument.parties?.employee?.legalName || (formData.employeeName as string) || 'Employee';
+    
+    const defaultFields: SignatureField[] = [
+      // Employer signature
+      {
+        id: 'employer-signature',
+        type: 'signature',
+        signatoryIndex: 0,
+        pageNumber: lastPage,
+        x: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.x,
+        y: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.y,
+        width: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.width,
+        height: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.height,
+        label: `${employerName} - Signature`,
+      },
+      // Employer date
+      {
+        id: 'employer-date',
+        type: 'date',
+        signatoryIndex: 0,
+        pageNumber: lastPage,
+        x: SIGNATURE_LAYOUT.EMPLOYER.DATE.x,
+        y: SIGNATURE_LAYOUT.EMPLOYER.DATE.y,
+        width: SIGNATURE_LAYOUT.EMPLOYER.DATE.width,
+        height: SIGNATURE_LAYOUT.EMPLOYER.DATE.height,
+        label: 'Date',
+      },
+      // Employee signature
+      {
+        id: 'employee-signature',
+        type: 'signature',
+        signatoryIndex: 1,
+        pageNumber: lastPage,
+        x: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.x,
+        y: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.y,
+        width: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.width,
+        height: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.height,
+        label: `${employeeName} - Signature`,
+      },
+      // Employee date
+      {
+        id: 'employee-date',
+        type: 'date',
+        signatoryIndex: 1,
+        pageNumber: lastPage,
+        x: SIGNATURE_LAYOUT.EMPLOYEE.DATE.x,
+        y: SIGNATURE_LAYOUT.EMPLOYEE.DATE.y,
+        width: SIGNATURE_LAYOUT.EMPLOYEE.DATE.width,
+        height: SIGNATURE_LAYOUT.EMPLOYEE.DATE.height,
+        label: 'Date',
+      },
+    ];
+
+    console.log('Setting default signature fields:', defaultFields);
+    setSignatureFields(defaultFields);
+    saveSignatureFields(defaultFields, docId);
+  };
+
+  // Save signature fields to sessionStorage
+  const saveSignatureFields = (fields: SignatureField[], docId: string) => {
+    const storageKey = `employment-agreement-signature-fields-${docId}`;
+    sessionStorage.setItem(storageKey, JSON.stringify(fields));
+  };
+
+  // Handle signature fields change
+  const handleSignatureFieldsChange = (fields: SignatureField[]) => {
+    setSignatureFields(fields);
+    if (generatedDocument) {
+      const docId = generatedDocument.metadata?.generatedAt || Date.now().toString();
+      saveSignatureFields(fields, docId);
+    }
+  };
+
+  // Handle page click - just deselect field if clicking on empty space
+  const handlePageClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    // Only deselect if clicking on the page itself (not on a field)
+    if (!selectedField) return;
+    setSelectedField(null);
+  };
+
+  // Get signatories from document
+  const getSignatories = () => {
+    if (!generatedDocument || !formData) return [];
+
+    const employerName = generatedDocument.parties?.employer?.legalName || (formData.companyName as string) || 'Company';
+    const employeeName = generatedDocument.parties?.employee?.legalName || (formData.employeeName as string) || 'Employee';
+
+    return [
+      {
+        name: (formData.companyRepName as string) || employerName,
+        email: (formData.companyRepEmail as string) || generatedDocument.parties?.employer?.email || '',
+        role: (formData.companyRepTitle as string) || 'Authorized Representative',
+        color: '#0066B2', // SELISE Blue
+      },
+      {
+        name: employeeName,
+        email: (formData.employeeEmail as string) || generatedDocument.parties?.employee?.email || '',
+        role: (formData.jobTitle as string) || 'Employee',
+        color: '#2A4D14', // Poly Green
+      },
+    ];
   };
 
   const handleZoomIn = () => {
@@ -459,51 +643,11 @@ function ReviewContent() {
               </div>
             </div>
             
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleDownloadPdf}
-                className="flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all group"
-              >
-                <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
-                Download
-              </button>
-              <button
-                onClick={handleSendToSignature}
-                disabled={isPreparingContract}
-                className="flex items-center gap-2 bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] text-white px-5 py-2 rounded-lg font-semibold text-sm hover:shadow-lg hover:shadow-[hsl(var(--selise-blue))]/25 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Send className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                Send for Signature
-              </button>
-            </div>
+            {/* Header info only - buttons moved to sidebar */}
           </div>
         </div>
       </header>
 
-      {/* Floating CTA Button - Shows when header is out of view */}
-      {showFloatingCTA && !isPreparingContract && (
-        <>
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] animate-slide-up">
-            <button
-              onClick={handleSendToSignature}
-              className="flex items-center gap-2 bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] text-white px-6 py-3.5 rounded-full font-semibold text-sm shadow-2xl hover:shadow-[hsl(var(--selise-blue))]/40 hover:scale-105 transition-all group"
-            >
-              <Send className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
-              Send for Signature
-            </button>
-          </div>
-          <div className="fixed bottom-8 right-8 z-[60] animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            <button
-              onClick={handleDownloadPdf}
-              className="flex items-center gap-2 bg-white text-gray-700 border-2 border-gray-300 px-5 py-3 rounded-full font-semibold text-sm shadow-xl hover:shadow-2xl hover:scale-105 hover:border-gray-400 transition-all group"
-            >
-              <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
-              Download
-            </button>
-          </div>
-        </>
-      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex">
@@ -603,7 +747,8 @@ function ReviewContent() {
                     {numPages && Array.from({ length: numPages }, (_, i) => i + 1).map((page) => (
                       <div
                         key={page}
-                        className="bg-white shadow-lg mx-auto"
+                        ref={page === pageNumber ? pageRef : null}
+                        className="bg-white shadow-lg mx-auto relative"
                         style={{
                           width: 612 * scale,
                           minHeight: 792 * scale,
@@ -621,6 +766,21 @@ function ReviewContent() {
                             </div>
                           }
                         />
+                        {page === pageNumber && pdfUrl && signatureFields.length > 0 && (
+                          <SignatureFieldOverlay
+                            fields={signatureFields}
+                            signatories={getSignatories()}
+                            currentPage={pageNumber}
+                            scale={scale}
+                            pageRef={pageRef}
+                            onFieldsChange={handleSignatureFieldsChange}
+                            selectedField={selectedField}
+                            onSelectField={setSelectedField}
+                            selectedSignatoryIndex={selectedSignatoryIndex}
+                            selectedFieldType={selectedFieldType}
+                            onPageClick={handlePageClick}
+                          />
+                        )}
                       </div>
                     ))}
                   </div>
@@ -636,11 +796,30 @@ function ReviewContent() {
 
         {/* Sidebar */}
         {sidebarOpen && (
-          <aside className="w-80 border-l border-gray-200 bg-white overflow-y-auto">
-            <div className="p-6 space-y-6">
+          <aside className="w-80 border-l border-gray-200 bg-white flex flex-col h-screen sticky top-0">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Signature Field Controls */}
+              <div>
+                <h3 className="font-semibold text-gray-900 text-sm mb-3">
+                  Signature Fields
+                </h3>
+                
+                {/* Instructions */}
+                <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg mb-4">
+                  <p className="text-[10px] text-blue-900 leading-relaxed">
+                    Fields are automatically placed. <strong>Drag fields to reposition</strong>, resize by dragging the corner.
+                  </p>
+                </div>
+
+                {/* Field Count */}
+                <div className="text-xs text-gray-600 mb-4">
+                  <strong className="text-gray-900">{signatureFields.length}</strong> field{signatureFields.length !== 1 ? 's' : ''} placed
+                </div>
+              </div>
+
               {/* Document Details */}
               {formData && (
-                <div>
+                <div className="border-t border-gray-200 pt-6">
                   <h3 className="font-semibold text-gray-900 text-sm mb-3">
                     Document Details
                   </h3>
@@ -672,6 +851,25 @@ function ReviewContent() {
               <div className="border-t border-gray-200 pt-6">
                 <LegalDisclaimer variant="compact" />
               </div>
+            </div>
+            
+            {/* Fixed Action Buttons at Bottom */}
+            <div className="border-t border-gray-200 p-6 space-y-3 bg-white">
+              <button
+                onClick={handleDownloadPdf}
+                className="w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all group"
+              >
+                <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+                Download PDF
+              </button>
+              <button
+                onClick={handleSendToSignature}
+                disabled={isPreparingContract}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] text-white px-4 py-2.5 rounded-lg font-semibold text-sm hover:shadow-lg hover:shadow-[hsl(var(--selise-blue))]/25 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                Send for Signature
+              </button>
             </div>
           </aside>
         )}

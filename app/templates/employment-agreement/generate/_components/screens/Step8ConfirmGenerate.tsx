@@ -26,19 +26,26 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
 
   const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false);
   const [acknowledgeAi, setAcknowledgeAi] = useState(false);
-  const [isHumanVerified, setIsHumanVerified] = useState(false);
-  const [verificationToken, setVerificationToken] = useState<string | null>(null);
+  const previousHashRef = useRef<string | null>(null);
 
   const formSnapshotHash = useMemo(
     () => computeSnapshotHash(formData),
     [computeSnapshotHash, formData]
   );
 
+  // Only reset checkboxes when form data actually changes (not on every render)
+  // This prevents checkboxes from resetting while user is checking them
   useEffect(() => {
-    setAcceptedDisclaimer(false);
-    setAcknowledgeAi(false);
-    setIsHumanVerified(false);
-    setVerificationToken(null);
+    const previousHash = previousHashRef.current;
+    
+    // Only reset if hash changed from previous value (form data actually changed)
+    if (previousHash !== null && formSnapshotHash !== previousHash) {
+      setAcceptedDisclaimer(false);
+      setAcknowledgeAi(false);
+    }
+    
+    // Update ref to track current hash
+    previousHashRef.current = formSnapshotHash;
   }, [formSnapshotHash]);
 
   const backgroundMatches = backgroundGeneration.snapshotHash === formSnapshotHash;
@@ -56,7 +63,6 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
   const pendingActions: string[] = [];
   if (!acceptedDisclaimer) pendingActions.push('Accept legal disclaimer');
   if (!acknowledgeAi) pendingActions.push('Confirm AI review');
-  if (!isHumanVerified) pendingActions.push('Verify you are human');
   const showPendingActions = pendingActions.length > 0;
 
   // REMOVED auto-prefetch logic to prevent double API calls
@@ -99,16 +105,6 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
     return null;
   }, [backgroundReady, backgroundGeneration.result, backgroundPending, backgroundErrored, backgroundStale]);
 
-  const handleHumanVerification = () => {
-    setIsHumanVerified(true);
-    setVerificationToken('placeholder-turnstile-token');
-  };
-
-  const resetHumanVerification = () => {
-    setIsHumanVerified(false);
-    setVerificationToken(null);
-  };
-
   const navigateWithResult = (result: BackgroundGenerationResult) => {
     const persisted = saveEmploymentAgreementReview({
       document: result.document,
@@ -129,7 +125,7 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
   };
 
   const handleGenerate = async () => {
-    if (!acceptedDisclaimer || !acknowledgeAi || !verificationToken) {
+    if (!acceptedDisclaimer || !acknowledgeAi) {
       return;
     }
 
@@ -289,51 +285,10 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
         </label>
       </div>
 
-      <div className="rounded-xl border border-dashed border-[hsl(var(--brand-border))] bg-white p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm font-medium text-[hsl(var(--fg))]">Human verification</p>
-            <p className="text-xs text-[hsl(var(--brand-muted))]">
-              Cloudflare Turnstile will live here to confirm you&apos;re a person.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {isHumanVerified ? (
-              <>
-                <div className="flex items-center gap-2 text-sm text-emerald-600">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Verified
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={resetHumanVerification}
-                >
-                  Reset
-                </Button>
-              </>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleHumanVerification}
-              >
-                Verify I am human (placeholder)
-              </Button>
-            )}
-          </div>
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          TODO: swap this placeholder for the Cloudflare Turnstile widget.
-        </p>
-      </div>
-
       <div className="pt-2">
         <Button
           onClick={handleGenerate}
-          disabled={!acceptedDisclaimer || !acknowledgeAi || !verificationToken}
+          disabled={!acceptedDisclaimer || !acknowledgeAi}
           className="w-full py-6 text-lg font-semibold"
           size="lg"
         >

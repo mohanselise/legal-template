@@ -237,7 +237,11 @@ export function Step4Compensation() {
             <SmartInput
               label="Base salary"
               name="salaryAmount"
-              type="number"
+              type={
+                formData.salaryAmount === '[TO BE DETERMINED]' || formData.salaryAmount === '[OMITTED]'
+                  ? 'text'
+                  : 'number'
+              }
               value={formData.salaryAmount || ''}
               onChange={(value) => updateFormData({ salaryAmount: value })}
               placeholder="120000"

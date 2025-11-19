@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { TurnstileReverifyDialog } from '@/components/turnstile-reverify-dialog';
 import { EmploymentAgreementFormData } from '../schema';
 import {
   EnrichmentState,
@@ -98,7 +99,7 @@ interface SmartFormContextType {
 const SmartFormContext = createContext<SmartFormContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'employment-agreement-smart-flow-v1';
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 8;
 const BACKGROUND_DEFAULT_STATE: BackgroundGenerationState = { status: 'idle' };
 
 function sortObject<T>(value: T): T {
@@ -184,6 +185,8 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
   );
   const [marketStandardsInputHash, setMarketStandardsInputHash] = useState<string | undefined>();
   const [hasGeneratedStandards, setHasGeneratedStandards] = useState(false);
+  const [showReverifyDialog, setShowReverifyDialog] = useState(false);
+  const [pendingGeneration, setPendingGeneration] = useState<(() => Promise<BackgroundGenerationResult | null>) | null>(null);
 
   const backgroundControllerRef = useRef<AbortController | null>(null);
   const backgroundStateRef = useRef<BackgroundGenerationState>(BACKGROUND_DEFAULT_STATE);
@@ -448,7 +451,16 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
 
     const runGeneration = async (): Promise<BackgroundGenerationResult | null> => {
       try {
-        console.log('[BackgroundGen] Fetching from API...');
+        // Get Turnstile token from sessionStorage (required for all API calls)
+        // Import dynamically to avoid SSR issues
+        const { getTurnstileToken } = await import('@/lib/turnstile-token-manager');
+        const turnstileToken = getTurnstileToken();
+
+        if (!turnstileToken) {
+          throw new Error('Turnstile verification token not found or expired. Please return to the start page and verify again.');
+        }
+
+        console.log('[BackgroundGen] Fetching from API with Turnstile token...');
         const response = await fetch('/api/templates/employment-agreement/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -463,13 +475,54 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
             acceptedLegalDisclaimer: true,
             understandAiContent: true,
             background: true,
+            turnstileToken, // SECURITY: Always pass token, even for background generation
           }),
           signal: controller.signal,
         });
 
         if (!response.ok) {
-          const message = await parseErrorMessage(response, 'Failed to generate employment agreement.');
+          let errorData: any = null;
+          try {
+            errorData = await response.json();
+          } catch {
+            // If response is not JSON, use text message
+          }
+          
+          const message = errorData?.error || await parseErrorMessage(response, 'Failed to generate employment agreement.');
           console.error('[BackgroundGen] API error:', response.status, message);
+          
+          // Check if this is a token expiration error (not server config error)
+          const isTokenExpiration = errorData?.['is-token-expiration'] === true;
+          const errorCodes = errorData?.['error-codes'] || [];
+          const isTokenExpirationError = 
+            isTokenExpiration ||
+            errorCodes.includes('timeout-or-duplicate') ||
+            errorCodes.includes('invalid-input-response');
+          
+          // Exclude server configuration errors - these should NOT trigger re-verify dialog
+          const isServerConfigError = 
+            errorCodes.includes('invalid-input-secret') ||
+            message.toLowerCase().includes('server configuration') ||
+            message.toLowerCase().includes('secret key not set');
+          
+          if (isTokenExpirationError && response.status === 400 && !isServerConfigError) {
+            // Token expired or invalid - show re-verify dialog
+            console.log('[BackgroundGen] Token expired or invalid, showing re-verify dialog');
+            // Store the generation function to retry after re-verification
+            setPendingGeneration(() => runGeneration);
+            setShowReverifyDialog(true);
+            // Return null to stop the current generation attempt
+            // The dialog will trigger a retry when user verifies
+            return null;
+          }
+          
+          // For server config errors, don't show re-verify dialog - it won't help
+          if (isServerConfigError) {
+            console.error('[BackgroundGen] Server configuration error - not showing re-verify dialog');
+            // Use the server's error message (which includes helpful details in dev mode)
+            throw new Error(message);
+          }
+          
           throw new Error(message);
         }
 
@@ -1093,7 +1146,56 @@ export function SmartFormProvider({ children }: { children: React.ReactNode }) {
     getBackgroundGenerationState,
   };
 
-  return <SmartFormContext.Provider value={value}>{children}</SmartFormContext.Provider>;
+  const handleTokenReverified = useCallback((newToken: string) => {
+    console.log('[SmartForm] Token re-verified, retrying generation...');
+    setShowReverifyDialog(false);
+    
+    // Retry the pending generation
+    if (pendingGeneration) {
+      // Clear the pending function and retry
+      const retryFn = pendingGeneration;
+      setPendingGeneration(null);
+      
+      // Small delay to ensure token is stored
+      setTimeout(() => {
+        retryFn().catch((error) => {
+          console.error('[SmartForm] Retry after re-verification failed:', error);
+          setBackgroundGeneration((prev) => ({
+            ...prev,
+            status: 'error',
+            error: error instanceof Error ? error.message : 'Failed to retry generation',
+          }));
+        });
+      }, 100);
+    }
+  }, [pendingGeneration]);
+
+  const handleReverifyCancel = useCallback(() => {
+    setShowReverifyDialog(false);
+    setPendingGeneration(null);
+    // Cancel background generation
+    if (backgroundControllerRef.current) {
+      backgroundControllerRef.current.abort();
+    }
+    setBackgroundGeneration((prev) => ({
+      ...prev,
+      status: 'error',
+      error: 'Generation cancelled: verification required',
+    }));
+  }, []);
+
+  return (
+    <SmartFormContext.Provider value={value}>
+      {children}
+      <TurnstileReverifyDialog
+        open={showReverifyDialog}
+        onVerified={handleTokenReverified}
+        onCancel={handleReverifyCancel}
+        title="Verification Required"
+        description="Your verification has expired or is invalid. Please verify again to continue generating your agreement. Your progress will be saved."
+      />
+    </SmartFormContext.Provider>
+  );
 }
 
 export function useSmartForm() {

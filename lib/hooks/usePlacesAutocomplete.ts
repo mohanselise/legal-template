@@ -1,8 +1,25 @@
 import { useState, useCallback } from 'react';
 
-interface Suggestion {
+export interface NominatimAddress {
+  road?: string;
+  house_number?: string;
+  business?: string;
+  city?: string;
+  town?: string;
+  village?: string;
+  state?: string;
+  postcode?: string;
+  country?: string;
+  country_code?: string;
+}
+
+export interface Suggestion {
   description: string;
   place_id: string;
+  nominatim?: {
+    display_name: string;
+    address?: NominatimAddress;
+  };
   structured_formatting?: {
     main_text: string;
     secondary_text: string;

@@ -1,15 +1,67 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { User } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
 import { SmartInput } from '../SmartInput';
+import { useReverseGeocode } from '@/lib/hooks/useReverseGeocode';
+import { parseAddressString } from '@/lib/utils/address-formatting';
+import type { StructuredAddress } from '@/lib/utils/address-formatting';
 
 export function Step2EmployeeIdentity() {
   const { formData, updateFormData, enrichment } = useSmartForm();
+  const { geocode, loading: geocodingLoading } = useReverseGeocode();
 
   const canContinue =
     formData.employeeName && formData.employeeAddress && formData.startDate;
+
+  // Handle structured address from autocomplete selection
+  const handleAddressStructuredSelect = useCallback((address: string, structured: StructuredAddress) => {
+    updateFormData({
+      employeeAddress: address,
+      // Store structured address components (optional fields, won't break schema)
+      employeeAddressStructured: structured as any,
+    });
+  }, [updateFormData]);
+
+  // Handle manual address entry - try reverse geocoding on blur (silent attempt)
+  const handleAddressBlur = useCallback(async (address: string) => {
+    // Only attempt if we don't already have structured data
+    if (formData.employeeAddressStructured) {
+      return; // Already have structured data, skip
+    }
+
+    if (!address || address.trim().length < 5) {
+      return; // Too short, skip
+    }
+
+    try {
+      // Attempt reverse geocoding
+      const structured = await geocode(address);
+      if (structured) {
+        updateFormData({
+          employeeAddressStructured: structured as any,
+        });
+        return; // Success, we're done
+      }
+    } catch (error) {
+      // Silently fail - this is just an attempt
+      console.debug('Auto-geocoding failed for employee address:', error);
+    }
+
+    // Fallback: try simple parsing
+    try {
+      const parsed = parseAddressString(address);
+      if (parsed.street || parsed.city) {
+        updateFormData({
+          employeeAddressStructured: parsed as any,
+        });
+      }
+    } catch (error) {
+      // Silently fail - parsing also failed, that's okay
+      console.debug('Address parsing failed for employee address:', error);
+    }
+  }, [formData.employeeAddressStructured, geocode, updateFormData]);
 
   return (
     <div className="space-y-6">
@@ -64,12 +116,25 @@ export function Step2EmployeeIdentity() {
           label="Employee address"
           name="employeeAddress"
           value={formData.employeeAddress || ''}
-          onChange={(value) => updateFormData({ employeeAddress: value })}
+          onChange={(value) => {
+            updateFormData({ employeeAddress: value });
+            // Clear structured data when user edits manually
+            if (formData.employeeAddressStructured) {
+              updateFormData({ employeeAddressStructured: undefined as any });
+            }
+          }}
           placeholder="456 Oak Avenue, Apt 3B, Austin, TX 78701, USA"
           required
           helpText="Full residential address of the employee"
           enableAddressAutocomplete={true}
           autocompleteType="address"
+          loading={geocodingLoading}
+          onAddressStructuredSelect={handleAddressStructuredSelect}
+          onAddressSelect={(address) => {
+            // Fallback if structured select not available
+            updateFormData({ employeeAddress: address });
+          }}
+          onAddressBlur={handleAddressBlur}
         />
 
         <SmartInput

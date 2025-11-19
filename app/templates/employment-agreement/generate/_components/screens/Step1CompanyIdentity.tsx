@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { AlertTriangle, Building2, Sparkles, Briefcase, Zap, Loader2 } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
 import { SmartInput } from '../SmartInput';
@@ -8,11 +8,63 @@ import { getFlagEmoji } from '@/lib/utils/flag-emoji';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
+import { useReverseGeocode } from '@/lib/hooks/useReverseGeocode';
+import { parseAddressString } from '@/lib/utils/address-formatting';
+import type { StructuredAddress } from '@/lib/utils/address-formatting';
 
 export function Step1CompanyIdentity() {
   const { formData, updateFormData, enrichment } = useSmartForm();
   const [isGeneratingResponsibilities, setIsGeneratingResponsibilities] = useState(false);
   const [responsibilitiesError, setResponsibilitiesError] = useState<string | null>(null);
+  const { geocode, loading: geocodingLoading } = useReverseGeocode();
+
+  // Handle structured address from autocomplete selection
+  const handleAddressStructuredSelect = useCallback((address: string, structured: StructuredAddress) => {
+    updateFormData({
+      companyAddress: address,
+      // Store structured address components (optional fields, won't break schema)
+      companyAddressStructured: structured as any,
+    });
+  }, [updateFormData]);
+
+  // Handle manual address entry - try reverse geocoding on blur (silent attempt)
+  const handleAddressBlur = useCallback(async (address: string) => {
+    // Only attempt if we don't already have structured data
+    if (formData.companyAddressStructured) {
+      return; // Already have structured data, skip
+    }
+
+    if (!address || address.trim().length < 5) {
+      return; // Too short, skip
+    }
+
+    try {
+      // Attempt reverse geocoding
+      const structured = await geocode(address);
+      if (structured) {
+        updateFormData({
+          companyAddressStructured: structured as any,
+        });
+        return; // Success, we're done
+      }
+    } catch (error) {
+      // Silently fail - this is just an attempt
+      console.debug('Auto-geocoding failed for company address:', error);
+    }
+
+    // Fallback: try simple parsing
+    try {
+      const parsed = parseAddressString(address);
+      if (parsed.street || parsed.city) {
+        updateFormData({
+          companyAddressStructured: parsed as any,
+        });
+      }
+    } catch (error) {
+      // Silently fail - parsing also failed, that's okay
+      console.debug('Address parsing failed for company address:', error);
+    }
+  }, [formData.companyAddressStructured, geocode, updateFormData]);
 
   const canContinue = formData.companyName && formData.companyAddress && formData.jobTitle;
   const canGenerateResponsibilities = canContinue && !isGeneratingResponsibilities;
@@ -86,14 +138,26 @@ export function Step1CompanyIdentity() {
           label="Company address"
           name="companyAddress"
           value={formData.companyAddress || ''}
-          onChange={(value) => updateFormData({ companyAddress: value })}
+          onChange={(value) => {
+            updateFormData({ companyAddress: value });
+            // Clear structured data when user edits manually
+            if (formData.companyAddressStructured) {
+              updateFormData({ companyAddressStructured: undefined as any });
+            }
+          }}
           placeholder="123 Main Street, Suite 500, San Francisco, CA 94105, USA"
           required
           helpText="Full address including city, state/province, and country"
-          loading={enrichment.jurisdictionLoading || enrichment.companyLoading}
+          loading={enrichment.jurisdictionLoading || enrichment.companyLoading || geocodingLoading}
           enableAddressAutocomplete={true}
           autocompleteType="address"
           searchQuery={formData.companyName}
+          onAddressStructuredSelect={handleAddressStructuredSelect}
+          onAddressSelect={(address) => {
+            // Fallback if structured select not available
+            updateFormData({ companyAddress: address });
+          }}
+          onAddressBlur={handleAddressBlur}
         />
 
         <SmartInput

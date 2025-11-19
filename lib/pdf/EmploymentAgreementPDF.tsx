@@ -448,6 +448,27 @@ const formatDate = (dateString: string) => {
   });
 };
 
+/**
+ * Checks if a phone number is a placeholder value that should not be displayed.
+ */
+const isPlaceholderPhone = (phone: string | undefined): boolean => {
+  if (!phone) return false;
+  const normalized = phone.trim().toLowerCase();
+  const placeholderPatterns = [
+    /\[.*to be completed.*\]/,
+    /\[.*tbd.*\]/,
+    /\[.*omitted.*\]/,
+    /\[.*placeholder.*\]/,
+    /\[.*\]/,
+    /^to be completed$/,
+    /^tbd$/,
+    /^n\/a$/,
+    /^not provided$/,
+    /^not available$/,
+  ];
+  return placeholderPatterns.some((pattern) => pattern.test(normalized));
+};
+
 
 const ContentBlockRenderer: React.FC<{
   block: ContentBlock;
@@ -562,11 +583,12 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
                 Email: {employmentAgreement.parties.employer.email}
               </Text>
             )}
-            {employmentAgreement.parties.employer.phone && (
-              <Text style={styles.partyDetails}>
-                Phone: {employmentAgreement.parties.employer.phone}
-              </Text>
-            )}
+            {employmentAgreement.parties.employer.phone &&
+              !isPlaceholderPhone(employmentAgreement.parties.employer.phone) && (
+                <Text style={styles.partyDetails}>
+                  Phone: {employmentAgreement.parties.employer.phone}
+                </Text>
+              )}
             <Text style={styles.partyDesignation}>
               (hereinafter referred to as &ldquo;
               {employmentAgreement.parties.employer.designatedTitle || 'EMPLOYER'}&rdquo;)
@@ -588,11 +610,12 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
                 Email: {employmentAgreement.parties.employee.email}
               </Text>
             )}
-            {employmentAgreement.parties.employee.phone && (
-              <Text style={styles.partyDetails}>
-                Phone: {employmentAgreement.parties.employee.phone}
-              </Text>
-            )}
+            {employmentAgreement.parties.employee.phone &&
+              !isPlaceholderPhone(employmentAgreement.parties.employee.phone) && (
+                <Text style={styles.partyDetails}>
+                  Phone: {employmentAgreement.parties.employee.phone}
+                </Text>
+              )}
             <Text style={styles.partyDesignation}>
               (hereinafter referred to as &ldquo;
               {employmentAgreement.parties.employee.designatedTitle || 'EMPLOYEE'}&rdquo;)

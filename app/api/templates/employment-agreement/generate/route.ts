@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { openai, EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON } from '@/lib/openai';
+import { validateTurnstileToken } from 'next-turnstile';
 import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
 import type { JurisdictionIntelligence, CompanyIntelligence, JobTitleAnalysis, MarketStandards } from '@/lib/types/smart-form';
+import { formatAddressByJurisdiction, parseAddressString } from '@/lib/utils/address-formatting';
+import type { StructuredAddress } from '@/lib/utils/address-formatting';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -28,20 +31,117 @@ export async function POST(request: NextRequest) {
 
     const isBackground = Boolean(background);
 
-    if (!isBackground) {
-      if (!acceptedLegalDisclaimer || !understandAiContent) {
+    // SECURITY: Require Turnstile token validation for ALL requests (both background and non-background)
+    // This prevents bots from bypassing verification by setting background: true
+    if (!turnstileToken || typeof turnstileToken !== 'string' || !turnstileToken.trim()) {
+      return NextResponse.json(
+        {
+          error: 'Human verification is required before generating the agreement.',
+          details: 'Please complete the Turnstile verification.',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate Turnstile token on server for ALL requests
+    const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
+    const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    
+    if (!TURNSTILE_SECRET_KEY) {
+      console.error('⚠️ [Generate API] TURNSTILE_SECRET_KEY is not set');
+      return NextResponse.json(
+        { error: 'Server configuration error: Turnstile secret key not set' },
+        { status: 500 }
+      );
+    }
+    
+    // Debug logging in development to help diagnose key mismatches
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 [Generate API] Turnstile keys check:');
+      console.log('   Site key prefix:', TURNSTILE_SITE_KEY?.substring(0, 10) || 'NOT SET');
+      console.log('   Secret key prefix:', TURNSTILE_SECRET_KEY.substring(0, 10));
+      console.log('   Keys match prefix?', TURNSTILE_SITE_KEY?.substring(0, 10) === TURNSTILE_SECRET_KEY.substring(0, 10) ? '⚠️ WARNING: Keys start with same prefix - might be using site key as secret!' : 'OK');
+    }
+
+    try {
+      // Log token info in development (first 20 chars only for security)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [Generate API] Validating Turnstile token:');
+        console.log('   Token length:', turnstileToken.length);
+        console.log('   Token prefix:', turnstileToken.substring(0, 20) + '...');
+        console.log('   Secret key prefix:', TURNSTILE_SECRET_KEY.substring(0, 10) + '...');
+      }
+
+      const validationResponse = await validateTurnstileToken({
+        token: turnstileToken,
+        secretKey: TURNSTILE_SECRET_KEY,
+        sandbox: false, // Using production keys
+      });
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 [Generate API] Validation response:', {
+          success: validationResponse.success,
+          errorCodes: validationResponse['error-codes'] || [],
+          hostname: validationResponse.hostname,
+        });
+      }
+
+      if (!validationResponse.success) {
+        const errorCodes = validationResponse['error-codes'] || [];
+        console.error('[Generate API] Turnstile validation failed:', errorCodes);
+        
+        // Provide more specific error messages based on error codes
+        let errorMessage = 'Human verification failed. Please verify again.';
+        let isTokenExpiration = false;
+        
+        if (errorCodes.includes('timeout-or-duplicate')) {
+          errorMessage = 'Your verification has expired. Please verify again.';
+          isTokenExpiration = true;
+        } else if (errorCodes.includes('invalid-input-response')) {
+          errorMessage = 'Invalid verification token. Please verify again.';
+          isTokenExpiration = true;
+        } else if (errorCodes.includes('invalid-input-secret')) {
+          // Provide more helpful error message in development
+          if (process.env.NODE_ENV === 'development') {
+            errorMessage = 'Turnstile configuration error: The secret key does not match the site key. Please check your .env or .env.local file.';
+            console.error('⚠️ [Generate API] TURNSTILE_SECRET_KEY appears to be invalid or does not match the site key!');
+            console.error('⚠️ [Generate API] Please verify that:');
+            console.error('   1. TURNSTILE_SECRET_KEY is set in your .env or .env.local file');
+            console.error('   2. NEXT_PUBLIC_TURNSTILE_SITE_KEY matches the site key for this secret key');
+            console.error('   3. Both keys are from the same Turnstile site (not mixing production/test keys)');
+            console.error('   4. If using Cloudflare Turnstile, ensure you copied the correct secret key (not the site key)');
+          } else {
+            errorMessage = 'Server configuration error. Please contact support.';
+            console.error('⚠️ [Generate API] TURNSTILE_SECRET_KEY appears to be invalid or does not match the site key!');
+            console.error('⚠️ [Generate API] Please verify that TURNSTILE_SECRET_KEY matches the secret key for your site key.');
+          }
+        }
+        
         return NextResponse.json(
-          { error: 'Please acknowledge the required legal disclaimers before generating.' },
+          {
+            error: errorMessage,
+            details: errorCodes.join(', ') || 'Invalid verification token',
+            'error-codes': errorCodes,
+            'is-token-expiration': isTokenExpiration, // Flag to help client distinguish
+          },
           { status: 400 }
         );
       }
 
-      if (!turnstileToken || typeof turnstileToken !== 'string' || !turnstileToken.trim()) {
+      console.log('✅ [Generate API] Turnstile token validated successfully');
+    } catch (validationError) {
+      console.error('[Generate API] Turnstile validation error:', validationError);
+      return NextResponse.json(
+        { error: 'Failed to validate human verification token' },
+        { status: 500 }
+      );
+    }
+
+    // For non-background requests, also require legal disclaimers
+    if (!isBackground) {
+      if (!acceptedLegalDisclaimer || !understandAiContent) {
         return NextResponse.json(
-          {
-            error: 'Human verification is required before generating the agreement.',
-            details: 'Integrate Cloudflare Turnstile and pass the verification token with your request.',
-          },
+          { error: 'Please acknowledge the required legal disclaimers before generating.' },
           { status: 400 }
         );
       }
@@ -50,10 +150,9 @@ export async function POST(request: NextRequest) {
     console.log('✅ [Generate API] Form data parsed successfully');
     console.log('📋 [Generate API] Company:', formData.companyName, '| Employee:', formData.employeeName);
     console.log('🛡️ [Generate API] Background request:', isBackground);
+    console.log('✅ [Generate API] Turnstile token validated for', isBackground ? 'background' : 'direct', 'generation');
     if (!isBackground) {
-      console.log('✅ [Generate API] Legal acknowledgments confirmed and human verification token received.');
-    } else {
-      console.log('ℹ️ [Generate API] Background mode – disclaimers and human verification deferred.');
+      console.log('✅ [Generate API] Legal acknowledgments confirmed.');
     }
 
     // Log enrichment data availability
@@ -106,6 +205,10 @@ export async function POST(request: NextRequest) {
       document = JSON.parse(documentContent);
       console.log('✅ [Generate API] JSON parsed successfully');
       console.log('📊 [Generate API] Articles count:', document.articles?.length);
+      
+      // Clean up placeholder phone numbers
+      document = removePlaceholderPhoneNumbers(document, formData);
+      console.log('🧹 [Generate API] Cleaned up placeholder phone numbers');
     } catch (parseError) {
       console.error('❌ [Generate API] Failed to parse JSON:', parseError);
       console.error('📄 [Generate API] Raw content:', documentContent.substring(0, 500));
@@ -143,6 +246,58 @@ interface EnrichmentData {
   company?: CompanyIntelligence;
   jobTitle?: JobTitleAnalysis;
   marketStandards?: MarketStandards;
+}
+
+/**
+ * Removes placeholder phone numbers from the document.
+ * If a phone number contains placeholder text or wasn't provided in formData, it's removed.
+ */
+function removePlaceholderPhoneNumbers(
+  document: EmploymentAgreement,
+  formData: any
+): EmploymentAgreement {
+  const placeholderPatterns = [
+    /\[.*to be completed.*\]/i,
+    /\[.*tbd.*\]/i,
+    /\[.*omitted.*\]/i,
+    /\[.*placeholder.*\]/i,
+    /\[.*\]/,
+    /to be completed/i,
+    /tbd/i,
+    /n\/a/i,
+    /not provided/i,
+    /not available/i,
+  ];
+
+  const isPlaceholder = (phone: string | undefined): boolean => {
+    if (!phone) return false;
+    const normalized = phone.trim();
+    return placeholderPatterns.some((pattern) => pattern.test(normalized));
+  };
+
+  // Check if phone was provided in formData
+  const employerPhoneProvided = Boolean(
+    formData.companyRepPhone?.trim() || formData.companyContactPhone?.trim()
+  );
+  const employeePhoneProvided = Boolean(formData.employeePhone?.trim());
+
+  // Remove employer phone if it's a placeholder or wasn't provided
+  if (
+    document.parties?.employer?.phone &&
+    (!employerPhoneProvided || isPlaceholder(document.parties.employer.phone))
+  ) {
+    delete document.parties.employer.phone;
+  }
+
+  // Remove employee phone if it's a placeholder or wasn't provided
+  if (
+    document.parties?.employee?.phone &&
+    (!employeePhoneProvided || isPlaceholder(document.parties.employee.phone))
+  ) {
+    delete document.parties.employee.phone;
+  }
+
+  return document;
 }
 
 function buildJurisdictionContext(formData: any, enrichment?: EnrichmentData): string {
@@ -264,20 +419,68 @@ function buildJurisdictionContext(formData: any, enrichment?: EnrichmentData): s
 }
 
 function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string {
-  const employerAddress = formatAddress(
-    data.companyAddress,
-    data.companyCity,
-    data.companyState,
-    data.companyPostalCode,
-    data.companyCountry
-  );
-  const employeeAddress = formatAddress(
-    data.employeeAddress,
-    data.employeeCity,
-    data.employeeState,
-    data.employeePostalCode,
-    data.employeeCountry
-  );
+  // Use structured address if available, otherwise fall back to parsing or raw string
+  const employerStructured: StructuredAddress | null = data.companyAddressStructured || null;
+  const employeeStructured: StructuredAddress | null = data.employeeAddressStructured || null;
+  
+  // Get jurisdiction country code for formatting
+  const jurisdictionCountryCode = enrichment?.jurisdiction?.countryCode;
+  
+  let employerAddress: string;
+  if (employerStructured) {
+    employerAddress = formatAddressByJurisdiction(employerStructured, jurisdictionCountryCode);
+  } else if (data.companyAddress) {
+    // Try to parse the address string
+    const parsed = parseAddressString(data.companyAddress);
+    if (parsed.street || parsed.city) {
+      employerAddress = formatAddressByJurisdiction(parsed as StructuredAddress, jurisdictionCountryCode);
+    } else {
+      // Fallback to original formatAddress function
+      employerAddress = formatAddress(
+        data.companyAddress,
+        data.companyCity,
+        data.companyState,
+        data.companyPostalCode,
+        data.companyCountry
+      );
+    }
+  } else {
+    employerAddress = formatAddress(
+      data.companyAddress,
+      data.companyCity,
+      data.companyState,
+      data.companyPostalCode,
+      data.companyCountry
+    );
+  }
+
+  let employeeAddress: string;
+  if (employeeStructured) {
+    employeeAddress = formatAddressByJurisdiction(employeeStructured, jurisdictionCountryCode);
+  } else if (data.employeeAddress) {
+    // Try to parse the address string
+    const parsed = parseAddressString(data.employeeAddress);
+    if (parsed.street || parsed.city) {
+      employeeAddress = formatAddressByJurisdiction(parsed as StructuredAddress, jurisdictionCountryCode);
+    } else {
+      // Fallback to original formatAddress function
+      employeeAddress = formatAddress(
+        data.employeeAddress,
+        data.employeeCity,
+        data.employeeState,
+        data.employeePostalCode,
+        data.employeeCountry
+      );
+    }
+  } else {
+    employeeAddress = formatAddress(
+      data.employeeAddress,
+      data.employeeCity,
+      data.employeeState,
+      data.employeePostalCode,
+      data.employeeCountry
+    );
+  }
   // Handle salary amount - preserve placeholder values, format numbers
   let salaryAmount = '[Amount]';
   if (data.salaryAmount) {
@@ -511,7 +714,8 @@ function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string
   prompt += `   ⚠️ IMPORTANT: Pre-fill "value" property for name and title fields using the actual data provided above. Leave signature and date fields empty.\n`;
   
   prompt += `8. Is formatted in clean markdown for professional presentation\n\n`;
-  prompt += `⚠️ CRITICAL: This is a legally binding document. Never use dummy/placeholder contact information (like "john.doe@company.com", "555-1234", etc.). Use ONLY the exact information provided above. If information is missing, use "[To Be Completed]" format.\n\n`;
+  prompt += `⚠️ CRITICAL: This is a legally binding document. Never use dummy/placeholder contact information (like "john.doe@company.com", "555-1234", etc.). Use ONLY the exact information provided above.\n\n`;
+  prompt += `📞 PHONE NUMBER HANDLING: If a phone number was NOT provided above for a party (employer or employee), DO NOT include a phone field at all in the parties section. Omit the phone line entirely - do not use placeholders like "[To Be Completed]", "[TBD]", or any other placeholder text for phone numbers. Only include phone numbers when they were explicitly provided.\n\n`;
   prompt += `The document should be ready for attorney review and execution.`;
 
   return prompt;

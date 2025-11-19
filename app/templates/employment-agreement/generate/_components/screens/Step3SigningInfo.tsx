@@ -8,11 +8,17 @@ import { SmartInput } from '../SmartInput';
 export function Step3SigningInfo() {
   const { formData, updateFormData } = useSmartForm();
 
+  const emailsMatch = 
+    formData.employeeEmail &&
+    formData.companyRepEmail &&
+    formData.employeeEmail.trim().toLowerCase() === formData.companyRepEmail.trim().toLowerCase();
+
   const canContinue =
     formData.employeeEmail &&
     formData.companyRepName &&
     formData.companyRepTitle &&
-    formData.companyRepEmail;
+    formData.companyRepEmail &&
+    !emailsMatch;
 
   return (
     <div className="space-y-6">
@@ -69,6 +75,11 @@ export function Step3SigningInfo() {
           placeholder="john.doe@company.com"
           required
           helpText="Email address to receive the signature request"
+          validation={emailsMatch ? {
+            severity: 'error',
+            message: 'Employee and employer emails cannot be the same',
+            suggestion: 'Please use different email addresses for the employee and company representative'
+          } : undefined}
         />
 
         <SmartInput
@@ -102,6 +113,11 @@ export function Step3SigningInfo() {
           placeholder="jane.smith@email.com"
           required
           helpText="Email address to receive the signature request"
+          validation={emailsMatch ? {
+            severity: 'error',
+            message: 'Employee and employer emails cannot be the same',
+            suggestion: 'Please use different email addresses for the employee and company representative'
+          } : undefined}
         />
 
         <SmartInput

@@ -55,12 +55,7 @@ export function Step7Review() {
       }
     }
 
-    if (formData.paidTimeOff && parseInt(formData.paidTimeOff) !== marketStandards.ptodays) {
-      const diff = parseInt(formData.paidTimeOff) - marketStandards.ptodays;
-      customizations.push(
-        `PTO: ${Math.abs(diff)} days ${diff > 0 ? 'more' : 'less'} than standard`
-      );
-    }
+    // PTO comparison removed - benefits step has been removed from the flow
 
     if (formData.workArrangement && formData.workArrangement !== marketStandards.workArrangement) {
       customizations.push(
@@ -132,7 +127,7 @@ export function Step7Review() {
               <p className="font-medium">{formData.workHoursPerWeek || '—'}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => goToStep(2)} className="text-xs">
+          <Button variant="ghost" size="sm" onClick={() => goToStep(3)} className="text-xs">
             <Edit3 className="w-3 h-3 mr-1" />
             Edit
           </Button>
@@ -147,12 +142,8 @@ export function Step7Review() {
                 {formData.salaryCurrency} {formData.salaryAmount ? parseFloat(formData.salaryAmount).toLocaleString() : '—'}
               </p>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">PTO Days</p>
-              <p className="font-medium">{formData.paidTimeOff || '—'}</p>
-            </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => goToStep(3)} className="text-xs">
+          <Button variant="ghost" size="sm" onClick={() => goToStep(4)} className="text-xs">
             <Edit3 className="w-3 h-3 mr-1" />
             Edit
           </Button>

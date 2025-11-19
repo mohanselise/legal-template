@@ -6,12 +6,15 @@ interface NominatimResult {
   name?: string;
   address?: {
     road?: string;
+    house_number?: string;
     business?: string;
     city?: string;
     town?: string;
     village?: string;
     state?: string;
+    postcode?: string;
     country?: string;
+    country_code?: string;
   };
 }
 
@@ -48,6 +51,11 @@ export async function GET(request: NextRequest) {
       return {
         description: item.display_name,
         place_id: item.place_id.toString(),
+        // Include full Nominatim data for structured address extraction
+        nominatim: {
+          display_name: item.display_name,
+          address: item.address,
+        },
         structured_formatting: {
           main_text: mainText,
           secondary_text: [

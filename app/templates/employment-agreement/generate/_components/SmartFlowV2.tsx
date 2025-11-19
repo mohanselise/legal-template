@@ -12,7 +12,6 @@ import { Step2EmployeeIdentity } from './screens/Step2EmployeeIdentity';
 import { Step3SigningInfo } from './screens/Step3SigningInfo';
 import { Step3WorkArrangement } from './screens/Step3WorkArrangement';
 import { Step4Compensation } from './screens/Step4Compensation';
-import { Step5BenefitsEquity } from './screens/Step5BenefitsEquity';
 import { Step6LegalTerms } from './screens/Step6LegalTerms';
 import { Step7Review } from './screens/Step7Review';
 import { Step8ConfirmGenerate } from './screens/Step8ConfirmGenerate';
@@ -29,6 +28,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { LegalDisclaimer } from '@/components/legal-disclaimer';
+import { Turnstile } from 'next-turnstile';
+import { setTurnstileToken as storeTurnstileToken } from '@/lib/turnstile-token-manager';
 
 const STEPS = [
   { id: 'company', title: 'Company & Role', component: Step1CompanyIdentity },
@@ -36,14 +37,13 @@ const STEPS = [
   { id: 'signing', title: 'Signing', component: Step3SigningInfo },
   { id: 'work', title: 'Work', component: Step3WorkArrangement },
   { id: 'compensation', title: 'Compensation', component: Step4Compensation },
-  { id: 'benefits', title: 'Benefits', component: Step5BenefitsEquity },
   { id: 'legal', title: 'Legal', component: Step6LegalTerms },
   { id: 'review', title: 'Review', component: Step7Review },
   { id: 'confirm', title: 'Confirm', component: Step8ConfirmGenerate },
 ];
 
-// Steps where "Use Market Standard" button should appear (now screens 3-6 after adding signing step)
-const MARKET_STANDARD_STEPS = [3, 4, 5, 6];
+// Steps where "Use Market Standard" button should appear (Work, Compensation, Legal)
+const MARKET_STANDARD_STEPS = [3, 4, 5];
 
 // Loading stages for document generation
 type GenerationStage = {
@@ -352,6 +352,8 @@ function SmartFlowContent() {
   const [fakeProgress, setFakeProgress] = useState(0);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const generationTaskRef = useRef<(() => Promise<BackgroundGenerationResult | null>) | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileStatus, setTurnstileStatus] = useState<'success' | 'error' | 'expired' | 'required'>('required');
 
   const CurrentStepComponent = STEPS[currentStep].component;
   const progress = ((currentStep + 1) / totalSteps) * 100;
@@ -387,7 +389,8 @@ function SmartFlowContent() {
           formData.employeeEmail &&
           formData.companyRepName &&
           formData.companyRepTitle &&
-          formData.companyRepEmail
+          formData.companyRepEmail &&
+          formData.employeeEmail.trim().toLowerCase() !== formData.companyRepEmail.trim().toLowerCase()
         );
       case 3: // Work
         // Work location is optional for remote workers
@@ -396,11 +399,9 @@ function SmartFlowContent() {
       case 4: // Compensation
         // Currency is required, but salary can be empty (will show dialog)
         return !!formData.salaryCurrency;
-      case 5: // Benefits (optional)
-        return true;
-      case 6: // Legal
+      case 5: // Legal
         return !!formData.governingLaw;
-      case 7: // Review
+      case 6: // Review
         return true;
       default:
         return false;
@@ -412,7 +413,10 @@ function SmartFlowContent() {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (showWelcome && (e.key === 'Enter' || e.key === ' ')) {
         e.preventDefault();
-        setShowWelcome(false);
+        if (turnstileStatus === 'success' && turnstileToken) {
+          // Token already stored in onVerify callback
+          setShowWelcome(false);
+        }
         return;
       }
       if (e.key === 'Enter' && !showWelcome && canContinue() && currentStep < totalSteps - 1) {
@@ -421,7 +425,7 @@ function SmartFlowContent() {
     };
     window.addEventListener('keypress', handleKeyPress);
     return () => window.removeEventListener('keypress', handleKeyPress);
-  }, [showWelcome, currentStep, formData, canContinue, nextStep]);
+  }, [showWelcome, currentStep, formData, canContinue, nextStep, turnstileStatus, turnstileToken]);
 
   // Loading animation for document generation
   useEffect(() => {
@@ -804,7 +808,7 @@ function SmartFlowContent() {
           <div className="mb-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <div className="flex items-center gap-3 text-base text-[hsl(var(--fg))]">
               <Check className="h-5 w-5 text-[hsl(var(--brand-primary))]" />
-              <span>8 smart screens</span>
+              <span>7 smart screens</span>
             </div>
             <div className="flex items-center gap-3 text-base text-[hsl(var(--fg))]">
               <Check className="h-5 w-5 text-[hsl(var(--brand-primary))]" />
@@ -830,9 +834,81 @@ function SmartFlowContent() {
             </div>
           </div>
 
+          {/* Human Verification */}
+          <div className="mb-8 rounded-2xl border border-[hsl(var(--brand-border))] bg-white p-6 shadow-sm">
+            <div className="mb-4 text-center">
+              <h3 className="text-lg font-semibold text-[hsl(var(--fg))] font-heading mb-2">
+                Verify you are human
+              </h3>
+              <p className="text-sm text-[hsl(var(--brand-muted))]">
+                Please complete the verification below to continue
+              </p>
+            </div>
+            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+              <div className="flex flex-col items-center gap-4">
+                <Turnstile
+                  siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                  retry="auto"
+                  refreshExpired="auto"
+                  sandbox={false} // Using production keys
+                  onError={() => {
+                    setTurnstileStatus('error');
+                    setTurnstileToken(null);
+                  }}
+                  onExpire={() => {
+                    setTurnstileStatus('expired');
+                    setTurnstileToken(null);
+                  }}
+                  onLoad={() => {
+                    setTurnstileStatus('required');
+                  }}
+                  onVerify={(token) => {
+                    setTurnstileStatus('success');
+                    setTurnstileToken(token); // Update local state
+                    storeTurnstileToken(token); // Store with timestamp in sessionStorage
+                  }}
+                />
+                {turnstileStatus === 'success' && turnstileToken && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-emerald-600">
+                    <Check className="h-4 w-4" />
+                    <span>Verification complete</span>
+                  </div>
+                )}
+                {turnstileStatus === 'error' && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-red-600">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Verification failed. Please try again.</span>
+                  </div>
+                )}
+                {turnstileStatus === 'expired' && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-amber-600">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Verification expired. Please verify again.</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-center">
+                <AlertTriangle className="mx-auto h-5 w-5 text-amber-600 mb-2" />
+                <p className="text-sm text-amber-800 font-medium mb-1">
+                  Turnstile configuration missing
+                </p>
+                <p className="text-xs text-amber-700">
+                  Please set <code className="bg-amber-100 px-1 rounded">NEXT_PUBLIC_TURNSTILE_SITE_KEY</code> in your environment variables.
+                </p>
+              </div>
+            )}
+          </div>
+
           <button
-            onClick={() => setShowWelcome(false)}
-            className="inline-flex items-center gap-3 rounded-xl bg-[hsl(var(--brand-primary))] px-10 py-4 text-lg font-semibold text-[hsl(var(--brand-primary-foreground))] shadow-lg transition-transform hover:scale-105 hover:shadow-xl"
+            onClick={() => {
+              if (turnstileStatus === 'success' && turnstileToken) {
+                // Token already stored in onVerify callback
+                setShowWelcome(false);
+              }
+            }}
+            disabled={turnstileStatus !== 'success' || !turnstileToken}
+            className="inline-flex items-center gap-3 rounded-xl bg-[hsl(var(--brand-primary))] px-10 py-4 text-lg font-semibold text-[hsl(var(--brand-primary-foreground))] shadow-lg transition-transform hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             I Understand, Get Started
             <ArrowRight className="h-5 w-5" />

@@ -9,6 +9,7 @@ import { Sparkles, HelpCircle, AlertCircle, CheckCircle2, Loader2, MapPin } from
 import { SmartFieldSuggestion, ValidationWarning } from '@/lib/types/smart-form';
 import { cn } from '@/lib/utils';
 import { usePlacesAutocomplete } from '@/lib/hooks/usePlacesAutocomplete';
+import { extractAddressFromNominatim } from '@/lib/utils/address-formatting';
 
 interface SmartInputProps {
   label: string;
@@ -33,6 +34,15 @@ interface SmartInputProps {
   enableAddressAutocomplete?: boolean;
   autocompleteType?: 'establishment' | 'address';
   onAddressSelect?: (address: string) => void; // Callback for when establishment is selected
+  onAddressStructuredSelect?: (address: string, structured: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    countryCode?: string;
+  }) => void; // Callback with structured address data
+  onAddressBlur?: (address: string) => Promise<void>; // Callback for when address field loses focus (for geocoding)
   searchQuery?: string; // External query to use for address search (e.g., company name)
 }
 
@@ -53,6 +63,8 @@ export function SmartInput({
   enableAddressAutocomplete = false,
   autocompleteType = 'address',
   onAddressSelect,
+  onAddressStructuredSelect,
+  onAddressBlur,
   searchQuery,
 }: SmartInputProps) {
   const isSuggestionApplied = suggestion && value === suggestion.value.toString();
@@ -102,9 +114,34 @@ export function SmartInput({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSuggestionClick = (suggestion: { description: string; structured_formatting?: { main_text: string } }) => {
-    // Just set the full address
-    onChange(suggestion.description);
+  const handleSuggestionClick = (suggestion: { 
+    description: string; 
+    nominatim?: {
+      display_name: string;
+      address?: any;
+    };
+    structured_formatting?: { main_text: string } 
+  }) => {
+    const addressString = suggestion.description;
+    
+    // Extract structured address if Nominatim data is available
+    if (suggestion.nominatim && onAddressStructuredSelect) {
+      try {
+        const structured = extractAddressFromNominatim(suggestion.nominatim);
+        onAddressStructuredSelect(addressString, structured);
+      } catch (error) {
+        console.error('Error extracting structured address:', error);
+        // Fallback to just the string
+        if (onAddressSelect) {
+          onAddressSelect(addressString);
+        }
+      }
+    } else if (onAddressSelect) {
+      onAddressSelect(addressString);
+    }
+    
+    // Set the address string
+    onChange(addressString);
     setShowSuggestions(false);
     clearSuggestions();
     setUserIsTyping(false); // Reset typing state after selection
@@ -133,6 +170,19 @@ export function SmartInput({
     setTimeout(() => {
       setInputIsFocused(false);
       setShowSuggestions(false);
+      
+      // Trigger geocoding attempt if address field and callback provided
+      // Wait 1 second after blur to avoid rate limiting (Nominatim: 1 req/sec per IP)
+      if (enableAddressAutocomplete && onAddressBlur && value && value.trim().length >= 5) {
+        // Wait 1 second before making the request to respect rate limits
+        setTimeout(() => {
+          // Don't await - fire and forget, non-blocking
+          onAddressBlur(value.trim()).catch((error) => {
+            // Silently fail - this is just an attempt, not required
+            console.debug('Auto-geocoding attempt failed (non-critical):', error);
+          });
+        }, 1000); // 1 second delay to avoid rate limiting
+      }
     }, 200);
   };
 

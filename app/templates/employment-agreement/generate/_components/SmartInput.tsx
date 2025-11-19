@@ -61,11 +61,11 @@ export function SmartInput({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [userIsTyping, setUserIsTyping] = useState(false);
   const [inputIsFocused, setInputIsFocused] = useState(false);
-  
+
   // Use searchQuery if provided and user hasn't started typing, otherwise use the field's own value
   const queryToUse = (searchQuery && !userIsTyping) ? searchQuery : value;
   const [debouncedValue] = useDebounce(queryToUse, 500);
-  
+
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { suggestions, loading: suggestionsLoading, fetchSuggestions, clearSuggestions } =
@@ -142,8 +142,8 @@ export function SmartInput({
   const isTextarea = type === 'textarea';
 
   return (
-    <Field 
-      className="space-y-2" 
+    <Field
+      className="space-y-2"
       ref={wrapperRef}
       data-invalid={hasError}
     >
@@ -193,9 +193,9 @@ export function SmartInput({
             className={cn(
               'flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all',
               validation?.severity === 'error' &&
-                'border-[hsla(var(--destructive)_/_0.45)] focus-visible:border-[hsla(var(--destructive)_/_0.7)] focus-visible:ring-[hsla(var(--destructive)_/_0.35)]',
+              'border-[hsla(var(--destructive)_/_0.45)] focus-visible:border-[hsla(var(--destructive)_/_0.7)] focus-visible:ring-[hsla(var(--destructive)_/_0.35)]',
               validation?.severity === 'warning' &&
-                'border-[hsla(var(--warning)_/_0.5)] focus-visible:border-[hsla(var(--warning)_/_0.7)] focus-visible:ring-[hsla(var(--warning)_/_0.3)]'
+              'border-[hsla(var(--warning)_/_0.5)] focus-visible:border-[hsla(var(--warning)_/_0.7)] focus-visible:ring-[hsla(var(--warning)_/_0.3)]'
             )}
           />
         ) : (
@@ -212,9 +212,9 @@ export function SmartInput({
             className={cn(
               'text-base transition-all',
               validation?.severity === 'error' &&
-                'border-[hsla(var(--destructive)_/_0.45)] focus-visible:border-[hsla(var(--destructive)_/_0.7)] focus-visible:ring-[hsla(var(--destructive)_/_0.35)]',
+              'border-[hsla(var(--destructive)_/_0.45)] focus-visible:border-[hsla(var(--destructive)_/_0.7)] focus-visible:ring-[hsla(var(--destructive)_/_0.35)]',
               validation?.severity === 'warning' &&
-                'border-[hsla(var(--warning)_/_0.5)] focus-visible:border-[hsla(var(--warning)_/_0.7)] focus-visible:ring-[hsla(var(--warning)_/_0.3)]'
+              'border-[hsla(var(--warning)_/_0.5)] focus-visible:border-[hsla(var(--warning)_/_0.7)] focus-visible:ring-[hsla(var(--warning)_/_0.3)]'
             )}
           />
         )}
@@ -228,27 +228,27 @@ export function SmartInput({
 
         {/* Address suggestions dropdown */}
         {enableAddressAutocomplete && showSuggestions && suggestions.length > 0 && (
-          <div className="absolute z-50 w-full mt-2 bg-white border border-border rounded-xl shadow-xl max-h-60 overflow-auto">
+          <div className="absolute z-50 w-full mt-2 bg-[hsl(var(--popover))] dark:bg-[hsl(var(--popover))] border border-[hsl(var(--border))] rounded-xl shadow-xl max-h-60 overflow-auto ring-1 ring-black/10 dark:ring-white/10 backdrop-blur-sm">
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion.place_id}
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="w-full px-4 py-3 text-left hover:bg-accent/50 border-b last:border-b-0 transition-colors flex items-start gap-3 focus:outline-none focus:bg-accent/60"
+                className="w-full px-4 py-3 text-left hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] border-b border-[hsl(var(--border))] last:border-b-0 transition-colors flex items-start gap-3 focus:outline-none focus:bg-[hsl(var(--accent))] focus:text-[hsl(var(--accent-foreground))]"
               >
-                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <MapPin className="h-4 w-4 text-[hsl(var(--muted-foreground))] mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   {suggestion.structured_formatting ? (
                     <>
-                      <div className="text-sm font-medium text-foreground truncate">
+                      <div className="text-sm font-medium text-[hsl(var(--popover-foreground))] truncate">
                         {suggestion.structured_formatting.main_text}
                       </div>
-                      <div className="text-xs text-muted-foreground truncate leading-relaxed">
+                      <div className="text-xs text-[hsl(var(--muted-foreground))] truncate leading-relaxed">
                         {suggestion.structured_formatting.secondary_text}
                       </div>
                     </>
                   ) : (
-                    <div className="text-sm text-foreground">
+                    <div className="text-sm text-[hsl(var(--popover-foreground))]">
                       {suggestion.description}
                     </div>
                   )}
@@ -270,7 +270,7 @@ export function SmartInput({
               <p className="text-sm font-semibold text-[hsl(var(--fg))]">AI Suggestion</p>
               <Badge
                 variant="outline"
-                className="text-xs border-[hsl(var(--brand-border))] bg-white text-[hsl(var(--brand-muted))]"
+                className="text-xs border-[hsl(var(--brand-border))] bg-[hsl(var(--popover))] text-[hsl(var(--brand-muted))]"
               >
                 {suggestion.confidence} confidence
               </Badge>
@@ -309,11 +309,11 @@ export function SmartInput({
             className={cn(
               'flex items-start gap-3 rounded-xl border p-4 shadow-sm',
               validation.severity === 'error' &&
-                'border-[hsla(var(--destructive)_/_0.35)] bg-[hsla(var(--destructive)_/_0.08)] text-[hsl(var(--destructive))]',
+              'border-[hsla(var(--destructive)_/_0.35)] bg-[hsla(var(--destructive)_/_0.08)] text-[hsl(var(--destructive))]',
               validation.severity === 'warning' &&
-                'border-[hsla(var(--warning)_/_0.4)] bg-[hsla(var(--warning)_/_0.12)] text-[hsla(var(--warning)_/_0.9)]',
+              'border-[hsla(var(--warning)_/_0.4)] bg-[hsla(var(--warning)_/_0.12)] text-[hsla(var(--warning)_/_0.9)]',
               validation.severity === 'info' &&
-                'border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]'
+              'border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]'
             )}
           >
             <AlertCircle
@@ -327,7 +327,7 @@ export function SmartInput({
             <div className="flex-1 space-y-1.5">
               <p className="text-sm font-semibold leading-relaxed">{validation.message}</p>
               {validation.suggestion && (
-                <p className="text-xs opacity-90 leading-relaxed">{validation.suggestion}</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))] leading-relaxed">{validation.suggestion}</p>
               )}
             </div>
           </div>

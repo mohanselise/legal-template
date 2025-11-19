@@ -30,7 +30,7 @@ export function Step6LegalTerms() {
           <Scale className="w-7 h-7" />
         </div>
         <div>
-          <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))]">
+          <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))] font-heading">
             Legal terms
           </h2>
           <p className="text-lg text-[hsl(var(--brand-muted))] mt-2">

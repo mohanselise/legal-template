@@ -82,9 +82,14 @@ export default function Footer() {
             Contact Us
           </Link>
           <span>•</span>
-          <Link href="/request" className="hover:text-foreground hover:underline">
+          <a
+            href="https://selisegroup.com/contact-us/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground hover:underline"
+          >
             Request a Template
-          </Link>
+          </a>
         </div>
       </div>
     </footer>

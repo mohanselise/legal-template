@@ -75,7 +75,7 @@ export function Step7Review() {
         <div className="w-14 h-14 bg-[hsl(var(--brand-primary))/0.1] rounded-2xl flex items-center justify-center text-[hsl(var(--brand-primary))]">
           <FileText className="w-7 h-7" />
         </div>
-        <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))]">
+        <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))] font-heading">
           Review details
         </h2>
         <p className="text-lg text-[hsl(var(--brand-muted))]">
@@ -171,7 +171,7 @@ export function Step7Review() {
                 <li key={i}>
                   <strong>{error.message}</strong>
                   {error.suggestion && (
-                    <div className="text-xs mt-1 ml-5 opacity-90">{error.suggestion}</div>
+                    <div className="text-xs mt-1 ml-5 text-[hsl(var(--muted-foreground))]">{error.suggestion}</div>
                   )}
                 </li>
               ))}
@@ -192,7 +192,7 @@ export function Step7Review() {
                 <li key={i}>
                   {warning.message}
                   {warning.suggestion && (
-                    <div className="text-xs mt-1 ml-5 opacity-75">{warning.suggestion}</div>
+                    <div className="text-xs mt-1 ml-5 text-[hsl(var(--muted-foreground))]">{warning.suggestion}</div>
                   )}
                 </li>
               ))}
@@ -213,7 +213,7 @@ export function Step7Review() {
                 <li key={i}>
                   {suggestion.message}
                   {suggestion.suggestion && (
-                    <div className="text-xs mt-1 ml-5 opacity-75">{suggestion.suggestion}</div>
+                    <div className="text-xs mt-1 ml-5 text-[hsl(var(--muted-foreground))]">{suggestion.suggestion}</div>
                   )}
                 </li>
               ))}

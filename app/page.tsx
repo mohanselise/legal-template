@@ -172,7 +172,7 @@ export default function Home() {
               </Badge>
             </div>
 
-            <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-7xl bg-clip-text">
+            <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-7xl bg-clip-text font-heading">
               Professional Legal Documents,
               <span className="block bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] bg-clip-text text-transparent dark:from-[hsl(var(--sky-blue))] dark:to-[hsl(var(--light-blue))]">
                 Generated Instantly
@@ -187,13 +187,13 @@ export default function Home() {
 
             {/* CTA Buttons */}
             <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" className="group bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] shadow-lg shadow-[hsl(var(--selise-blue))]/30 text-base px-8 py-6 h-auto">
+              <Button asChild size="lg" className="group bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] shadow-lg shadow-[hsl(var(--selise-blue))]/30 text-base px-8 py-6 h-auto font-subheading">
                 <Link href="#templates">
                   Start Generating Free
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="text-base px-8 py-6 h-auto border-2 border-[hsl(var(--selise-blue))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/10">
+              <Button asChild variant="outline" size="lg" className="text-base px-8 py-6 h-auto border-2 border-[hsl(var(--selise-blue))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/10 font-subheading">
                 <Link href="#how-it-works">
                   See How It Works
                 </Link>
@@ -242,7 +242,7 @@ export default function Home() {
             <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))]">
               Popular Templates
             </Badge>
-            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl font-heading">
               Choose Your Template
             </h2>
             <p className="mt-6 text-lg text-muted-foreground">
@@ -292,7 +292,7 @@ export default function Home() {
                   </CardHeader>
                   <CardFooter className="pt-4">
                     {template.available ? (
-                      <Button asChild className="group w-full bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] shadow-md">
+                      <Button asChild className="group w-full bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] shadow-md font-subheading">
                         <Link href={template.href}>
                           Generate Now
                           <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -313,9 +313,14 @@ export default function Home() {
           <div className="mt-12 text-center">
             <p className="text-sm text-muted-foreground">
               Need a different template?{" "}
-              <Link href="#" className="font-semibold text-[hsl(var(--selise-blue))] hover:text-[hsl(var(--oxford-blue))] dark:text-[hsl(var(--sky-blue))]">
+              <a
+                href="https://selisegroup.com/contact-us/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-[hsl(var(--selise-blue))] hover:text-[hsl(var(--oxford-blue))] dark:text-[hsl(var(--sky-blue))]"
+              >
                 Request a template
-              </Link>
+              </a>
             </p>
           </div>
         </div>
@@ -338,7 +343,7 @@ export default function Home() {
             <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
               Why Choose Us
             </Badge>
-            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl font-heading">
               Legal Documents Made Simple
             </h2>
             <p className="mt-6 text-lg text-muted-foreground">
@@ -359,7 +364,7 @@ export default function Home() {
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
                     <Icon className="h-8 w-8 text-[hsl(var(--white))]" />
                   </div>
-                  <h3 className="mt-6 text-xl font-semibold text-foreground">
+                  <h3 className="mt-6 text-xl font-semibold text-foreground font-heading">
                     {feature.title}
                   </h3>
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -373,7 +378,7 @@ export default function Home() {
           {/* Additional benefits list */}
           <div className="mx-auto mt-16 max-w-3xl">
             <div className="rounded-2xl border border-border bg-[hsl(var(--card))]/70 p-8 backdrop-blur-sm dark:bg-[hsl(var(--background))]/40">
-              <h3 className="text-center text-xl font-semibold text-foreground">
+              <h3 className="text-center text-xl font-semibold text-foreground font-heading">
                 Everything You Need, Nothing You Don&apos;t
               </h3>
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -398,7 +403,7 @@ export default function Home() {
             <Badge className="mb-4 bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/20 dark:text-[hsl(var(--lime-green))] font-subheading uppercase tracking-[0.12em]">
               Quick & Easy
             </Badge>
-            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl font-heading">
               Generate in 3 Simple Steps
             </h2>
             <p className="mt-6 text-lg text-muted-foreground">
@@ -441,7 +446,7 @@ export default function Home() {
                         </div>
                         <Icon className="h-10 w-10 text-[hsl(var(--white))]" />
                       </div>
-                      <h3 className="mt-8 text-2xl font-semibold text-foreground">
+                      <h3 className="mt-8 text-2xl font-semibold text-foreground font-heading">
                         {item.title}
                       </h3>
                       <p className="mt-4 text-base leading-relaxed text-muted-foreground">
@@ -472,7 +477,7 @@ export default function Home() {
             <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
               Our DIO Model
             </Badge>
-            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl font-heading">
               Structured for End-to-End Delivery
             </h2>
             <p className="mt-6 text-lg text-muted-foreground">
@@ -496,7 +501,7 @@ export default function Home() {
                     <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg shadow-[hsl(var(--selise-blue))]/25">
                       <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
                     </div>
-                    <h3 className="text-2xl font-semibold text-foreground">{item.title}</h3>
+                    <h3 className="text-2xl font-semibold text-foreground font-heading">{item.title}</h3>
                   </div>
                   <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
                 </div>
@@ -522,7 +527,7 @@ export default function Home() {
             <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/20 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
               Our Values
             </Badge>
-            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            <h2 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl font-heading">
               Guided by What Matters
             </h2>
             <p className="mt-6 text-lg text-muted-foreground">
@@ -542,7 +547,7 @@ export default function Home() {
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[hsl(var(--selise-blue))]/12 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/25 dark:text-[hsl(var(--sky-blue))]">
                       <Icon className="h-5 w-5" />
                     </span>
-                    <h3 className="text-lg font-semibold text-foreground">{value.title}</h3>
+                    <h3 className="text-lg font-semibold text-foreground font-heading">{value.title}</h3>
                   </div>
                   <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{value.description}</p>
                 </div>
@@ -575,7 +580,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-size-[32px_32px]" />
         <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-bold tracking-tight text-[hsl(var(--white))] sm:text-5xl">
+            <h2 className="text-4xl font-bold tracking-tight text-[hsl(var(--white))] sm:text-5xl font-heading">
               Ready to Create Your Legal Document?
             </h2>
             <p className="mt-6 text-xl leading-8 text-[hsl(var(--white))]/90">
@@ -583,13 +588,13 @@ export default function Home() {
               No credit card. No sign-up. Just instant access.
             </p>
             <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" className="group bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))]/90 shadow-xl text-base px-10 py-6 h-auto">
+              <Button asChild size="lg" className="group bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))]/90 shadow-xl text-base px-10 py-6 h-auto font-subheading">
                 <Link href="#templates">
                   Get Started Free
                   <Sparkles className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="border-2 border-[hsl(var(--white))] bg-transparent text-[hsl(var(--white))] hover:bg-[hsl(var(--white))]/10 text-base px-10 py-6 h-auto">
+              <Button asChild variant="outline" size="lg" className="border-2 border-[hsl(var(--white))] bg-transparent text-[hsl(var(--white))] hover:bg-[hsl(var(--white))]/10 text-base px-10 py-6 h-auto font-subheading">
                 <Link href="#templates">
                   View All Templates
                 </Link>

@@ -57,38 +57,44 @@ const GENERATION_STEPS: GenerationStage[] = [
   {
     title: 'Analyzing your requirements',
     description: 'Reviewing parties, role details, compensation, and employment terms to ensure completeness.',
-    progress: 15,
-    duration: 1800,
+    progress: 12,
+    duration: 3200,
   },
   {
     title: 'Drafting core provisions',
     description: 'Crafting employment terms, duties, and compensation clauses with precise legal language.',
-    progress: 35,
-    duration: 2200,
+    progress: 28,
+    duration: 3800,
   },
   {
     title: 'Building protective clauses',
     description: 'Generating confidentiality, IP assignment, and restrictive covenant provisions tailored to your needs.',
-    progress: 55,
-    duration: 2400,
+    progress: 45,
+    duration: 4200,
   },
   {
     title: 'Structuring articles & recitals',
     description: 'Organizing sections, adding recitals, and formatting signature blocks for professional presentation.',
-    progress: 75,
-    duration: 2300,
+    progress: 62,
+    duration: 4000,
+  },
+  {
+    title: 'Generating PDF document',
+    description: 'Converting the agreement to PDF format with proper formatting, signatures, and legal structure.',
+    progress: 80,
+    duration: 4800,
   },
   {
     title: 'Quality assurance',
     description: 'Verifying defined terms, cross-references, dates, and legal consistency throughout the document.',
     progress: 92,
-    duration: 2600,
+    duration: 3600,
   },
   {
     title: 'Finalizing document',
     description: 'Applying final formatting touches and preparing your employment agreement for review.',
     progress: 98,
-    duration: 1500,
+    duration: 2400,
   },
 ];
 
@@ -325,7 +331,7 @@ function NavigationButtons({
             >
               <div className="text-left flex-1 min-w-0">
                 <div className="font-medium text-base mb-1">Skip salary entirely</div>
-                <div className="text-sm opacity-75 leading-relaxed">
+                <div className="text-sm text-[hsl(var(--muted-foreground))] leading-relaxed">
                   No salary mention in final document
                 </div>
               </div>
@@ -425,24 +431,37 @@ function SmartFlowContent() {
     let stepTimeout: NodeJS.Timeout;
     let pollInterval: NodeJS.Timeout;
     let isNavigating = false;
+    let startTime: number;
 
     const currentStage = GENERATION_STEPS[generationStepIndex];
 
-    // Animate fake progress for this stage
+    // Animate fake progress for this stage with non-linear easing
     const startProgress = generationStepIndex > 0 ? GENERATION_STEPS[generationStepIndex - 1].progress : 0;
     const targetProgress = currentStage.progress;
-    const increment = (targetProgress - startProgress) / (currentStage.duration / 50);
+    const progressRange = targetProgress - startProgress;
+
+    // Easing function: ease-in-out-cubic for smooth, non-linear progress
+    const easeInOutCubic = (t: number): number => {
+      return t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    };
+
+    startTime = Date.now();
 
     progressInterval = setInterval(() => {
-      setFakeProgress((prev) => {
-        const next = prev + increment;
-        if (next >= targetProgress) {
-          clearInterval(progressInterval);
-          return targetProgress;
-        }
-        return next;
-      });
-    }, 50);
+      const elapsed = Date.now() - startTime;
+      const normalizedTime = Math.min(elapsed / currentStage.duration, 1);
+      const easedTime = easeInOutCubic(normalizedTime);
+      const currentProgress = startProgress + (progressRange * easedTime);
+
+      setFakeProgress(currentProgress);
+
+      if (normalizedTime >= 1) {
+        clearInterval(progressInterval);
+        setFakeProgress(targetProgress);
+      }
+    }, 16); // ~60fps for smoother animation
 
     // Poll for result availability - check every 500ms
     const navigateWithResult = async (result: BackgroundGenerationResult) => {
@@ -535,38 +554,88 @@ function SmartFlowContent() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-12 space-y-4 text-center"
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="mb-12 space-y-5 text-center"
           >
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-[hsl(var(--brand-border))] bg-background shadow-sm">
-              <FileText className="h-10 w-10 text-[hsl(var(--brand-primary))]" />
-            </div>
-            <h2 className="text-4xl font-semibold text-[hsl(var(--fg))] md:text-5xl">
+            <motion.div
+              className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl border-2 border-[hsl(var(--brand-primary)/0.2)] bg-gradient-to-br from-[hsl(var(--brand-primary)/0.1)] to-[hsl(var(--brand-primary)/0.05)] shadow-lg backdrop-blur-sm"
+              animate={{
+                scale: [1, 1.05, 1],
+                boxShadow: [
+                  '0 10px 25px -5px hsla(var(--brand-primary)/0.1)',
+                  '0 15px 35px -5px hsla(var(--brand-primary)/0.2)',
+                  '0 10px 25px -5px hsla(var(--brand-primary)/0.1)',
+                ],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            >
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+              >
+                <FileText className="h-12 w-12 text-[hsl(var(--brand-primary))]" />
+              </motion.div>
+            </motion.div>
+            <h2 className="text-4xl font-semibold text-[hsl(var(--fg))] md:text-5xl font-heading tracking-tight">
               Generating your agreement
             </h2>
-            <p className="text-lg text-[hsl(var(--brand-muted))]">
+            <p className="text-lg text-[hsl(var(--brand-muted))] leading-relaxed">
               Please wait while we craft your employment agreement
             </p>
           </motion.div>
 
           {/* Progress Bar */}
           <div className="mb-10">
-            <div className="mb-3 flex items-center justify-between text-sm text-[hsl(var(--brand-muted))]">
-              <span>{Math.round(fakeProgress)}% complete</span>
-              <span>Step {generationStepIndex + 1} of {GENERATION_STEPS.length}</span>
+            <div className="mb-4 flex items-center justify-between text-sm font-medium">
+              <span className="text-[hsl(var(--fg))]">{Math.round(fakeProgress)}% complete</span>
+              <span className="text-[hsl(var(--brand-muted))]">Step {generationStepIndex + 1} of {GENERATION_STEPS.length}</span>
             </div>
-            <div className="relative h-3 overflow-hidden rounded-full border border-[hsl(var(--brand-primary)/0.35)] bg-[hsl(var(--brand-primary)/0.12)] shadow-[0_1px_2px_hsla(0,0%,0%,0.08)]">
+            <div className="relative h-4 overflow-hidden rounded-full border border-[hsl(var(--brand-primary)/0.25)] bg-[hsl(var(--brand-primary)/0.08)] shadow-inner">
+              {/* Animated background shimmer */}
               <motion.div
-                className="absolute left-0 top-0 h-full rounded-full bg-[hsl(var(--brand-primary))]"
-                initial={{ width: 0 }}
-                animate={{ width: `${fakeProgress}%` }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-[hsl(var(--brand-primary)/0.15)] to-transparent"
+                animate={{
+                  x: ['-100%', '200%'],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+              />
+              {/* Progress fill */}
+              <motion.div
+                className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-[hsl(var(--brand-primary))] via-[hsl(var(--brand-primary)/0.9)] to-[hsl(var(--brand-primary))] shadow-lg"
+                style={{ width: `${fakeProgress}%` }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+              />
+              {/* Glowing edge */}
+              <motion.div
+                className="absolute left-0 top-0 h-full w-2 rounded-full bg-white/60 blur-sm"
+                style={{ left: `${fakeProgress}%`, marginLeft: '-4px' }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
               />
               {/* Moving dot indicator */}
               <motion.div
-                className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border border-white bg-[hsl(var(--brand-primary))] shadow-[0_0_0_2px_rgba(255,255,255,0.65),0_4px_10px_hsla(206,100%,35%,0.45)]"
-                animate={{ left: `${fakeProgress}%` }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
-                style={{ marginLeft: '-8px' }}
+                className="absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full border-2 border-white bg-[hsl(var(--brand-primary))] shadow-[0_0_0_3px_rgba(255,255,255,0.5),0_4px_12px_hsla(206,100%,35%,0.5)]"
+                style={{ left: `${fakeProgress}%`, marginLeft: '-10px' }}
+                animate={{
+                  scale: [1, 1.15, 1],
+                  boxShadow: [
+                    '0 0 0 3px rgba(255,255,255,0.5), 0 4px 12px hsla(206,100%,35%,0.5)',
+                    '0 0 0 4px rgba(255,255,255,0.6), 0 6px 16px hsla(206,100%,35%,0.6)',
+                    '0 0 0 3px rgba(255,255,255,0.5), 0 4px 12px hsla(206,100%,35%,0.5)',
+                  ],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
               />
             </div>
           </div>
@@ -583,7 +652,7 @@ function SmartFlowContent() {
                   <AlertTriangle className="h-6 w-6 text-red-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="mb-2 text-xl font-semibold text-red-900">
+                  <h3 className="mb-2 text-xl font-semibold text-red-900 font-heading">
                     Generation failed
                   </h3>
                   <p className="mb-4 leading-relaxed text-red-800">
@@ -622,61 +691,71 @@ function SmartFlowContent() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={generationStepIndex}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4 }}
-                className="rounded-2xl border border-[hsl(var(--brand-border))] bg-background p-8 shadow-sm"
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className="rounded-2xl border border-[hsl(var(--brand-border))] bg-gradient-to-br from-background to-[hsl(var(--brand-primary)/0.02)] p-8 shadow-lg backdrop-blur-sm"
               >
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-[hsl(var(--brand-border))] bg-muted">
+              <div className="flex items-start gap-5">
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border-2 border-[hsl(var(--brand-primary)/0.2)] bg-gradient-to-br from-[hsl(var(--brand-primary)/0.1)] to-[hsl(var(--brand-primary)/0.05)] shadow-sm">
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                   >
-                    <Sparkles className="h-6 w-6 text-[hsl(var(--brand-primary))]" />
+                    <Sparkles className="h-7 w-7 text-[hsl(var(--brand-primary))]" />
                   </motion.div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="mb-2 text-xl font-semibold text-[hsl(var(--fg))]">
+                  <h3 className="mb-2 text-xl font-semibold text-[hsl(var(--fg))] font-heading tracking-tight">
                     {currentStage.title}
                   </h3>
-                  <p className="leading-relaxed text-[hsl(var(--brand-muted))]">
+                  <p className="leading-relaxed text-[hsl(var(--brand-muted))] text-base">
                     {currentStage.description}
                   </p>
                 </div>
               </div>
 
               {/* Stage checklist */}
-              <div className="mt-6 space-y-2">
+              <div className="mt-7 space-y-3">
                 {GENERATION_STEPS.map((stage, index) => {
                   const isCompleted = index < generationStepIndex;
                   const isCurrent = index === generationStepIndex;
 
                   return (
-                    <div
+                    <motion.div
                       key={index}
-                      className={`flex items-center gap-3 text-sm transition-colors ${
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={`flex items-center gap-3 text-sm transition-all duration-300 ${
                         isCompleted
                           ? 'text-[hsl(var(--brand-primary))]'
                           : isCurrent
-                          ? 'text-[hsl(var(--fg))]'
-                          : 'text-[hsl(var(--brand-muted))]/70'
+                          ? 'text-[hsl(var(--fg))] font-medium'
+                          : 'text-[hsl(var(--muted-foreground))]'
                       }`}
                     >
                       {isCompleted ? (
-                        <Check className="h-4 w-4" />
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                          className="flex h-5 w-5 items-center justify-center rounded-full bg-[hsl(var(--brand-primary))] text-white"
+                        >
+                          <Check className="h-3 w-3" />
+                        </motion.div>
                       ) : isCurrent ? (
                         <motion.div
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 1, repeat: Infinity }}
-                          className="h-4 w-4 rounded-full border-2 border-[hsl(var(--brand-primary))]"
+                          animate={{ scale: [1, 1.3, 1], opacity: [1, 0.8, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                          className="h-5 w-5 rounded-full border-2 border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary)/0.1)]"
                         />
                       ) : (
-                        <div className="h-4 w-4 rounded-full border-2 border-[hsl(var(--brand-border))]" />
+                        <div className="h-5 w-5 rounded-full border-2 border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-border)/0.3)]" />
                       )}
-                      <span>{stage.title}</span>
-                    </div>
+                      <span className={isCurrent ? 'font-medium' : ''}>{stage.title}</span>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -686,9 +765,14 @@ function SmartFlowContent() {
 
           {/* Bottom hint */}
           {!generationError && (
-            <p className="mt-8 text-center text-sm text-[hsl(var(--brand-muted))]">
-              This typically takes 12-15 seconds
-            </p>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="mt-8 text-center text-sm text-[hsl(var(--brand-muted))]"
+            >
+              This typically takes 25-30 seconds
+            </motion.p>
           )}
         </div>
       </div>
@@ -709,7 +793,7 @@ function SmartFlowContent() {
           <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-3xl border border-[hsl(var(--brand-border))] bg-muted shadow-sm">
             <Sparkles className="h-10 w-10 text-[hsl(var(--brand-primary))]" />
           </div>
-          <h1 className="mb-6 text-5xl font-semibold text-[hsl(var(--fg))] md:text-6xl">
+          <h1 className="mb-6 text-5xl font-semibold text-[hsl(var(--fg))] md:text-6xl font-heading">
             Smart Employment Agreement
           </h1>
           <p className="mb-12 text-xl leading-relaxed text-[hsl(var(--brand-muted))]">
@@ -736,7 +820,7 @@ function SmartFlowContent() {
           <div className="mb-8 rounded-2xl border border-[hsl(var(--brand-border))] bg-muted p-6 text-left shadow-sm">
             <div className="mb-3 flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-[hsl(var(--brand-primary))]" />
-              <h3 className="text-lg font-semibold text-[hsl(var(--fg))]">Before You Begin</h3>
+              <h3 className="text-lg font-semibold text-[hsl(var(--fg))] font-heading">Before You Begin</h3>
             </div>
             <div className="space-y-2 text-sm leading-relaxed text-[hsl(var(--brand-muted))]">
               <p><strong className="text-[hsl(var(--brand-primary))]">Not Legal Advice:</strong> This tool does not provide legal advice and generates documents for informational purposes only.</p>

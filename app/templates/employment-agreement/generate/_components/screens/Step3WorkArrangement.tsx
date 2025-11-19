@@ -58,7 +58,7 @@ export function Step3WorkArrangement() {
           <MapPin className="w-7 h-7" />
         </div>
         <div>
-          <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))]">
+          <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))] font-heading">
             Work arrangement
           </h2>
           <p className="text-lg text-[hsl(var(--brand-muted))] mt-2">
@@ -95,7 +95,7 @@ export function Step3WorkArrangement() {
                 {isRecommended && (
                   <Badge
                     variant="outline"
-                    className="absolute -top-2.5 left-1/2 -translate-x-1/2 border-[hsl(var(--brand-primary))]/40 bg-white dark:bg-[hsl(var(--eerie-black))] text-xs text-[hsl(var(--brand-primary))] shadow-md font-medium"
+                    className="absolute -top-2.5 left-1/2 -translate-x-1/2 border-[hsl(var(--brand-primary))] bg-[hsl(var(--popover))] dark:bg-[hsl(var(--popover))] text-xs text-[hsl(var(--brand-primary))] shadow-lg font-medium backdrop-blur-sm"
                   >
                     {jurisdictionName} standard
                   </Badge>

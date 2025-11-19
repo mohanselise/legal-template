@@ -18,7 +18,7 @@ export function Step2EmployeeIdentity() {
         <div className="w-14 h-14 bg-[hsl(var(--brand-primary))/0.1] rounded-2xl flex items-center justify-center text-[hsl(var(--brand-primary))]">
           <User className="w-7 h-7" />
         </div>
-        <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))]">
+        <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))] font-heading">
           Now for the employee
         </h2>
         <p className="text-lg text-[hsl(var(--brand-muted))]">

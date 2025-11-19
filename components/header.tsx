@@ -13,7 +13,7 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-primary">
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-primary font-heading">
               <FileText className="h-6 w-6" />
               <span>Legal Templates</span>
             </Link>
@@ -23,31 +23,33 @@ export default function Header() {
           <div className="hidden md:flex md:items-center md:gap-8">
             <Link
               href="/templates"
-              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors font-subheading"
             >
               Templates
             </Link>
             <Link
               href="/about"
-              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors font-subheading"
             >
               About
             </Link>
             <Link
               href="/faq"
-              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors font-subheading"
             >
               FAQ
             </Link>
-            <Link
-              href="/contact"
-              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+            <a
+              href="https://selisegroup.com/contact-us/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors font-subheading"
             >
               Contact
-            </Link>
+            </a>
             <Link
               href="/templates/employment-agreement/generate"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity font-subheading"
             >
               Generate Document
             </Link>
@@ -77,35 +79,37 @@ export default function Header() {
           <div className="space-y-1 px-4 pb-3 pt-2">
             <Link
               href="/templates"
-              className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card"
+              className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card font-subheading"
               onClick={() => setMobileMenuOpen(false)}
             >
               Templates
             </Link>
             <Link
               href="/about"
-              className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card"
+              className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card font-subheading"
               onClick={() => setMobileMenuOpen(false)}
             >
               About
             </Link>
             <Link
               href="/faq"
-              className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card"
+              className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card font-subheading"
               onClick={() => setMobileMenuOpen(false)}
             >
               FAQ
             </Link>
-            <Link
-              href="/contact"
-              className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card"
+            <a
+              href="https://selisegroup.com/contact-us/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card font-subheading"
               onClick={() => setMobileMenuOpen(false)}
             >
               Contact
-            </Link>
+            </a>
             <Link
               href="/templates/employment-agreement/generate"
-              className="block rounded-md bg-primary px-3 py-2 text-base font-semibold text-primary-foreground hover:opacity-90"
+              className="block rounded-md bg-primary px-3 py-2 text-base font-semibold text-primary-foreground hover:opacity-90 font-subheading"
               onClick={() => setMobileMenuOpen(false)}
             >
               Generate Document

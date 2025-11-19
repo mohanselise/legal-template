@@ -21,7 +21,7 @@ export function Step3SigningInfo() {
         <div className="w-14 h-14 bg-[hsl(var(--brand-primary))/0.1] rounded-2xl flex items-center justify-center text-[hsl(var(--brand-primary))]">
           <PenLine className="w-7 h-7" />
         </div>
-        <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))]">
+        <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))] font-heading">
           Signing information
         </h2>
         <p className="text-lg text-[hsl(var(--brand-muted))]">
@@ -32,7 +32,7 @@ export function Step3SigningInfo() {
       {/* Company Representative Section */}
       <div className="space-y-5">
         <div className="pb-2 border-b border-[hsl(var(--brand-border))]">
-          <h3 className="text-lg font-semibold text-[hsl(var(--fg))]">
+          <h3 className="text-lg font-semibold text-[hsl(var(--fg))] font-heading">
             Company Representative
           </h3>
           <p className="text-sm text-[hsl(var(--brand-muted))]">
@@ -85,7 +85,7 @@ export function Step3SigningInfo() {
       {/* Employee Section */}
       <div className="space-y-5 pt-4">
         <div className="pb-2 border-b border-[hsl(var(--brand-border))]">
-          <h3 className="text-lg font-semibold text-[hsl(var(--fg))]">
+          <h3 className="text-lg font-semibold text-[hsl(var(--fg))] font-heading">
             Employee Information
           </h3>
           <p className="text-sm text-[hsl(var(--brand-muted))]">

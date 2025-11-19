@@ -673,43 +673,71 @@ function ReviewContent() {
   // Show full-screen loading overlay during contract preparation
   if (isPreparingContract) {
     return (
-      <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
-        <div className="relative w-20 h-20 mb-6">
-          <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-          <div className="absolute inset-0 border-4 border-[hsl(var(--selise-blue))] border-t-transparent rounded-full animate-spin"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Send className="w-8 h-8 text-[hsl(var(--selise-blue))]" />
-          </div>
+      <div className="fixed inset-0 bg-[hsl(var(--bg))] dark:bg-[hsl(var(--background))] z-50 flex flex-col items-center justify-center px-4">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-[hsl(var(--selise-blue))]/5 blur-3xl dark:bg-[hsl(var(--sky-blue))]/10" />
+          <div className="absolute right-1/4 bottom-1/4 h-80 w-80 rounded-full bg-[hsl(var(--sky-blue))]/5 blur-3xl dark:bg-[hsl(var(--selise-blue))]/10" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Preparing Your Contract
-        </h2>
-        <p className="text-gray-600 text-center max-w-md mb-6">
-          Setting up your document for signature...
-        </p>
-        <div className="space-y-2 bg-gray-50 rounded-xl p-6 border border-gray-200">
-          {[
-            'Generating PDF document',
-            'Configuring signature fields',
-          ].map((step, index) => (
-            <div
-              key={step}
-              className="flex items-center gap-3 text-gray-600 text-sm font-medium"
-              style={{
-                animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`
-              }}
-            >
-              <div className="w-2 h-2 bg-[hsl(var(--selise-blue))] rounded-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
-              <span>{step}</span>
+
+        <div className="relative z-10 max-w-2xl w-full text-center">
+          {/* Main loader with icon */}
+          <div className="relative w-24 h-24 mx-auto mb-8">
+            <div className="absolute inset-0 border-4 border-[hsl(var(--border))] rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-[hsl(var(--selise-blue))] border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] flex items-center justify-center shadow-lg shadow-[hsl(var(--selise-blue))]/30">
+                <Send className="w-6 h-6 text-[hsl(var(--white))]" />
+              </div>
             </div>
-          ))}
+          </div>
+
+          {/* Heading */}
+          <h2 className="text-4xl font-bold text-[hsl(var(--fg))] mb-3 font-heading sm:text-5xl">
+            Preparing Your Contract
+          </h2>
+          
+          {/* Description */}
+          <p className="text-lg text-[hsl(var(--muted-foreground))] mb-10 max-w-lg mx-auto leading-relaxed">
+            Setting up your document for signature...
+          </p>
+
+          {/* Progress steps */}
+          <div className="space-y-3 bg-[hsl(var(--card))] dark:bg-[hsl(var(--card))] rounded-2xl p-8 border border-[hsl(var(--border))] shadow-xl backdrop-blur-sm max-w-md mx-auto">
+            {[
+              { label: 'Generating PDF document', icon: '📄' },
+              { label: 'Configuring signature fields', icon: '✍️' },
+              { label: 'Preparing for delivery', icon: '📧' },
+            ].map((step, index) => (
+              <div
+                key={step.label}
+                className="flex items-center gap-4 text-[hsl(var(--fg))] text-base font-medium"
+                style={{
+                  animation: `fadeInUp 0.6s ease-out ${index * 0.15}s both`
+                }}
+              >
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[hsl(var(--brand-surface))] dark:bg-[hsl(var(--brand-surface))] border border-[hsl(var(--brand-border))] shrink-0">
+                  <span className="text-lg">{step.icon}</span>
+                </div>
+                <div className="flex-1 flex items-center gap-3">
+                  <div className="w-2 h-2 bg-[hsl(var(--selise-blue))] rounded-full animate-pulse" style={{ animationDelay: `${index * 0.3}s` }} />
+                  <span>{step.label}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Subtle hint */}
+          <p className="mt-8 text-sm text-[hsl(var(--muted-foreground))]">
+            This usually takes just a few moments...
+          </p>
         </div>
 
         <style jsx>{`
           @keyframes fadeInUp {
             from {
               opacity: 0;
-              transform: translateY(10px);
+              transform: translateY(12px);
             }
             to {
               opacity: 1;
@@ -723,11 +751,11 @@ function ReviewContent() {
 
   if (isGenerating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--bg))]">
         <div className="text-center space-y-6 px-6 max-w-md">
           {/* Animated icon */}
           <div className="relative w-20 h-20 mx-auto">
-            <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-[hsl(var(--border))] rounded-full"></div>
             <div className="absolute inset-0 border-4 border-[hsl(var(--selise-blue))] border-t-transparent rounded-full animate-spin"></div>
             <div className="absolute inset-0 flex items-center justify-center">
               <Sparkles className="w-8 h-8 text-[hsl(var(--selise-blue))] animate-pulse" />
@@ -736,16 +764,16 @@ function ReviewContent() {
 
           {/* Title */}
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-[hsl(var(--fg))] font-heading">
               Creating Your Agreement
             </h2>
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <p className="text-sm text-[hsl(var(--muted-foreground))] leading-relaxed">
               Our AI is generating a professional employment agreement tailored to your specifications.
             </p>
           </div>
 
           {/* Loading steps */}
-          <div className="space-y-2 bg-white rounded-xl p-5 border border-gray-200">
+          <div className="space-y-2 bg-[hsl(var(--card))] rounded-xl p-5 border border-[hsl(var(--border))]">
             {[
               'Analyzing requirements',
               'Drafting provisions',
@@ -753,7 +781,7 @@ function ReviewContent() {
             ].map((step, index) => (
               <div
                 key={step}
-                className="flex items-center gap-3 text-gray-600 text-sm font-medium"
+                className="flex items-center gap-3 text-[hsl(var(--fg))] text-sm font-medium"
                 style={{
                   animation: `fadeInUp 0.6s ease-out ${index * 0.2}s both`
                 }}
@@ -784,7 +812,7 @@ function ReviewContent() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
-      <header ref={headerRef} className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+      <header ref={headerRef} className="sticky top-0 z-40 bg-[hsl(var(--bg))] border-b border-[hsl(var(--border))] shadow-sm">
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -798,7 +826,7 @@ function ReviewContent() {
                     Ready
                   </span>
                 </div>
-                <h1 className="text-lg font-bold text-gray-900">
+                <h1 className="text-lg font-bold text-[hsl(var(--fg))] font-heading">
                   Employment Agreement
                 </h1>
               </div>
@@ -813,14 +841,14 @@ function ReviewContent() {
       {/* Main Content Area */}
       <div className="flex-1 flex">
         {/* PDF Preview Area */}
-        <div className="flex-1 flex flex-col bg-gray-100">
+        <div className="flex-1 flex flex-col bg-[hsl(var(--muted))]">
           {/* PDF Controls */}
-          <div className="bg-white border-b border-gray-200 px-6 py-2.5 flex items-center justify-between">
+          <div className="bg-[hsl(var(--bg))] border-b border-[hsl(var(--border))] px-6 py-2.5 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <FileText className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-medium text-gray-700">Preview</span>
+              <FileText className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+              <span className="text-sm font-medium text-[hsl(var(--fg))]">Preview</span>
               {numPages && (
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded font-medium">
+                <span className="text-xs text-[hsl(var(--muted-foreground))] bg-[hsl(var(--muted))] px-2 py-0.5 rounded font-medium">
                   {numPages} {numPages === 1 ? 'page' : 'pages'}
                 </span>
               )}
@@ -828,22 +856,22 @@ function ReviewContent() {
 
             <div className="flex items-center gap-2">
               {/* Zoom Controls */}
-              <div className="flex items-center border border-gray-300 rounded-md bg-white divide-x divide-gray-300">
+              <div className="flex items-center border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] divide-x divide-[hsl(var(--border))]">
                 <button
                   onClick={handleZoomOut}
                   disabled={scale <= 0.5}
-                  className="p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   title="Zoom Out"
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
-                <span className="text-xs font-medium text-gray-700 min-w-[3.5rem] text-center px-2">
+                <span className="text-xs font-medium text-[hsl(var(--fg))] min-w-[3.5rem] text-center px-2">
                   {Math.round(scale * 100)}%
                 </span>
                 <button
                   onClick={handleZoomIn}
                   disabled={scale >= 2.0}
-                  className="p-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="p-1.5 text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   title="Zoom In"
                 >
                   <ZoomIn className="w-4 h-4" />
@@ -851,17 +879,17 @@ function ReviewContent() {
               </div>
 
               {/* Fit Presets */}
-              <div className="flex items-center border border-gray-300 rounded-md bg-white divide-x divide-gray-300">
+              <div className="flex items-center border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] divide-x divide-[hsl(var(--border))]">
                 <button
                   onClick={handleFitWidth}
-                  className="px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="px-2.5 py-1.5 text-xs font-medium text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
                   title="Fit Width"
                 >
                   Fit Width
                 </button>
                 <button
                   onClick={handleFitPage}
-                  className="px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="px-2.5 py-1.5 text-xs font-medium text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
                   title="100%"
                 >
                   100%
@@ -871,7 +899,7 @@ function ReviewContent() {
               {/* Sidebar Toggle */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-1.5 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                className="p-1.5 text-[hsl(var(--fg))] border border-[hsl(var(--border))] rounded-md hover:bg-[hsl(var(--muted))] transition-colors"
                 title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
               >
                 {sidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
@@ -885,7 +913,7 @@ function ReviewContent() {
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <Loader2 className="w-10 h-10 animate-spin text-[hsl(var(--selise-blue))] mx-auto mb-3" />
-                  <p className="text-gray-600 text-sm font-medium">Loading preview...</p>
+                  <p className="text-[hsl(var(--fg))] text-sm font-medium">Loading preview...</p>
                 </div>
               </div>
             ) : pdfUrl ? (
@@ -922,8 +950,8 @@ function ReviewContent() {
                           renderTextLayer={true}
                           renderAnnotationLayer={true}
                           loading={
-                            <div className="flex items-center justify-center bg-white" style={{ width: 612 * scale, height: 792 * scale }}>
-                              <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                            <div className="flex items-center justify-center bg-[hsl(var(--bg))]" style={{ width: 612 * scale, height: 792 * scale }}>
+                              <Loader2 className="w-8 h-8 animate-spin text-[hsl(var(--muted-foreground))]" />
                             </div>
                           }
                         />
@@ -962,42 +990,42 @@ function ReviewContent() {
 
         {/* Sidebar */}
         {sidebarOpen && (
-          <aside className="w-80 border-l border-gray-200 bg-white flex flex-col h-screen sticky top-0">
+          <aside className="w-80 border-l border-[hsl(var(--border))] bg-[hsl(var(--bg))] flex flex-col h-screen sticky top-0">
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Signature Field Controls */}
               <div>
-                <h3 className="font-semibold text-gray-900 text-sm mb-3">
+                <h3 className="font-semibold text-[hsl(var(--fg))] text-sm mb-3 font-heading">
                   Signature Fields
                 </h3>
 
                 {/* Instructions */}
-                <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg mb-4">
-                  <p className="text-[10px] text-blue-900 leading-relaxed">
-                    Fields are automatically placed. <strong>Drag fields to reposition</strong>, resize by dragging the corner.
+                <div className="p-3 bg-[hsl(var(--brand-surface))] border border-[hsl(var(--brand-border))] rounded-lg mb-4">
+                  <p className="text-[10px] text-[hsl(var(--fg))] leading-relaxed">
+                    Fields are automatically placed. <strong className="font-semibold">Drag fields to reposition</strong>, resize by dragging the corner.
                   </p>
                 </div>
 
                 {/* Field Count */}
-                <div className="text-xs text-gray-600 mb-4">
-                  <strong className="text-gray-900">{signatureFields.length}</strong> field{signatureFields.length !== 1 ? 's' : ''} placed
+                <div className="text-xs text-[hsl(var(--muted-foreground))] mb-4">
+                  <strong className="text-[hsl(var(--fg))] font-semibold">{signatureFields.length}</strong> field{signatureFields.length !== 1 ? 's' : ''} placed
                 </div>
               </div>
 
               {/* Document Details */}
               {formData && (
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="font-semibold text-gray-900 text-sm mb-3">
+                <div className="border-t border-[hsl(var(--border))] pt-6">
+                  <h3 className="font-semibold text-[hsl(var(--fg))] text-sm mb-3 font-heading">
                     Document Details
                   </h3>
                   <dl className="space-y-3 text-sm">
                     {Object.entries(formData as Record<string, unknown>)
                       .slice(0, 6)
                       .map(([key, value]) => (
-                        <div key={key} className="pb-3 border-b border-gray-100 last:border-0">
-                          <dt className="text-gray-500 capitalize text-xs mb-1">
+                        <div key={key} className="pb-3 border-b border-[hsl(var(--border))] last:border-0">
+                          <dt className="text-[hsl(var(--muted-foreground))] capitalize text-xs mb-1">
                             {key.replace(/([A-Z])/g, ' $1').trim()}
                           </dt>
-                          <dd className="font-medium text-gray-900 text-sm break-words">
+                          <dd className="font-medium text-[hsl(var(--fg))] text-sm break-words">
                             {typeof value === 'string' ? value : JSON.stringify(value)}
                           </dd>
                         </div>
@@ -1005,7 +1033,7 @@ function ReviewContent() {
                   </dl>
                   <button
                     onClick={() => router.push('/templates/employment-agreement/generate')}
-                    className="mt-4 w-full flex items-center justify-center gap-2 text-[hsl(var(--selise-blue))] hover:text-[hsl(206,100%,30%)] font-medium text-sm py-2 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="mt-4 w-full flex items-center justify-center gap-2 text-[hsl(var(--selise-blue))] hover:text-[hsl(var(--oxford-blue))] font-medium text-sm py-2 hover:bg-[hsl(var(--brand-surface))] rounded-lg transition-colors"
                   >
                     <Edit className="w-4 h-4" />
                     Edit Details
@@ -1014,16 +1042,16 @@ function ReviewContent() {
               )}
 
               {/* Legal Disclaimer */}
-              <div className="border-t border-gray-200 pt-6">
+              <div className="border-t border-[hsl(var(--border))] pt-6">
                 <LegalDisclaimer variant="compact" />
               </div>
             </div>
 
             {/* Fixed Action Buttons at Bottom */}
-            <div className="border-t border-gray-200 p-6 space-y-3 bg-white">
+            <div className="border-t border-[hsl(var(--border))] p-6 space-y-3 bg-[hsl(var(--bg))]">
               <button
                 onClick={handleDownloadPdf}
-                className="w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-gray-50 transition-all group"
+                className="w-full flex items-center justify-center gap-2 border border-[hsl(var(--border))] text-[hsl(var(--fg))] px-4 py-2.5 rounded-lg font-medium text-sm hover:bg-[hsl(var(--muted))] transition-all group"
               >
                 <Download className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
                 Download PDF

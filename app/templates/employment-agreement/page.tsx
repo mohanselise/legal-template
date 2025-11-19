@@ -50,7 +50,7 @@ export default function EmploymentAgreementPage() {
                 </Badge>
               </div>
 
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-6">
+              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-6 font-heading">
                 Create Professional Employment Agreements in Minutes
               </h1>
               <p className="text-lg sm:text-xl text-[hsl(var(--white))]/85 leading-relaxed">

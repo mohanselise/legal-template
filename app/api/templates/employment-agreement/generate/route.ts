@@ -79,15 +79,16 @@ export async function POST(request: NextRequest) {
       });
 
       if (process.env.NODE_ENV === 'development') {
+        const errorCodes = (validationResponse as any)['error-codes'] || (validationResponse as any).error_codes || [];
         console.log('🔍 [Generate API] Validation response:', {
           success: validationResponse.success,
-          errorCodes: validationResponse['error-codes'] || [],
+          errorCodes,
           hostname: validationResponse.hostname,
         });
       }
 
       if (!validationResponse.success) {
-        const errorCodes = validationResponse['error-codes'] || [];
+        const errorCodes = (validationResponse as any)['error-codes'] || (validationResponse as any).error_codes || [];
         console.error('[Generate API] Turnstile validation failed:', errorCodes);
         
         // Provide more specific error messages based on error codes

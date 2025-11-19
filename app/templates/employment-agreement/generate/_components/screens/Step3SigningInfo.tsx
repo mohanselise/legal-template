@@ -76,6 +76,7 @@ export function Step3SigningInfo() {
           required
           helpText="Email address to receive the signature request"
           validation={emailsMatch ? {
+            field: 'companyRepEmail',
             severity: 'error',
             message: 'Employee and employer emails cannot be the same',
             suggestion: 'Please use different email addresses for the employee and company representative'
@@ -114,6 +115,7 @@ export function Step3SigningInfo() {
           required
           helpText="Email address to receive the signature request"
           validation={emailsMatch ? {
+            field: 'employeeEmail',
             severity: 'error',
             message: 'Employee and employer emails cannot be the same',
             suggestion: 'Please use different email addresses for the employee and company representative'

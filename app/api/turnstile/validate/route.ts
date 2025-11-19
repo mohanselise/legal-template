@@ -30,11 +30,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (!validationResponse.success) {
-      console.error('[Turnstile] Validation failed:', validationResponse['error-codes']);
+      const errorCodes = (validationResponse as any)['error-codes'] || (validationResponse as any).error_codes || ['validation-failed'];
+      console.error('[Turnstile] Validation failed:', errorCodes);
       return NextResponse.json(
         {
           success: false,
-          'error-codes': validationResponse['error-codes'] || ['validation-failed'],
+          'error-codes': errorCodes,
         },
         { status: 400 }
       );

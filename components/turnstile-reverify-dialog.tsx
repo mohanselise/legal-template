@@ -43,7 +43,7 @@ export function TurnstileReverifyDialog({
   React.useEffect(() => {
     if (turnstileStatus === 'success' && turnstileToken) {
       // Store token using token manager (imported function)
-      storeTurnstileToken(turnstileToken);
+      setTurnstileToken(turnstileToken);
       // Small delay to ensure token is stored, then auto-close
       const timer = setTimeout(() => {
         onVerified(turnstileToken);
@@ -58,7 +58,7 @@ export function TurnstileReverifyDialog({
   const handleConfirm = () => {
     if (turnstileStatus === 'success' && turnstileToken) {
       // Store token using token manager
-      storeTurnstileToken(turnstileToken);
+      setTurnstileToken(turnstileToken);
       onVerified(turnstileToken);
       // Reset state for next time
       setTurnstileTokenState(null);

@@ -1,16 +1,19 @@
 import { z } from 'zod';
+import type { StructuredAddress } from '@/lib/utils/address-formatting';
 
 // Form validation schema for employment agreement generation
 export const employmentAgreementSchema = z.object({
   // Step 1: Basic Information
   companyName: z.string().min(1, 'Company name is required'),
   companyAddress: z.string().min(1, 'Company address is required'),
+  companyAddressStructured: z.custom<StructuredAddress>().optional(),
   companyState: z.string().min(1, 'State/Province is required'),
   companyCountry: z.string().min(1, 'Country is required'),
   companyWebsite: z.string().optional(),
 
   employeeName: z.string().min(1, 'Employee name is required'),
   employeeAddress: z.string().min(1, 'Employee address is required'),
+  employeeAddressStructured: z.custom<StructuredAddress>().optional(),
   employeeEmail: z.string().email('Valid email is required'),
   employeePhone: z.string().optional(),
 

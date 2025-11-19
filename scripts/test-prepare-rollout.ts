@@ -1,25 +1,30 @@
 #!/usr/bin/env tsx
 
 /**
- * SELISE Signature - Prepare + Rollout Test (Automatic Send)
+ * SELISE Signature - Prepare + Rollout Test
  *
- * This script performs the automated workflow:
+ * Usage: Place this file and test-pdf.pdf in the same folder, then run:
+ *   tsx test-prepare-rollout.ts
+ *
+ * This script:
  * 1. Authenticates with SELISE Identity API
  * 2. Uploads test-pdf.pdf to SELISE Storage
- * 3. Prepares contract with signatories (Prepare API)
- * 4. Places signature fields (Rollout API)
- * 5. Sends the contract automatically and fetches document events
+ * 3. Prepares contract with signatories
+ * 4. Rolls out with signature fields
+ * 5. Checks rollout status and fetches events
  */
 
 import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { config } from 'dotenv';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables
-config({ path: join(process.cwd(), '.env.local') });
+// Get directory of this script file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-const SELISE_CLIENT_ID = process.env.SELISE_CLIENT_ID;
-const SELISE_CLIENT_SECRET = process.env.SELISE_CLIENT_SECRET;
+// Hardcoded credentials for easy reproduction by developers
+const SELISE_CLIENT_ID = '70c3d8d1-0568-4c39-a05c-2967a581e583';
+const SELISE_CLIENT_SECRET = 'SlzTXWE5Fmkwz5JyzfuVeOWPv+IBhywUYDL807iSE25Ptg=';
 
 // SELISE API endpoints
 const IDENTITY_API = 'https://selise.app/api/identity/v100/identity/token';
@@ -64,13 +69,6 @@ async function main() {
   console.log('🚀 SELISE Signature - Prepare + Rollout Test (Review Before Sending)\n');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-  // Validate environment variables
-  if (!SELISE_CLIENT_ID || !SELISE_CLIENT_SECRET) {
-    console.error('❌ Missing SELISE credentials in .env.local');
-    console.error('   Required: SELISE_CLIENT_ID, SELISE_CLIENT_SECRET');
-    process.exit(1);
-  }
-
   console.log('📋 Test Configuration:');
   console.log('   Document: test-pdf.pdf');
   console.log(`   Company Rep: ${COMPANY_REP.firstName} ${COMPANY_REP.lastName} <${COMPANY_REP.email}>`);
@@ -86,7 +84,7 @@ async function main() {
 
     // Step 2: Upload document
     console.log('📤 Step 2: Uploading test-pdf.pdf to SELISE Storage...');
-    const testFilePath = join(process.cwd(), 'test-pdf.pdf');
+    const testFilePath = join(__dirname, 'test-pdf.pdf');
     const fileBuffer = await readFile(testFilePath);
     console.log(`   File size: ${fileBuffer.length} bytes`);
 
@@ -115,32 +113,27 @@ async function main() {
 
     console.log('📐 Step 4: Rolling out with signature fields...');
     await rolloutContract(accessToken, prepareResult.documentId, fileId);
-    console.log('✅ Rollout completed and invitations sent\n');
+    console.log('✅ Rollout API call completed\n');
+
+    console.log('⏳ Step 4.5: Waiting for rollout status...');
+    const rolloutStatus = await waitForRolloutStatus(accessToken, prepareResult.documentId);
+    if (rolloutStatus === 'rollout_success') {
+      console.log('✅ Rollout succeeded - invitations sent\n');
+    } else if (rolloutStatus === 'rollout_failed') {
+      console.error('❌ Rollout failed\n');
+    } else {
+      console.warn('⚠️  Rollout status unknown - timed out waiting for event\n');
+    }
 
     console.log('📊 Step 5: Fetching document events...');
     const events = await getDocumentEvents(accessToken, prepareResult.documentId);
     console.log('📦 GetEvents response:', JSON.stringify(events, null, 2));
 
     // Output results
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🎉 SUCCESS! Contract prepared, rolled out, and invitations sent\n');
-    console.log('📋 Contract Details:');
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ Test completed');
     console.log(`   Document ID: ${prepareResult.documentId}`);
-    console.log(`   Tracking ID: ${prepareResult.trackingId}`);
-    console.log(`   Title: ${prepareResult.title}\n`);
-
-    console.log('👥 Signatories (in signing order):');
-    console.log(`   1️⃣  ${COMPANY_REP.firstName} ${COMPANY_REP.lastName} (${COMPANY_REP.email})`);
-    console.log(`       Role: Contract Owner (signs first)`);
-    console.log(`   2️⃣  ${EMPLOYEE.firstName} ${EMPLOYEE.lastName} (${EMPLOYEE.email})`);
-    console.log(`       Role: Employee (signs after owner)\n`);
-
-    console.log('🧭 Signature Field Positions (auto-placed):');
-    console.log(`   Owner signature: Page ${SIGNATURE_POSITIONS.lastPage}, X=${SIGNATURE_POSITIONS.companyRep.signature.x}, Y=${SIGNATURE_POSITIONS.companyRep.signature.y}`);
-    console.log(`   Employee signature: Page ${SIGNATURE_POSITIONS.lastPage}, X=${SIGNATURE_POSITIONS.employee.signature.x}, Y=${SIGNATURE_POSITIONS.employee.signature.y}`);
-    console.log('   Names and timestamps positioned near respective signatures\n');
-
-    console.log('🚀 Contract has been sent to signatories. No manual review step required.\n');
+    console.log(`   Tracking ID: ${prepareResult.trackingId}\n`);
 
   } catch (error) {
     console.error('\n❌ Test failed!');
@@ -162,8 +155,8 @@ async function main() {
 async function getAccessToken(): Promise<string> {
   const params = new URLSearchParams({
     grant_type: 'client_credentials',
-    client_id: SELISE_CLIENT_ID!,
-    client_secret: SELISE_CLIENT_SECRET!,
+    client_id: SELISE_CLIENT_ID,
+    client_secret: SELISE_CLIENT_SECRET,
   });
 
   const response = await fetch(IDENTITY_API, {
@@ -356,30 +349,32 @@ async function rolloutContract(accessToken: string, documentId: string, fileId: 
   const stampCoordinates = [
     {
       FileId: fileId,
-      PageNumber: SIGNATURE_POSITIONS.lastPage,
       Width: SIGNATURE_POSITIONS.companyRep.signature.width,
       Height: SIGNATURE_POSITIONS.companyRep.signature.height,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
       X: SIGNATURE_POSITIONS.companyRep.signature.x,
       Y: SIGNATURE_POSITIONS.companyRep.signature.y,
       SignatoryEmail: COMPANY_REP.email,
+      SignatureImageFileId: null,
     },
     {
       FileId: fileId,
-      PageNumber: SIGNATURE_POSITIONS.lastPage,
       Width: SIGNATURE_POSITIONS.employee.signature.width,
       Height: SIGNATURE_POSITIONS.employee.signature.height,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
       X: SIGNATURE_POSITIONS.employee.signature.x,
       Y: SIGNATURE_POSITIONS.employee.signature.y,
       SignatoryEmail: EMPLOYEE.email,
+      SignatureImageFileId: null,
     },
   ];
 
   const textFieldCoordinates = [
     {
       FileId: fileId,
-      PageNumber: SIGNATURE_POSITIONS.lastPage,
       Width: SIGNATURE_POSITIONS.companyRep.nameField.width,
       Height: SIGNATURE_POSITIONS.companyRep.nameField.height,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
       X: SIGNATURE_POSITIONS.companyRep.nameField.x,
       Y: SIGNATURE_POSITIONS.companyRep.nameField.y,
       SignatoryEmail: COMPANY_REP.email,
@@ -387,9 +382,9 @@ async function rolloutContract(accessToken: string, documentId: string, fileId: 
     },
     {
       FileId: fileId,
-      PageNumber: SIGNATURE_POSITIONS.lastPage,
       Width: SIGNATURE_POSITIONS.employee.nameField.width,
       Height: SIGNATURE_POSITIONS.employee.nameField.height,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
       X: SIGNATURE_POSITIONS.employee.nameField.x,
       Y: SIGNATURE_POSITIONS.employee.nameField.y,
       SignatoryEmail: EMPLOYEE.email,
@@ -400,9 +395,9 @@ async function rolloutContract(accessToken: string, documentId: string, fileId: 
   const stampPostInfoCoordinates = [
     {
       FileId: fileId,
-      PageNumber: SIGNATURE_POSITIONS.lastPage,
       Width: SIGNATURE_POSITIONS.companyRep.dateStamp.width,
       Height: SIGNATURE_POSITIONS.companyRep.dateStamp.height,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
       X: SIGNATURE_POSITIONS.companyRep.dateStamp.x,
       Y: SIGNATURE_POSITIONS.companyRep.dateStamp.y,
       EntityName: 'AuditLog',
@@ -411,9 +406,9 @@ async function rolloutContract(accessToken: string, documentId: string, fileId: 
     },
     {
       FileId: fileId,
-      PageNumber: SIGNATURE_POSITIONS.lastPage,
       Width: SIGNATURE_POSITIONS.employee.dateStamp.width,
       Height: SIGNATURE_POSITIONS.employee.dateStamp.height,
+      PageNumber: SIGNATURE_POSITIONS.lastPage,
       X: SIGNATURE_POSITIONS.employee.dateStamp.x,
       Y: SIGNATURE_POSITIONS.employee.dateStamp.y,
       EntityName: 'AuditLog',
@@ -501,6 +496,84 @@ async function waitForPreparationSuccess(
   }
 
   return false;
+}
+
+/**
+ * Wait for rollout status with specific retry timing:
+ * - First check: after 5 seconds
+ * - Second check: after 10 more seconds (15 seconds total)
+ * - Third check: after 30 more seconds (45 seconds total)
+ */
+async function waitForRolloutStatus(
+  accessToken: string,
+  documentId: string
+): Promise<'rollout_success' | 'rollout_failed' | null> {
+  const delays = [5000, 10000, 30000]; // 5s, then +10s, then +30s
+
+  for (let attempt = 0; attempt < delays.length; attempt++) {
+    const delay = delays[attempt];
+    const totalTime = delays.slice(0, attempt + 1).reduce((a, b) => a + b, 0) / 1000;
+
+    console.log(`   ⏱️  Waiting ${delay / 1000}s before check ${attempt + 1}/${delays.length}...`);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+
+    console.log(`   🔍 Checking rollout status (${totalTime}s elapsed)...`);
+
+    const response = await fetch(GET_EVENTS_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        DocumentId: documentId,
+        Type: 'DocumentStatus',
+      }),
+    });
+
+    const responseText = await response.clone().text();
+    console.log(`   📥 Response status: ${response.status} ${response.statusText}`);
+    console.log(`   📥 Response body: ${responseText || '(empty)'}`);
+
+    if (!response.ok) {
+      console.warn(`   ⚠️  GetEvents failed: ${response.status}`);
+      continue;
+    }
+
+    const events = responseText ? JSON.parse(responseText) : null;
+
+    if (Array.isArray(events) && events.length > 0) {
+      // Check for rollout_success
+      const successEvent = events.find(
+        (e: { Type?: string; Status?: string; Success?: boolean }) =>
+          e.Type === 'DocumentStatus' &&
+          e.Status === 'rollout_success' &&
+          e.Success === true
+      );
+
+      if (successEvent) {
+        console.log(`   ✅ Found rollout_success event!`);
+        return 'rollout_success';
+      }
+
+      // Check for rollout_failed
+      const failedEvent = events.find(
+        (e: { Type?: string; Status?: string }) =>
+          e.Type === 'DocumentStatus' &&
+          e.Status === 'rollout_failed'
+      );
+
+      if (failedEvent) {
+        console.log(`   ❌ Found rollout_failed event!`);
+        return 'rollout_failed';
+      }
+    }
+
+    console.log(`   ⏳ No rollout status found yet...`);
+  }
+
+  console.log(`   ⚠️  Timeout: No rollout status after 45 seconds`);
+  return null;
 }
 
 async function getDocumentEvents(accessToken: string, documentId: string): Promise<unknown> {

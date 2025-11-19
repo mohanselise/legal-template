@@ -17,7 +17,7 @@ import { SIGNATURE_LAYOUT, SIGNATURE_FIELD_DEFAULTS, type SignatureFieldMetadata
 // Dynamically import react-pdf components to avoid SSR issues
 const Document = dynamic(
   () => import('react-pdf').then((mod) => mod.Document),
-  { 
+  {
     ssr: false,
     loading: () => <div className="flex items-center justify-center py-20"><div className="text-[hsl(var(--brand-muted))]">Loading PDF viewer...</div></div>
   }
@@ -48,7 +48,7 @@ function ReviewContent() {
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
-  
+
   // Signature field overlay state
   const [signatureFields, setSignatureFields] = useState<SignatureField[]>([]);
   const [apiSignatureFields, setApiSignatureFields] = useState<SignatureFieldMetadata[] | null>(null);
@@ -97,7 +97,7 @@ function ReviewContent() {
       setError(null);
       // Generate PDF from the loaded document
       generatePdfPreview(sessionPayload!.document, sessionPayload!.formData);
-      
+
       // Try to load saved signature fields
       const docId = sessionPayload!.document.metadata?.generatedAt || Date.now().toString();
       const storageKey = `employment-agreement-signature-fields-${docId}`;
@@ -115,7 +115,7 @@ function ReviewContent() {
     const docParam = searchParams.get('document');
     const dataParam = searchParams.get('data');
 
-        if (!hasSessionDocument && docParam) {
+    if (!hasSessionDocument && docParam) {
       try {
         const parsedDocument: EmploymentAgreement = JSON.parse(docParam);
         setGeneratedDocument(parsedDocument);
@@ -123,7 +123,7 @@ function ReviewContent() {
         setIsGenerating(false);
         setError(null);
         console.log('✅ Document parsed successfully:', parsedDocument);
-        
+
         // Parse formData if available and generate PDF
         let parsedFormData = null;
         if (dataParam) {
@@ -140,9 +140,9 @@ function ReviewContent() {
             console.error('Failed to parse form data');
           }
         }
-        
+
         generatePdfPreview(parsedDocument, parsedFormData);
-        
+
         // Try to load saved signature fields
         const docId = parsedDocument.metadata?.generatedAt || Date.now().toString();
         const storageKey = `employment-agreement-signature-fields-${docId}`;
@@ -199,10 +199,10 @@ function ReviewContent() {
     return metadataFields.map((field) => {
       // Convert party to signatoryIndex (0 = employer, 1 = employee)
       const signatoryIndex = field.party === 'employer' ? 0 : 1;
-      
+
       // Ensure pageNumber matches actual PDF page count
       const pageNumber = Math.min(field.pageNumber, actualPageCount);
-      
+
       return {
         id: field.id,
         type: field.type === 'text' ? 'signature' : field.type, // Map 'text' to 'signature'
@@ -236,7 +236,7 @@ function ReviewContent() {
       if (!response.ok) throw new Error('Failed to generate PDF preview');
 
       const responseData = await response.json();
-      
+
       if (responseData.success && responseData.pdfBase64) {
         // Convert base64 to blob
         const binaryString = atob(responseData.pdfBase64);
@@ -247,7 +247,7 @@ function ReviewContent() {
         const blob = new Blob([bytes], { type: 'application/pdf' });
         const url = window.URL.createObjectURL(blob);
         setPdfUrl(url);
-        
+
         // Store API-provided signature fields for later use
         if (responseData.signatureFields && Array.isArray(responseData.signatureFields)) {
           console.log('✅ Received signature fields from API:', responseData.signatureFields);
@@ -283,18 +283,37 @@ function ReviewContent() {
       // The overlay fields are already in PDF points, so we can use them directly
       // This includes any user adjustments (drag/resize) made to the fields
       const signatureFieldsForAPI = signatureFields.map((field) => {
-        // Ensure pageNumber is valid (convert 1-indexed to 0-indexed)
-        const pageNumber = Math.max(0, (field.pageNumber || 1) - 1);
+        // Send 1-indexed page number to API (Server will convert to 0-indexed)
+        const pageNumber = field.pageNumber || 1;
+
+        // Scaling factor: 96 DPI (Screen/API) / 72 DPI (PDF) = 1.3333
+        const DPI_SCALE = 96 / 72;
+
+        let x = field.x;
+        let y = field.y;
+        let width = field.width;
+        let height = field.height;
+
+        if (field.type === 'signature') {
+          // For signatures, apply DPI scaling only.
+          // The "shifted down by height" report indicates the API uses Top-Left anchor,
+          // so we should NOT add the height. The scaling fixes the main position issue.
+          x = field.x * DPI_SCALE;
+          y = field.y * DPI_SCALE;
+          width = field.width * DPI_SCALE;
+          height = field.height * DPI_SCALE;
+        }
+        // Dates are reported correct as-is (Top-Left, 72 DPI)
 
         return {
           id: field.id,
           type: field.type, // 'signature' | 'date'
           signatoryIndex: field.signatoryIndex, // 0 = employer, 1 = employee
-          pageNumber, // 0-indexed for API
-          x: field.x, // PDF points - exact position from overlay
-          y: field.y, // PDF points - exact position from overlay
-          width: field.width, // PDF points - exact size from overlay
-          height: field.height, // PDF points - exact size from overlay
+          pageNumber, // 1-indexed for Server
+          x: Math.round(x),
+          y: Math.round(y),
+          width: Math.round(width),
+          height: Math.round(height),
           label: field.label || `${field.type === 'signature' ? 'Signature' : 'Date'}`,
         };
       });
@@ -356,15 +375,15 @@ function ReviewContent() {
       );
 
       // Log the exact coordinates being sent to the API
-      console.log('✅ Sending signature fields with exact overlay coordinates:', {
+      console.log('✅ Sending signature fields with exact overlay coordinates (Top-Left origin):', {
         totalFields: signatureFieldsForAPI.length,
         fields: signatureFieldsForAPI.map((field) => ({
           id: field.id,
           type: field.type,
           signatoryIndex: field.signatoryIndex,
           pageNumber: field.pageNumber,
-          position: `(${field.x.toFixed(2)}, ${field.y.toFixed(2)})`,
-          size: `${field.width.toFixed(2)}×${field.height.toFixed(2)}`,
+          position: `(${field.x}, ${field.y})`,
+          size: `${field.width}×${field.height}`,
           label: field.label,
         })),
       });
@@ -386,8 +405,8 @@ function ReviewContent() {
         const errorBody = await rolloutResponse.json().catch(() => null);
         throw new Error(
           errorBody?.details ||
-            errorBody?.error ||
-            'Failed to send contract for signature'
+          errorBody?.error ||
+          'Failed to send contract for signature'
         );
       }
 
@@ -448,13 +467,13 @@ function ReviewContent() {
     setNumPages(numPages);
     // Navigate to last page where signature fields are typically placed
     setPageNumber(numPages);
-    
+
     // If we have API-provided signature fields, convert and use them now that we know the actual page count
     if (apiSignatureFields && apiSignatureFields.length > 0 && signatureFields.length === 0) {
       const convertedFields = convertMetadataToFields(apiSignatureFields, numPages);
       console.log('✅ Using API-provided signature fields with actual page count:', convertedFields);
       setSignatureFields(convertedFields);
-      
+
       // Save to sessionStorage
       if (generatedDocument) {
         const docId = generatedDocument.metadata?.generatedAt || Date.now().toString();
@@ -497,7 +516,7 @@ function ReviewContent() {
 
     const docId = generatedDocument.metadata?.generatedAt || Date.now().toString();
     const storageKey = `employment-agreement-signature-fields-${docId}`;
-    
+
     // Priority 1: Try to load saved fields (user-adjusted positions)
     const savedFields = sessionStorage.getItem(storageKey);
     if (savedFields) {
@@ -529,7 +548,7 @@ function ReviewContent() {
     const lastPage = totalPages;
     const employerName = generatedDocument.parties?.employer?.legalName || (formData.companyName as string) || 'Company';
     const employeeName = generatedDocument.parties?.employee?.legalName || (formData.employeeName as string) || 'Employee';
-    
+
     const defaultFields: SignatureField[] = [
       // Employer signature
       {
@@ -784,7 +803,7 @@ function ReviewContent() {
                 </h1>
               </div>
             </div>
-            
+
             {/* Header info only - buttons moved to sidebar */}
           </div>
         </div>
@@ -950,7 +969,7 @@ function ReviewContent() {
                 <h3 className="font-semibold text-gray-900 text-sm mb-3">
                   Signature Fields
                 </h3>
-                
+
                 {/* Instructions */}
                 <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg mb-4">
                   <p className="text-[10px] text-blue-900 leading-relaxed">
@@ -974,15 +993,15 @@ function ReviewContent() {
                     {Object.entries(formData as Record<string, unknown>)
                       .slice(0, 6)
                       .map(([key, value]) => (
-                      <div key={key} className="pb-3 border-b border-gray-100 last:border-0">
-                        <dt className="text-gray-500 capitalize text-xs mb-1">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
-                        </dt>
-                        <dd className="font-medium text-gray-900 text-sm break-words">
-                          {typeof value === 'string' ? value : JSON.stringify(value)}
-                        </dd>
-                      </div>
-                    ))}
+                        <div key={key} className="pb-3 border-b border-gray-100 last:border-0">
+                          <dt className="text-gray-500 capitalize text-xs mb-1">
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </dt>
+                          <dd className="font-medium text-gray-900 text-sm break-words">
+                            {typeof value === 'string' ? value : JSON.stringify(value)}
+                          </dd>
+                        </div>
+                      ))}
                   </dl>
                   <button
                     onClick={() => router.push('/templates/employment-agreement/generate')}
@@ -999,7 +1018,7 @@ function ReviewContent() {
                 <LegalDisclaimer variant="compact" />
               </div>
             </div>
-            
+
             {/* Fixed Action Buttons at Bottom */}
             <div className="border-t border-gray-200 p-6 space-y-3 bg-white">
               <button

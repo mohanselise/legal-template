@@ -3,6 +3,50 @@
  * This structure ensures consistent, well-formatted legal documents
  */
 
+// ==========================================
+// NEW BLOCK-BASED SCHEMA
+// ==========================================
+
+export type BlockType = 
+  | 'document'      // Root container
+  | 'article'       // Level 1 container (e.g., "Article 1")
+  | 'section'       // Level 2 container (e.g., "1.1")
+  | 'paragraph'     // Standard text
+  | 'list'          // Ordered/Unordered lists
+  | 'list_item'     // Individual list items
+  | 'definition'    // Term/Definition pairs
+  | 'definition_item' // Individual definition item
+  | 'table'         // Simple tabular data
+  | 'table_row'     // Table row
+  | 'table_cell'    // Table cell
+  | 'page_break';   // Explicit control
+
+export interface DocumentBlock {
+  type: BlockType;
+  id?: string;
+  props?: Record<string, any>; // Flexible attributes (title, number, style, etc.)
+  children?: DocumentBlock[];
+  text?: string; // For leaf nodes like paragraph, table_cell
+}
+
+export interface LegalDocument {
+  metadata: DocumentMetadata;
+  content: DocumentBlock[]; // The main body content (Articles, Sections, etc.)
+  signatories: SignatoryData[]; // Data for the signature page
+}
+
+export interface SignatoryData {
+  party: 'employer' | 'employee' | 'witness' | 'other';
+  name: string;
+  title?: string;
+  email?: string;
+  phone?: string;
+}
+
+// ==========================================
+// LEGACY SCHEMA (Kept for transition)
+// ==========================================
+
 export interface EmploymentAgreement {
   metadata: DocumentMetadata;
   parties: Parties;
@@ -22,6 +66,7 @@ export interface DocumentMetadata {
 export interface Parties {
   employer: Party;
   employee: Party;
+  // ...
 }
 
 export interface Party {
@@ -45,6 +90,7 @@ export interface Address {
   country?: string;
 }
 
+// Legacy structures
 export interface Article {
   number: number;
   title: string;
@@ -52,7 +98,7 @@ export interface Article {
 }
 
 export interface Section {
-  number?: string; // e.g., "4.1", "4.2" or null for unnumbered
+  number?: string;
   title?: string;
   content: ContentBlock[];
 }
@@ -69,13 +115,13 @@ export interface ContentBlock {
 }
 
 export interface ListItem {
-  marker?: string; // e.g., "a.", "i.", "1."
+  marker?: string;
   content: string;
   subItems?: ListItem[];
 }
 
 export interface DefinitionItem {
-  number?: string; // Optional subsection number like "1.1", "1.2"
+  number?: string;
   term: string;
   definition: string;
 }
@@ -95,82 +141,3 @@ export interface SignatureField {
   type: 'signature' | 'name' | 'title' | 'date';
   value?: string;
 }
-
-// Example structure for validation
-export const EMPLOYMENT_AGREEMENT_TEMPLATE: EmploymentAgreement = {
-  metadata: {
-    title: 'Employment Agreement',
-    effectiveDate: '2025-01-01',
-    documentType: 'employment-agreement',
-    generatedAt: new Date().toISOString(),
-  },
-  parties: {
-    employer: {
-      legalName: 'Company Name',
-      address: {
-        street: '123 Business St',
-        city: 'City',
-        state: 'State',
-        postalCode: '12345',
-        country: 'Country',
-      },
-      designatedTitle: 'EMPLOYER',
-    },
-    employee: {
-      legalName: 'Employee Name',
-      address: {
-        street: '456 Home St',
-        city: 'City',
-        state: 'State',
-        postalCode: '12345',
-        country: 'Country',
-      },
-      email: 'employee@example.com',
-      designatedTitle: 'EMPLOYEE',
-    },
-  },
-  recitals: [
-    'WHEREAS, EMPLOYER is engaged in...',
-    'WHEREAS, EMPLOYER desires to employ EMPLOYEE...',
-    'NOW, THEREFORE, in consideration of...',
-  ],
-  articles: [
-    {
-      number: 1,
-      title: 'DEFINITIONS',
-      sections: [
-        {
-          content: [
-            {
-              type: 'definition',
-              content: [
-                { term: 'AGREEMENT', definition: 'This Employment Agreement...' },
-                { term: 'EMPLOYER', definition: 'The company as defined above...' },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ],
-  signatures: [
-    {
-      party: 'employer',
-      partyName: 'Company Name',
-      fields: [
-        { label: 'By', type: 'signature' },
-        { label: 'Name', type: 'name' },
-        { label: 'Title', type: 'title' },
-        { label: 'Date', type: 'date' },
-      ],
-    },
-    {
-      party: 'employee',
-      partyName: 'Employee Name',
-      fields: [
-        { label: 'Signature', type: 'signature' },
-        { label: 'Date', type: 'date' },
-      ],
-    },
-  ],
-};

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { EmploymentAgreementPDF } from '@/lib/pdf/EmploymentAgreementPDF';
 import { generateSignatureFieldMetadata, createMetadataPayload } from '@/lib/pdf/signature-field-metadata';
+import type { LegalDocument, SignatoryData } from '@/app/api/templates/employment-agreement/schema';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,11 +26,25 @@ export async function POST(request: NextRequest) {
     
     // Calculate number of pages (approximate - can be refined)
     // For now, we'll assume signature is on last page
-    const estimatedPages = Math.ceil(document.articles?.length || 5);
+    // Fallback to 5 pages if content length is not available (though it should be)
+    const contentBlockCount = (document as LegalDocument).content?.length || 0;
+    const estimatedPages = Math.ceil(contentBlockCount / 2) + 2; // Rough estimate: 2 blocks per page + cover/sig
     
+    // Get names for metadata
+    // Try to get from signatories first, then metadata/formData
+    let employerName = formData.companyName || 'Company';
+    let employeeName = formData.employeeName || 'Employee';
+    
+    const legalDoc = document as LegalDocument;
+    if (legalDoc.signatories) {
+      const empSignatory = legalDoc.signatories.find(s => s.party === 'employer');
+      const employeeSignatory = legalDoc.signatories.find(s => s.party === 'employee');
+      
+      if (empSignatory?.name) employerName = empSignatory.name;
+      if (employeeSignatory?.name) employeeName = employeeSignatory.name;
+    }
+
     // Generate signature field metadata
-    const employerName = document.parties?.employer?.legalName || formData.companyName || 'Company';
-    const employeeName = document.parties?.employee?.legalName || formData.employeeName || 'Employee';
     const signatureFields = generateSignatureFieldMetadata(
       employerName,
       employeeName,
@@ -37,22 +52,36 @@ export async function POST(request: NextRequest) {
     );
 
     // Extract signatory information from formData (Step 3 of SmartFlow)
-    const signatories = [
-      {
-        party: 'employer' as const,
-        name: formData.companyRepName || employerName,
-        email: formData.companyRepEmail || document.parties?.employer?.email || '',
-        role: formData.companyRepTitle || 'Authorized Representative',
-        ...(formData.companyRepPhone && { phone: formData.companyRepPhone }),
-      },
-      {
-        party: 'employee' as const,
-        name: employeeName,
-        email: formData.employeeEmail || document.parties?.employee?.email || '',
-        role: formData.jobTitle || 'Employee',
-        ...(formData.employeePhone && { phone: formData.employeePhone }),
-      },
-    ];
+    // OR from the document signatories if available (preferred)
+    let signatories = [];
+    
+    if (legalDoc.signatories && Array.isArray(legalDoc.signatories)) {
+       signatories = legalDoc.signatories.map(s => ({
+         party: s.party,
+         name: s.name,
+         email: s.email || (s.party === 'employer' ? formData.companyRepEmail : formData.employeeEmail) || '',
+         role: s.title || (s.party === 'employer' ? 'Authorized Representative' : 'Employee'),
+         ...(s.phone && { phone: s.phone })
+       }));
+    } else {
+      // Fallback for legacy or missing signatories
+      signatories = [
+        {
+          party: 'employer' as const,
+          name: formData.companyRepName || employerName,
+          email: formData.companyRepEmail || '',
+          role: formData.companyRepTitle || 'Authorized Representative',
+          ...(formData.companyRepPhone && { phone: formData.companyRepPhone }),
+        },
+        {
+          party: 'employee' as const,
+          name: employeeName,
+          email: formData.employeeEmail || '',
+          role: formData.jobTitle || 'Employee',
+          ...(formData.employeePhone && { phone: formData.employeePhone }),
+        },
+      ];
+    }
 
     // Check if client wants metadata (for signature editor)
     const url = new URL(request.url);
@@ -76,9 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Return the PDF file (original behavior)
-    const sanitizedEmployeeName = sanitizeForFilename(
-      document.parties?.employee?.legalName || formData.employeeName
-    );
+    const sanitizedEmployeeName = sanitizeForFilename(employeeName);
     const filename = `Employment_Agreement_${sanitizedEmployeeName}.pdf`;
 
     // Convert Buffer to Uint8Array for NextResponse compatibility

@@ -1,9 +1,4 @@
-import OpenAI from 'openai';
-import { SmartCard } from './card-engine/types';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { openrouter, JURISDICTION_MODEL } from './openrouter';
 
 export interface SuggestionRequest {
   cardId: string;
@@ -27,7 +22,7 @@ export interface SuggestionResponse {
 export async function getAISuggestion(request: SuggestionRequest): Promise<SuggestionResponse> {
   try {
     const contextStr = Object.entries(request.context)
-      .filter(([_, value]) => value)
+      .filter(([, value]) => value)
       .map(([key, value]) => `${key}: ${value}`)
       .join(', ');
 
@@ -44,8 +39,8 @@ Your response must be a JSON object with exactly these fields:
   "reasoning": "brief explanation (max 20 words)"
 }`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const completion = await openrouter.chat.completions.create({
+      model: JURISDICTION_MODEL, // Use llama-4-scout for small AI tasks
       messages: [
         {
           role: 'system',

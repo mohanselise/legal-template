@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openai } from '@/lib/openai';
+import { openrouter } from '@/lib/openrouter';
 
 type SectionKey = 'basics' | 'compensation' | 'workTerms' | 'legalTerms';
 
@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
     console.log('📋 [Section API] Generating section:', section);
 
     const prompt = buildSectionPrompt(section, data);
-    console.log('🤖 [Section API] Calling OpenAI for section:', section);
+    console.log('🤖 [Section API] Calling OpenRouter for section:', section);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+    const completion = await openrouter.chat.completions.create({
+      model: 'anthropic/claude-3.5-sonnet',
       messages: [
         {
           role: 'system',

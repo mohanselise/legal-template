@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openai } from '@/lib/openai';
+import { openrouter, JURISDICTION_MODEL } from '@/lib/openrouter';
 import { JobTitleAnalysis } from '@/lib/types/smart-form';
 
 interface JobTitleAnalysisRequest {
@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use GPT-4o-mini for fast job title analysis
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    // Use llama-4-scout via OpenRouter for fast job title analysis
+    const completion = await openrouter.chat.completions.create({
+      model: JURISDICTION_MODEL,
       messages: [
         {
           role: 'system',

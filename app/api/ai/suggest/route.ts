@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openai } from '@/lib/openai';
+import { openrouter, JURISDICTION_MODEL } from '@/lib/openrouter';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,8 +12,8 @@ Keep suggestions practical, professional, and brief (1-2 sentences max).`;
 
     const userPrompt = buildSuggestionPrompt(question, context, field);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+    const completion = await openrouter.chat.completions.create({
+      model: JURISDICTION_MODEL, // Use llama-4-scout for small AI tasks
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -34,7 +34,7 @@ Keep suggestions practical, professional, and brief (1-2 sentences max).`;
   }
 }
 
-function buildSuggestionPrompt(question: string, context: any, field: string): string {
+function buildSuggestionPrompt(question: string, context: Record<string, unknown>, field: string): string {
   let prompt = `Question: "${question}"\n\nContext:\n`;
 
   // Add relevant context

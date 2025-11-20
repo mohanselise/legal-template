@@ -14,7 +14,6 @@
  * - Width: 612pt (8.5 inches)
  * - Height: 792pt (11 inches)
  * - Margins: 72pt (1 inch) on all sides
- * - Content area: 468pt × 648pt
  */
 
 export interface SignatureFieldMetadata {
@@ -26,12 +25,9 @@ export interface SignatureFieldMetadata {
   y: number;
   width: number;
   height: number;
-  pageNumber: number; // Usually the last page
+  pageNumber: number; // Always the LAST page for the new renderer
 }
 
-/**
- * Signatory contact information for sending signature requests
- */
 export interface SignatoryInfo {
   party: 'employer' | 'employee';
   name: string;
@@ -41,234 +37,129 @@ export interface SignatoryInfo {
 }
 
 /**
- * Calculate exact signature field positions based on PDF structure
- * These calculations match the styles in EmploymentAgreementPDF.tsx
- * 
- * Positions are calculated from the BOTTOM of the page (792pt) for reliability,
- * since the signature section is always positioned at the bottom regardless of
- * the amount of content above it.
+ * Calculates the fixed positions for the Block-Based Renderer Signature Page.
+ * These must align perfectly with `lib/pdf/components/SignaturePage.tsx`
  */
 function calculateSignatureFieldPositions() {
-  // Page settings
-  const PAGE_PADDING = 72; // Page padding on all sides
-  const PAGE_HEIGHT = 792; // US Letter page height
-  const CONTENT_WIDTH = 612 - PAGE_PADDING * 2; // 468pt
+  // Constants from SignaturePage.tsx styles & React-PDF layout
+  // NOTE: React-PDF layout engine is tricky. These values are approximations
+  // that need to be calibrated against the actual visual output.
   
-  // Signature section styles
-  const SIGNATURE_SECTION_MARGIN_TOP = 40;
-  const SIGNATURE_SECTION_PADDING_TOP = 20;
+  // Page Padding: 50pt (defined in SignaturePage.tsx)
+  const PAGE_PADDING_TOP = 50;
+  const PAGE_PADDING_LEFT = 50;
+
+  // Header estimate: ~100pt height
+  // (Title 14pt + margin 10pt) + (Subtitle 10pt + margin 40pt)
+  const HEADER_HEIGHT = 80;
   
-  // Witness clause
-  const WITNESS_CLAUSE_FONT_SIZE = 10;
-  const WITNESS_CLAUSE_LINE_HEIGHT = 1.5;
-  const WITNESS_CLAUSE_HEIGHT = WITNESS_CLAUSE_FONT_SIZE * WITNESS_CLAUSE_LINE_HEIGHT; // ~15pt
-  const WITNESS_CLAUSE_MARGIN_BOTTOM = 20;
-  const WITNESS_CLAUSE_TOTAL = WITNESS_CLAUSE_HEIGHT + WITNESS_CLAUSE_MARGIN_BOTTOM; // ~35pt
+  const START_Y = PAGE_PADDING_TOP + HEADER_HEIGHT;
+
+  // Block 1 (Employer)
+  // Label: 9pt + 8pt margin = 17pt
+  // Name: 12pt + 4pt margin = 16pt
+  // Title: 10pt + 15pt margin = 25pt
+  // Total Text Height: ~58pt
+  // Signature Area starts after this.
   
-  // Signature block
-  const SIGNATURE_BLOCK_PADDING = 12;
-  const SIGNATURE_BLOCK_MARGIN_BOTTOM = 20;
+  const BLOCK_PADDING = 10;
+  const GAP_BETWEEN_BLOCKS = 40;
   
-  // Party label
-  const PARTY_LABEL_FONT_SIZE = 9;
-  const PARTY_LABEL_MARGIN_BOTTOM = 8;
-  const PARTY_LABEL_PADDING_BOTTOM = 8;
-  const PARTY_LABEL_TOTAL = PARTY_LABEL_FONT_SIZE + PARTY_LABEL_MARGIN_BOTTOM + PARTY_LABEL_PADDING_BOTTOM; // ~25pt
+  // 1. EMPLOYER BLOCK
+  const employerBlockY = START_Y;
   
-  // Party name
-  const PARTY_NAME_FONT_SIZE = 12;
-  const PARTY_NAME_MARGIN_TOP = 8;
-  const PARTY_NAME_MARGIN_BOTTOM = 12;
-  const PARTY_NAME_TOTAL = PARTY_NAME_FONT_SIZE + PARTY_NAME_MARGIN_TOP + PARTY_NAME_MARGIN_BOTTOM; // ~32pt
+  // Relative offset within the block for the signature line
+  // Label (9+8) + Name (12+4) + Title (10+15) + MarginTop(10) + Line(30)
+  // = ~88pt down from the start of the block content
+  const signatureLineOffset = 88; 
+
+  // Actual Y position on page
+  // We need the signature BOX, not just the line. 
+  // Let's place the box slightly above the line.
+  const employerSigY = employerBlockY + BLOCK_PADDING + signatureLineOffset - 40; // Box starts 40pt above line
   
-  // Role
-  const ROLE_FONT_SIZE = 10;
-  const ROLE_MARGIN_TOP = 4;
-  const ROLE_TOTAL = ROLE_FONT_SIZE + ROLE_MARGIN_TOP; // ~14pt
+  const fieldWidth = 200; // Approx half width
+  const fieldHeight = 50;
+
+  // 2. EMPLOYEE BLOCK
+  // Previous block height estimate: 
+  // Text(58) + SigArea(50) + Padding(20) = ~130pt
+  const employerBlockHeight = 180; 
+  const employeeBlockY = employerBlockY + employerBlockHeight + GAP_BETWEEN_BLOCKS;
   
-  // Field dimensions based on manually adjusted positions
-  const dateFieldWidth = 140;
-  const dateFieldHeight = 36;
-  
-  // Employer signature field (smaller)
-  const employerSignatureFieldWidth = 196;
-  const employerSignatureFieldHeight = 48;
-  const employerSignatureX = 164;
-  
-  // Employee signature field (larger)
-  const employeeSignatureFieldWidth = 240;
-  const employeeSignatureFieldHeight = 58;
-  const employeeSignatureX = 136;
-  
-  // Date field X positions (both align to 387pt)
-  const dateX = 387;
-  
-  // Calculate Y positions from BOTTOM of page (792pt total height)
-  // Based on manually adjusted positions:
-  // - Employee signature Y: 556pt from top = 792 - 556 = 236pt from bottom
-  // - Employee date Y: 575pt from top = 792 - 575 = 217pt from bottom
-  // - Employer signature Y: 301pt from top = 792 - 301 = 491pt from bottom
-  // - Employer date Y: 314pt from top = 792 - 314 = 478pt from bottom
-  
-  // Employee signature field Y (from bottom)
-  const employeeSignatureYFromBottom = 236; // 792 - 556
-  const employeeSignatureY = PAGE_HEIGHT - employeeSignatureYFromBottom; // 556
-  
-  // Employee date Y (from bottom)
-  const employeeDateYFromBottom = 217; // 792 - 575
-  const employeeDateY = PAGE_HEIGHT - employeeDateYFromBottom; // 575
-  
-  // Employer signature field Y (from bottom)
-  const employerSignatureYFromBottom = 491; // 792 - 301
-  const employerSignatureY = PAGE_HEIGHT - employerSignatureYFromBottom; // 301
-  
-  // Employer date Y (from bottom)
-  const employerDateYFromBottom = 478; // 792 - 314
-  const employerDateY = PAGE_HEIGHT - employerDateYFromBottom; // 314
-  
+  const employeeSigY = employeeBlockY + BLOCK_PADDING + signatureLineOffset - 40;
+
+  // X Coordinates (Fixed)
+  const sigX = PAGE_PADDING_LEFT + BLOCK_PADDING; // Left aligned in block
+  const dateX = sigX + 250; // Shifted right for date
+
   return {
     EMPLOYER: {
-      SIGNATURE: {
-        x: employerSignatureX, // 164pt
-        y: employerSignatureY, // 301pt from top (491pt from bottom)
-        width: employerSignatureFieldWidth, // 196pt
-        height: employerSignatureFieldHeight, // 48pt
-      },
-      DATE: {
-        x: dateX, // 387pt
-        y: employerDateY, // 314pt from top (478pt from bottom)
-        width: dateFieldWidth, // 140pt
-        height: dateFieldHeight, // 36pt
-      },
+      SIGNATURE: { x: sigX, y: employerSigY, width: 200, height: 50 },
+      DATE: { x: dateX, y: employerSigY, width: 120, height: 50 }
     },
     EMPLOYEE: {
-      SIGNATURE: {
-        x: employeeSignatureX, // 136pt
-        y: employeeSignatureY, // 556pt from top (236pt from bottom)
-        width: employeeSignatureFieldWidth, // 240pt
-        height: employeeSignatureFieldHeight, // 58pt
-      },
-      DATE: {
-        x: dateX, // 387pt
-        y: employeeDateY, // 575pt from top (217pt from bottom)
-        width: dateFieldWidth, // 140pt
-        height: dateFieldHeight, // 36pt
-      },
-    },
+      SIGNATURE: { x: sigX, y: employeeSigY, width: 200, height: 50 },
+      DATE: { x: dateX, y: employeeSigY, width: 120, height: 50 }
+    }
   };
 }
 
-/**
- * Signature field layout configuration
- * These values are calculated to match the PDF generation in EmploymentAgreementPDF.tsx
- */
 export const SIGNATURE_LAYOUT = (() => {
   const calculated = calculateSignatureFieldPositions();
   return {
-    // Page settings
-    PAGE_WIDTH: 612,
-    PAGE_HEIGHT: 792,
-    MARGIN: 72,
     EMPLOYER: calculated.EMPLOYER,
     EMPLOYEE: calculated.EMPLOYEE,
   };
 })();
 
-export const SIGNATURE_FIELD_DEFAULTS = {
-  SIGNATURE_HEIGHT: 58,
-  SIGNATURE_WIDTH: 240,
-  DATE_HEIGHT: 36,
-  DATE_WIDTH: 140,
-};
-
-/**
- * Generate signature field metadata for a document
- * This returns the exact positions where fields should be placed
- */
 export function generateSignatureFieldMetadata(
   employerName: string,
   employeeName: string,
   numPages: number
 ): SignatureFieldMetadata[] {
-  const lastPage = numPages;
+  const lastPage = numPages; // Signature page is always the last one
   const layout = SIGNATURE_LAYOUT;
 
-  const fields = [
+  return [
     // EMPLOYER FIELDS
     {
       id: 'employer-signature',
-      type: 'signature' as const,
-      party: 'employer' as const,
+      type: 'signature',
+      party: 'employer',
       label: `${employerName} - Signature`,
-      x: layout.EMPLOYER.SIGNATURE.x,
-      y: layout.EMPLOYER.SIGNATURE.y,
-      width: layout.EMPLOYER.SIGNATURE.width,
-      height: layout.EMPLOYER.SIGNATURE.height,
+      ...layout.EMPLOYER.SIGNATURE,
       pageNumber: lastPage,
     },
     {
       id: 'employer-date',
-      type: 'date' as const,
-      party: 'employer' as const,
+      type: 'date',
+      party: 'employer',
       label: 'Date',
-      x: layout.EMPLOYER.DATE.x,
-      y: layout.EMPLOYER.DATE.y,
-      width: layout.EMPLOYER.DATE.width,
-      height: layout.EMPLOYER.DATE.height,
+      ...layout.EMPLOYER.DATE,
       pageNumber: lastPage,
     },
 
     // EMPLOYEE FIELDS
     {
       id: 'employee-signature',
-      type: 'signature' as const,
-      party: 'employee' as const,
+      type: 'signature',
+      party: 'employee',
       label: `${employeeName} - Signature`,
-      x: layout.EMPLOYEE.SIGNATURE.x,
-      y: layout.EMPLOYEE.SIGNATURE.y,
-      width: layout.EMPLOYEE.SIGNATURE.width,
-      height: layout.EMPLOYEE.SIGNATURE.height,
+      ...layout.EMPLOYEE.SIGNATURE,
       pageNumber: lastPage,
     },
     {
       id: 'employee-date',
-      type: 'date' as const,
-      party: 'employee' as const,
+      type: 'date',
+      party: 'employee',
       label: 'Date',
-      x: layout.EMPLOYEE.DATE.x,
-      y: layout.EMPLOYEE.DATE.y,
-      width: layout.EMPLOYEE.DATE.width,
-      height: layout.EMPLOYEE.DATE.height,
+      ...layout.EMPLOYEE.DATE,
       pageNumber: lastPage,
     },
   ];
-
-  // Debug logging
-  console.log('[generateSignatureFieldMetadata] Generated fields:', {
-    pageCount: numPages,
-    lastPage,
-    positions: fields.map(f => ({
-      id: f.id,
-      type: f.type,
-      party: f.party,
-      position: `(${f.x}, ${f.y})`,
-      size: `${f.width}×${f.height}`,
-    })),
-    layout: {
-      employerSignature: layout.EMPLOYER.SIGNATURE,
-      employerDate: layout.EMPLOYER.DATE,
-      employeeSignature: layout.EMPLOYEE.SIGNATURE,
-      employeeDate: layout.EMPLOYEE.DATE,
-    },
-  });
-
-  return fields;
 }
 
-/**
- * Embed metadata as a JSON string in the PDF
- * This can be stored in the PDF's metadata or as a hidden annotation
- */
 export function createMetadataPayload(
   fields: SignatureFieldMetadata[],
   signatories?: SignatoryInfo[]
@@ -281,9 +172,6 @@ export function createMetadataPayload(
   });
 }
 
-/**
- * Parse metadata from PDF
- */
 export function parseMetadataPayload(payload: string): SignatureFieldMetadata[] | null {
   try {
     const data = JSON.parse(payload);

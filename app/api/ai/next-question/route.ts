@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openai } from '@/lib/openai';
+import { openrouter, JURISDICTION_MODEL } from '@/lib/openrouter';
 
 type Answer = {
   questionId: string;
@@ -9,7 +9,7 @@ type Answer = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { answers, currentPhase } = await request.json();
+    const { answers } = await request.json();
 
     // Determine if we have enough information
     const systemPrompt = `You are an intelligent legal assistant helping to collect information for an employment agreement.
@@ -46,8 +46,8 @@ IMPORTANT:
 
     const userPrompt = buildPrompt(answers);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+    const completion = await openrouter.chat.completions.create({
+      model: JURISDICTION_MODEL, // Use llama-4-scout for small AI tasks
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

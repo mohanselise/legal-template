@@ -6,17 +6,9 @@ import {
   View,
   StyleSheet,
 } from '@react-pdf/renderer';
-import type {
-  EmploymentAgreement,
-  ContentBlock,
-  ListItem,
-  DefinitionItem,
-  SignatureField,
-} from '@/app/api/templates/employment-agreement/schema';
-
-// You can register custom fonts here if needed:
-// import { Font } from '@react-pdf/renderer';
-// Font.register({ family: 'CustomFont', src: '/fonts/custom.ttf' });
+import type { LegalDocument, EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
+import { BlockRenderer } from './components/BlockRenderer';
+import { SignaturePage } from './components/SignaturePage';
 
 // Professional Legal Document Styles - DocuSign-inspired clean design
 const styles = StyleSheet.create({
@@ -35,16 +27,6 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottom: '0.5pt solid #e5e7eb', // Subtle border
   },
-  badge: {
-    backgroundColor: '#f3f4f6', // Soft gray
-    color: '#374151',
-    fontSize: 7,
-    fontFamily: 'Helvetica-Bold',
-    padding: '4pt 8pt',
-    textAlign: 'center',
-    marginBottom: 12,
-    letterSpacing: 1,
-  },
   title: {
     fontSize: 18, // Slightly smaller, less aggressive
     fontFamily: 'Helvetica-Bold',
@@ -54,337 +36,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: '#111827',
   },
+  
   // Document Body
   effectiveDate: {
     fontSize: 11,
     fontFamily: 'Times-Bold',
     marginBottom: 12,
-  },
-  
-  // Parties Section
-  partiesIntro: {
-    marginBottom: 14,
-    textAlign: 'left', // Ragged-right for better readability
-  },
-  partyBox: {
-    marginBottom: 12,
-    marginLeft: 20,
-    paddingLeft: 12,
-    paddingRight: 10,
-    paddingTop: 10,
-    paddingBottom: 10,
-    borderLeft: '2pt solid #3b82f6', // Softer blue
-    backgroundColor: '#f8fafc',
-  },
-  partyBoxEmployee: {
-    borderLeft: '2pt solid #10b981', // Softer green
-  },
-  partyName: {
-    fontSize: 13,
-    fontFamily: 'Helvetica-Bold',
-    marginBottom: 8,
-    color: '#1e293b',
-  },
-  partyNameEmployee: {
-    color: '#1e293b',
-  },
-  partyDetails: {
-    fontSize: 9,
-    marginBottom: 6,
-  },
-  partyDesignation: {
-    fontSize: 9,
-    fontStyle: 'italic',
-    color: '#6b7280',
-    marginTop: 6,
-  },
-  andSeparator: {
-    textAlign: 'center',
-    fontFamily: 'Times-Bold',
-    fontSize: 12,
-    marginVertical: 8,
-  },
-  
-  // Recitals
-  recitalsHeading: {
-    fontSize: 13,
-    fontFamily: 'Helvetica-Bold',
-    textAlign: 'center',
-    marginTop: 24,
-    marginBottom: 14,
-    paddingBottom: 6,
-    borderBottom: '0.5pt solid #d1d5db',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: '#374151',
-  },
-  recitalParagraph: {
-    marginBottom: 10,
-    textAlign: 'left', // Ragged-right prevents rivers
-    paddingLeft: 0, // No hard indent
-  },
-
-  // Articles - Strong visual hierarchy
-  articleHeading: {
-    fontSize: 13,
-    fontFamily: 'Helvetica-Bold',
-    marginTop: 24, // Reduced space for major sections
-    marginBottom: 12,
-    paddingBottom: 8,
-    paddingTop: 4,
-    borderBottom: '1pt solid #3b82f6', // Stronger blue line for articles
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    color: '#111827', // Darkest for top-level headings
-    backgroundColor: '#f8fafc', // Very subtle background
-    paddingLeft: 8,
-    paddingRight: 8,
-  },
-  
-  // Sections - Enhanced for better scanning
-  sectionHeading: {
-    fontSize: 11.5,
-    fontFamily: 'Helvetica-Bold',
-    marginTop: 16, // Reduced space above for visual separation
-    marginBottom: 8,
-    color: '#1f2937', // Darker for better contrast
-    paddingBottom: 4,
-    borderBottom: '0.5pt solid #e5e7eb', // Subtle underline for scanning
-  },
-  sectionNumber: {
-    color: '#3b82f6', // Blue number for visual cue
-    marginRight: 8,
-  },
-
-  // Content Blocks
-  paragraph: {
-    marginBottom: 10, // Reduced spacing between paragraphs
-    textAlign: 'left', // Ragged-right for easier skimming
-    lineHeight: 1.5, // More compact line spacing
-  },
-  paragraphIndent: {
-    // Remove hard indents - use spacing instead
-    marginLeft: 0,
-    marginTop: 6, // Reduced visual separation without indent
-  },
-  // First paragraph after heading - no extra space
-  paragraphFirst: {
-    marginTop: 0,
-  },
-
-  // Definitions - Highlighted for easy reference
-  definitionContainer: {
-    marginBottom: 10,
-    padding: 8,
-    borderLeft: '3pt solid #3b82f6', // Stronger left border for scanning
-    backgroundColor: '#f0f9ff', // Very light blue background
-    marginLeft: 8,
-  },
-  definitionTerm: {
-    fontFamily: 'Helvetica-Bold',
-    marginBottom: 4,
-    color: '#1e40af',
-    fontSize: 11,
-  },
-  definitionText: {
-    textAlign: 'left', // Ragged-right
-    lineHeight: 1.5,
-    color: '#374151',
-  },
-  
-  // Lists - Clear hierarchy and spacing
-  listItem: {
-    marginBottom: 8, // Reduced space between list items
-    marginLeft: 20, // Less aggressive indent
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  listNumber: {
-    width: 28,
-    fontFamily: 'Helvetica-Bold',
-    color: '#3b82f6', // Blue numbers for visual cue
-    marginRight: 6,
-  },
-  listContent: {
-    flex: 1,
-    textAlign: 'left', // Ragged-right for lists
-    lineHeight: 1.5,
-  },
-  subListItem: {
-    marginLeft: 28, // Consistent with main list
-    marginTop: 6,
-    marginBottom: 6,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  subListLetter: {
-    width: 28,
-    color: '#6b7280',
-    marginRight: 8,
-  },
-  
-  // Signatures - DocuSign-style Professional Design
-  signatureSection: {
-    marginTop: 40,
-    paddingTop: 20,
-    paddingBottom: 0,
-    borderTop: '3pt solid #2563eb',
-  },
-  witnessClause: {
-    textAlign: 'center',
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 10,
-    marginBottom: 20,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: '#1e293b',
-    lineHeight: 1.5,
-  },
-  signatureBlock: {
-    marginBottom: 20,
-    padding: 12,
-    backgroundColor: '#fafbfc',
-    border: '1pt solid #e2e8f0',
-    borderRadius: 6,
-  },
-  signaturePartyLabel: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 9,
-    marginBottom: 8,
-    paddingBottom: 8,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    color: '#1d4ed8',
-    borderBottom: '1.5pt solid #2563eb',
-  },
-  signaturePartyName: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 12,
-    marginTop: 8,
-    marginBottom: 12,
-    color: '#0f172a',
-  },
-  signatureOverlayBox: {
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#2563eb',
-    backgroundColor: '#eef2ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  signatureOverlayLabel: {
-    fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 4,
-    color: '#1d4ed8',
-  },
-  signatureOverlayName: {
-    fontSize: 10,
-    color: '#475569',
-  },
-  signatureSummary: {
-    marginTop: 10,
-    marginBottom: 8,
-  },
-  signatureSummaryName: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 11,
-    color: '#0f172a',
-  },
-  signatureSummaryRole: {
-    fontSize: 10,
-    color: '#475569',
-    marginTop: 4,
-  },
-  signatureFieldsRow: {
-    flexDirection: 'row',
-    marginTop: 10,
-    marginBottom: 6,
-  },
-  signatureFieldBox: {
-    flex: 1,
-    minHeight: 50,
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderStyle: 'dashed',
-    borderRadius: 4,
-    padding: 8,
-    backgroundColor: '#f8fafc',
-    marginRight: 16,
-  },
-  signatureFieldLabel: {
-    fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  dateFieldBox: {
-    width: 140,
-    minHeight: 36,
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderStyle: 'dashed',
-    borderRadius: 4,
-    padding: 8,
-    backgroundColor: '#f8fafc',
-  },
-  nameFieldBox: {
-    marginTop: 6,
-    minHeight: 28,
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderStyle: 'dashed',
-    borderRadius: 4,
-    padding: 5,
-    backgroundColor: '#f8fafc',
-  },
-  nameFieldLabel: {
-    fontSize: 8,
-    fontFamily: 'Helvetica-Bold',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  nameFieldValue: {
-    fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
-    color: '#0f172a',
-    textTransform: 'uppercase',
-  },
-  signatureDateRow: {
-    flexDirection: 'row',
-    marginTop: 16,
-  },
-  signatureDateBox: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#334155',
-    backgroundColor: '#f1f5f9',
-    minWidth: 140,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  signatureDateLabel: {
-    fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
-    color: '#1e293b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  signatureDatePlaceholder: {
-    fontSize: 9,
-    color: '#475569',
-    marginTop: 4,
   },
   
   // Footer
@@ -402,37 +59,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-
-  // Text formatting
-  bold: {
-    fontFamily: 'Helvetica-Bold',
-  },
-  italic: {
-    fontFamily: 'Helvetica-Oblique',
-  },
 });
 
-interface EmploymentAgreementPDFProps {
-  document: EmploymentAgreement;
-  docId?: string;
+// Type guard to distinguish between new and legacy schema
+function isLegacyDocument(doc: LegalDocument | EmploymentAgreement): doc is EmploymentAgreement {
+  return 'articles' in doc;
 }
 
-const formatAddress = (address: {
-  street?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  country?: string;
-}) => {
-  return [
-    address.street,
-    [address.city, address.state].filter(Boolean).join(', '),
-    address.postalCode,
-    address.country,
-  ]
-    .filter(Boolean)
-    .join(', ');
-};
+interface EmploymentAgreementPDFProps {
+  document: LegalDocument | EmploymentAgreement;
+  docId?: string;
+}
 
 const formatDate = (dateString: string) => {
   const parsedDate = new Date(dateString);
@@ -448,298 +85,66 @@ const formatDate = (dateString: string) => {
   });
 };
 
-/**
- * Checks if a phone number is a placeholder value that should not be displayed.
- */
-const isPlaceholderPhone = (phone: string | undefined): boolean => {
-  if (!phone) return false;
-  const normalized = phone.trim().toLowerCase();
-  const placeholderPatterns = [
-    /\[.*to be completed.*\]/,
-    /\[.*tbd.*\]/,
-    /\[.*omitted.*\]/,
-    /\[.*placeholder.*\]/,
-    /\[.*\]/,
-    /^to be completed$/,
-    /^tbd$/,
-    /^n\/a$/,
-    /^not provided$/,
-    /^not available$/,
-  ];
-  return placeholderPatterns.some((pattern) => pattern.test(normalized));
-};
-
-
-const ContentBlockRenderer: React.FC<{
-  block: ContentBlock;
-  articleIndex: number;
-  sectionIndex: number;
-}> = ({ block }) => {
-  switch (block.type) {
-    case 'paragraph':
-      const indent = block.formatting?.indent || 0;
-      const content = typeof block.content === 'string' ? block.content : '';
-      
-      return (
-        <Text
-          style={[
-            styles.paragraph,
-            ...(indent > 0 ? [styles.paragraphIndent] : []),
-          ]}
-        >
-          {content}
-        </Text>
-      );
-
-    case 'definition':
-      const definitions = block.content as DefinitionItem[];
-      return (
-        <View>
-          {definitions.map((def, idx) => (
-            <View key={idx} style={styles.definitionContainer}>
-              <Text style={styles.definitionTerm}>
-                {def.number && `${def.number} `}&ldquo;{def.term}&rdquo;
-              </Text>
-              <Text style={styles.definitionText}>{def.definition}</Text>
-            </View>
-          ))}
-        </View>
-      );
-
-    case 'list':
-      const items = block.content as ListItem[];
-      return (
-        <View>
-          {items.map((item, idx) => (
-            <View key={idx}>
-              <View style={styles.listItem}>
-                <Text style={styles.listNumber}>{idx + 1}.</Text>
-                <Text style={styles.listContent}>{item.content}</Text>
-              </View>
-              {item.subItems && item.subItems.length > 0 && (
-                <View>
-                  {item.subItems.map((subItem, subIdx) => (
-                    <View key={subIdx} style={styles.subListItem}>
-                      <Text style={styles.subListLetter}>
-                        {String.fromCharCode(97 + subIdx)}.
-                      </Text>
-                      <Text style={styles.listContent}>{subItem.content}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          ))}
-        </View>
-      );
-
-    case 'clause':
-      return (
-        <Text style={[styles.paragraph, styles.paragraphIndent]}>
-          {typeof block.content === 'string' ? block.content : ''}
-        </Text>
-      );
-
-    default:
-      return null;
-  }
-};
-
 export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
-  document: employmentAgreement,
+  document,
+  docId,
 }) => {
+  
+  // Handle Legacy Documents (Keep for backward compatibility if needed, or just error out)
+  // For now, we'll assume we're migrating everything to the new schema
+  // but providing a fallback message if old data is passed
+  if (isLegacyDocument(document)) {
+    return (
+      <Document>
+        <Page style={styles.page}>
+          <Text>Legacy document format is no longer supported. Please regenerate the document.</Text>
+        </Page>
+      </Document>
+    );
+  }
+
+  // New Block-Based Renderer
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>{employmentAgreement.metadata.title}</Text>
+          <Text style={styles.title}>{document.metadata.title}</Text>
         </View>
 
         {/* Effective Date */}
         <View style={{ marginBottom: 12 }}>
           <Text style={styles.effectiveDate}>
-            Effective Date: {formatDate(employmentAgreement.metadata.effectiveDate)}
+            Effective Date: {formatDate(document.metadata.effectiveDate)}
           </Text>
         </View>
 
-        {/* Opening Paragraph with Parties */}
-        <View style={{ marginBottom: 18 }}>
-          <Text style={styles.partiesIntro}>
-            This Employment Agreement (the &ldquo;AGREEMENT&rdquo;) is entered into as of{' '}
-            {formatDate(employmentAgreement.metadata.effectiveDate)}, by and between:
-          </Text>
-
-          {/* Employer */}
-          <View style={styles.partyBox}>
-            <Text style={styles.partyName}>
-              {employmentAgreement.parties.employer.legalName}
-            </Text>
-            <Text style={styles.partyDetails}>
-              {formatAddress(employmentAgreement.parties.employer.address)}
-            </Text>
-            {employmentAgreement.parties.employer.email && (
-              <Text style={styles.partyDetails}>
-                Email: {employmentAgreement.parties.employer.email}
-              </Text>
-            )}
-            {employmentAgreement.parties.employer.phone &&
-              !isPlaceholderPhone(employmentAgreement.parties.employer.phone) && (
-                <Text style={styles.partyDetails}>
-                  Phone: {employmentAgreement.parties.employer.phone}
-                </Text>
-              )}
-            <Text style={styles.partyDesignation}>
-              (hereinafter referred to as &ldquo;
-              {employmentAgreement.parties.employer.designatedTitle || 'EMPLOYER'}&rdquo;)
-            </Text>
-          </View>
-
-          <Text style={styles.andSeparator}>AND</Text>
-
-          {/* Employee */}
-          <View style={[styles.partyBox, styles.partyBoxEmployee]}>
-            <Text style={[styles.partyName, styles.partyNameEmployee]}>
-              {employmentAgreement.parties.employee.legalName}
-            </Text>
-            <Text style={styles.partyDetails}>
-              {formatAddress(employmentAgreement.parties.employee.address)}
-            </Text>
-            {employmentAgreement.parties.employee.email && (
-              <Text style={styles.partyDetails}>
-                Email: {employmentAgreement.parties.employee.email}
-              </Text>
-            )}
-            {employmentAgreement.parties.employee.phone &&
-              !isPlaceholderPhone(employmentAgreement.parties.employee.phone) && (
-                <Text style={styles.partyDetails}>
-                  Phone: {employmentAgreement.parties.employee.phone}
-                </Text>
-              )}
-            <Text style={styles.partyDesignation}>
-              (hereinafter referred to as &ldquo;
-              {employmentAgreement.parties.employee.designatedTitle || 'EMPLOYEE'}&rdquo;)
-            </Text>
-          </View>
-        </View>
-
-        {/* Recitals */}
-        {employmentAgreement.recitals && employmentAgreement.recitals.length > 0 && (
-          <View style={{ marginBottom: 18 }}>
-            <Text style={styles.recitalsHeading}>RECITALS</Text>
-            {employmentAgreement.recitals.map((recital, index) => (
-              <Text key={index} style={styles.recitalParagraph}>
-                {recital}
-              </Text>
-            ))}
-          </View>
-        )}
-
-        {/* Articles */}
-        {employmentAgreement.articles.map((article, articleIndex) => (
-          <View key={article.number} style={{ marginBottom: 14 }} wrap={true}>
-            <Text style={styles.articleHeading}>
-              ARTICLE {article.number}. {article.title}
-            </Text>
-
-            {article.sections.map((section, sectionIndex) => (
-              <View key={sectionIndex} style={{ marginBottom: 8 }}>
-                {section.title && (
-                  <Text style={styles.sectionHeading}>
-                    {section.number && (
-                      <Text style={styles.sectionNumber}>{section.number} </Text>
-                    )}
-                    {section.title}
-                  </Text>
-                )}
-                {section.content.map((block, blockIndex) => (
-                  <ContentBlockRenderer
-                    key={blockIndex}
-                    block={block}
-                    articleIndex={articleIndex}
-                    sectionIndex={sectionIndex}
-                  />
-                ))}
-              </View>
-            ))}
-          </View>
+        {/* Main Content Blocks */}
+        {document.content.map((block, index) => (
+          <BlockRenderer key={block.id || index} block={block} level={0} />
         ))}
 
-        {/* Signature Section - With Party Info, but no signature/date boxes */}
-        <View style={styles.signatureSection} wrap={false}>
-          <Text style={styles.witnessClause}>
-            IN WITNESS WHEREOF, THE PARTIES HAVE EXECUTED THIS AGREEMENT
-            {'\n'}AS OF THE DATE FIRST WRITTEN ABOVE.
-          </Text>
-
-          {employmentAgreement.signatures.map((signature, index) => {
-            const nameField = signature.fields.find(
-              (field) => field.type === 'name'
-            );
-            const titleField = signature.fields.find(
-              (field) => field.type === 'title'
-            );
-            const displayName =
-              (nameField?.value && nameField.value.trim()) ||
-              signature.partyName;
-            const displayRole =
-              (titleField?.value && titleField.value.trim()) ||
-              (signature.party === 'employer'
-                ? 'Authorized Signatory'
-                : 'Employee');
-
-            // Convert full name to uppercase
-            const fullName = displayName.trim().toUpperCase();
-            const isLastSignature = index === employmentAgreement.signatures.length - 1;
-
-            return (
-              <View key={index} style={[styles.signatureBlock, ...(isLastSignature ? [{ marginBottom: 0 }] : [])]}>
-                <Text style={styles.signaturePartyLabel}>
-                  {signature.party === 'employer' ? 'EMPLOYER' : 'EMPLOYEE'}
-                </Text>
-
-                <Text style={styles.signaturePartyName}>
-                  {signature.partyName}
-                </Text>
-
-                {/* Role/Title */}
-                {displayRole && (
-                  <Text style={styles.signatureSummaryRole}>
-                    {displayRole}
-                  </Text>
-                )}
-
-                {/* Signature and Date Fields - Visual placeholders */}
-                <View style={styles.signatureFieldsRow}>
-                  <View style={styles.signatureFieldBox}>
-                    <Text style={styles.signatureFieldLabel}>Signature</Text>
-                  </View>
-                  <View style={styles.dateFieldBox}>
-                    <Text style={styles.signatureFieldLabel}>Date</Text>
-                  </View>
-                </View>
-
-                {/* Full Name Field - in CAPS */}
-                <View style={styles.nameFieldBox}>
-                  <Text style={styles.nameFieldLabel}>Full Name</Text>
-                  {fullName && (
-                    <Text style={styles.nameFieldValue}>{fullName}</Text>
-                  )}
-                </View>
-              </View>
-            );
-          })}
-        </View>
-
-        {/* Footer - Production Ready */}
+        {/* Footer on content pages */}
         <View style={styles.footer} fixed>
           <View style={styles.footerContent}>
+            <Text>{document.metadata.title}</Text>
             <Text>
-              {employmentAgreement.metadata.title}
+              Page <Text render={({ pageNumber }) => `${pageNumber}`} />
             </Text>
+          </View>
+        </View>
+      </Page>
+
+      {/* Signature Page - Always on a new page */}
+      <Page size="LETTER" style={styles.page}>
+         {/* We can reuse the same footer or a different one */}
+        <SignaturePage signatories={document.signatories} />
+        
+        <View style={styles.footer} fixed>
+           <View style={styles.footerContent}>
+            <Text>{document.metadata.title}</Text>
             <Text>
-              Page <Text render={({ pageNumber }) => `${pageNumber}`} /> of{' '}
-              <Text render={({ totalPages }) => `${totalPages}`} />
+              Page <Text render={({ pageNumber }) => `${pageNumber}`} />
             </Text>
           </View>
         </View>

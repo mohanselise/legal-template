@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON } from '@/lib/openai';
 import { openrouter, CONTRACT_GENERATION_MODEL } from '@/lib/openrouter';
 import { validateTurnstileToken } from 'next-turnstile';
-import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
+import type { LegalDocument } from '@/app/api/templates/employment-agreement/schema';
 import type { JurisdictionIntelligence, CompanyIntelligence, JobTitleAnalysis, MarketStandards } from '@/lib/types/smart-form';
 import { formatAddressByJurisdiction, parseAddressString } from '@/lib/utils/address-formatting';
 import type { StructuredAddress } from '@/lib/utils/address-formatting';
@@ -202,11 +202,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate JSON
-    let document: EmploymentAgreement;
+    let document: LegalDocument;
     try {
       document = JSON.parse(documentContent);
       console.log('✅ [Generate API] JSON parsed successfully');
-      console.log('📊 [Generate API] Articles count:', document.articles?.length);
+      console.log('📊 [Generate API] Content blocks count:', document.content?.length);
       
       // Clean up placeholder phone numbers
       document = removePlaceholderPhoneNumbers(document, formData);
@@ -255,9 +255,9 @@ interface EnrichmentData {
  * If a phone number contains placeholder text or wasn't provided in formData, it's removed.
  */
 function removePlaceholderPhoneNumbers(
-  document: EmploymentAgreement,
+  document: LegalDocument,
   formData: any
-): EmploymentAgreement {
+): LegalDocument {
   const placeholderPatterns = [
     /\[.*to be completed.*\]/i,
     /\[.*tbd.*\]/i,
@@ -283,20 +283,21 @@ function removePlaceholderPhoneNumbers(
   );
   const employeePhoneProvided = Boolean(formData.employeePhone?.trim());
 
-  // Remove employer phone if it's a placeholder or wasn't provided
-  if (
-    document.parties?.employer?.phone &&
-    (!employerPhoneProvided || isPlaceholder(document.parties.employer.phone))
-  ) {
-    delete document.parties.employer.phone;
-  }
+  // Handle Signatories Array
+  if (document.signatories && Array.isArray(document.signatories)) {
+    // Find and clean Employer signatory
+    const employerSignatory = document.signatories.find(s => s.party === 'employer');
+    if (employerSignatory && employerSignatory.phone && 
+        (!employerPhoneProvided || isPlaceholder(employerSignatory.phone))) {
+      delete employerSignatory.phone;
+    }
 
-  // Remove employee phone if it's a placeholder or wasn't provided
-  if (
-    document.parties?.employee?.phone &&
-    (!employeePhoneProvided || isPlaceholder(document.parties.employee.phone))
-  ) {
-    delete document.parties.employee.phone;
+    // Find and clean Employee signatory
+    const employeeSignatory = document.signatories.find(s => s.party === 'employee');
+    if (employeeSignatory && employeeSignatory.phone && 
+        (!employeePhoneProvided || isPlaceholder(employeeSignatory.phone))) {
+      delete employeeSignatory.phone;
+    }
   }
 
   return document;
@@ -691,33 +692,20 @@ function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string
   prompt += `5. Balances protections for both employer and employee\n`;
   prompt += `6. Uses sophisticated legal language appropriate for a professional contract\n`;
   
-  // Signature block instructions with actual representative info
-  prompt += `7. Includes proper signature blocks for both parties with PRE-FILLED VALUES:\n`;
+  // Updated Signature Block Instructions for new schema
+  prompt += `7. Includes the "signatories" array with PRE-FILLED VALUES:\n`;
   if (data.companyRepName && data.companyRepTitle) {
-    prompt += `   - EMPLOYER signature block (all fields except signature and date must have "value" pre-filled):\n`;
-    prompt += `     * By (signature): leave empty (type: "signature")\n`;
-    prompt += `     * Name: "${data.companyRepName}" (type: "name", value: "${data.companyRepName}")\n`;
-    prompt += `     * Title: "${data.companyRepTitle}" (type: "title", value: "${data.companyRepTitle}")\n`;
-    prompt += `     * Date: leave empty (type: "date")\n`;
+    prompt += `   - EMPLOYER: Party="employer", Name="${data.companyRepName}", Title="${data.companyRepTitle}"\n`;
   } else {
-    prompt += `   - EMPLOYER signature block with fields:\n`;
-    prompt += `     * By (type: "signature")\n`;
-    prompt += `     * Name (type: "name")\n`;
-    prompt += `     * Title (type: "title")\n`;
-    prompt += `     * Date (type: "date")\n`;
+    prompt += `   - EMPLOYER: Party="employer", Name="[Authorized Representative Name]", Title="[Authorized Representative Title]"\n`;
   }
-  prompt += `   - EMPLOYEE signature block (all fields except signature and date must have "value" pre-filled):\n`;
-  prompt += `     * Signature: leave empty (type: "signature")\n`;
   if (data.employeeName) {
-    prompt += `     * Name: "${data.employeeName}" (type: "name", value: "${data.employeeName}") - MUST be pre-filled\n`;
+    prompt += `   - EMPLOYEE: Party="employee", Name="${data.employeeName}"\n`;
   }
-  prompt += `     * Date: leave empty (type: "date")\n`;
-  prompt += `\n`;
-  prompt += `   ⚠️ IMPORTANT: Pre-fill "value" property for name and title fields using the actual data provided above. Leave signature and date fields empty.\n`;
   
   prompt += `8. Returns ONLY valid JSON format (no markdown, no code blocks, no additional text outside the JSON structure)\n\n`;
-  prompt += `⚠️ CRITICAL: This is a legally binding document. Never use dummy/placeholder contact information (like "john.doe@company.com", "555-1234", etc.). Use ONLY the exact information provided above.\n\n`;
-  prompt += `📞 PHONE NUMBER HANDLING: If a phone number was NOT provided above for a party (employer or employee), DO NOT include a phone field at all in the parties section. Omit the phone line entirely - do not use placeholders like "[To Be Completed]", "[TBD]", or any other placeholder text for phone numbers. Only include phone numbers when they were explicitly provided.\n\n`;
+  prompt += `⚠️ CRITICAL: This is a legally binding document. Never use dummy/placeholder contact information. Use ONLY the exact information provided above.\n\n`;
+  prompt += `📞 PHONE NUMBER HANDLING: If a phone number was NOT provided above for a party (employer or employee), DO NOT include a phone field in the signatory object. Omit the phone property entirely.\n\n`;
   prompt += `The document should be ready for attorney review and execution.`;
 
   return prompt;

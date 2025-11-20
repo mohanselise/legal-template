@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Loader2, CheckCircle2, Edit, Download, Send, Sparkles, FileText, ZoomIn, ZoomOut, PanelRightClose, PanelRightOpen, Signature, Calendar, User, Briefcase, Trash2 } from 'lucide-react';
-import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
+import type { EmploymentAgreement, LegalDocument } from '@/app/api/templates/employment-agreement/schema';
 import {
   clearEmploymentAgreementReview,
   loadEmploymentAgreementReview,
@@ -40,14 +40,54 @@ const Page = dynamic(
 
 type FormDataState = Record<string, unknown> | null;
 
+// Helper to check for legacy document
+function isLegacyDocument(doc: LegalDocument | EmploymentAgreement): doc is EmploymentAgreement {
+  return 'parties' in doc;
+}
+
+// Helpers to extract party info safely from either schema
+function getEmployerInfo(doc: LegalDocument | EmploymentAgreement | null, formData: any) {
+  if (!doc) return { name: formData?.companyName || 'Company', email: formData?.companyRepEmail || '' };
+  
+  if (isLegacyDocument(doc)) {
+    return {
+      name: doc.parties.employer.legalName,
+      email: doc.parties.employer.email || formData?.companyRepEmail || ''
+    };
+  } else {
+    const sig = doc.signatories?.find(s => s.party === 'employer');
+    return {
+      name: sig?.name || formData?.companyName || 'Company',
+      email: sig?.email || formData?.companyRepEmail || ''
+    };
+  }
+}
+
+function getEmployeeInfo(doc: LegalDocument | EmploymentAgreement | null, formData: any) {
+  if (!doc) return { name: formData?.employeeName || 'Employee', email: formData?.employeeEmail || '' };
+
+  if (isLegacyDocument(doc)) {
+    return {
+      name: doc.parties.employee.legalName,
+      email: doc.parties.employee.email || formData?.employeeEmail || ''
+    };
+  } else {
+    const sig = doc.signatories?.find(s => s.party === 'employee');
+    return {
+      name: sig?.name || formData?.employeeName || 'Employee',
+      email: sig?.email || formData?.employeeEmail || ''
+    };
+  }
+}
+
 function ReviewContent() {
   const t = useTranslations('employmentAgreement.reviewPage');
   const tCommon = useTranslations('common');
   const searchParams = useSearchParams();
   const router = useRouter();
   const [formData, setFormData] = useState<FormDataState>(null);
-  const [generatedDocument, setGeneratedDocument] = useState<EmploymentAgreement | null>(null);
-  const [editedDocument, setEditedDocument] = useState<EmploymentAgreement | null>(null);
+  const [generatedDocument, setGeneratedDocument] = useState<LegalDocument | EmploymentAgreement | null>(null);
+  const [editedDocument, setEditedDocument] = useState<LegalDocument | EmploymentAgreement | null>(null);
   const [isGenerating, setIsGenerating] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPreparingContract, setIsPreparingContract] = useState(false);
@@ -130,7 +170,7 @@ function ReviewContent() {
 
     if (!hasSessionDocument && docParam) {
       try {
-        const parsedDocument: EmploymentAgreement = JSON.parse(docParam);
+        const parsedDocument: LegalDocument | EmploymentAgreement = JSON.parse(docParam);
         setGeneratedDocument(parsedDocument);
         setEditedDocument(parsedDocument);
         setIsGenerating(false);
@@ -231,7 +271,7 @@ function ReviewContent() {
   };
 
   const generatePdfPreview = async (
-    document: EmploymentAgreement,
+    document: LegalDocument | EmploymentAgreement,
     formDataValue: FormDataState
   ) => {
     setIsLoadingPdf(true);
@@ -349,22 +389,22 @@ function ReviewContent() {
         throw new Error('Some signature fields have invalid coordinates. Please check and adjust the fields.');
       }
 
-      // Extract signatories from formData (same logic as PDF generation)
-      const employerName = documentToSend.parties?.employer?.legalName || (formData.companyName as string) || 'Company';
-      const employeeName = documentToSend.parties?.employee?.legalName || (formData.employeeName as string) || 'Employee';
+      // Extract signatories safely
+      const empInfo = getEmployerInfo(documentToSend, formData);
+      const emplInfo = getEmployeeInfo(documentToSend, formData);
 
       const signatories = [
         {
           party: 'employer' as const,
-          name: (formData.companyRepName as string) || employerName,
-          email: (formData.companyRepEmail as string) || documentToSend.parties?.employer?.email || '',
+          name: (formData.companyRepName as string) || empInfo.name,
+          email: (formData.companyRepEmail as string) || empInfo.email,
           role: (formData.companyRepTitle as string) || 'Authorized Representative',
           ...((formData.companyRepPhone as string) && { phone: formData.companyRepPhone as string }),
         },
         {
           party: 'employee' as const,
-          name: employeeName,
-          email: (formData.employeeEmail as string) || documentToSend.parties?.employee?.email || '',
+          name: emplInfo.name,
+          email: (formData.employeeEmail as string) || emplInfo.email,
           role: (formData.jobTitle as string) || 'Employee',
           ...((formData.employeePhone as string) && { phone: formData.employeePhone as string }),
         },
@@ -464,7 +504,9 @@ function ReviewContent() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const employeeName = documentToDownload.parties.employee.legalName.replace(/\s+/g, '_');
+      
+      const empInfo = getEmployeeInfo(documentToDownload, formData);
+      const employeeName = empInfo.name.replace(/\s+/g, '_');
       a.download = `Employment_Agreement_${employeeName}_${Date.now()}.pdf`;
       document.body.appendChild(a);
       a.click();
@@ -499,7 +541,7 @@ function ReviewContent() {
   useEffect(() => {
     if (numPages && numPages > 0 && generatedDocument && formData) {
       if (signatureFields.length === 0) {
-        // Initialize fields using priority: saved -> API -> hardcoded
+        // Initialize fields using priority: 1) Saved fields, 2) API-provided fields, 3) Hardcoded coordinates
         initializeSignatureFields(numPages);
       } else {
         // Update page numbers if they don't match (e.g., if PDF page count changed)
@@ -559,8 +601,12 @@ function ReviewContent() {
 
     // Priority 3: Fall back to hardcoded coordinates
     const lastPage = totalPages;
-    const employerName = generatedDocument.parties?.employer?.legalName || (formData.companyName as string) || 'Company';
-    const employeeName = generatedDocument.parties?.employee?.legalName || (formData.employeeName as string) || 'Employee';
+    
+    const empInfo = getEmployerInfo(generatedDocument, formData);
+    const emplInfo = getEmployeeInfo(generatedDocument, formData);
+
+    const employerName = empInfo.name;
+    const employeeName = emplInfo.name;
 
     const defaultFields: SignatureField[] = [
       // Employer signature
@@ -644,19 +690,19 @@ function ReviewContent() {
   const getSignatories = () => {
     if (!generatedDocument || !formData) return [];
 
-    const employerName = generatedDocument.parties?.employer?.legalName || (formData.companyName as string) || 'Company';
-    const employeeName = generatedDocument.parties?.employee?.legalName || (formData.employeeName as string) || 'Employee';
+    const empInfo = getEmployerInfo(generatedDocument, formData);
+    const emplInfo = getEmployeeInfo(generatedDocument, formData);
 
     return [
       {
-        name: (formData.companyRepName as string) || employerName,
-        email: (formData.companyRepEmail as string) || generatedDocument.parties?.employer?.email || '',
+        name: (formData.companyRepName as string) || empInfo.name,
+        email: (formData.companyRepEmail as string) || empInfo.email,
         role: (formData.companyRepTitle as string) || 'Authorized Representative',
         color: '#0066B2', // SELISE Blue
       },
       {
-        name: employeeName,
-        email: (formData.employeeEmail as string) || generatedDocument.parties?.employee?.email || '',
+        name: emplInfo.name,
+        email: (formData.employeeEmail as string) || emplInfo.email,
         role: (formData.jobTitle as string) || 'Employee',
         color: '#2A4D14', // Poly Green
       },

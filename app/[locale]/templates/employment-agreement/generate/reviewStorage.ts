@@ -1,10 +1,10 @@
-import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
+import type { EmploymentAgreement, LegalDocument } from '@/app/api/templates/employment-agreement/schema';
 import type { EmploymentAgreementFormData } from './schema';
 
 export const REVIEW_STORAGE_KEY = 'employment-agreement-review';
 
 type ReviewPayload = {
-  document: EmploymentAgreement;
+  document: LegalDocument | EmploymentAgreement;
   formData: Partial<EmploymentAgreementFormData>;
   storedAt?: string;
 };

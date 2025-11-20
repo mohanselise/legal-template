@@ -741,6 +741,215 @@
     "professionalReviewRequired": "Professionelle Überprüfung erforderlich:",
     "professionalReviewRequiredText": "Sie müssen einen qualifizierten Rechtsberater konsultieren, der in Ihrer relevanten Gerichtsbarkeit zugelassen ist, um jedes Dokument zu überprüfen, zu ändern und zu genehmigen, bevor Sie es unterschreiben oder verwenden. Verlassen Sie sich nicht auf diese Vorlagen ohne ordnungsgemäße Rechtsberatung.",
     "acknowledgment": "Durch die Nutzung dieses Dienstes bestätigen Sie, dass Sie diese Einschränkungen verstehen und sich einverstanden erklären, vor der Verwendung generierter Dokumente angemessene Rechtsberatung einzuholen."
+  },
+  "employmentAgreementPage": {
+    "metadata": {
+      "title": "Arbeitsvertrag-Vorlage | Kostenloser Rechtsvertrags-Generator",
+      "description": "Erstellen Sie professionelle Arbeitsverträge in Minuten. Rechtlich solide, anpassbare Vorlagen für Vollzeit-, Teilzeit- und Vertragsmitarbeiter. Kein Anwalt erforderlich.",
+      "keywords": "Arbeitsvertrag, Beschäftigungsvertrag, Stellenvertrag-Vorlage, Mitarbeitervereinbarung, Arbeitsvertrag, Einstellungsvereinbarung",
+      "openGraphTitle": "Arbeitsvertrag-Vorlage | Kostenloser Rechtsvertrags-Generator",
+      "openGraphDescription": "Erstellen Sie professionelle Arbeitsverträge in Minuten. Rechtlich solide, anpassbare Vorlagen."
+    },
+    "hero": {
+      "trustedBadge": "Vertraut von über 10.000 Arbeitgebern",
+      "alwaysFreeBadge": "Immer kostenlos",
+      "title": "Erstellen Sie professionelle Arbeitsverträge in Minuten",
+      "subtitle": "Generieren Sie rechtlich solide Arbeitsverträge, die auf Ihre Bedürfnisse zugeschnitten sind. Kein Anwalt erforderlich. Sparen Sie Zeit und Geld mit unserem vertrauenswürdigen Vorlagengenerator.",
+      "generateButton": "Jetzt Vereinbarung erstellen",
+      "seeHowItWorks": "So funktioniert's",
+      "legallyVetted": "Rechtlich geprüfte Vorlagen",
+      "readyIn5Minutes": "Bereit in 5 Minuten",
+      "fullyCustomizable": "Vollständig anpassbar",
+      "whatsIncluded": "Was enthalten ist:",
+      "includedItems": {
+        "jobTitle": "Stellenbezeichnung und -beschreibung",
+        "compensation": "Vergütung und Leistungen",
+        "workingHours": "Arbeitszeiten und Standort",
+        "confidentiality": "Vertraulichkeitsklauseln",
+        "termination": "Kündigungsbedingungen",
+        "nonCompete": "Wettbewerbsverbotsvereinbarungen",
+        "ipRights": "Geistige Eigentumsrechte",
+        "disputeResolution": "Streitbeilegungsbedingungen"
+      }
+    },
+    "whyItMatters": {
+      "badge": "Warum es wichtig ist",
+      "title": "Warum jeder Arbeitgeber einen schriftlichen Arbeitsvertrag braucht",
+      "subtitle": "Schützen Sie Ihr Unternehmen und schaffen Sie klare Erwartungen vom ersten Tag an",
+      "intro1": "Ein Arbeitsvertrag ist mehr als nur eine Formalität—er ist ein wichtiges Rechtsdokument, das sowohl Arbeitgeber als auch Arbeitnehmer schützt. Ob Sie Ihren ersten Mitarbeiter einstellen oder Ihren hundertsten, eine klare, schriftliche Vereinbarung verhindert Missverständnisse und bietet rechtlichen Schutz.",
+      "intro2": "Ohne einen ordnungsgemäßen Arbeitsvertrag riskieren Sie kostspielige Streitigkeiten über Vergütung, Arbeitsverantwortlichkeiten, Eigentum an geistigem Eigentum und Kündigungsbedingungen. Ein gut ausgearbeiteter Vertrag setzt klare Erwartungen und bietet einen Rahmen zur Lösung von Problemen, bevor sie eskalieren.",
+      "legalProtection": {
+        "title": "Rechtlicher Schutz",
+        "description": "Schützen Sie Ihre Geschäftsinteressen mit durchsetzbaren Vertraulichkeits-, Wettbewerbsverbots- und IP-Klauseln."
+      },
+      "clearExpectations": {
+        "title": "Klare Erwartungen",
+        "description": "Definieren Sie Rollen, Verantwortlichkeiten und Leistungsstandards, um zukünftige Streitigkeiten zu vermeiden."
+      },
+      "professionalImage": {
+        "title": "Professionelles Image",
+        "description": "Zeigen Sie Kandidaten, dass Sie ein seriöser, organisierter Arbeitgeber sind, der ordnungsgemäße Dokumentation schätzt."
+      },
+      "compliance": {
+        "title": "Compliance",
+        "description": "Stellen Sie sicher, dass Ihre Vereinbarungen den gesetzlichen Anforderungen und Branchenstandards entsprechen."
+      }
+    },
+    "howItWorks": {
+      "badge": "Schneller & einfacher Prozess",
+      "title": "Erstellen Sie Ihren Arbeitsvertrag in 3 einfachen Schritten",
+      "subtitle": "Keine Rechtskenntnisse erforderlich. Unser geführter Prozess macht es einfach.",
+      "step1": {
+        "title": "Einfache Fragen beantworten",
+        "description": "Erzählen Sie uns von der Position, Vergütung und wichtigen Bedingungen. Unser geführtes Formular führt Sie durch jedes Detail."
+      },
+      "step2": {
+        "title": "Ihr Dokument überprüfen",
+        "description": "Sehen Sie sofort Ihre angepasste Vereinbarung. Nehmen Sie Änderungen vor, fügen Sie Klauseln hinzu oder passen Sie Bedingungen nach Bedarf an."
+      },
+      "step3": {
+        "title": "Herunterladen & Unterschreiben",
+        "description": "Laden Sie im PDF- oder Word-Format herunter. Bereit zum Drucken, Unterschreiben und sofortigen Verwenden."
+      },
+      "ctaButton": "Vereinbarung erstellen starten",
+      "ctaSubtext": "⚡ Dauert weniger als 5 Minuten • Keine Kreditkarte erforderlich"
+    },
+    "keyClauses": {
+      "badge": "Was drin ist",
+      "title": "Wesentliche Klauseln in jedem Arbeitsvertrag",
+      "subtitle": "Die Bausteine eines starken Vertrags verstehen",
+      "clauses": {
+        "jobDescription": {
+          "title": "Stellenbeschreibung & Pflichten",
+          "description": "Definiert klar die Rolle, Verantwortlichkeiten, Berichtsstruktur und Leistungserwartungen. Verhindert Scope Creep und Streitigkeiten über Arbeitsanforderungen."
+        },
+        "compensation": {
+          "title": "Vergütung & Leistungen",
+          "description": "Spezifiziert Gehalt, Boni, Provisionsstruktur, Leistungen, Eigenkapital und Zahlungsplan. Enthält Bestimmungen für Gehaltserhöhungen und Leistungsbeurteilungen."
+        },
+        "workSchedule": {
+          "title": "Arbeitszeitplan & Standort",
+          "description": "Umreißt Arbeitszeiten, Remote-Arbeitsrichtlinien, Überstundenerwartungen und physischen Arbeitsstandort. Kritisch für hybride und Remote-Anordnungen."
+        },
+        "confidentiality": {
+          "title": "Vertraulichkeit & Geheimhaltung",
+          "description": "Schützt sensible Geschäftsinformationen, Geschäftsgeheimnisse, Kundenlisten und proprietäre Daten. Während und nach der Beschäftigung durchsetzbar."
+        },
+        "ipRights": {
+          "title": "Geistige Eigentumsrechte",
+          "description": "Klärt, wem Arbeitsprodukte, Erfindungen und kreative Ergebnisse gehören. Wesentlich für Technologieunternehmen und kreative Branchen."
+        },
+        "nonCompete": {
+          "title": "Wettbewerbsverbot & Abwerbeverbot",
+          "description": "Verhindert, dass Mitarbeiter zu Wettbewerbern wechseln oder Kunden/Mitarbeiter nach dem Verlassen abwerben. Muss in Umfang und Dauer angemessen sein."
+        },
+        "termination": {
+          "title": "Kündigungsbedingungen",
+          "description": "Definiert Kündigungsstatus nach Belieben, Kündigungsfristen, Abfindungsbedingungen und Gründe für sofortige Entlassung. Schützt beide Parteien."
+        },
+        "disputeResolution": {
+          "title": "Streitbeilegung",
+          "description": "Etabliert, wie Konflikte gelöst werden—durch Schiedsverfahren, Mediation oder Gericht. Enthält Gerichtsbarkeit und geltendes Recht."
+        }
+      }
+    },
+    "useCases": {
+      "badge": "Für jedes Unternehmen",
+      "title": "Perfekt für jedes Einstellungsszenario",
+      "useCases": {
+        "startups": {
+          "title": "Startups",
+          "description": "Einstellung Ihrer ersten Mitarbeiter mit Eigenkapital und Vesting-Zeitplänen"
+        },
+        "smallBusinesses": {
+          "title": "Kleine Unternehmen",
+          "description": "Einstellung von Vollzeit- oder Teilzeitpersonal mit klaren Bedingungen"
+        },
+        "remoteCompanies": {
+          "title": "Remote-Unternehmen",
+          "description": "Verwaltung verteilter Teams über verschiedene Gerichtsbarkeiten hinweg"
+        },
+        "contractors": {
+          "title": "Vertragsnehmer",
+          "description": "Umwandlung von Freelancern in Vollzeitmitarbeiter"
+        },
+        "executives": {
+          "title": "C-Suite-Führungskräfte",
+          "description": "Führungskräftevereinbarungen mit komplexen Vergütungspaketen"
+        },
+        "internationalHires": {
+          "title": "Internationale Einstellungen",
+          "description": "Grenzüberschreitende Beschäftigung mit Compliance-Überlegungen"
+        }
+      }
+    },
+    "stats": {
+      "documentsGenerated": "Dokumente erstellt",
+      "satisfactionRate": "Zufriedenheitsrate",
+      "averageTime": "Durchschnittliche Zeit",
+      "available": "Verfügbar"
+    },
+    "benefits": {
+      "title": "Warum unseren Arbeitsvertrags-Generator wählen?",
+      "saveTimeMoney": {
+        "title": "Zeit & Geld sparen",
+        "description": "Anwälte verlangen 500-2.000 € für Arbeitsverträge. Erstellen Sie Ihren in Minuten für einen Bruchteil der Kosten."
+      },
+      "legallySound": {
+        "title": "Rechtlich solide Vorlagen",
+        "description": "Unsere Vorlagen werden von Rechtsfachleuten erstellt und regelmäßig aktualisiert, um aktuelle Gesetze widerzuspiegeln."
+      },
+      "fullyCustomizable": {
+        "title": "Vollständig anpassbar",
+        "description": "Fügen Sie Klauseln hinzu, entfernen oder ändern Sie sie, um sie an Ihre spezifische Situation anzupassen. Jedes Unternehmen ist einzigartig."
+      },
+      "plainEnglish": {
+        "title": "Verständlich",
+        "description": "Kein verwirrendes Juristendeutsch. Unsere Vereinbarungen sind in klarer, verständlicher Sprache verfasst."
+      }
+    },
+    "faq": {
+      "title": "Häufig gestellte Fragen",
+      "questions": {
+        "legallyBinding": {
+          "question": "Ist dieser Arbeitsvertrag rechtlich bindend?",
+          "answer": "Ja, unsere Vorlagen erstellen rechtlich bindende Vereinbarungen, wenn sie ordnungsgemäß von beiden Parteien ausgeführt werden. Wir empfehlen jedoch, jeden Vertrag von einem örtlichen Anwalt überprüfen zu lassen, um sicherzustellen, dass er den spezifischen Anforderungen Ihrer Gerichtsbarkeit entspricht."
+        },
+        "remoteEmployees": {
+          "question": "Kann ich dies für Remote-Mitarbeiter in anderen Bundesstaaten oder Ländern verwenden?",
+          "answer": "Unsere Vorlagen können für Remote-Mitarbeiter angepasst werden, aber Arbeitsgesetze variieren erheblich je nach Gerichtsbarkeit. Für internationale Einstellungen oder Beschäftigung in mehreren Bundesstaaten empfehlen wir dringend, einen Arbeitsrechtsanwalt zu konsultieren, um Compliance sicherzustellen."
+        },
+        "differenceOfferLetter": {
+          "question": "Was ist der Unterschied zwischen einem Arbeitsvertrag und einem Angebotsschreiben?",
+          "answer": "Ein Angebotsschreiben ist ein vorläufiges Dokument, das grundlegende Bedingungen umreißt. Ein Arbeitsvertrag ist ein umfassender Rechtsvertrag, der alle Aspekte des Beschäftigungsverhältnisses detailliert beschreibt, einschließlich Vertraulichkeit, IP-Rechten und Kündigungsbedingungen."
+        },
+        "nonCompete": {
+          "question": "Wie gehe ich mit Wettbewerbsverbotsklauseln um?",
+          "answer": "Die Durchsetzbarkeit von Wettbewerbsverboten variiert je nach Bundesstaat. Unsere Vorlage enthält anpassbare Wettbewerbsverbotssprache, aber einige Bundesstaaten schränken diese Klauseln stark ein oder verbieten sie. Überprüfen Sie Ihre örtlichen Gesetze oder konsultieren Sie einen Anwalt."
+        },
+        "modifyAfterSigning": {
+          "question": "Kann ich die Vereinbarung nach der Unterzeichnung ändern?",
+          "answer": "Ja, aber alle Änderungen erfordern die gegenseitige Zustimmung von Arbeitgeber und Arbeitnehmer. Änderungen sollten schriftlich als Änderungen des ursprünglichen Vertrags dokumentiert werden."
+        },
+        "partTimeFullTime": {
+          "question": "Brauche ich separate Vereinbarungen für Teilzeit- vs. Vollzeitmitarbeiter?",
+          "answer": "Unsere Vorlage kann sowohl für Vollzeit- als auch für Teilzeitpositionen angepasst werden. Die Hauptunterschiede liegen normalerweise in der Leistungsberechtigung und den Arbeitszeiten, die Sie während des Erstellungsprozesses angeben können."
+        }
+      }
+    },
+    "disclaimer": {
+      "title": "Wichtiger rechtlicher Hinweis",
+      "text": "Diese Vorlage wird nur zu Informationszwecken bereitgestellt und sollte nicht als Rechtsberatung angesehen werden. Arbeitsgesetze variieren je nach Gerichtsbarkeit, Branche und spezifischen Umständen. Während unsere Vorlagen umfassend und rechtlich solide erstellt wurden, empfehlen wir dringend, jeden Arbeitsvertrag von einem qualifizierten Anwalt in Ihrer Region überprüfen zu lassen, bevor Sie ihn verwenden, insbesondere für Führungspositionen, internationale Einstellungen oder Situationen mit komplexen Vergütungsstrukturen."
+    },
+    "finalCta": {
+      "badge": "Bereit loszulegen?",
+      "title": "Erstellen Sie jetzt Ihren Arbeitsvertrag",
+      "subtitle": "Schließen Sie sich Tausenden von Arbeitgebern an, die unserer Plattform für ihre Einstellungsbedürfnisse vertrauen",
+      "generateButton": "Jetzt Vereinbarung erstellen",
+      "noCreditCard": "Keine Kreditkarte erforderlich",
+      "readyIn5Minutes": "Bereit in 5 Minuten",
+      "downloadInstantly": "Sofort herunterladen"
+    }
   }
 }
 

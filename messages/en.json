@@ -741,6 +741,215 @@
     "professionalReviewRequired": "Professional Review Required:",
     "professionalReviewRequiredText": "You must consult with a qualified legal advisor admitted to practice in your relevant jurisdiction to review, modify, and approve any document before you sign or use it. Do not rely on these templates without proper legal counsel.",
     "acknowledgment": "By using this service, you acknowledge that you understand these limitations and agree to seek appropriate legal counsel before using any generated documents."
+  },
+  "employmentAgreementPage": {
+    "metadata": {
+      "title": "Employment Agreement Template | Free Legal Contract Generator",
+      "description": "Create professional employment agreements in minutes. Legally sound, customizable templates for full-time, part-time, and contract employees. No lawyer required.",
+      "keywords": "employment agreement, employment contract, job contract template, employee agreement, work contract, hiring agreement",
+      "openGraphTitle": "Employment Agreement Template | Free Legal Contract Generator",
+      "openGraphDescription": "Create professional employment agreements in minutes. Legally sound, customizable templates."
+    },
+    "hero": {
+      "trustedBadge": "Trusted by 10,000+ employers",
+      "alwaysFreeBadge": "Always Free",
+      "title": "Create Professional Employment Agreements in Minutes",
+      "subtitle": "Generate legally sound employment contracts tailored to your needs. No lawyer required. Save time and money with our trusted template generator.",
+      "generateButton": "Generate Your Agreement Now",
+      "seeHowItWorks": "See How It Works",
+      "legallyVetted": "Legally vetted templates",
+      "readyIn5Minutes": "Ready in 5 minutes",
+      "fullyCustomizable": "Fully customizable",
+      "whatsIncluded": "What's Included:",
+      "includedItems": {
+        "jobTitle": "Job title and description",
+        "compensation": "Compensation and benefits",
+        "workingHours": "Working hours and location",
+        "confidentiality": "Confidentiality clauses",
+        "termination": "Termination conditions",
+        "nonCompete": "Non-compete agreements",
+        "ipRights": "Intellectual property rights",
+        "disputeResolution": "Dispute resolution terms"
+      }
+    },
+    "whyItMatters": {
+      "badge": "Why It Matters",
+      "title": "Why Every Employer Needs a Written Employment Agreement",
+      "subtitle": "Protect your business and create clear expectations from day one",
+      "intro1": "An employment agreement is more than just a formality—it's a critical legal document that protects both employers and employees. Whether you're hiring your first employee or your hundredth, having a clear, written agreement prevents misunderstandings and provides legal protection.",
+      "intro2": "Without a proper employment agreement, you risk costly disputes over compensation, job responsibilities, intellectual property ownership, and termination conditions. A well-drafted contract sets clear expectations and provides a framework for resolving issues before they escalate.",
+      "legalProtection": {
+        "title": "Legal Protection",
+        "description": "Safeguard your business interests with enforceable confidentiality, non-compete, and IP clauses."
+      },
+      "clearExpectations": {
+        "title": "Clear Expectations",
+        "description": "Define roles, responsibilities, and performance standards to prevent future disputes."
+      },
+      "professionalImage": {
+        "title": "Professional Image",
+        "description": "Show candidates you're a serious, organized employer who values proper documentation."
+      },
+      "compliance": {
+        "title": "Compliance",
+        "description": "Ensure your agreements meet legal requirements and industry standards."
+      }
+    },
+    "howItWorks": {
+      "badge": "Quick & Easy Process",
+      "title": "Generate Your Employment Agreement in 3 Simple Steps",
+      "subtitle": "No legal expertise required. Our guided process makes it easy.",
+      "step1": {
+        "title": "Answer Simple Questions",
+        "description": "Tell us about the position, compensation, and key terms. Our guided form walks you through every detail."
+      },
+      "step2": {
+        "title": "Review Your Document",
+        "description": "Instantly see your customized agreement. Make edits, add clauses, or adjust terms as needed."
+      },
+      "step3": {
+        "title": "Download & Sign",
+        "description": "Download in PDF or Word format. Ready to print, sign, and use immediately."
+      },
+      "ctaButton": "Start Creating Your Agreement",
+      "ctaSubtext": "⚡ Takes less than 5 minutes • No credit card required"
+    },
+    "keyClauses": {
+      "badge": "What's Inside",
+      "title": "Essential Clauses in Every Employment Agreement",
+      "subtitle": "Understanding the building blocks of a strong contract",
+      "clauses": {
+        "jobDescription": {
+          "title": "Job Description & Duties",
+          "description": "Clearly defines the role, responsibilities, reporting structure, and performance expectations. Prevents scope creep and disputes about job requirements."
+        },
+        "compensation": {
+          "title": "Compensation & Benefits",
+          "description": "Specifies salary, bonuses, commission structure, benefits, equity, and payment schedule. Includes provisions for raises and performance reviews."
+        },
+        "workSchedule": {
+          "title": "Work Schedule & Location",
+          "description": "Outlines working hours, remote work policies, overtime expectations, and physical work location. Critical for hybrid and remote arrangements."
+        },
+        "confidentiality": {
+          "title": "Confidentiality & Non-Disclosure",
+          "description": "Protects sensitive business information, trade secrets, client lists, and proprietary data. Enforceable during and after employment."
+        },
+        "ipRights": {
+          "title": "Intellectual Property Rights",
+          "description": "Clarifies who owns work products, inventions, and creative output. Essential for tech companies and creative industries."
+        },
+        "nonCompete": {
+          "title": "Non-Compete & Non-Solicitation",
+          "description": "Prevents employees from joining competitors or poaching clients/staff after leaving. Must be reasonable in scope and duration."
+        },
+        "termination": {
+          "title": "Termination Conditions",
+          "description": "Defines at-will employment status, notice periods, severance terms, and grounds for immediate dismissal. Protects both parties."
+        },
+        "disputeResolution": {
+          "title": "Dispute Resolution",
+          "description": "Establishes how conflicts will be resolved—through arbitration, mediation, or court. Includes jurisdiction and governing law."
+        }
+      }
+    },
+    "useCases": {
+      "badge": "For Every Business",
+      "title": "Perfect For Every Hiring Scenario",
+      "useCases": {
+        "startups": {
+          "title": "Startups",
+          "description": "Hiring your first employees with equity and vesting schedules"
+        },
+        "smallBusinesses": {
+          "title": "Small Businesses",
+          "description": "Bringing on full-time or part-time staff with clear terms"
+        },
+        "remoteCompanies": {
+          "title": "Remote Companies",
+          "description": "Managing distributed teams across different jurisdictions"
+        },
+        "contractors": {
+          "title": "Contractors",
+          "description": "Converting freelancers to full-time employees"
+        },
+        "executives": {
+          "title": "C-Suite Executives",
+          "description": "Executive agreements with complex compensation packages"
+        },
+        "internationalHires": {
+          "title": "International Hires",
+          "description": "Cross-border employment with compliance considerations"
+        }
+      }
+    },
+    "stats": {
+      "documentsGenerated": "Documents Generated",
+      "satisfactionRate": "Satisfaction Rate",
+      "averageTime": "Average Time",
+      "available": "Available"
+    },
+    "benefits": {
+      "title": "Why Choose Our Employment Agreement Generator?",
+      "saveTimeMoney": {
+        "title": "Save Time & Money",
+        "description": "Lawyers charge $500-$2,000 for employment agreements. Create yours in minutes for a fraction of the cost."
+      },
+      "legallySound": {
+        "title": "Legally Sound Templates",
+        "description": "Our templates are drafted by legal professionals and updated regularly to reflect current laws."
+      },
+      "fullyCustomizable": {
+        "title": "Fully Customizable",
+        "description": "Add, remove, or modify clauses to fit your specific situation. Every business is unique."
+      },
+      "plainEnglish": {
+        "title": "Plain English",
+        "description": "No confusing legalese. Our agreements are written in clear, understandable language."
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "questions": {
+        "legallyBinding": {
+          "question": "Is this employment agreement legally binding?",
+          "answer": "Yes, our templates create legally binding agreements when properly executed by both parties. However, we recommend having any contract reviewed by a local attorney to ensure it complies with your jurisdiction's specific requirements."
+        },
+        "remoteEmployees": {
+          "question": "Can I use this for remote employees in other states or countries?",
+          "answer": "Our templates can be customized for remote workers, but employment laws vary significantly by jurisdiction. For international hires or multi-state employment, we strongly recommend consulting with an employment lawyer to ensure compliance."
+        },
+        "differenceOfferLetter": {
+          "question": "What's the difference between an employment agreement and an offer letter?",
+          "answer": "An offer letter is a preliminary document outlining basic terms. An employment agreement is a comprehensive legal contract that details all aspects of the employment relationship, including confidentiality, IP rights, and termination conditions."
+        },
+        "nonCompete": {
+          "question": "How do I handle non-compete clauses?",
+          "answer": "Non-compete enforceability varies by state. Our template includes customizable non-compete language, but some states heavily restrict or ban these clauses. Check your local laws or consult an attorney."
+        },
+        "modifyAfterSigning": {
+          "question": "Can I modify the agreement after it's signed?",
+          "answer": "Yes, but any changes require mutual consent from both employer and employee. Changes should be documented in writing as amendments to the original agreement."
+        },
+        "partTimeFullTime": {
+          "question": "Do I need separate agreements for part-time vs full-time employees?",
+          "answer": "Our template can be customized for both full-time and part-time positions. The key differences are usually in benefits eligibility and work hours, which you can specify during the generation process."
+        }
+      }
+    },
+    "disclaimer": {
+      "title": "Important Legal Notice",
+      "text": "This template is provided for informational purposes and should not be considered legal advice. Employment laws vary by jurisdiction, industry, and specific circumstances. While our templates are drafted to be comprehensive and legally sound, we strongly recommend having any employment agreement reviewed by a qualified attorney in your area before use, especially for executive positions, international hires, or situations involving complex compensation structures."
+    },
+    "finalCta": {
+      "badge": "Ready to Get Started?",
+      "title": "Create Your Employment Agreement Now",
+      "subtitle": "Join thousands of employers who trust our platform for their hiring needs",
+      "generateButton": "Generate Your Agreement Now",
+      "noCreditCard": "No credit card required",
+      "readyIn5Minutes": "Ready in 5 minutes",
+      "downloadInstantly": "Download instantly"
+    }
   }
 }
 

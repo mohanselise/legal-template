@@ -1,21 +1,26 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import Image from 'next/image';
 import { Metadata } from 'next';
 import { CheckCircle2, Clock, Shield, FileText, Users, Briefcase, Scale, AlertCircle, ArrowRight, Sparkles, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { getTranslations } from 'next-intl/server';
 
-export const metadata: Metadata = {
-  title: 'Employment Agreement Template | Free Legal Contract Generator',
-  description: 'Create professional employment agreements in minutes. Legally sound, customizable templates for full-time, part-time, and contract employees. No lawyer required.',
-  keywords: 'employment agreement, employment contract, job contract template, employee agreement, work contract, hiring agreement',
-  openGraph: {
-    title: 'Employment Agreement Template | Free Legal Contract Generator',
-    description: 'Create professional employment agreements in minutes. Legally sound, customizable templates.',
-    type: 'website',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('employmentAgreementPage.metadata');
+  return {
+    title: t('title'),
+    description: t('description'),
+    keywords: t('keywords'),
+    openGraph: {
+      title: t('openGraphTitle'),
+      description: t('openGraphDescription'),
+      type: 'website',
+    },
+  };
+}
 
-export default function EmploymentAgreementPage() {
+export default async function EmploymentAgreementPage() {
+  const t = await getTranslations('employmentAgreementPage');
   return (
     <div className="bg-[hsl(var(--bg))] text-foreground">
       {/* Hero Section - Above the Fold */}
@@ -42,19 +47,19 @@ export default function EmploymentAgreementPage() {
               <div className="mb-6 flex flex-wrap items-center gap-3">
                 <Badge className="bg-[hsl(var(--white))]/15 text-[hsl(var(--white))] border-[hsl(var(--white))]/30 backdrop-blur-sm font-subheading uppercase tracking-[0.12em]" variant="outline">
                   <Star className="mr-1 h-3 w-3 fill-current" />
-                  Trusted by 10,000+ employers
+                  {t('hero.trustedBadge')}
                 </Badge>
                 <Badge className="bg-[hsl(var(--lime-green))]/20 text-[hsl(var(--white))] border-[hsl(var(--lime-green))]/40 font-subheading uppercase tracking-[0.12em]" variant="outline">
                   <CheckCircle2 className="mr-1 h-3 w-3" />
-                  Always Free
+                  {t('hero.alwaysFreeBadge')}
                 </Badge>
               </div>
 
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-6 font-heading">
-                Create Professional Employment Agreements in Minutes
+                {t('hero.title')}
               </h1>
               <p className="text-lg sm:text-xl text-[hsl(var(--white))]/85 leading-relaxed">
-                Generate legally sound employment contracts tailored to your needs. No lawyer required. Save time and money with our trusted template generator.
+                {t('hero.subtitle')}
               </p>
 
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
@@ -62,7 +67,7 @@ export default function EmploymentAgreementPage() {
                   href="/templates/employment-agreement/generate"
                   className="group inline-flex items-center justify-center rounded-xl bg-[hsl(var(--white))] px-8 py-4 text-lg font-semibold text-[hsl(var(--selise-blue))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 hover:bg-[hsl(var(--white))]/90 transition-all transform hover:scale-105"
                 >
-                  Generate Your Agreement Now
+                  {t('hero.generateButton')}
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
 
@@ -70,7 +75,7 @@ export default function EmploymentAgreementPage() {
                   href="#how-it-works"
                   className="inline-flex items-center justify-center rounded-xl border-2 border-[hsl(var(--white))]/70 px-8 py-4 text-lg font-semibold text-[hsl(var(--white))] hover:bg-[hsl(var(--white))]/10 hover:border-[hsl(var(--white))] transition-all backdrop-blur-sm"
                 >
-                  See How It Works
+                  {t('hero.seeHowItWorks')}
                 </Link>
               </div>
 
@@ -79,19 +84,19 @@ export default function EmploymentAgreementPage() {
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[hsl(var(--lime-green))]/15">
                     <CheckCircle2 className="h-4 w-4 text-[hsl(var(--lime-green))]" />
                   </div>
-                  <span className="text-[hsl(var(--white))]/80">Legally vetted templates</span>
+                  <span className="text-[hsl(var(--white))]/80">{t('hero.legallyVetted')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[hsl(var(--lime-green))]/15">
                     <CheckCircle2 className="h-4 w-4 text-[hsl(var(--lime-green))]" />
                   </div>
-                  <span className="text-[hsl(var(--white))]/80">Ready in 5 minutes</span>
+                  <span className="text-[hsl(var(--white))]/80">{t('hero.readyIn5Minutes')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[hsl(var(--lime-green))]/15">
                     <CheckCircle2 className="h-4 w-4 text-[hsl(var(--lime-green))]" />
                   </div>
-                  <span className="text-[hsl(var(--white))]/80">Fully customizable</span>
+                  <span className="text-[hsl(var(--white))]/80">{t('hero.fullyCustomizable')}</span>
                 </div>
               </div>
             </div>
@@ -108,18 +113,18 @@ export default function EmploymentAgreementPage() {
 
                 <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
                   <FileText className="h-6 w-6" />
-                  What&apos;s Included:
+                  {t('hero.whatsIncluded')}
                 </h3>
                 <ul className="space-y-4">
                   {[
-                    'Job title and description',
-                    'Compensation and benefits',
-                    'Working hours and location',
-                    'Confidentiality clauses',
-                    'Termination conditions',
-                    'Non-compete agreements',
-                    'Intellectual property rights',
-                    'Dispute resolution terms'
+                    t('hero.includedItems.jobTitle'),
+                    t('hero.includedItems.compensation'),
+                    t('hero.includedItems.workingHours'),
+                    t('hero.includedItems.confidentiality'),
+                    t('hero.includedItems.termination'),
+                    t('hero.includedItems.nonCompete'),
+                    t('hero.includedItems.ipRights'),
+                    t('hero.includedItems.disputeResolution')
                   ].map((item, index) => (
                     <li key={index} className="flex items-start gap-3 group">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[hsl(var(--lime-green))]/15 transition-colors group-hover:bg-[hsl(var(--lime-green))]/25 flex-shrink-0 mt-0.5">
@@ -140,23 +145,23 @@ export default function EmploymentAgreementPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/25 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
-              Why It Matters
+              {t('whyItMatters.badge')}
             </Badge>
             <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
-              Why Every Employer Needs a Written Employment Agreement
+              {t('whyItMatters.title')}
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Protect your business and create clear expectations from day one
+              {t('whyItMatters.subtitle')}
             </p>
           </div>
 
           <div className="prose prose-lg max-w-4xl mx-auto text-foreground mb-16">
             <p className="text-lg leading-relaxed">
-              An employment agreement is more than just a formality—it&apos;s a critical legal document that protects both employers and employees. Whether you&apos;re hiring your first employee or your hundredth, having a clear, written agreement prevents misunderstandings and provides legal protection.
+              {t('whyItMatters.intro1')}
             </p>
 
             <p className="text-lg leading-relaxed">
-              Without a proper employment agreement, you risk costly disputes over compensation, job responsibilities, intellectual property ownership, and termination conditions. A well-drafted contract sets clear expectations and provides a framework for resolving issues before they escalate.
+              {t('whyItMatters.intro2')}
             </p>
           </div>
 
@@ -165,9 +170,9 @@ export default function EmploymentAgreementPage() {
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
                 <Shield className="h-7 w-7 text-[hsl(var(--white))]" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-3">Legal Protection</h3>
+              <h3 className="text-xl font-bold text-foreground mb-3">{t('whyItMatters.legalProtection.title')}</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Safeguard your business interests with enforceable confidentiality, non-compete, and IP clauses.
+                {t('whyItMatters.legalProtection.description')}
               </p>
             </div>
 
@@ -175,9 +180,9 @@ export default function EmploymentAgreementPage() {
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
                 <Users className="h-7 w-7 text-[hsl(var(--white))]" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-3">Clear Expectations</h3>
+              <h3 className="text-xl font-bold text-foreground mb-3">{t('whyItMatters.clearExpectations.title')}</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Define roles, responsibilities, and performance standards to prevent future disputes.
+                {t('whyItMatters.clearExpectations.description')}
               </p>
             </div>
 
@@ -185,9 +190,9 @@ export default function EmploymentAgreementPage() {
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
                 <Briefcase className="h-7 w-7 text-[hsl(var(--white))]" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-3">Professional Image</h3>
+              <h3 className="text-xl font-bold text-foreground mb-3">{t('whyItMatters.professionalImage.title')}</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Show candidates you&apos;re a serious, organized employer who values proper documentation.
+                {t('whyItMatters.professionalImage.description')}
               </p>
             </div>
 
@@ -195,9 +200,9 @@ export default function EmploymentAgreementPage() {
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg group-hover:scale-110 transition-transform">
                 <Scale className="h-7 w-7 text-[hsl(var(--white))]" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-3">Compliance</h3>
+              <h3 className="text-xl font-bold text-foreground mb-3">{t('whyItMatters.compliance.title')}</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Ensure your agreements meet legal requirements and industry standards.
+                {t('whyItMatters.compliance.description')}
               </p>
             </div>
           </div>
@@ -220,13 +225,13 @@ export default function EmploymentAgreementPage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <Badge className="mb-4 bg-[hsl(var(--lime-green))]/15 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/25 dark:text-[hsl(var(--lime-green))] font-subheading uppercase tracking-[0.12em]">
-              Quick & Easy Process
+              {t('howItWorks.badge')}
             </Badge>
             <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
-              Generate Your Employment Agreement in 3 Simple Steps
+              {t('howItWorks.title')}
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              No legal expertise required. Our guided process makes it easy.
+              {t('howItWorks.subtitle')}
             </p>
           </div>
 
@@ -244,10 +249,10 @@ export default function EmploymentAgreementPage() {
                 </div>
               </div>
               <h3 className="mt-8 text-2xl font-bold text-foreground mb-4">
-                Answer Simple Questions
+                {t('howItWorks.step1.title')}
               </h3>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Tell us about the position, compensation, and key terms. Our guided form walks you through every detail.
+                {t('howItWorks.step1.description')}
               </p>
             </div>
 
@@ -263,10 +268,10 @@ export default function EmploymentAgreementPage() {
                 </div>
               </div>
               <h3 className="mt-8 text-2xl font-bold text-foreground mb-4">
-                Review Your Document
+                {t('howItWorks.step2.title')}
               </h3>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Instantly see your customized agreement. Make edits, add clauses, or adjust terms as needed.
+                {t('howItWorks.step2.description')}
               </p>
             </div>
 
@@ -281,10 +286,10 @@ export default function EmploymentAgreementPage() {
                 </div>
               </div>
               <h3 className="mt-8 text-2xl font-bold text-foreground mb-4">
-                Download & Sign
+                {t('howItWorks.step3.title')}
               </h3>
               <p className="text-base text-muted-foreground leading-relaxed">
-                Download in PDF or Word format. Ready to print, sign, and use immediately.
+                {t('howItWorks.step3.description')}
               </p>
             </div>
           </div>
@@ -294,11 +299,11 @@ export default function EmploymentAgreementPage() {
               href="/templates/employment-agreement/generate"
               className="group inline-flex items-center justify-center rounded-xl bg-[hsl(var(--selise-blue))] px-10 py-5 text-lg font-semibold text-[hsl(var(--white))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 hover:bg-[hsl(var(--gradient-dark-from))] transition-all transform hover:scale-105"
             >
-              Start Creating Your Agreement
+              {t('howItWorks.ctaButton')}
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
-              ⚡ Takes less than 5 minutes • No credit card required
+              {t('howItWorks.ctaSubtext')}
             </p>
           </div>
         </div>
@@ -309,49 +314,49 @@ export default function EmploymentAgreementPage() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/25 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
-              What's Inside
+              {t('keyClauses.badge')}
             </Badge>
             <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
-              Essential Clauses in Every Employment Agreement
+              {t('keyClauses.title')}
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Understanding the building blocks of a strong contract
+              {t('keyClauses.subtitle')}
             </p>
           </div>
 
           <div className="space-y-4">
             {[
               {
-                title: 'Job Description & Duties',
-                description: 'Clearly defines the role, responsibilities, reporting structure, and performance expectations. Prevents scope creep and disputes about job requirements.'
+                title: t('keyClauses.clauses.jobDescription.title'),
+                description: t('keyClauses.clauses.jobDescription.description')
               },
               {
-                title: 'Compensation & Benefits',
-                description: 'Specifies salary, bonuses, commission structure, benefits, equity, and payment schedule. Includes provisions for raises and performance reviews.'
+                title: t('keyClauses.clauses.compensation.title'),
+                description: t('keyClauses.clauses.compensation.description')
               },
               {
-                title: 'Work Schedule & Location',
-                description: 'Outlines working hours, remote work policies, overtime expectations, and physical work location. Critical for hybrid and remote arrangements.'
+                title: t('keyClauses.clauses.workSchedule.title'),
+                description: t('keyClauses.clauses.workSchedule.description')
               },
               {
-                title: 'Confidentiality & Non-Disclosure',
-                description: 'Protects sensitive business information, trade secrets, client lists, and proprietary data. Enforceable during and after employment.'
+                title: t('keyClauses.clauses.confidentiality.title'),
+                description: t('keyClauses.clauses.confidentiality.description')
               },
               {
-                title: 'Intellectual Property Rights',
-                description: 'Clarifies who owns work products, inventions, and creative output. Essential for tech companies and creative industries.'
+                title: t('keyClauses.clauses.ipRights.title'),
+                description: t('keyClauses.clauses.ipRights.description')
               },
               {
-                title: 'Non-Compete & Non-Solicitation',
-                description: 'Prevents employees from joining competitors or poaching clients/staff after leaving. Must be reasonable in scope and duration.'
+                title: t('keyClauses.clauses.nonCompete.title'),
+                description: t('keyClauses.clauses.nonCompete.description')
               },
               {
-                title: 'Termination Conditions',
-                description: 'Defines at-will employment status, notice periods, severance terms, and grounds for immediate dismissal. Protects both parties.'
+                title: t('keyClauses.clauses.termination.title'),
+                description: t('keyClauses.clauses.termination.description')
               },
               {
-                title: 'Dispute Resolution',
-                description: 'Establishes how conflicts will be resolved—through arbitration, mediation, or court. Includes jurisdiction and governing law.'
+                title: t('keyClauses.clauses.disputeResolution.title'),
+                description: t('keyClauses.clauses.disputeResolution.description')
               }
             ].map((clause, index) => (
               <div key={index} className="group bg-card border-2 border-border rounded-xl p-6 hover:border-[hsl(var(--sky-blue))] hover:shadow-lg transition-all">
@@ -373,21 +378,21 @@ export default function EmploymentAgreementPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/25 dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.12em]">
-              For Every Business
+              {t('useCases.badge')}
             </Badge>
             <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-6">
-              Perfect For Every Hiring Scenario
+              {t('useCases.title')}
             </h2>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
             {[
-              { title: 'Startups', desc: 'Hiring your first employees with equity and vesting schedules', icon: Sparkles },
-              { title: 'Small Businesses', desc: 'Bringing on full-time or part-time staff with clear terms', icon: Briefcase },
-              { title: 'Remote Companies', desc: 'Managing distributed teams across different jurisdictions', icon: Users },
-              { title: 'Contractors', desc: 'Converting freelancers to full-time employees', icon: FileText },
-              { title: 'C-Suite Executives', desc: 'Executive agreements with complex compensation packages', icon: Star },
-              { title: 'International Hires', desc: 'Cross-border employment with compliance considerations', icon: Scale }
+              { title: t('useCases.useCases.startups.title'), desc: t('useCases.useCases.startups.description'), icon: Sparkles },
+              { title: t('useCases.useCases.smallBusinesses.title'), desc: t('useCases.useCases.smallBusinesses.description'), icon: Briefcase },
+              { title: t('useCases.useCases.remoteCompanies.title'), desc: t('useCases.useCases.remoteCompanies.description'), icon: Users },
+              { title: t('useCases.useCases.contractors.title'), desc: t('useCases.useCases.contractors.description'), icon: FileText },
+              { title: t('useCases.useCases.executives.title'), desc: t('useCases.useCases.executives.description'), icon: Star },
+              { title: t('useCases.useCases.internationalHires.title'), desc: t('useCases.useCases.internationalHires.description'), icon: Scale }
             ].map((useCase, index) => {
               const Icon = useCase.icon;
               return (
@@ -418,10 +423,10 @@ export default function EmploymentAgreementPage() {
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 text-center">
             {[
-              { number: '10,000+', label: 'Documents Generated' },
-              { number: '98%', label: 'Satisfaction Rate' },
-              { number: '< 5 min', label: 'Average Time' },
-              { number: '24/7', label: 'Available' }
+              { number: '10,000+', label: t('stats.documentsGenerated') },
+              { number: '98%', label: t('stats.satisfactionRate') },
+              { number: '< 5 min', label: t('stats.averageTime') },
+              { number: '24/7', label: t('stats.available') }
             ].map((stat, index) => (
               <div key={index} className="flex flex-col items-center">
                 <div className="text-4xl font-bold text-primary mb-2">
@@ -441,7 +446,7 @@ export default function EmploymentAgreementPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Why Choose Our Employment Agreement Generator?
+              {t('benefits.title')}
             </h2>
           </div>
 
@@ -452,10 +457,10 @@ export default function EmploymentAgreementPage() {
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Save Time & Money
+                  {t('benefits.saveTimeMoney.title')}
                 </h3>
                 <p className="text-muted-foreground">
-                  Lawyers charge $500-$2,000 for employment agreements. Create yours in minutes for a fraction of the cost.
+                  {t('benefits.saveTimeMoney.description')}
                 </p>
               </div>
             </div>
@@ -466,10 +471,10 @@ export default function EmploymentAgreementPage() {
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Legally Sound Templates
+                  {t('benefits.legallySound.title')}
                 </h3>
                 <p className="text-muted-foreground">
-                  Our templates are drafted by legal professionals and updated regularly to reflect current laws.
+                  {t('benefits.legallySound.description')}
                 </p>
               </div>
             </div>
@@ -480,10 +485,10 @@ export default function EmploymentAgreementPage() {
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Fully Customizable
+                  {t('benefits.fullyCustomizable.title')}
                 </h3>
                 <p className="text-muted-foreground">
-                  Add, remove, or modify clauses to fit your specific situation. Every business is unique.
+                  {t('benefits.fullyCustomizable.description')}
                 </p>
               </div>
             </div>
@@ -494,10 +499,10 @@ export default function EmploymentAgreementPage() {
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Plain English
+                  {t('benefits.plainEnglish.title')}
                 </h3>
                 <p className="text-muted-foreground">
-                  No confusing legalese. Our agreements are written in clear, understandable language.
+                  {t('benefits.plainEnglish.description')}
                 </p>
               </div>
             </div>
@@ -510,35 +515,35 @@ export default function EmploymentAgreementPage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Frequently Asked Questions
+              {t('faq.title')}
             </h2>
           </div>
 
           <div className="space-y-6">
             {[
               {
-                q: 'Is this employment agreement legally binding?',
-                a: 'Yes, our templates create legally binding agreements when properly executed by both parties. However, we recommend having any contract reviewed by a local attorney to ensure it complies with your jurisdiction\'s specific requirements.'
+                q: t('faq.questions.legallyBinding.question'),
+                a: t('faq.questions.legallyBinding.answer')
               },
               {
-                q: 'Can I use this for remote employees in other states or countries?',
-                a: 'Our templates can be customized for remote workers, but employment laws vary significantly by jurisdiction. For international hires or multi-state employment, we strongly recommend consulting with an employment lawyer to ensure compliance.'
+                q: t('faq.questions.remoteEmployees.question'),
+                a: t('faq.questions.remoteEmployees.answer')
               },
               {
-                q: 'What\'s the difference between an employment agreement and an offer letter?',
-                a: 'An offer letter is a preliminary document outlining basic terms. An employment agreement is a comprehensive legal contract that details all aspects of the employment relationship, including confidentiality, IP rights, and termination conditions.'
+                q: t('faq.questions.differenceOfferLetter.question'),
+                a: t('faq.questions.differenceOfferLetter.answer')
               },
               {
-                q: 'How do I handle non-compete clauses?',
-                a: 'Non-compete enforceability varies by state. Our template includes customizable non-compete language, but some states heavily restrict or ban these clauses. Check your local laws or consult an attorney.'
+                q: t('faq.questions.nonCompete.question'),
+                a: t('faq.questions.nonCompete.answer')
               },
               {
-                q: 'Can I modify the agreement after it\'s signed?',
-                a: 'Yes, but any changes require mutual consent from both employer and employee. Changes should be documented in writing as amendments to the original agreement.'
+                q: t('faq.questions.modifyAfterSigning.question'),
+                a: t('faq.questions.modifyAfterSigning.answer')
               },
               {
-                q: 'Do I need separate agreements for part-time vs full-time employees?',
-                a: 'Our template can be customized for both full-time and part-time positions. The key differences are usually in benefits eligibility and work hours, which you can specify during the generation process.'
+                q: t('faq.questions.partTimeFullTime.question'),
+                a: t('faq.questions.partTimeFullTime.answer')
               }
             ].map((faq, index) => (
               <details key={index} className="group bg-background border border-border rounded-lg p-6">
@@ -560,9 +565,9 @@ export default function EmploymentAgreementPage() {
             <div className="flex gap-3">
               <AlertCircle className="h-6 w-6 flex-shrink-0 text-[hsl(var(--warning))]" />
               <div>
-                <h3 className="mb-2 text-sm font-semibold text-[hsl(var(--warning))]">Important Legal Notice</h3>
+                <h3 className="mb-2 text-sm font-semibold text-[hsl(var(--warning))]">{t('disclaimer.title')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  This template is provided for informational purposes and should not be considered legal advice. Employment laws vary by jurisdiction, industry, and specific circumstances. While our templates are drafted to be comprehensive and legally sound, we strongly recommend having any employment agreement reviewed by a qualified attorney in your area before use, especially for executive positions, international hires, or situations involving complex compensation structures.
+                  {t('disclaimer.text')}
                 </p>
               </div>
             </div>
@@ -590,15 +595,15 @@ export default function EmploymentAgreementPage() {
           <div className="mb-6">
             <Badge className="bg-[hsl(var(--white))]/20 text-[hsl(var(--white))] border-[hsl(var(--white))]/30 backdrop-blur-sm font-subheading uppercase tracking-[0.12em]">
               <Sparkles className="mr-1 h-3 w-3" />
-              Ready to Get Started?
+              {t('finalCta.badge')}
             </Badge>
           </div>
           
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-            Create Your Employment Agreement Now
+            {t('finalCta.title')}
           </h2>
           <p className="text-xl sm:text-2xl text-[hsl(var(--white))]/85 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Join thousands of employers who trust our platform for their hiring needs
+            {t('finalCta.subtitle')}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -606,7 +611,7 @@ export default function EmploymentAgreementPage() {
               href="/templates/employment-agreement/generate"
               className="group inline-flex items-center justify-center rounded-xl bg-[hsl(var(--white))] px-12 py-6 text-lg font-bold text-[hsl(var(--selise-blue))] shadow-2xl shadow-[hsl(var(--selise-blue))]/30 hover:bg-[hsl(var(--white))]/90 transition-all transform hover:scale-105"
             >
-              Generate Your Agreement Now
+              {t('finalCta.generateButton')}
               <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
@@ -614,15 +619,15 @@ export default function EmploymentAgreementPage() {
           <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-[hsl(var(--white))]/80">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-[hsl(var(--lime-green))]" />
-              <span>No credit card required</span>
+              <span>{t('finalCta.noCreditCard')}</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-[hsl(var(--lime-green))]" />
-              <span>Ready in 5 minutes</span>
+              <span>{t('finalCta.readyIn5Minutes')}</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-[hsl(var(--lime-green))]" />
-              <span>Download instantly</span>
+              <span>{t('finalCta.downloadInstantly')}</span>
             </div>
           </div>
         </div>

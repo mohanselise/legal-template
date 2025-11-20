@@ -22,7 +22,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { SIGNATURE_LAYOUT, SIGNATURE_FIELD_DEFAULTS } from '@/lib/pdf/signature-field-metadata';
+import { SIG_PAGE_LAYOUT, getSignatureBlockPosition } from '@/lib/pdf/signature-layout';
 
 // Dynamic imports for react-pdf to avoid SSR issues
 const Document = dynamic(
@@ -98,8 +98,8 @@ type FieldTypeConfig = {
 };
 
 const FIELD_TYPES: FieldTypeConfig[] = [
-  { type: 'signature' as const, label: 'Signature', icon: Signature, defaultWidth: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_WIDTH, defaultHeight: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_HEIGHT, color: '#facc15' },
-  { type: 'date' as const, label: 'Date Signed', icon: Calendar, defaultWidth: SIGNATURE_FIELD_DEFAULTS.DATE_WIDTH, defaultHeight: SIGNATURE_FIELD_DEFAULTS.DATE_HEIGHT, color: '#38bdf8' },
+  { type: 'signature' as const, label: 'Signature', icon: Signature, defaultWidth: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH, defaultHeight: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT, color: '#facc15' },
+  { type: 'date' as const, label: 'Date Signed', icon: Calendar, defaultWidth: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH, defaultHeight: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT, color: '#38bdf8' },
 ];
 
 const applyAlpha = (hex: string, alpha: number) => {
@@ -131,8 +131,8 @@ const resolveFieldVisual = (type: SignatureField['type']): FieldTypeConfig => {
       type: 'date',
       label: 'Date Signed',
       icon: Calendar,
-      defaultWidth: SIGNATURE_FIELD_DEFAULTS.DATE_WIDTH,
-      defaultHeight: SIGNATURE_FIELD_DEFAULTS.DATE_HEIGHT,
+      defaultWidth: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH,
+      defaultHeight: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
       color: '#38bdf8',
     };
   }
@@ -141,8 +141,8 @@ const resolveFieldVisual = (type: SignatureField['type']): FieldTypeConfig => {
     type: 'signature',
     label: 'Signature',
     icon: Signature,
-    defaultWidth: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_WIDTH,
-    defaultHeight: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_HEIGHT,
+    defaultWidth: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH,
+    defaultHeight: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
     color: '#facc15',
   };
 };
@@ -215,26 +215,16 @@ export function PDFSignatureEditor({
       const lastPage = numPages;
 
       signatories.forEach((sig, index) => {
-        const layout =
-          index === 0
-            ? SIGNATURE_LAYOUT.EMPLOYER
-            : index === 1
-            ? SIGNATURE_LAYOUT.EMPLOYEE
-            : null;
+        const blockTop = getSignatureBlockPosition(index);
+        const MARGIN_LEFT = SIG_PAGE_LAYOUT.MARGIN_X;
 
-        const signatureLayout = layout?.SIGNATURE ?? {
-          x: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.x,
-          y: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.y + index * 96,
-          width: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_WIDTH,
-          height: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_HEIGHT,
-        };
-
-        const dateLayout = layout?.DATE ?? {
-          x: signatureLayout.x + signatureLayout.width + 24,
-          y: signatureLayout.y + 8,
-          width: SIGNATURE_FIELD_DEFAULTS.DATE_WIDTH,
-          height: SIGNATURE_FIELD_DEFAULTS.DATE_HEIGHT,
-        };
+        // Signature Position
+        const sigX = MARGIN_LEFT + SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET;
+        const sigY = blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET;
+        
+        // Date Position
+        const dateX = MARGIN_LEFT + SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET;
+        const dateY = blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET;
 
         defaultFields.push(
           {
@@ -242,10 +232,10 @@ export function PDFSignatureEditor({
             type: 'signature',
             signatoryIndex: index,
             pageNumber: lastPage,
-            x: signatureLayout.x,
-            y: signatureLayout.y,
-            width: signatureLayout.width,
-            height: signatureLayout.height,
+            x: sigX,
+            y: sigY,
+            width: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH,
+            height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
             label: `${sig.name} - Signature`,
           },
           {
@@ -253,10 +243,10 @@ export function PDFSignatureEditor({
             type: 'date',
             signatoryIndex: index,
             pageNumber: lastPage,
-            x: dateLayout.x,
-            y: dateLayout.y,
-            width: dateLayout.width,
-            height: dateLayout.height,
+            x: dateX,
+            y: dateY,
+            width: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH,
+            height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
             label: `${sig.name} - Date`,
           }
         );
@@ -391,26 +381,16 @@ export function PDFSignatureEditor({
       const lastPage = numPages;
 
       signatories.forEach((sig, index) => {
-        const layout =
-          index === 0
-            ? SIGNATURE_LAYOUT.EMPLOYER
-            : index === 1
-            ? SIGNATURE_LAYOUT.EMPLOYEE
-            : null;
+        const blockTop = getSignatureBlockPosition(index);
+        const MARGIN_LEFT = SIG_PAGE_LAYOUT.MARGIN_X;
 
-        const signatureLayout = layout?.SIGNATURE ?? {
-          x: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.x,
-          y: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.y + index * 96,
-          width: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_WIDTH,
-          height: SIGNATURE_FIELD_DEFAULTS.SIGNATURE_HEIGHT,
-        };
-
-        const dateLayout = layout?.DATE ?? {
-          x: signatureLayout.x + signatureLayout.width + 24,
-          y: signatureLayout.y + 8,
-          width: SIGNATURE_FIELD_DEFAULTS.DATE_WIDTH,
-          height: SIGNATURE_FIELD_DEFAULTS.DATE_HEIGHT,
-        };
+        // Signature Position
+        const sigX = MARGIN_LEFT + SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET;
+        const sigY = blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET;
+        
+        // Date Position
+        const dateX = MARGIN_LEFT + SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET;
+        const dateY = blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET;
 
         defaultFields.push(
           {
@@ -418,10 +398,10 @@ export function PDFSignatureEditor({
             type: 'signature',
             signatoryIndex: index,
             pageNumber: lastPage,
-            x: signatureLayout.x,
-            y: signatureLayout.y,
-            width: signatureLayout.width,
-            height: signatureLayout.height,
+            x: sigX,
+            y: sigY,
+            width: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH,
+            height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
             label: `${sig.name} - Signature`,
           },
           {
@@ -429,10 +409,10 @@ export function PDFSignatureEditor({
             type: 'date',
             signatoryIndex: index,
             pageNumber: lastPage,
-            x: dateLayout.x,
-            y: dateLayout.y,
-            width: dateLayout.width,
-            height: dateLayout.height,
+            x: dateX,
+            y: dateY,
+            width: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH,
+            height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
             label: `${sig.name} - Date`,
           }
         );
@@ -569,402 +549,403 @@ export function PDFSignatureEditor({
               </button>
             ))}
           </div>
-
-          {/* Instructions */}
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-            <div className="flex items-start gap-2">
-              <Info className="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" />
-              <div className="text-[10px] text-blue-900 leading-relaxed">
-                <p className="font-semibold mb-1">✨ Auto-placed fields</p>
-                <p className="text-blue-800">Drag to adjust • Add more • Delete unwanted</p>
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Validation Summary & Actions */}
-        <div className="p-5 border-t border-gray-200 space-y-3">
-          {/* Validation Status */}
-          {!validation.isValid && (
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex items-start gap-2">
-                <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-white text-xs font-bold">!</span>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-amber-900 mb-1">Missing Required Fields</p>
-                  <ul className="text-[10px] text-amber-800 space-y-0.5">
-                    {validation.missingFields.map((msg, idx) => (
-                      <li key={idx}>• {msg}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+        {/* Instructions */}
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+          <div className="flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" />
+            <div className="text-[10px] text-blue-900 leading-relaxed">
+              <p className="font-semibold mb-1">✨ Auto-placed fields</p>
+              <p className="text-blue-800">Drag to adjust • Add more • Delete unwanted</p>
             </div>
-          )}
-
-          {validation.isValid && fields.length > 0 && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                <p className="text-xs font-semibold text-green-900">All required fields placed</p>
-              </div>
-            </div>
-          )}
-
-          <Button
-            onClick={handleResetFields}
-            variant="outline"
-            size="sm"
-            className="w-full justify-center gap-2 text-xs"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Reset All Fields
-          </Button>
-          <div className="text-[10px] text-center text-gray-500">
-            <strong className="text-gray-900">{fields.length}</strong> field{fields.length !== 1 ? 's' : ''} added
           </div>
         </div>
       </div>
 
-      {/* Main Content - PDF Viewer */}
-      <div className="flex-1 flex flex-col">
-        {/* Top Toolbar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-4">{/* Page Navigation */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage <= 1}
-                className="h-8"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
-                <span className="text-sm font-semibold text-gray-900">
-                  {currentPage}
-                </span>
-                <span className="text-sm text-gray-500">of</span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {numPages}
-                </span>
+      {/* Validation Summary & Actions */}
+      <div className="p-5 border-t border-gray-200 space-y-3">
+        {/* Validation Status */}
+        {!validation.isValid && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+                <span className="text-white text-xs font-bold">!</span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))}
-                disabled={currentPage >= numPages}
-                className="h-8"
-              >
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+              <div>
+                <p className="text-xs font-semibold text-amber-900 mb-1">Missing Required Fields</p>
+                <ul className="text-[10px] text-amber-800 space-y-0.5">
+                  {validation.missingFields.map((msg, idx) => (
+                    <li key={idx}>• {msg}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
-
-            {/* Page Thumbnails */}
-            {numPages > 1 && (
-              <div className="flex items-center gap-1 ml-2">
-                {Array.from({ length: Math.min(numPages, 10) }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-8 h-8 rounded text-xs font-medium transition-all ${
-                      currentPage === page
-                        ? 'bg-blue-600 text-white'
-                        : hasFieldsOnPage(page)
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                    title={`Page ${page}${hasFieldsOnPage(page) ? ' (has fields)' : ''}`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                {numPages > 10 && (
-                  <span className="text-xs text-gray-500 ml-1">+{numPages - 10}</span>
-                )}
-              </div>
-            )}
           </div>
+        )}
 
-          {/* Zoom Controls */}
+        {validation.isValid && fields.length > 0 && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <p className="text-xs font-semibold text-green-900">All required fields placed</p>
+            </div>
+          </div>
+        )}
+
+        <Button
+          onClick={handleResetFields}
+          variant="outline"
+          size="sm"
+          className="w-full justify-center gap-2 text-xs"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Reset All Fields
+        </Button>
+        <div className="text-[10px] text-center text-gray-500">
+          <strong className="text-gray-900">{fields.length}</strong> field{fields.length !== 1 ? 's' : ''} added
+        </div>
+      </div>
+    </div>
+
+    {/* Main Content - PDF Viewer */}
+    <div className="flex-1 flex flex-col">
+      {/* Top Toolbar */}
+      <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-4">{/* Page Navigation */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setScale(s => Math.max(0.5, s - 0.1))}
-              disabled={scale <= 0.5}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
               className="h-8"
             >
-              <ZoomOut className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4" />
             </Button>
-            <div className="px-3 py-1.5 bg-gray-100 rounded-lg min-w-[70px] text-center">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
               <span className="text-sm font-semibold text-gray-900">
-                {Math.round(scale * 100)}%
+                {currentPage}
+              </span>
+              <span className="text-sm text-gray-500">of</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {numPages}
               </span>
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setScale(s => Math.min(2, s + 0.1))}
-              disabled={scale >= 2}
+              onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))}
+              disabled={currentPage >= numPages}
               className="h-8"
             >
-              <ZoomIn className="w-4 h-4" />
-            </Button>
-            
-            <div className="w-px h-6 bg-gray-200 mx-2" />
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setScale(1)}
-              className="h-8 text-xs"
-            >
-              Fit
+              <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
-        </div>
 
-        {/* PDF Viewer Area */}
-        <div 
-          ref={containerRef}
-          className="flex-1 overflow-auto bg-gray-100 p-8 relative"
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        >
-          {/* Auto-placed notification */}
-          {showAutoPlacedMessage && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
-              <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5" />
-                <div>
-                  <p className="font-semibold">Fields Auto-Placed!</p>
-                  <p className="text-sm text-green-100">Drag to adjust positions if needed</p>
-                </div>
-              </div>
+          {/* Page Thumbnails */}
+          {numPages > 1 && (
+            <div className="flex items-center gap-1 ml-2">
+              {Array.from({ length: Math.min(numPages, 10) }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded text-xs font-medium transition-all ${
+                    currentPage === page
+                      ? 'bg-blue-600 text-white'
+                      : hasFieldsOnPage(page)
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                  title={`Page ${page}${hasFieldsOnPage(page) ? ' (has fields)' : ''}`}
+                >
+                  {page}
+                </button>
+              ))}
+              {numPages > 10 && (
+                <span className="text-xs text-gray-500 ml-1">+{numPages - 10}</span>
+              )}
             </div>
           )}
+        </div>
 
-          <div className="max-w-5xl mx-auto">
-            <div
-              ref={pageRef}
-              className="relative inline-block bg-white shadow-lg cursor-crosshair"
-              style={{
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              }}
-              onClick={handlePageClick}
-            >
-              <Document
-                file={pdfUrl}
-                onLoadSuccess={handleDocumentLoadSuccess}
-                loading={
-                  <div className="flex items-center justify-center p-20 bg-white">
-                    <div className="text-center">
-                      <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-3" />
-                      <p className="text-sm text-gray-500">Loading document...</p>
-                    </div>
+        {/* Zoom Controls */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setScale(s => Math.max(0.5, s - 0.1))}
+            disabled={scale <= 0.5}
+            className="h-8"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+          <div className="px-3 py-1.5 bg-gray-100 rounded-lg min-w-[70px] text-center">
+            <span className="text-sm font-semibold text-gray-900">
+              {Math.round(scale * 100)}%
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setScale(s => Math.min(2, s + 0.1))}
+            disabled={scale >= 2}
+            className="h-8"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </Button>
+          
+          <div className="w-px h-6 bg-gray-200 mx-2" />
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setScale(1)}
+            className="h-8 text-xs"
+          >
+            Fit
+          </Button>
+        </div>
+      </div>
+
+      {/* PDF Viewer Area */}
+      <div 
+        ref={containerRef}
+        className="flex-1 overflow-auto bg-gray-100 p-8 relative"
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        {/* Auto-placed notification */}
+        {showAutoPlacedMessage && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-slide-down">
+            <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5" />
+              <div>
+                <p className="font-semibold">Fields Auto-Placed!</p>
+                <p className="text-sm text-green-100">Drag to adjust positions if needed</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="max-w-5xl mx-auto">
+          <div
+            ref={pageRef}
+            className="relative inline-block bg-white shadow-lg cursor-crosshair"
+            style={{
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            }}
+            onClick={handlePageClick}
+          >
+            <Document
+              file={pdfUrl}
+              onLoadSuccess={handleDocumentLoadSuccess}
+              loading={
+                <div className="flex items-center justify-center p-20 bg-white">
+                  <div className="text-center">
+                    <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">Loading document...</p>
                   </div>
-                }
-              >
-                <Page
-                  pageNumber={currentPage}
-                  scale={scale}
-                  renderTextLayer={false}
-                  renderAnnotationLayer={false}
-                  className="pdf-page"
-                />
-              </Document>
+                </div>
+              }
+            >
+              <Page
+                pageNumber={currentPage}
+                scale={scale}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                className="pdf-page"
+              />
+            </Document>
 
-              {/* Signature Fields Overlay */}
-              {fields
-                .filter(field => field.pageNumber === currentPage)
-                .map(field => {
-                  const signatory = signatories[field.signatoryIndex];
-                  const fieldType = resolveFieldVisual(field.type);
-                  const isSelected = selectedField === field.id;
-                  const isHovered = hoveredField === field.id;
-                  const accentColor = signatory.color || fieldType.color;
-                  const nameLine = signatory.name || 'Signatory';
-                  const secondaryLine =
-                    field.type === 'signature'
-                      ? signatory.role || 'Authorized Signature'
-                      : 'Signature Date';
+            {/* Signature Fields Overlay */}
+            {fields
+              .filter(field => field.pageNumber === currentPage)
+              .map(field => {
+                const signatory = signatories[field.signatoryIndex];
+                const fieldType = resolveFieldVisual(field.type);
+                const isSelected = selectedField === field.id;
+                const isHovered = hoveredField === field.id;
+                const accentColor = signatory.color || fieldType.color;
+                const nameLine = signatory.name || 'Signatory';
+                const secondaryLine =
+                  field.type === 'signature'
+                    ? signatory.role || 'Authorized Signature'
+                    : 'Signature Date';
 
-                  return (
+                return (
+                  <div
+                    key={field.id}
+                    className={`absolute group transition-all ${
+                      isSelected
+                        ? 'z-50'
+                        : isHovered
+                        ? 'z-40'
+                        : 'z-30'
+                    }`}
+                    style={{
+                      left: field.x * scale,
+                      top: field.y * scale,
+                      width: field.width * scale,
+                      height: field.height * scale,
+                      overflow: 'visible',
+                    }}
+                    onMouseDown={(e) => handleFieldMouseDown(field.id, e)}
+                    onMouseEnter={() => setHoveredField(field.id)}
+                    onMouseLeave={() => setHoveredField(null)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedField(field.id);
+                    }}
+                  >
                     <div
-                      key={field.id}
-                      className={`absolute group transition-all ${
-                        isSelected
-                          ? 'z-50'
-                          : isHovered
-                          ? 'z-40'
-                          : 'z-30'
-                      }`}
+                      className="absolute inset-0 rounded-lg border-2 transition-all cursor-move flex items-center justify-center"
                       style={{
-                        left: field.x * scale,
-                        top: field.y * scale,
-                        width: field.width * scale,
-                        height: field.height * scale,
-                        overflow: 'visible',
-                      }}
-                      onMouseDown={(e) => handleFieldMouseDown(field.id, e)}
-                      onMouseEnter={() => setHoveredField(field.id)}
-                      onMouseLeave={() => setHoveredField(null)}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedField(field.id);
+                        borderColor: accentColor,
+                        backgroundColor: applyAlpha(
+                          accentColor,
+                          isSelected || isHovered ? 0.25 : 0.15
+                        ),
+                        boxShadow: isSelected
+                          ? `0 16px 24px -12px ${applyAlpha(accentColor, 0.55)}`
+                          : `0 10px 24px -18px rgba(15, 23, 42, 0.45)`,
                       }}
                     >
-                      <div
-                        className="absolute inset-0 rounded-lg border-2 transition-all cursor-move flex items-center justify-center"
-                        style={{
-                          borderColor: accentColor,
-                          backgroundColor: applyAlpha(
-                            accentColor,
-                            isSelected || isHovered ? 0.25 : 0.15
-                          ),
-                          boxShadow: isSelected
-                            ? `0 16px 24px -12px ${applyAlpha(accentColor, 0.55)}`
-                            : `0 10px 24px -18px rgba(15, 23, 42, 0.45)`,
-                        }}
-                      >
-                        <div className="flex flex-col items-center justify-center px-3 text-center leading-tight">
-                          <span
-                            className="text-[11px] font-semibold tracking-wide uppercase"
-                            style={{ color: accentColor }}
-                          >
-                            {fieldType.label}
-                          </span>
-                          <span className="text-[11px] text-slate-600">
-                            ({nameLine})
-                          </span>
-                        </div>
-
-                        {(isHovered || isSelected) && (
-                          <div
-                            className="absolute -top-2 -left-2 w-6 h-6 rounded-full border-2 border-white shadow-md flex items-center justify-center"
-                            style={{ backgroundColor: accentColor }}
-                          >
-                            <Move className="w-3 h-3 text-white" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="absolute left-1/2 top-full -translate-x-1/2 mt-2 text-center pointer-events-none whitespace-nowrap">
-                        <div className="text-[11px] font-semibold text-slate-800">
-                          {nameLine}
-                        </div>
-                        <div className="text-[10px] text-slate-500">
-                          {secondaryLine}
-                        </div>
-                      </div>
-
-                      {isSelected && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteField(field.id);
-                          }}
-                          className="absolute -top-3 -right-3 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg border-2 border-white"
+                      <div className="flex flex-col items-center justify-center px-3 text-center leading-tight">
+                        <span
+                          className="text-[11px] font-semibold tracking-wide uppercase"
+                          style={{ color: accentColor }}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-
-                      {isHovered && !isSelected && (
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
-                          Click to select • Drag to move
-                        </div>
-                      )}
+                          {fieldType.label}
+                        </span>
+                        <span className="text-[11px] text-slate-600">
+                          ({nameLine})
+                        </span>
+                      </div>
 
                       {(isHovered || isSelected) && (
                         <div
-                          className="absolute -bottom-2 -right-2 w-4 h-4 bg-white border border-slate-400 rounded cursor-nwse-resize shadow-sm"
-                          onMouseDown={(e) => handleResizeMouseDown(field.id, field.type, e)}
-                        />
+                          className="absolute -top-2 -left-2 w-6 h-6 rounded-full border-2 border-white shadow-md flex items-center justify-center"
+                          style={{ backgroundColor: accentColor }}
+                        >
+                          <Move className="w-3 h-3 text-white" />
+                        </div>
                       )}
+                    </div>
+
+                    <div className="absolute left-1/2 top-full -translate-x-1/2 mt-2 text-center pointer-events-none whitespace-nowrap">
+                      <div className="text-[11px] font-semibold text-slate-800">
+                        {nameLine}
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        {secondaryLine}
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteField(field.id);
+                        }}
+                        className="absolute -top-3 -right-3 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg border-2 border-white"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    {isHovered && !isSelected && (
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
+                        Click to select • Drag to move
+                      </div>
+                    )}
+
+                    {(isHovered || isSelected) && (
+                      <div
+                        className="absolute -bottom-2 -right-2 w-4 h-4 bg-white border border-slate-400 rounded cursor-nwse-resize shadow-sm"
+                        onMouseDown={(e) => handleResizeMouseDown(field.id, field.type, e)}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Action Bar */}
+      <div className="bg-white border-t border-gray-200 px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <span className="font-semibold text-gray-900">{fields.length}</span>
+              <span className="text-gray-600">field{fields.length !== 1 ? 's' : ''} added</span>
+            </div>
+            
+            {fields.length > 0 && (
+              <div className="h-4 w-px bg-gray-300" />
+            )}
+            
+            {fields.length > 0 && (
+              <div className="flex items-center gap-2">
+                {signatories.map((sig, idx) => {
+                  const count = fields.filter(f => f.signatoryIndex === idx).length;
+                  if (count === 0) return null;
+                  return (
+                    <div
+                      key={sig.email}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium"
+                      style={{ 
+                        backgroundColor: `${sig.color}15`,
+                        color: sig.color,
+                      }}
+                    >
+                      <div 
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: sig.color }}
+                      />
+                      <span>{sig.name.split(' ')[0]}: {count}</span>
                     </div>
                   );
                 })}
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Action Bar */}
-        <div className="bg-white border-t border-gray-200 px-6 py-4">
-          <div className="max-w-5xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <span className="font-semibold text-gray-900">{fields.length}</span>
-                <span className="text-gray-600">field{fields.length !== 1 ? 's' : ''} added</span>
               </div>
-              
-              {fields.length > 0 && (
-                <div className="h-4 w-px bg-gray-300" />
-              )}
-              
-              {fields.length > 0 && (
-                <div className="flex items-center gap-2">
-                  {signatories.map((sig, idx) => {
-                    const count = fields.filter(f => f.signatoryIndex === idx).length;
-                    if (count === 0) return null;
-                    return (
-                      <div
-                        key={sig.email}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium"
-                        style={{ 
-                          backgroundColor: `${sig.color}15`,
-                          color: sig.color,
-                        }}
-                      >
-                        <div 
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: sig.color }}
-                        />
-                        <span>{sig.name.split(' ')[0]}: {count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            )}
+          </div>
 
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={onCancel}
-                disabled={isSubmitting}
-                size="lg"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                disabled={isSubmitting || !validation.isValid}
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                title={!validation.isValid ? 'Please add all required signature fields' : ''}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-5 h-5 mr-2" />
-                    Send for Signature
-                  </>
-                )}
-              </Button>
-            </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSubmitting}
+              size="lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              disabled={isSubmitting || !validation.isValid}
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!validation.isValid ? 'Please add all required signature fields' : ''}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5 mr-2" />
+                  Send for Signature
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>
     </div>
+  </div>
   );
 }

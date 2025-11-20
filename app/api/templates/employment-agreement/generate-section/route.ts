@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
         {
           role: 'system',
           content:
-            'You are an expert legal document drafter. Generate ONLY the requested section of an employment agreement in a professional, legally-sound manner. Use markdown formatting. Do not include placeholders - use the exact information provided. Be concise but comprehensive.',
+            'You are an expert legal drafter. Generate the requested section using exact information provided and appropriate formatting for the jurisdiction.',
         },
         { role: 'user', content: prompt },
       ],

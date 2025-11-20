@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Move, Trash2, Signature, Calendar } from 'lucide-react';
-import { SIGNATURE_LAYOUT, SIGNATURE_FIELD_DEFAULTS } from '@/lib/pdf/signature-field-metadata';
 
 export interface SignatureField {
   id: string;
@@ -467,4 +466,3 @@ export function SignatureFieldOverlay({
     </div>
   );
 }
-

@@ -251,54 +251,30 @@ interface EnrichmentData {
 }
 
 /**
- * Removes placeholder phone numbers from the document.
- * If a phone number contains placeholder text or wasn't provided in formData, it's removed.
+ * Removes phone numbers from signatories if not provided in formData.
+ * This is a safety check - the model should already omit phone fields per system prompt.
  */
 function removePlaceholderPhoneNumbers(
   document: LegalDocument,
   formData: any
 ): LegalDocument {
-  const placeholderPatterns = [
-    /\[.*to be completed.*\]/i,
-    /\[.*tbd.*\]/i,
-    /\[.*omitted.*\]/i,
-    /\[.*placeholder.*\]/i,
-    /\[.*\]/,
-    /to be completed/i,
-    /tbd/i,
-    /n\/a/i,
-    /not provided/i,
-    /not available/i,
-  ];
+  if (!document.signatories || !Array.isArray(document.signatories)) {
+    return document;
+  }
 
-  const isPlaceholder = (phone: string | undefined): boolean => {
-    if (!phone) return false;
-    const normalized = phone.trim();
-    return placeholderPatterns.some((pattern) => pattern.test(normalized));
-  };
-
-  // Check if phone was provided in formData
   const employerPhoneProvided = Boolean(
     formData.companyRepPhone?.trim() || formData.companyContactPhone?.trim()
   );
   const employeePhoneProvided = Boolean(formData.employeePhone?.trim());
 
-  // Handle Signatories Array
-  if (document.signatories && Array.isArray(document.signatories)) {
-    // Find and clean Employer signatory
-    const employerSignatory = document.signatories.find(s => s.party === 'employer');
-    if (employerSignatory && employerSignatory.phone && 
-        (!employerPhoneProvided || isPlaceholder(employerSignatory.phone))) {
-      delete employerSignatory.phone;
+  document.signatories.forEach(signatory => {
+    if (signatory.party === 'employer' && !employerPhoneProvided && signatory.phone) {
+      delete signatory.phone;
     }
-
-    // Find and clean Employee signatory
-    const employeeSignatory = document.signatories.find(s => s.party === 'employee');
-    if (employeeSignatory && employeeSignatory.phone && 
-        (!employeePhoneProvided || isPlaceholder(employeeSignatory.phone))) {
-      delete employeeSignatory.phone;
+    if (signatory.party === 'employee' && !employeePhoneProvided && signatory.phone) {
+      delete signatory.phone;
     }
-  }
+  });
 
   return document;
 }
@@ -323,7 +299,8 @@ function buildJurisdictionContext(formData: any, enrichment?: EnrichmentData): s
   context += `We have analyzed the jurisdiction and role to ensure legal compliance. Apply these critical requirements:\n\n`;
 
   // Jurisdiction basics
-  context += `**Governing Jurisdiction:** ${j.state ? `${j.state}, ` : ''}${j.country} (${j.countryCode})\n\n`;
+  context += `**Governing Jurisdiction:** ${j.state ? `${j.state}, ` : ''}${j.country} (${j.countryCode})\n`;
+  context += `Apply ${j.countryCode} formatting conventions for dates, currency, addresses, and numbers.\n\n`;
 
   // At-will employment
   if (!j.atWillEmployment) {
@@ -683,30 +660,11 @@ function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string
   }
 
   prompt += `---\n\n`;
-  prompt += `# DRAFTING INSTRUCTIONS\n\n`;
-  prompt += `Generate a complete, sophisticated employment agreement that:\n`;
-  prompt += `1. Uses the EXACT names, emails, phone numbers, and details provided above (absolutely NO placeholders, dummy data, or generic information)\n`;
-  prompt += `2. Follows the comprehensive structure outlined in the system prompt\n`;
-  prompt += `3. Includes properly numbered articles and sections\n`;
-  prompt += `4. Contains all standard legal provisions (severability, entire agreement, amendments, force majeure, notices)\n`;
-  prompt += `5. Balances protections for both employer and employee\n`;
-  prompt += `6. Uses sophisticated legal language appropriate for a professional contract\n`;
-  
-  // Updated Signature Block Instructions for new schema
-  prompt += `7. Includes the "signatories" array with PRE-FILLED VALUES:\n`;
-  if (data.companyRepName && data.companyRepTitle) {
-    prompt += `   - EMPLOYER: Party="employer", Name="${data.companyRepName}", Title="${data.companyRepTitle}"\n`;
-  } else {
-    prompt += `   - EMPLOYER: Party="employer", Name="[Authorized Representative Name]", Title="[Authorized Representative Title]"\n`;
-  }
-  if (data.employeeName) {
-    prompt += `   - EMPLOYEE: Party="employee", Name="${data.employeeName}"\n`;
-  }
-  
-  prompt += `8. Returns ONLY valid JSON format (no markdown, no code blocks, no additional text outside the JSON structure)\n\n`;
-  prompt += `⚠️ CRITICAL: This is a legally binding document. Never use dummy/placeholder contact information. Use ONLY the exact information provided above.\n\n`;
-  prompt += `📞 PHONE NUMBER HANDLING: If a phone number was NOT provided above for a party (employer or employee), DO NOT include a phone field in the signatory object. Omit the phone property entirely.\n\n`;
-  prompt += `The document should be ready for attorney review and execution.`;
+  prompt += `# REQUIREMENTS\n\n`;
+  prompt += `- Use exact information provided above (no placeholders or dummy data)\n`;
+  prompt += `- Apply ${enrichment?.jurisdiction?.countryCode || 'standard'} formatting conventions\n`;
+  prompt += `- Follow the block structure schema strictly\n`;
+  prompt += `- Return valid JSON only (no markdown or code blocks)\n`;
 
   return prompt;
 }

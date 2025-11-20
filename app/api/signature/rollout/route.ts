@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
-import { SIGNATURE_LAYOUT } from '@/lib/pdf/signature-field-metadata';
+import { SIG_PAGE_LAYOUT, getSignatureBlockPosition } from '@/lib/pdf/signature-layout';
 
 interface SignatureField {
   id: string;
@@ -503,27 +503,28 @@ function buildPreparePayload({
 
   if (stampCoordinates.length === 0 && signatoryMeta.length > 0) {
     console.log('⚠️  No signature fields provided, falling back to default positions');
-    const defaultPositions = {
-      companyRep: {
-        signature: { x: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.x, y: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.y, width: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.width, height: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.height },
-        dateStamp: { x: SIGNATURE_LAYOUT.EMPLOYER.DATE.x, y: SIGNATURE_LAYOUT.EMPLOYER.DATE.y, width: SIGNATURE_LAYOUT.EMPLOYER.DATE.width, height: SIGNATURE_LAYOUT.EMPLOYER.DATE.height },
-      },
-      employee: {
-        signature: { x: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.x, y: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.y, width: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.width, height: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.height },
-        dateStamp: { x: SIGNATURE_LAYOUT.EMPLOYEE.DATE.x, y: SIGNATURE_LAYOUT.EMPLOYEE.DATE.y, width: SIGNATURE_LAYOUT.EMPLOYEE.DATE.width, height: SIGNATURE_LAYOUT.EMPLOYEE.DATE.height },
-      },
-    };
+    
+    const MARGIN_LEFT = SIG_PAGE_LAYOUT.MARGIN_X;
 
     signatoryMeta.forEach((signatory, index) => {
-      const layout =
-        index === 0 ? defaultPositions.companyRep : defaultPositions.employee;
+      const blockTop = getSignatureBlockPosition(index);
+      
+      // Signature Position
+      const sigX = MARGIN_LEFT + SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET;
+      const sigY = blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET;
+      
+      // Date Position
+      const dateX = MARGIN_LEFT + SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET;
+      const dateY = blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET;
+
+      // Add Signature Field
       stampCoordinates.push({
         FileId: fileId,
-        Width: layout.signature.width,
-        Height: layout.signature.height,
-        PageNumber: 0,
-        X: layout.signature.x,
-        Y: layout.signature.y,
+        Width: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH,
+        Height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
+        PageNumber: 0, // Default to page 0 if unknown, but usually should be known
+        X: sigX,
+        Y: sigY,
         SignatoryEmail: signatory.email,
         SignatureImageFileId: null,
         CoordinateId: randomUUID(),
@@ -533,13 +534,14 @@ function buildPreparePayload({
         SignatoryName: signatory.name || 'Signatory',
       });
 
+      // Add Date Field
       stampPostInfoCoordinates.push({
         FileId: fileId,
-        Width: layout.dateStamp.width,
-        Height: layout.dateStamp.height,
+        Width: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH,
+        Height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT, // Same height as signature box
         PageNumber: 0,
-        X: layout.dateStamp.x,
-        Y: layout.dateStamp.y,
+        X: dateX,
+        Y: dateY,
         EntityName: 'AuditLog',
         PropertyName: '{StampTime}',
         SignatoryEmail: signatory.email,
@@ -783,3 +785,4 @@ async function waitForRolloutSuccess(accessToken: string, documentId: string) {
 
   return lastParsed;
 }
+

@@ -19,43 +19,12 @@ export async function POST(request: NextRequest) {
     // Generate a unique document ID
     const docId = `DOC-${Date.now().toString(36).toUpperCase().slice(-8)}`;
 
-    // Generate PDF buffer using @react-pdf/renderer
-    const pdfBuffer = await renderToBuffer(
-      <EmploymentAgreementPDF document={document} docId={docId} />
-    );
-    
-    // Calculate number of pages (approximate - can be refined)
-    // For now, we'll assume signature is on last page
-    // Fallback to 5 pages if content length is not available (though it should be)
-    const contentBlockCount = (document as LegalDocument).content?.length || 0;
-    const estimatedPages = Math.ceil(contentBlockCount / 2) + 2; // Rough estimate: 2 blocks per page + cover/sig
-    
-    // Get names for metadata
-    // Try to get from signatories first, then metadata/formData
-    let employerName = formData.companyName || 'Company';
-    let employeeName = formData.employeeName || 'Employee';
-    
+    // 1. Prepare Signatories List (Unified Source of Truth)
     const legalDoc = document as LegalDocument;
-    if (legalDoc.signatories) {
-      const empSignatory = legalDoc.signatories.find(s => s.party === 'employer');
-      const employeeSignatory = legalDoc.signatories.find(s => s.party === 'employee');
-      
-      if (empSignatory?.name) employerName = empSignatory.name;
-      if (employeeSignatory?.name) employeeName = employeeSignatory.name;
-    }
+    let signatories: any[] = [];
 
-    // Generate signature field metadata
-    const signatureFields = generateSignatureFieldMetadata(
-      employerName,
-      employeeName,
-      estimatedPages
-    );
-
-    // Extract signatory information from formData (Step 3 of SmartFlow)
-    // OR from the document signatories if available (preferred)
-    let signatories = [];
-    
-    if (legalDoc.signatories && Array.isArray(legalDoc.signatories)) {
+    // Logic to extract or create fallback signatories
+    if (legalDoc.signatories && Array.isArray(legalDoc.signatories) && legalDoc.signatories.length > 0) {
        signatories = legalDoc.signatories.map(s => ({
          party: s.party,
          name: s.name,
@@ -64,17 +33,20 @@ export async function POST(request: NextRequest) {
          ...(s.phone && { phone: s.phone })
        }));
     } else {
-      // Fallback for legacy or missing signatories
+      // Fallback
+      const employerName = formData.companyName || 'Company';
+      const employeeName = formData.employeeName || 'Employee';
+      
       signatories = [
         {
-          party: 'employer' as const,
+          party: 'employer',
           name: formData.companyRepName || employerName,
           email: formData.companyRepEmail || '',
           role: formData.companyRepTitle || 'Authorized Representative',
           ...(formData.companyRepPhone && { phone: formData.companyRepPhone }),
         },
         {
-          party: 'employee' as const,
+          party: 'employee',
           name: employeeName,
           email: formData.employeeEmail || '',
           role: formData.jobTitle || 'Employee',
@@ -82,11 +54,38 @@ export async function POST(request: NextRequest) {
         },
       ];
     }
+    
+    // 2. Ensure Document has these signatories (for PDF Renderer)
+    // We create a shallow copy with updated signatories to pass to the renderer
+    const documentForPdf = {
+        ...legalDoc,
+        signatories: signatories
+    };
+
+    // 3. Generate PDF buffer using @react-pdf/renderer
+    const pdfBuffer = await renderToBuffer(
+      <EmploymentAgreementPDF document={documentForPdf} docId={docId} />
+    );
+    
+    // Calculate number of pages (approximate - can be refined)
+    // For now, we'll assume signature is on last page
+    const contentBlockCount = (document as LegalDocument).content?.length || 0;
+    const estimatedPages = Math.ceil(contentBlockCount / 2) + 2; // Rough estimate: 2 blocks per page + cover/sig
+    
+    // 4. Generate signature field metadata using the SAME signatories list
+    const signatureFields = generateSignatureFieldMetadata(
+      signatories,
+      estimatedPages
+    );
 
     // Check if client wants metadata (for signature editor)
     const url = new URL(request.url);
     const includeMetadata = url.searchParams.get('metadata') === 'true';
     
+    // Get names for metadata response (just for convenience)
+    const employerName = signatories.find(s => s.party === 'employer')?.name || 'Company';
+    const employeeName = signatories.find(s => s.party === 'employee')?.name || 'Employee';
+
     if (includeMetadata) {
       // Return JSON with PDF and metadata
       const base64Pdf = pdfBuffer.toString('base64');

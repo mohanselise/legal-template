@@ -10,7 +10,7 @@ You MUST return ONLY a valid JSON object. Do NOT include markdown code blocks, b
 
 ## OUTPUT FORMAT
 
-Return a JSON object matching this EXACT structure (Block-Based Document Schema):
+Return a JSON object matching this EXACT structure:
 
 {
   "metadata": {
@@ -23,132 +23,58 @@ Return a JSON object matching this EXACT structure (Block-Based Document Schema)
   "content": [
     {
       "type": "article",
-      "props": { "title": "DEFINITIONS", "number": "1" },
+      "props": { "title": "ARTICLE TITLE", "number": "1" },
       "children": [
         {
           "type": "section",
-          "props": { "title": null, "number": "1.1" },
-          "children": [
-            {
-              "type": "definition",
-              "children": [
-                {
-                  "type": "definition_item",
-                  "props": { "term": "AGREEMENT" },
-                  "text": "This Employment Agreement, including all exhibits and schedules attached hereto, as may be amended from time to time."
-                },
-                {
-                  "type": "definition_item",
-                  "props": { "term": "EMPLOYER" },
-                  "text": "The company identified above, including its successors and assigns."
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "article",
-      "props": { "title": "POSITION AND DUTIES", "number": "2" },
-      "children": [
-        {
-          "type": "section",
-          "props": { "title": "Position", "number": "2.1" },
+          "props": { "title": "Optional Section Title", "number": "1.1" },
           "children": [
             {
               "type": "paragraph",
-              "text": "EMPLOYER hereby employs EMPLOYEE in the position of [Job Title], and EMPLOYEE hereby accepts such employment. EMPLOYEE shall report directly to [Reporting Manager/Title] and shall perform such duties and responsibilities as are customarily associated with such position."
+              "text": "Content here..."
             }
           ]
         }
       ]
-    }
-  ],
-  "signatories": [
-    {
-      "party": "employer",
-      "name": "Full Company Name",
-      "title": "Authorized Representative Title",
-      "email": "email@company.com"
-    },
-    {
-      "party": "employee",
-      "name": "Full Employee Name",
-      "email": "employee@email.com"
     }
   ]
 }
 
-## DRAFTING STRATEGY & STRUCTURE
+## METADATA REQUIREMENTS
 
-Instead of a rigid template, structure the agreement logically based on the specific role, industry, and jurisdiction provided.
+The metadata object MUST contain exactly these fields with the specified formats:
+- title: "Employment Agreement" (exact string)
+- effectiveDate: ISO date format (YYYY-MM-DD)
+- documentType: "employment-agreement" (exact string)
+- jurisdiction: State/Country name as string
+- generatedAt: ISO 8601 timestamp
 
-1. **Organize Logically**: Group related provisions (e.g., Position/Duties, Compensation/Benefits, Termination/Severance).
-2. **Use Context**: If the user provides specific "Additional Clauses" or "Special Provisions", integrate them seamlessly.
-3. **Jurisdiction First**: Ensure the structure complies with local laws (e.g., some jurisdictions require specific statutory notices at the start).
+## BLOCK STRUCTURE REQUIREMENTS
 
-## CRITICAL EXCLUSION - NO SIGNATURE BLOCKS
+Strictly follow this hierarchy:
+- **Article** (type: "article"): Top-level container
+  - props: { "title": string, "number": string }
+  - children: Array of Section blocks
+  
+- **Section** (type: "section"): Second-level container
+  - props: { "title": string | null, "number": string }
+  - children: Array of content blocks
+  
+- **Content blocks**: paragraph, list, list_item, definition, definition_item
+  - paragraph: { "type": "paragraph", "text": string }
+  - list: { "type": "list", "props": { "ordered": boolean }, "children": [list_item] }
+  - list_item: { "type": "list_item", "text": string }
+  - definition: { "type": "definition", "children": [definition_item] }
+  - definition_item: { "type": "definition_item", "props": { "term": string }, "text": string }
 
-**DO NOT** create an "Article" or "Section" for signatures in the \`content\` array.
-- The signature page is generated automatically by our PDF renderer.
-- **ACTION**: You MUST populate the \`signatories\` array in the root JSON object with accurate names and titles.
-- **ACTION**: Omit any text blocks related to "In Witness Whereof" or signature lines from the \`content\`.
+## CONTENT EXCLUSIONS
 
-## BLOCK STRUCTURE RULES
+Do NOT include signature blocks, "In Witness Whereof" clauses, or any signature-related content in the content array. The signature page is generated separately in the PDF template.
 
-1. **Article**: Level 1 container.
-   - type: "article"
-   - props: { "title": "ARTICLE TITLE", "number": "1" }
-   - children: Array of "section" blocks
+## REGIONAL FORMATTING
 
-2. **Section**: Level 2 container.
-   - type: "section"
-   - props: { "title": "Optional Title", "number": "1.1" }
-   - children: Array of content blocks ("paragraph", "list", "definition", etc.)
+Apply formatting conventions appropriate for the jurisdiction specified in the user prompt (dates, currency, addresses, numbers).
 
-3. **Paragraph**: Standard text.
-   - type: "paragraph"
-   - text: "The actual text content..."
+## DATA REQUIREMENTS
 
-4. **List**: Ordered or unordered lists.
-   - type: "list"
-   - props: { "ordered": true/false }
-   - children: Array of "list_item" blocks
-
-5. **List Item**: Individual item in a list.
-   - type: "list_item"
-   - text: "Content of the list item"
-   - children: Optional nested "list" block
-
-6. **Definition**: Container for definitions.
-   - type: "definition"
-   - children: Array of "definition_item" blocks
-
-7. **Definition Item**: Single term definition.
-   - type: "definition_item"
-   - props: { "term": "DEFINED TERM" }
-   - text: "Definition text..."
-
-## LEGAL DRAFTING STANDARDS
-
-1. **Use EXACT names and details provided** - Never use placeholders like [Company Name] or dummy data
-2. **⚠️ CRITICAL - NO DUMMY DATA**: This is a legally binding document. NEVER use:
-   - Dummy email addresses (e.g., "john.doe@company.com")
-   - Dummy phone numbers (e.g., "555-1234")
-   - Generic names (e.g., "John Doe")
-   - Use ONLY the exact information provided in the user prompt
-   - If specific information is missing, use "[To Be Completed]" format
-3. **Defined terms**: Use designated titles (EMPLOYER, EMPLOYEE) consistently after definition
-4. **Modal verbs**: "shall" for mandatory obligations, "may" for permissive rights
-5. **Precision**: Include specific amounts, dates, time periods
-6. **Professional tone**: Sophisticated legal language, third person, active voice where appropriate
-7. **Completeness**: Each article should have 2-4 detailed sections with substantive content
-
-## SIGNATORIES
-
-Include the "signatories" array at the root level with:
-- **employer**: Company name and authorized representative (if provided).
-- **employee**: Employee name and contact info.
-
-Generate a complete, legally-sound employment agreement in valid JSON format using this block structure.`;
+- Use EXACT names and details provided in the user prompt - never use placeholders or dummy data`;

@@ -136,7 +136,8 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
       </Page>
 
       {/* Signature Page - Always on a new page */}
-      <Page size="LETTER" style={styles.page}>
+      {/* Note: No padding on signature page since we use absolute positioning from page edge */}
+      <Page size="LETTER" style={{ ...styles.page, padding: 0 }}>
          {/* We can reuse the same footer or a different one */}
         <SignaturePage signatories={document.signatories} />
         

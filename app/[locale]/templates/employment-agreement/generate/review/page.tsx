@@ -13,7 +13,7 @@ import { LegalDisclaimer } from '@/components/legal-disclaimer';
 import { useRouter } from '@/i18n/routing';
 import dynamic from 'next/dynamic';
 import { SignatureFieldOverlay, type SignatureField } from './_components/SignatureFieldOverlay';
-import { SIGNATURE_LAYOUT, SIGNATURE_FIELD_DEFAULTS, type SignatureFieldMetadata } from '@/lib/pdf/signature-field-metadata';
+import { generateSignatureFieldMetadata, type SignatureFieldMetadata } from '@/lib/pdf/signature-field-metadata';
 
 // Loading component for PDF viewer
 function PDFLoadingMessage() {
@@ -599,67 +599,20 @@ function ReviewContent() {
       return;
     }
 
-    // Priority 3: Fall back to hardcoded coordinates
-    const lastPage = totalPages;
-    
+    // Priority 3: Fall back to local generation using the shared metadata generator
+    // This ensures even if API failed, we use the same logic as the backend
     const empInfo = getEmployerInfo(generatedDocument, formData);
     const emplInfo = getEmployeeInfo(generatedDocument, formData);
 
-    const employerName = empInfo.name;
-    const employeeName = emplInfo.name;
-
-    const defaultFields: SignatureField[] = [
-      // Employer signature
-      {
-        id: 'employer-signature',
-        type: 'signature',
-        signatoryIndex: 0,
-        pageNumber: lastPage,
-        x: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.x,
-        y: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.y,
-        width: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.width,
-        height: SIGNATURE_LAYOUT.EMPLOYER.SIGNATURE.height,
-        label: `${employerName} - ${t('signature')}`,
-      },
-      // Employer date
-      {
-        id: 'employer-date',
-        type: 'date',
-        signatoryIndex: 0,
-        pageNumber: lastPage,
-        x: SIGNATURE_LAYOUT.EMPLOYER.DATE.x,
-        y: SIGNATURE_LAYOUT.EMPLOYER.DATE.y,
-        width: SIGNATURE_LAYOUT.EMPLOYER.DATE.width,
-        height: SIGNATURE_LAYOUT.EMPLOYER.DATE.height,
-        label: t('date'),
-      },
-      // Employee signature
-      {
-        id: 'employee-signature',
-        type: 'signature',
-        signatoryIndex: 1,
-        pageNumber: lastPage,
-        x: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.x,
-        y: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.y,
-        width: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.width,
-        height: SIGNATURE_LAYOUT.EMPLOYEE.SIGNATURE.height,
-        label: `${employeeName} - ${t('signature')}`,
-      },
-      // Employee date
-      {
-        id: 'employee-date',
-        type: 'date',
-        signatoryIndex: 1,
-        pageNumber: lastPage,
-        x: SIGNATURE_LAYOUT.EMPLOYEE.DATE.x,
-        y: SIGNATURE_LAYOUT.EMPLOYEE.DATE.y,
-        width: SIGNATURE_LAYOUT.EMPLOYEE.DATE.width,
-        height: SIGNATURE_LAYOUT.EMPLOYEE.DATE.height,
-        label: t('date'),
-      },
+    const signatories = [
+      { party: 'employer' as const, name: empInfo.name, email: empInfo.email },
+      { party: 'employee' as const, name: emplInfo.name, email: emplInfo.email },
     ];
 
-    console.log('⚠️ Using hardcoded signature field coordinates (fallback):', defaultFields);
+    const metadataFields = generateSignatureFieldMetadata(signatories, totalPages);
+    const defaultFields = convertMetadataToFields(metadataFields, totalPages);
+
+    console.log('⚠️ Using locally generated signature fields (fallback):', defaultFields);
     setSignatureFields(defaultFields);
     saveSignatureFields(defaultFields, docId);
   };

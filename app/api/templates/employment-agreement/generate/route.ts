@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openai, EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON } from '@/lib/openai';
+import { EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON } from '@/lib/openai';
+import { openrouter, CONTRACT_GENERATION_MODEL } from '@/lib/openrouter';
 import { validateTurnstileToken } from 'next-turnstile';
 import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
 import type { JurisdictionIntelligence, CompanyIntelligence, JobTitleAnalysis, MarketStandards } from '@/lib/types/smart-form';
@@ -176,20 +177,20 @@ export async function POST(request: NextRequest) {
     const promptLength = userPrompt.length;
     console.log('✅ [Generate API] Prompt built - Length:', promptLength, 'characters');
 
-    console.log('🤖 [Generate API] Calling OpenAI API with GPT-4o (JSON mode)...');
+    console.log('🤖 [Generate API] Calling OpenRouter API with Claude 3.5 Sonnet (JSON mode)...');
     const apiCallStart = Date.now();
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+    const completion = await openrouter.chat.completions.create({
+      model: CONTRACT_GENERATION_MODEL,
       messages: [
         { role: 'system', content: EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON },
         { role: 'user', content: userPrompt },
       ],
       response_format: { type: 'json_object' }, // Enforce JSON output
       temperature: 0.3, // Lower temperature for more consistent legal text
-      max_tokens: 16000, // GPT-4o supports longer outputs for comprehensive legal documents
+      max_tokens: 16000, // Claude 3.5 Sonnet supports longer outputs for comprehensive legal documents
     });
     const apiCallDuration = Date.now() - apiCallStart;
-    console.log('✅ [Generate API] OpenAI response received in', apiCallDuration, 'ms');
+    console.log('✅ [Generate API] OpenRouter response received in', apiCallDuration, 'ms');
 
     const documentContent = completion.choices[0]?.message?.content || '';
     console.log('📄 [Generate API] Document content length:', documentContent.length, 'characters');
@@ -714,7 +715,7 @@ function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string
   prompt += `\n`;
   prompt += `   ⚠️ IMPORTANT: Pre-fill "value" property for name and title fields using the actual data provided above. Leave signature and date fields empty.\n`;
   
-  prompt += `8. Is formatted in clean markdown for professional presentation\n\n`;
+  prompt += `8. Returns ONLY valid JSON format (no markdown, no code blocks, no additional text outside the JSON structure)\n\n`;
   prompt += `⚠️ CRITICAL: This is a legally binding document. Never use dummy/placeholder contact information (like "john.doe@company.com", "555-1234", etc.). Use ONLY the exact information provided above.\n\n`;
   prompt += `📞 PHONE NUMBER HANDLING: If a phone number was NOT provided above for a party (employer or employee), DO NOT include a phone field at all in the parties section. Omit the phone line entirely - do not use placeholders like "[To Be Completed]", "[TBD]", or any other placeholder text for phone numbers. Only include phone numbers when they were explicitly provided.\n\n`;
   prompt += `The document should be ready for attorney review and execution.`;

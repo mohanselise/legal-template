@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openai } from '@/lib/openai';
+import { openrouter, JURISDICTION_MODEL } from '@/lib/openrouter';
 import { CompanyIntelligence, JurisdictionIntelligence, JobTitleAnalysis } from '@/lib/types/smart-form';
 import { safeValidateJurisdictionResponse, getValidationErrorMessage } from '@/lib/validation/jurisdiction-schema';
 
@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use GPT-4o-mini for fast, cost-effective intelligence gathering
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    // Use OpenRouter with llama-4-scout for jurisdiction and market standards detection
+    const completion = await openrouter.chat.completions.create({
+      model: JURISDICTION_MODEL,
       messages: [
         {
           role: 'system',

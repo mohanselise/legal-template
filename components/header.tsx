@@ -1,11 +1,14 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Menu, X, FileText } from 'lucide-react';
+import { LanguageSwitcher } from './language-switcher';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const t = useTranslations('common');
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/80 dark:bg-gray-950/95">
@@ -15,7 +18,7 @@ export default function Header() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2 text-xl font-bold text-primary font-heading">
               <FileText className="h-6 w-6" />
-              <span>Legal Templates</span>
+              <span>{t('legalTemplates')}</span>
             </Link>
           </div>
 
@@ -25,19 +28,19 @@ export default function Header() {
               href="/templates"
               className="text-sm font-medium text-foreground hover:text-primary transition-colors font-subheading"
             >
-              Templates
+              {t('templates')}
             </Link>
             <Link
               href="/about"
               className="text-sm font-medium text-foreground hover:text-primary transition-colors font-subheading"
             >
-              About
+              {t('about')}
             </Link>
             <Link
               href="/faq"
               className="text-sm font-medium text-foreground hover:text-primary transition-colors font-subheading"
             >
-              FAQ
+              {t('faq')}
             </Link>
             <a
               href="https://selisegroup.com/contact-us/"
@@ -45,14 +48,15 @@ export default function Header() {
               rel="noopener noreferrer"
               className="text-sm font-medium text-foreground hover:text-primary transition-colors font-subheading"
             >
-              Contact
+              {t('contact')}
             </a>
             <Link
               href="/templates/employment-agreement/generate"
               className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity font-subheading"
             >
-              Generate Document
+              {t('generateDocument')}
             </Link>
+            <LanguageSwitcher />
           </div>
 
           {/* Mobile menu button */}
@@ -62,7 +66,7 @@ export default function Header() {
               className="inline-flex items-center justify-center rounded-md p-2 text-foreground hover:bg-card"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              <span className="sr-only">Open main menu</span>
+              <span className="sr-only">{t('openMainMenu')}</span>
               {mobileMenuOpen ? (
                 <X className="h-6 w-6" aria-hidden="true" />
               ) : (
@@ -82,21 +86,21 @@ export default function Header() {
               className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card font-subheading"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Templates
+              {t('templates')}
             </Link>
             <Link
               href="/about"
               className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card font-subheading"
               onClick={() => setMobileMenuOpen(false)}
             >
-              About
+              {t('about')}
             </Link>
             <Link
               href="/faq"
               className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card font-subheading"
               onClick={() => setMobileMenuOpen(false)}
             >
-              FAQ
+              {t('faq')}
             </Link>
             <a
               href="https://selisegroup.com/contact-us/"
@@ -105,15 +109,18 @@ export default function Header() {
               className="block rounded-md px-3 py-2 text-base font-medium text-foreground hover:bg-card font-subheading"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Contact
+              {t('contact')}
             </a>
             <Link
               href="/templates/employment-agreement/generate"
               className="block rounded-md bg-primary px-3 py-2 text-base font-semibold text-primary-foreground hover:opacity-90 font-subheading"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Generate Document
+              {t('generateDocument')}
             </Link>
+            <div className="px-3 py-2">
+              <LanguageSwitcher />
+            </div>
           </div>
         </div>
       )}

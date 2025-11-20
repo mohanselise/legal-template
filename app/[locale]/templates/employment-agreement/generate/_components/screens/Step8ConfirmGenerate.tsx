@@ -1,0 +1,307 @@
+'use client';
+
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
+import { CheckCircle2, AlertTriangle, Clock, ShieldCheck } from 'lucide-react';
+import { useSmartForm } from '../SmartFormContext';
+import type { BackgroundGenerationResult } from '../SmartFormContext';
+import { useRouter } from '@/i18n/routing';
+import { Button } from '@/components/ui/button';
+import { saveEmploymentAgreementReview } from '../../reviewStorage';
+
+interface Step8ConfirmGenerateProps {
+  onStartGeneration?: (task: () => Promise<BackgroundGenerationResult | null>) => void;
+}
+
+export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerateProps) {
+  const t = useTranslations('employmentAgreement.step8');
+  const {
+    formData,
+    backgroundGeneration,
+    cancelBackgroundGeneration,
+    computeSnapshotHash,
+    awaitBackgroundGeneration,
+    startBackgroundGeneration,
+    getBackgroundGenerationState,
+  } = useSmartForm();
+  const router = useRouter();
+
+  const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false);
+  const [acknowledgeAi, setAcknowledgeAi] = useState(false);
+  const previousHashRef = useRef<string | null>(null);
+
+  const formSnapshotHash = useMemo(
+    () => computeSnapshotHash(formData),
+    [computeSnapshotHash, formData]
+  );
+
+  // Only reset checkboxes when form data actually changes (not on every render)
+  // This prevents checkboxes from resetting while user is checking them
+  useEffect(() => {
+    const previousHash = previousHashRef.current;
+    
+    // Only reset if hash changed from previous value (form data actually changed)
+    if (previousHash !== null && formSnapshotHash !== previousHash) {
+      setAcceptedDisclaimer(false);
+      setAcknowledgeAi(false);
+    }
+    
+    // Update ref to track current hash
+    previousHashRef.current = formSnapshotHash;
+  }, [formSnapshotHash]);
+
+  const backgroundMatches = backgroundGeneration.snapshotHash === formSnapshotHash;
+  const backgroundReady =
+    backgroundMatches &&
+    backgroundGeneration.status === 'ready' &&
+    Boolean(backgroundGeneration.result);
+  const backgroundPending = backgroundMatches && backgroundGeneration.status === 'pending';
+  const backgroundErrored = backgroundMatches && backgroundGeneration.status === 'error';
+  const backgroundStale =
+    !backgroundMatches &&
+    Boolean(backgroundGeneration.snapshotHash) &&
+    backgroundGeneration.status !== 'idle';
+
+  const pendingActions: string[] = [];
+  if (!acceptedDisclaimer) pendingActions.push(t('acceptLegalDisclaimer'));
+  if (!acknowledgeAi) pendingActions.push(t('confirmAiReview'));
+  const showPendingActions = pendingActions.length > 0;
+
+  // REMOVED auto-prefetch logic to prevent double API calls
+  // Generation should only be triggered from Step 6 "Continue" button
+  // This component will consume the result that was started in Step 6
+
+  const backgroundStatusMeta = useMemo(() => {
+    if (backgroundReady && backgroundGeneration.result) {
+      return {
+        tone: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+        icon: <CheckCircle2 className="h-5 w-5 text-emerald-600" />,
+        title: t('draftReadyToReview'),
+        description: t('draftReadyDescription'),
+      };
+    }
+    if (backgroundPending) {
+      return {
+        tone: 'border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] text-[hsl(var(--brand-muted))]',
+        icon: <Clock className="h-5 w-5 text-[hsl(var(--brand-primary))]" />,
+        title: t('preparingYourDraft'),
+        description: t('preparingDescription'),
+      };
+    }
+    if (backgroundErrored) {
+      return {
+        tone: 'border-amber-200 bg-amber-50 text-amber-900',
+        icon: <AlertTriangle className="h-5 w-5 text-amber-600" />,
+        title: t('willTryAgain'),
+        description: t('willTryAgainDescription'),
+      };
+    }
+    if (backgroundStale) {
+      return {
+        tone: 'border-amber-200 bg-amber-50 text-amber-900',
+        icon: <AlertTriangle className="h-5 w-5 text-amber-600" />,
+        title: t('draftUpdating'),
+        description: t('draftUpdatingDescription'),
+      };
+    }
+    return null;
+  }, [backgroundReady, backgroundGeneration.result, backgroundPending, backgroundErrored, backgroundStale]);
+
+  const navigateWithResult = (result: BackgroundGenerationResult) => {
+    const persisted = saveEmploymentAgreementReview({
+      document: result.document,
+      formData: result.formDataSnapshot,
+      storedAt: new Date().toISOString(),
+    });
+
+    if (persisted) {
+      router.push('/templates/employment-agreement/generate/review');
+      return;
+    }
+
+    const params = new URLSearchParams({
+      document: JSON.stringify(result.document),
+      data: JSON.stringify(result.formDataSnapshot),
+    });
+    router.push(`/templates/employment-agreement/generate/review?${params.toString()}`);
+  };
+
+  const handleGenerate = async () => {
+    if (!acceptedDisclaimer || !acknowledgeAi) {
+      return;
+    }
+
+    const snapshotHash = formSnapshotHash;
+
+    // This function will be called repeatedly by the polling mechanism
+    // It returns the result when ready, or throws if not ready yet
+    const checkBackgroundStatus = async (): Promise<BackgroundGenerationResult | null> => {
+      if (!snapshotHash) {
+        throw new Error('We could not verify your latest answers. Please return to the Legal step and try again.');
+      }
+
+      // Get the LATEST state from the ref (not stale component state)
+      const currentBgState = getBackgroundGenerationState();
+      const stateMatches = currentBgState.snapshotHash === snapshotHash;
+      const isReady = stateMatches && currentBgState.status === 'ready' && Boolean(currentBgState.result);
+
+      // Debug logging (only on first few checks)
+      if (Math.random() < 0.1) { // Log 10% of checks to avoid spam
+        console.log('[Status Check]', {
+          status: currentBgState.status,
+          stateMatches,
+          isReady,
+          hasResult: Boolean(currentBgState.result),
+        });
+      }
+
+      // Check if result is already ready
+      if (isReady && currentBgState.result) {
+        console.log('✅ [Status Check] Result is ready!');
+        cancelBackgroundGeneration('consumed');
+        return currentBgState.result;
+      }
+
+      // If not started or errored, start it
+      if (
+        currentBgState.status === 'idle' ||
+        currentBgState.status === 'error' ||
+        !stateMatches ||
+        currentBgState.status === 'stale'
+      ) {
+        // Start background generation (non-blocking)
+        if (currentBgState.status === 'idle') {
+          console.log('🚀 [Status Check] Starting background generation...');
+        }
+        startBackgroundGeneration().catch(() => {
+          // Error will be caught by polling mechanism
+        });
+        throw new Error('Generation starting...');
+      }
+
+      // If pending, check if it's ready now (use longer timeout - 100ms from main was too short)
+      if (currentBgState.status === 'pending') {
+        const awaited = await awaitBackgroundGeneration(snapshotHash, 500); // Increased from 100ms to 500ms
+        if (awaited && awaited.document) {
+          console.log('✅ [Status Check] Result retrieved from await!');
+          cancelBackgroundGeneration('consumed');
+          return awaited;
+        }
+        throw new Error('Still generating...');
+      }
+
+      throw new Error('Unexpected state');
+    };
+
+    if (onStartGeneration) {
+      // Pass the status checker to the parent component for polling
+      onStartGeneration(checkBackgroundStatus);
+      return;
+    }
+
+    // Fallback: direct navigation (shouldn't happen in SmartFlowV2)
+    try {
+      // Try to get result with longer timeout (increased from 60s to 90s)
+      const awaited = await awaitBackgroundGeneration(snapshotHash, 90000);
+      if (awaited && awaited.document) {
+        cancelBackgroundGeneration('consumed');
+        navigateWithResult(awaited);
+      } else {
+        throw new Error('Failed to generate agreement. Please try again.');
+      }
+    } catch (error) {
+      console.error('[Step8] Generation error:', error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Failed to open your draft. Please return to the Legal step and try again.'
+      );
+    }
+  };
+
+  const buttonLabel = backgroundReady
+    ? t('reviewYourAgreement')
+    : backgroundPending
+      ? t('continueToReview')
+      : t('generateEmploymentAgreement');
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <div className="w-14 h-14 bg-[hsl(var(--brand-primary))/0.1] rounded-2xl flex items-center justify-center text-[hsl(var(--brand-primary))]">
+          <ShieldCheck className="w-7 h-7" />
+        </div>
+        <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))] font-heading">
+          {t('title')}
+        </h2>
+        <p className="text-lg text-[hsl(var(--brand-muted))]">
+          {t('subtitle')}
+        </p>
+      </div>
+
+      {backgroundStatusMeta && (
+        <div className={`flex items-start gap-3 rounded-2xl border p-4 ${backgroundStatusMeta.tone}`}>
+          <div className="mt-1">{backgroundStatusMeta.icon}</div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">{backgroundStatusMeta.title}</p>
+            <p className="text-sm">{backgroundStatusMeta.description}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        <label
+          className={`flex items-start gap-3 rounded-xl border p-4 text-sm transition ${
+            acceptedDisclaimer
+              ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.05]'
+              : 'border-[hsl(var(--brand-border))] bg-white'
+          }`}
+        >
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4"
+            checked={acceptedDisclaimer}
+            onChange={(event) => setAcceptedDisclaimer(event.target.checked)}
+          />
+          <span>
+            {t('legalDisclaimer')}
+          </span>
+        </label>
+
+        <label
+          className={`flex items-start gap-3 rounded-xl border p-4 text-sm transition ${
+            acknowledgeAi
+              ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.05]'
+              : 'border-[hsl(var(--brand-border))] bg-white'
+          }`}
+        >
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4"
+            checked={acknowledgeAi}
+            onChange={(event) => setAcknowledgeAi(event.target.checked)}
+          />
+          <span>
+            {t('aiAcknowledgment')}
+          </span>
+        </label>
+      </div>
+
+      <div className="pt-2">
+        <Button
+          onClick={handleGenerate}
+          disabled={!acceptedDisclaimer || !acknowledgeAi}
+          className="w-full py-6 text-lg font-semibold"
+          size="lg"
+        >
+          {buttonLabel}
+        </Button>
+        {showPendingActions && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            {t('completeBeforeContinuing', { actions: pendingActions.join(' • ') })}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

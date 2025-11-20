@@ -1,0 +1,746 @@
+{
+  "common": {
+    "templates": "Vorlagen",
+    "about": "Über uns",
+    "faq": "FAQ",
+    "contact": "Kontakt",
+    "generateDocument": "Dokument erstellen",
+    "legalTemplates": "Rechtsvorlagen",
+    "openMainMenu": "Hauptmenü öffnen",
+    "closeMainMenu": "Hauptmenü schließen",
+    "above": "über",
+    "below": "unter",
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "home": {
+    "title": "Professionelle Rechtsdokumente, sofort erstellt",
+    "subtitle": "Hören Sie auf, teure Anwälte für Standarddokumente zu bezahlen. Erstellen Sie angepasste, verständliche Rechtsvorlagen in Minuten – völlig kostenlos, für immer.",
+    "startGeneratingFree": "Kostenlos starten",
+    "seeHowItWorks": "So funktioniert's",
+    "noCreditCardNeeded": "Keine Kreditkarte erforderlich",
+    "noSignUpRequired": "Keine Anmeldung erforderlich",
+    "instantDownload": "Sofortiger Download",
+    "trustedByThousands": "Vertraut von Tausenden",
+    "freeForever": "100% kostenlos",
+    "announcement": "Neu: Arbeitsvertrag-Vorlage jetzt verfügbar!",
+    "tryItNow": "Jetzt ausprobieren →",
+    "features": {
+      "generateInMinutes": {
+        "title": "In Minuten erstellen",
+        "description": "Beantworten Sie ein paar Fragen und erhalten Sie Ihr angepasstes Rechtsdokument sofort – kein Warten, kein Aufwand.",
+        "highlight": "Ø 2 Min"
+      },
+      "legallySound": {
+        "title": "Rechtlich solide",
+        "description": "Alle Vorlagen werden nach Branchenbest practices und gängigen Rechtsstandards erstellt.",
+        "highlight": "Professionell"
+      },
+      "plainEnglish": {
+        "title": "Verständlich",
+        "description": "Kein verwirrendes Juristendeutsch. Unsere Vorlagen sind in klarer, verständlicher Sprache verfasst.",
+        "highlight": "Leicht zu lesen"
+      },
+      "free": {
+        "title": "100% kostenlos",
+        "description": "Alle Vorlagen sind völlig kostenlos zu erstellen, anzupassen und herunterzuladen. Keine versteckten Kosten.",
+        "highlight": "Für immer kostenlos"
+      }
+    },
+    "stats": {
+      "legalTemplates": "5+",
+      "legalTemplatesLabel": "Rechtsvorlagen",
+      "freeForever": "100%",
+      "freeForeverLabel": "Für immer kostenlos",
+      "avgGeneration": "2 Min",
+      "avgGenerationLabel": "Ø Erstellung",
+      "available": "24/7",
+      "availableLabel": "Verfügbar"
+    },
+    "benefits": {
+      "noSignup": "Keine Anmeldung oder Registrierung erforderlich",
+      "instantPdf": "Sofortiger PDF-Download",
+      "customizable": "Anpassbar für Ihre Bedürfnisse",
+      "plainEnglish": "Verständlich, leicht zu verstehen",
+      "noHiddenFees": "Keine versteckten Gebühren oder Abonnements",
+      "professionalQuality": "Professionelle Qualitätsvorlagen"
+    },
+    "templatesSection": {
+      "badge": "Beliebte Vorlagen",
+      "title": "Wählen Sie Ihre Vorlage",
+      "description": "Wählen Sie aus unserer wachsenden Bibliothek professioneller Rechtsvorlagen. Jeden Monat kommen neue Vorlagen hinzu.",
+      "generateNow": "Jetzt erstellen",
+      "comingSoon": "Demnächst verfügbar",
+      "mostPopular": "Am beliebtesten",
+      "needDifferentTemplate": "Benötigen Sie eine andere Vorlage?",
+      "requestTemplate": "Vorlage anfordern"
+    },
+    "featuresSection": {
+      "badge": "Warum uns wählen",
+      "title": "Rechtsdokumente einfach gemacht",
+      "description": "Wir glauben, dass Rechtsdokumente für alle zugänglich, verständlich und kostenlos sein sollten.",
+      "everythingYouNeed": "Alles was Sie brauchen, nichts was Sie nicht brauchen"
+    },
+    "howItWorks": {
+      "badge": "Schnell & Einfach",
+      "title": "Erstellen Sie in 3 einfachen Schritten",
+      "description": "Von null zu einem rechtlich soliden Dokument in weniger als 2 Minuten.",
+      "step1": {
+        "title": "Wählen Sie Ihre Vorlage",
+        "description": "Wählen Sie das Rechtsdokument aus, das Sie benötigen, aus unserer kuratierten Bibliothek professioneller Vorlagen."
+      },
+      "step2": {
+        "title": "Füllen Sie die Details aus",
+        "description": "Beantworten Sie einfache Fragen in verständlicher Sprache. Keine Rechtskenntnisse erforderlich – wir führen Sie durch jedes Feld."
+      },
+      "step3": {
+        "title": "Herunterladen & Verwenden",
+        "description": "Erhalten Sie Ihr angepasstes, professionell formatiertes Dokument als PDF. Sofort einsatzbereit."
+      }
+    },
+    "finalCta": {
+      "title": "Bereit, Ihr Rechtsdokument zu erstellen?",
+      "description": "Schließen Sie sich Tausenden von Nutzern an, die professionelle Rechtsdokumente kostenlos erstellen. Keine Kreditkarte. Keine Anmeldung. Einfach sofortiger Zugang.",
+      "getStartedFree": "Kostenlos starten",
+      "viewAllTemplates": "Alle Vorlagen anzeigen",
+      "generateFirstDocument": "⚡ Erstellen Sie Ihr erstes Dokument in weniger als 2 Minuten"
+    },
+    "seliseDio": {
+      "badge": "Unser DIO-Modell",
+      "title": "Strukturiert für End-to-End-Lieferung",
+      "description": "SELISE folgt einem Design-Implement-Operate-Rhythmus, der jede Vorlage menschenzentriert, technisch solide und kontinuierlich optimiert hält.",
+      "design": {
+        "title": "Design",
+        "description": "Kollaborative Entdeckung verwandelt Anforderungen in menschenzentrierte Reisen, die regionale Vorschriften von Anfang an respektieren.",
+        "badge": "Einsicht zu Blaupause"
+      },
+      "implement": {
+        "title": "Implementieren",
+        "description": "Agile Sprints mit automatisierter QA liefern zuverlässige, skalierbare Dokumentenerfahrungen, die mit rechtlichen Standards übereinstimmen.",
+        "badge": "Mit Präzision bauen"
+      },
+      "operate": {
+        "title": "Betreiben",
+        "description": "Kontinuierliche Überwachung, Analysen und Feedback-Schleifen halten jede Vorlage genau, sicher und immer versandbereit.",
+        "badge": "Immer aktiv"
+      }
+    },
+    "brandValues": {
+      "badge": "Unsere Werte",
+      "title": "Geleitet von dem, was wichtig ist",
+      "description": "Jede Interaktion spiegelt SELISE-Werte wider—Respekt, Integrität, Demut, Pragmatismus, Ausdauer und Ermächtigung.",
+      "respectful": {
+        "title": "Respektvoll",
+        "description": "Wir hören zuerst zu und erstellen gemeinsam Lösungen, die verteilte Teams und ihre Kunden stärken."
+      },
+      "integrous": {
+        "title": "Integrität",
+        "description": "Transparente Prozesse, Prüfpfade und verantwortungsvoller Umgang mit Daten schaffen lang anhaltendes Vertrauen."
+      },
+      "humble": {
+        "title": "Bescheiden",
+        "description": "Wir bleiben neugierig, iterieren schnell und lernen mit jeder Veröffentlichung, um unser Handwerk kontinuierlich zu verbessern."
+      },
+      "pragmatic": {
+        "title": "Pragmatisch",
+        "description": "Jede Funktion ist in messbarer Wirkung verankert, was die rechtliche Lieferung einfacher und schneller macht."
+      },
+      "persevering": {
+        "title": "Ausdauernd",
+        "description": "Wir entwickeln widerstandsfähige Systeme, die sich anpassen, skalieren und kritische Workflows am Laufen halten."
+      },
+      "empowering": {
+        "title": "Ermächtigend",
+        "description": "Wir übertragen Wissen und Tools, die Teams ermöglichen, unabhängig und mit Vertrauen zu operieren."
+      }
+    }
+  },
+  "templates": {
+    "title": "Entdecken Sie unsere Rechtsvorlagen",
+    "description": "SELISE-Rechtsvorlagen folgen Branchenbest Practices, sind in verständlicher Sprache verfasst und werden in Minuten erstellt. Beginnen Sie heute mit einer Live-Vorlage oder sehen Sie, was als Nächstes kommt.",
+    "templateLibrary": "Vorlagenbibliothek",
+    "availableNow": "Jetzt verfügbar",
+    "readyToGenerate": "Bereit zum Erstellen",
+    "availableDescription": "Starten Sie ein maßgeschneidertes Dokument in Minuten. Wir sammeln die Details, wenden SELISE Best-Practice-Inhalte an und liefern ein herunterladbares PDF, das Sie sofort teilen können.",
+    "currentlyLive": "Derzeit {count} Vorlage{plural} live. Jeden Monat kommen weitere hinzu.",
+    "mostPopular": "Am beliebtesten",
+    "live": "Live",
+    "inProgress": "In Bearbeitung",
+    "upcomingTemplates": "Bevorstehende Vorlagen",
+    "upcomingDescription": "Stimmen Sie ab, was wir als Nächstes veröffentlichen. Teilen Sie uns mit, was Sie benötigen, und wir priorisieren neue Vorlagen entsprechend.",
+    "requestEarlyAccess": "Frühen Zugang anfordern",
+    "needDifferentDocument": "Benötigen Sie ein anderes Dokument?",
+    "needDifferentDescription": "Wir erweitern die Bibliothek mit den am häufigsten gestellten Anfragen. Lassen Sie uns wissen, was Ihrem Team helfen würde, und unsere Rechtsexperten werden es zur Roadmap hinzufügen.",
+    "sendRequest": "Anfrage senden",
+    "exploreGenerator": "Generator erkunden",
+    "templatesList": {
+      "employment-agreement": {
+        "title": "Arbeitsvertrag",
+        "description": "Umfassende Arbeitsverträge mit anpassbaren Bedingungen, Gehalt, Leistungen und Kündigungsklauseln."
+      },
+      "founders-agreement": {
+        "title": "Gründervereinbarung",
+        "description": "Definieren Sie Eigenkapitalaufteilungen, Rollen, Verantwortlichkeiten und Entscheidungsprozesse für Ihr Startup."
+      },
+      "nda": {
+        "title": "Geheimhaltungsvereinbarung",
+        "description": "Schützen Sie vertrauliche Informationen mit bilateralen oder unilateralen NDA-Vorlagen."
+      },
+      "dpa": {
+        "title": "Datenverarbeitungsvereinbarung",
+        "description": "DSGVO-konforme DPA-Vorlagen für Auftragsverarbeiter-Auftragsgeber-Beziehungen."
+      },
+      "ip-assignment": {
+        "title": "IP-Übertragungsvereinbarung",
+        "description": "Übertragen Sie geistige Eigentumsrechte mit klaren Bedingungen und umfassender Abdeckung."
+      }
+    }
+  },
+  "about": {
+    "title": "Über den Rechtsvorlagen-Generator | Eine SELISE Group AG Initiative",
+    "description": "Entdecken Sie die Mission hinter dem Rechtsvorlagen-Generator, einer kostenlosen Tochterinitiative der SELISE Group AG, die sich darauf konzentriert, verständliche Rechtsdokumente für alle bereitzustellen.",
+    "subsidiaryBadge": "Tochtergesellschaft der SELISE Group AG",
+    "freeForeverBadge": "Für immer kostenlos",
+    "heading": "Rechtliche Klarheit für jedes wachsende Team.",
+    "subheading": "Der Rechtsvorlagen-Generator ist eine SELISE-Initiative, die sich darauf konzentriert, professionelle Verträge für jeden, überall, ohne Kosten verfügbar zu machen. Wir wandeln komplexe Rechtsstrukturen in verständliche Dokumente um, denen Sie von Ihrer ersten Einstellung bis zur globalen Expansion vertrauen können.",
+    "exploreTemplates": "Vorlagen erkunden",
+    "talkToSelise": "Mit SELISE sprechen",
+    "whatGuidesOurWork": "Was unsere Arbeit leitet",
+    "whatGuidesDescription": "Jede Veröffentlichung konzentriert sich auf Zugänglichkeit, Klarheit und Vertrauen. Diese Säulen halten die Erfahrung pragmatisch und bereit für reale Rechtsabläufe.",
+    "pillars": {
+      "accessibleByDesign": {
+        "title": "Zugänglich durch Design",
+        "description": "Wir entfernen Reibung von Standardvereinbarungen, damit Gründer, Betreiber und HR-Führungskräfte konforme Unterlagen ohne rechtliche Barrieren erhalten."
+      },
+      "groundedInLegalCraft": {
+        "title": "Gegründet auf Rechtshandwerk",
+        "description": "Jede Vorlage folgt branchenorientierten Strukturen mit klarer Anleitung, sodass Sie jede Klausel verstehen, die Sie unterschreiben oder teilen."
+      },
+      "humanSupportNetwork": {
+        "title": "Menschliches Unterstützungsnetzwerk",
+        "description": "Brauchen Sie mehr als eine Vorlage? Unser SELISE-Netzwerk verbindet Sie mit Spezialisten, die das, was Sie generieren, erweitern, lokalisieren oder operationalisieren können."
+      }
+    },
+    "poweredBySelise": "Unterstützt von SELISE Group AG",
+    "poweredByDescription": "SELISE Group AG ist ein globaler digitaler Engineering-Partner mit Hauptsitz in der Schweiz, bekannt für die Lieferung von Ergebnissen durch das Design-Implement-Operate (DIO)-Modell. Der Rechtsvorlagen-Generator erweitert diese Mission, indem er jahrelange regulatorische Erfahrung in sofortige, selbstbediente Lösungen für Teams übersetzt, die sich schnell bewegen müssen, ohne Compliance zu opfern.",
+    "commitments": {
+      "alwaysFree": {
+        "title": "Immer kostenlos",
+        "description": "Keine Paywalls, Zusatzkosten oder aggressive Upsells. Ihre Organisation behält die Kontrolle vom Entwurf bis zur Unterschrift."
+      },
+      "plainLanguageFirst": {
+        "title": "Verständliche Sprache zuerst",
+        "description": "Wir übersetzen rechtliche Formalität in verständliches Englisch, während wir die Verpflichtungen bewahren, die Sie benötigen, um geschützt zu bleiben."
+      },
+      "privacyRespectful": {
+        "title": "Datenschutzrespektvoll",
+        "description": "Dokumente werden clientseitig gerendert. Wir speichern niemals Ihre Antworten oder generierten Dateien, es sei denn, Sie entscheiden sich ausdrücklich dafür."
+      }
+    },
+    "globalFootprint": "Unser globaler Fußabdruck",
+    "globalFootprintDescription": "Mit Teams in Europa, dem Nahen Osten und Asien verbindet SELISE regulatorische Expertise mit technischer Tiefe. Diese Reichweite ermöglicht es uns, Vorlagen über Gerichtsbarkeiten hinweg relevant zu halten und gleichzeitig Best Practices aus Unternehmensprogrammen zu teilen.",
+    "multidisciplinaryTeams": "Multidisziplinäre Teams, die auf Ihre Region und Zeitzone ausgerichtet sind",
+    "experienceSpanning": "Erfahrung in regulierten Branchen, Scale-ups und öffentlichem Sektor",
+    "governancePractices": "Governance-Praktiken, die in Datenschutz, Resilienz und Klarheit verwurzelt sind",
+    "dioApproach": "Der DIO-Ansatz",
+    "howWeKeepTemplatesReliable": "Wie wir Vorlagen zuverlässig halten",
+    "dioDescription": "SELISEs Design-Implement-Operate-Methodik stellt sicher, dass der Generator parallel zu Vorschriften, Technologie und den Realitäten der Geschäftsführung entwickelt wird. Tempo ohne Dinge zu brechen.",
+    "dioSteps": {
+      "design": {
+        "title": "Design",
+        "accent": "Einsicht zu Blaupause",
+        "description": "Wir erstellen gemeinsam Reisen mit Rechtsberatern und operativen Teams, um echte Genehmigungswege, regionale Nuancen und Stakeholder-Bedürfnisse zu kartieren."
+      },
+      "implement": {
+        "title": "Implementieren",
+        "accent": "Mit Präzision bauen",
+        "description": "Engineering-Sprints stapeln Automatisierung, Validierung und Leistungsüberwachung, damit Rechtsinhalte in großem Maßstab zuverlässig bleiben."
+      },
+      "operate": {
+        "title": "Betreiben",
+        "accent": "Immer aktiv",
+        "description": "Kontinuierliche Updates, Feedback-Schleifen und Analysen halten Vorlagen mit regulatorischen Verschiebungen und Geschäftswachstum ausgerichtet."
+      }
+    },
+    "believeHeading": "Wir glauben, dass rechtliches Vertrauen Standard sein sollte",
+    "believeDescription": "Ob Sie Ihren ersten Mitarbeiter einstellen, geistiges Eigentum schützen oder strategische Partnerschaften formalisieren, der Rechtsvorlagen-Generator hält die Barrieren niedrig und die Standards hoch. Betrachten Sie es als Ihren Ausgangspunkt—kostenlos heute, kostenlos morgen.",
+    "generateDocument": "Dokument erstellen",
+    "readFaq": "FAQ lesen"
+  },
+  "faq": {
+    "title": "Häufig gestellte Fragen | Rechtsvorlagen-Generator",
+    "description": "Finden Sie Antworten darauf, wie der Rechtsvorlagen-Generator funktioniert, was ihn kostenlos macht und wie SELISE Group AG Ihre Dokumente privat und zuverlässig hält.",
+    "faqHub": "FAQ-Hub",
+    "updatedMonthly": "Monatlich aktualisiert",
+    "heading": "Antworten, die Sie mit Vertrauen weiterbringen.",
+    "subheading": "Der Rechtsvorlagen-Generator entfernt die Reibung von Standardvereinbarungen. Erkunden Sie die häufigsten Fragen darüber, wie wir kostenlos bleiben, wie SELISE Ihre Informationen schützt und wie Sie Hilfe von einem Menschen erhalten, wenn Sie sie benötigen.",
+    "browseTemplates": "Vorlagen durchsuchen",
+    "reachSupport": "Support erreichen",
+    "stillNeedHelp": "Benötigen Sie noch Hilfe?",
+    "oneMessageAway": "Wir sind nur eine Nachricht entfernt.",
+    "stillNeedHelpDescription": "Chatten Sie mit unserem Support-Team für Anleitungen, Enterprise-Rollouts oder spezialisierte Klauseln. SELISE-Berater können einspringen, wenn Sie regionale Nuancen oder tiefere Automatisierung benötigen.",
+    "contactSelise": "SELISE kontaktieren",
+    "startWithEmploymentAgreement": "Mit Arbeitsvertrag beginnen",
+    "sections": {
+      "gettingStarted": {
+        "badge": "Erste Schritte",
+        "title": "Verwendung des Generators",
+        "description": "Alles, was Sie wissen müssen, um in Minuten von der Idee zur herunterladbaren Vorlage zu gelangen.",
+        "questions": {
+          "howFast": {
+            "question": "Wie schnell kann ich ein Dokument erstellen?",
+            "answer": "Die meisten Vorlagen sind in weniger als drei Minuten fertig. Die geführten Fragen sammeln Kernfakten, rendern die Klauseln clientseitig und erstellen sofort sowohl eine Vorschau als auch ein herunterladbares PDF."
+          },
+          "needAccount": {
+            "question": "Muss ich ein Konto erstellen?",
+            "answer": "Nein. Der Rechtsvorlagen-Generator ist absichtlich reibungslos. Öffnen Sie die benötigte Vorlage, beantworten Sie die Eingabeaufforderungen und exportieren Sie Ihr Dokument—keine Registrierung, Kreditkarte oder E-Mails erforderlich."
+          },
+          "fileFormats": {
+            "question": "Welche Dateiformate werden unterstützt?",
+            "answer": "Wir bieten derzeit hochauflösende PDF-Downloads an, die für das Teilen und die elektronische Unterschrift optimiert sind. Strukturierte DOCX-Exporte sind in der Roadmap und folgen, sobald die Formatparität garantiert ist."
+          }
+        }
+      },
+      "trustAccuracy": {
+        "badge": "Vertrauen & Genauigkeit",
+        "title": "Rechtliche Qualität und Datenschutz",
+        "description": "Warum Sie sich auf unsere Vorlagen verlassen können und wie wir jede Antwort schützen, die Sie geben.",
+        "questions": {
+          "legallyBinding": {
+            "question": "Sind die Vorlagen rechtlich bindend?",
+            "answer": "Unsere Vorlagen spiegeln branchenübliche Strukturen wider, die mit SELISE-Rechtsspezialisten erstellt wurden. Die Durchsetzbarkeit hängt jedoch immer vom lokalen Recht und der ordnungsgemäßen Ausführung ab. Im Zweifelsfall lassen Sie einen Berater für gerichtsspezifische Bedürfnisse überprüfen."
+          },
+          "dataHandled": {
+            "question": "Wie werden meine Daten behandelt?",
+            "answer": "Ihre Eingaben bleiben in Ihrer Browsersitzung. Wir speichern niemals Vorlagenantworten oder generierte Dokumente, es sei denn, Sie entscheiden sich ausdrücklich dafür, sie mit uns zu teilen. Analysen sind anonymisiert, um die Nutzung von Funktionen zu verstehen, nicht den Dokumentinhalt."
+          },
+          "regionSpecific": {
+            "question": "Enthalten Vorlagen regionsspezifische Klauseln?",
+            "answer": "Ja. Wir integrieren bedingte Sprache für gängige Gerichtsbarkeiten und heben hervor, wo lokalisierte Beratung validieren sollte. Wenn sich Vorschriften ändern, aktualisiert SELISEs globales Compliance-Team diese Klauseln und veröffentlicht Versionshinweise."
+          }
+        }
+      },
+      "beyondTemplate": {
+        "badge": "Über die Vorlage hinaus",
+        "title": "Arbeiten mit SELISE",
+        "description": "Wie das breitere SELISE-Ökosystem hilft, wenn Sie mehr als ein selbstbedientes Dokument benötigen.",
+        "questions": {
+          "seliseReview": {
+            "question": "Kann SELISE mein fertiges Dokument überprüfen?",
+            "answer": "Absolut. Unsere Beratungspartner können jedes generierte Abkommen prüfen, lokalisieren oder anpassen. Kontaktieren Sie uns über das Kontaktformular und wir verbinden Sie mit dem richtigen Expertenteam."
+          },
+          "esignature": {
+            "question": "Bieten Sie E-Signatur- oder Workflow-Tools an?",
+            "answer": "Ja. SELISE Signature integriert sich direkt mit unseren Vorlagen für Drag-and-Drop-Unterschriftsplatzierung, automatisierte Erinnerungen und Prüfpfade. Die Integrations-Roadmap wird in unserem Updates-Bereich veröffentlicht."
+          },
+          "templateNotListed": {
+            "question": "Was ist, wenn ich eine Vorlage benötige, die nicht aufgeführt ist?",
+            "answer": "Verwenden Sie das Anfrageformular und teilen Sie uns mit, was Sie benötigen. Wir priorisieren basierend auf Nachfrage und regulatorischer Dringlichkeit und versenden dann neue Vorlagen mit klaren Änderungsprotokollen, damit Sie immer wissen, was neu ist."
+          }
+        }
+      }
+    }
+  },
+  "employmentAgreement": {
+    "step1": {
+      "title": "Unternehmens- & Rollendetails",
+      "subtitle": "Erzählen Sie uns vom Arbeitgeber und der Position",
+      "companyLegalName": "Rechtlicher Firmenname",
+      "companyLegalNameHelp": "Der vollständige rechtliche Name des Arbeitgebers",
+      "companyAddress": "Firmenadresse",
+      "companyAddressHelp": "Vollständige Adresse einschließlich Stadt, Bundesland/Provinz und Land",
+      "jobTitle": "Stellenbezeichnung",
+      "jobTitleHelp": "Offizielle Stellenbezeichnung für diese Position",
+      "jobResponsibilities": "Stellenverantwortlichkeiten (optional)",
+      "jobResponsibilitiesHelp": "Hauptaufgaben und Verantwortlichkeiten – hilft uns, bessere Gehaltsbenchmarks zu liefern",
+      "smartSuggestions": "Intelligente Vorschläge",
+      "generatingSuggestions": "Vorschläge werden generiert...",
+      "analyzingInBackground": "Im Hintergrund analysieren...",
+      "analyzingDescription": "Erkennung der Gerichtsbarkeit, Unternehmensdetails und Rollenanforderungen",
+      "jurisdictionDetected": "Gerichtsbarkeit erkannt: {country}{state}",
+      "jurisdictionDetectedDescription": "Wir wenden automatisch lokale Arbeitsstandards und rechtliche Anforderungen an.",
+      "industry": "Branche:",
+      "roleAnalysis": "Rollenanalyse",
+      "level": "Level",
+      "typicalSalaryRange": "Typisches Gehaltsband:",
+      "equityCompensationTypical": "💡 Eigenkapitalvergütung ist für diese Rolle typisch",
+      "stillAnalyzing": "Analysiere noch Gerichtsbarkeit und Rolle im Hintergrund...",
+      "analysisComplete": "Analyse abgeschlossen: {country}{industry}{department}",
+      "helpText": "Sobald Sie diese Details angeben, analysieren wir automatisch die Gerichtsbarkeit, Rolle und Gehaltsbenchmarks, um intelligente Standardwerte für den Rest des Formulars vorzubereiten.",
+      "errorContinue": "Sie können mit manueller Eingabe fortfahren."
+    },
+    "step2": {
+      "title": "Jetzt zum Mitarbeiter",
+      "subtitle": "Persönliche Informationen über die Neueinstellung",
+      "employeeFullName": "Vollständiger Name des Mitarbeiters",
+      "employeeFullNameHelp": "Vollständiger rechtlicher Name, wie er im Vertrag erscheinen soll",
+      "employeeAddress": "Mitarbeiteradresse",
+      "employeeAddressHelp": "Vollständige Wohnadresse des Mitarbeiters",
+      "reportsTo": "Berichtet an (optional)",
+      "reportsToHelp": "Der Name und Titel des direkten Vorgesetzten des Mitarbeiters",
+      "startDate": "Startdatum",
+      "startDateHelp": "Erster Arbeitstag",
+      "stillAnalyzing": "Gerichtsbarkeit und Rolle werden noch im Hintergrund analysiert...",
+      "analysisComplete": "Analyse abgeschlossen: {country}{industry}{department}"
+    },
+    "step3Work": {
+      "title": "Arbeitsvereinbarung",
+      "subtitle": "Wo und wann werden sie arbeiten?",
+      "workArrangement": "Arbeitsvereinbarung",
+      "onSite": "Vor Ort",
+      "onSiteDescription": "Vollzeit im Büro",
+      "remote": "Remote",
+      "remoteDescription": "Von überall arbeiten",
+      "hybrid": "Hybrid",
+      "hybridDescription": "Mischung aus Büro und Remote",
+      "standard": "Standard",
+      "homeBase": "Heimatbasis / Steuerwohnsitz (optional)",
+      "homeBasePlaceholder": "z.B. Manchester, UK (für Steuer-/Rechtszwecke)",
+      "homeBaseHelp": "Standort für Steuer- und Rechtszwecke (nicht erforderlich, von hier aus zu arbeiten)",
+      "officeLocation": "Bürostandort",
+      "officeLocationPlaceholder": "San Francisco, CA",
+      "officeLocationHelp": "Bürostandort, an dem der Mitarbeiter an Präsenztagen arbeiten wird",
+      "primaryWorkLocation": "Hauptarbeitsort",
+      "primaryWorkLocationHelp": "Stadt und Bundesland/Land, in dem der Mitarbeiter hauptsächlich arbeiten wird",
+      "basedOnCompanyAddress": "Basierend auf Firmenadresse",
+      "hoursPerWeek": "Stunden pro Woche",
+      "hoursPerWeekHelp": "Standardarbeitsstunden pro Woche",
+      "standardWorkWeek": "Standardarbeitswoche in {jurisdiction}",
+      "typicalWorkWeek": "💡 Typische Arbeitswoche: {workDays}",
+      "clickToCustomize": "hier klicken, um anzupassen",
+      "customizeWorkSchedule": "Arbeitsplan anpassen",
+      "customWorkSchedule": "Benutzerdefinierter Arbeitsplan",
+      "customWorkScheduleHelp": "Geben Sie benutzerdefinierte Arbeitstage und -stunden an, wenn sie vom Standard abweichen",
+      "overtimeEligible": "Mitarbeiter ist für Überstundenvergütung berechtigt"
+    },
+    "step3Signing": {
+      "title": "Unterschriftsinformationen",
+      "subtitle": "Wer wird diesen Vertrag unterzeichnen?",
+      "companyRepresentative": "Unternehmensvertreter",
+      "companyRepresentativeDescription": "Die autorisierte Person, die im Namen von {companyName} unterschreiben wird",
+      "representativeName": "Name des Vertreters",
+      "representativeNameHelp": "Vollständiger Name des Unternehmensvertreters",
+      "representativeTitle": "Titel/Rolle des Vertreters",
+      "representativeTitleHelp": "Ihr offizieller Titel oder ihre Rolle im Unternehmen",
+      "representativeEmail": "E-Mail des Vertreters",
+      "representativeEmailHelp": "E-Mail-Adresse zum Empfang der Unterschriftsanfrage",
+      "representativePhone": "Telefon des Vertreters (optional)",
+      "representativePhoneHelp": "Telefonnummer für Benachrichtigungen",
+      "employeeInformation": "Mitarbeiterinformationen",
+      "employeeInformationDescription": "Kontaktdaten für {employeeName}",
+      "employeeEmail": "E-Mail des Mitarbeiters",
+      "employeeEmailHelp": "E-Mail-Adresse zum Empfang der Unterschriftsanfrage",
+      "employeePhone": "Telefon des Mitarbeiters (optional)",
+      "employeePhoneHelp": "Telefonnummer für Benachrichtigungen",
+      "emailsCannotMatch": "E-Mails von Mitarbeiter und Arbeitgeber dürfen nicht identisch sein",
+      "emailsCannotMatchSuggestion": "Bitte verwenden Sie unterschiedliche E-Mail-Adressen für den Mitarbeiter und den Unternehmensvertreter",
+      "signatureProcess": "📧 Unterschriftsprozess: Beide Parteien erhalten eine E-Mail mit einem Link zur elektronischen Unterschrift des Vertrags, sobald er erstellt wurde."
+    },
+    "step4": {
+      "title": "Vergütung",
+      "subtitle": "Grundgehalt und Vergütungsstruktur",
+      "marketBenchmark": "Marktbenchmark für {jobTitle}",
+      "rates": "{frequency} Sätze",
+      "convertedTo": "(umgerechnet in {currency})",
+      "min": "Min",
+      "median": "Median",
+      "max": "Max",
+      "baseSalary": "Grundgehalt",
+      "currency": "Währung",
+      "standardCurrencyIn": "Standardwährung in {jurisdiction}",
+      "or": "Oder:",
+      "markAsToBeDetermined": "Als \"Zu bestimmen\" markieren",
+      "noSalaryMentioned": "Kein Gehalt erwähnt",
+      "salaryWillShow": "✓ Das Gehalt wird im Dokument als \"[ZU BESTIMMEN]\" angezeigt",
+      "salaryWillBeOmitted": "✓ Das Gehalt wird aus dem Dokument weggelassen",
+      "clearAndEnterAmount": "Löschen und Betrag eingeben",
+      "payFrequency": "Zahlungsfrequenz",
+      "hourly": "Stündlich",
+      "weekly": "Wöchentlich",
+      "biWeekly": "Zweiwöchentlich",
+      "monthly": "Monatlich",
+      "annual": "Jährlich",
+      "recommended": "Empfohlen",
+      "standardPayFrequency": "💡 {frequency} Zahlung ist in {jurisdiction} Standard"
+    },
+    "step5": {
+      "title": "Vorteile & Eigenkapital",
+      "subtitle": "Zusätzliche Vergütung und Vorteile",
+      "equityTypical": "💡 Eigenkapital ist für diese Rolle typisch",
+      "typicalRange": "Typischer Bereich: {min}% - {max}%",
+      "equityOffered": "Angebotenes Eigenkapital (optional)",
+      "equityOfferedHelp": "Beschreiben Sie die Eigenkapitalgewährung (z.B. Aktienoptionen, RSUs, Prozentsatz)",
+      "signOnBonus": "Einstiegsbonus (optional)",
+      "signOnBonusHelp": "Einmaliger Einstiegsbonus, falls zutreffend",
+      "equityLessCommon": "Eigenkapitalvergütung ist für diese Rolle weniger üblich. Sie können diesen Abschnitt überspringen oder bei Bedarf hinzufügen.",
+      "paidTimeOff": "Bezahlter Urlaub (PTO)",
+      "paidTimeOffHelp": "Anzahl der PTO-Tage pro Jahr",
+      "standardIn": "Standard in {jurisdiction}",
+      "sickLeave": "Krankheitsurlaub",
+      "sickLeaveHelp": "Krankheitstage pro Jahr",
+      "statutoryRequirement": "Gesetzliche Anforderung in {jurisdiction}",
+      "skipBenefitsDetails": "Vorteilsdetails überspringen →"
+    },
+    "step6": {
+      "title": "Rechtliche Bedingungen",
+      "subtitle": "Schutzklauseln und Gerichtsbarkeit",
+      "governingLaw": "Geltendes Recht",
+      "governingLawHelp": "Welches Recht regelt diese Vereinbarung",
+      "basedOnCompanyLocation": "Basierend auf Firmenstandort",
+      "standardProtectionClauses": "Standard-Schutzklauseln",
+      "confidentiality": "Vertraulichkeit (NDA)",
+      "confidentialityDescription": "Schützt Unternehmensinformationen",
+      "required": "Erforderlich",
+      "optional": "Optional",
+      "ipAssignment": "IP-Zuweisung",
+      "ipAssignmentDescription": "Unternehmen besitzt Arbeitsprodukt",
+      "recommended": "Empfohlen",
+      "nonCompete": "Wettbewerbsverbot",
+      "nonCompeteEnforceable": "In dieser Gerichtsbarkeit durchsetzbar",
+      "nonCompeteNotEnforceable": "In dieser Gerichtsbarkeit nicht durchsetzbar",
+      "allowed": "Erlaubt",
+      "notEnforceable": "Nicht durchsetzbar",
+      "nonSolicitation": "Werbeverbot",
+      "nonSolicitationDescription": "Verhindert Abwerbung von Mitarbeitern/Kunden",
+      "common": "Üblich",
+      "noticePeriod": "Kündigungsfrist",
+      "noticePeriodHelp": "Erforderliche Kündigungsfrist",
+      "requiredIn": "Erforderlich in {jurisdiction}"
+    },
+    "step7": {
+      "title": "Details überprüfen",
+      "subtitle": "Bestätigen Sie die von Ihnen bereitgestellten Informationen, bevor Sie zu den endgültigen Bestätigungen übergehen.",
+      "parties": "Parteien",
+      "company": "Unternehmen",
+      "employee": "Mitarbeiter",
+      "edit": "Bearbeiten",
+      "position": "Position",
+      "title": "Titel",
+      "startDate": "Startdatum",
+      "workDetails": "Arbeitsdetails",
+      "arrangement": "Vereinbarung",
+      "hoursPerWeek": "Stunden/Woche",
+      "compensation": "Vergütung",
+      "baseSalary": "Grundgehalt",
+      "criticalIssues": "{count} kritische {plural} erkannt",
+      "issue": "Problem",
+      "issues": "Probleme",
+      "warnings": "{count} {plural}",
+      "warning": "Warnung",
+      "warningsPlural": "Warnungen",
+      "suggestions": "{count} {plural}",
+      "suggestion": "Vorschlag",
+      "suggestionsPlural": "Vorschläge",
+      "customizationsDetected": "{count} Anpassung{plural} erkannt",
+      "allTermsAlign": "Alle Bedingungen entsprechen den Marktstandards für diese Rolle und Gerichtsbarkeit.",
+      "protectionClausesIncluded": "Enthaltene Schutzklauseln",
+      "noneSelected": "Keine ausgewählt",
+      "allSet": "Alles bereit? Klicken Sie auf Weiter, um die schnellen Bestätigungen abzuschließen, bevor Sie Ihren Vertrag erstellen."
+    },
+    "step8": {
+      "title": "Bevor wir erstellen",
+      "subtitle": "Bestätigen Sie diese schnellen Punkte, während Ihr Entwurf fertiggestellt wird.",
+      "draftReadyToReview": "Entwurf bereit zur Überprüfung",
+      "draftReadyDescription": "Wir haben diese Vereinbarung bereits im Hintergrund vorbereitet. Sobald Sie die unten stehenden Punkte abgeschlossen haben, öffnen wir sie sofort.",
+      "preparingYourDraft": "Ihr Entwurf wird vorbereitet",
+      "preparingDescription": "Wir aktualisieren die Vereinbarung im Hintergrund. Bestätigen Sie diese Details, während sie fertiggestellt wird.",
+      "willTryAgain": "Wir werden es erneut versuchen",
+      "willTryAgainDescription": "Der Hintergrundentwurf ist auf ein Problem gestoßen. Wir erstellen eine neue Kopie, wenn Sie fortfahren.",
+      "draftUpdating": "Entwurf wird aktualisiert",
+      "draftUpdatingDescription": "Wir haben neue Details bemerkt. Bitte warten Sie, während wir die Vereinbarung automatisch aktualisieren.",
+      "legalDisclaimer": "Diese Vorlagen werden nur zu Informationszwecken bereitgestellt und stellen keine Rechtsberatung dar.",
+      "aiAcknowledgment": "Ich verstehe, dass diese Vereinbarung von KI generiert wurde und werde den Vertrag sorgfältig überprüfen, bevor ich ihn verwende.",
+      "reviewYourAgreement": "Ihre Vereinbarung überprüfen",
+      "continueToReview": "Zur Überprüfung fortfahren",
+      "generateEmploymentAgreement": "Arbeitsvertrag erstellen",
+      "completeBeforeContinuing": "Vor dem Fortfahren abschließen: {actions}",
+      "acceptLegalDisclaimer": "Rechtlichen Haftungsausschluss akzeptieren",
+      "confirmAiReview": "KI-Überprüfung bestätigen"
+    },
+    "smartInput": {
+      "aiSuggestion": "KI-Vorschlag",
+      "confidence": "{confidence} Vertrauen",
+      "applySuggestion": "Vorschlag anwenden"
+    },
+    "reviewPage": {
+      "loadingPdf": "PDF-Viewer wird geladen...",
+      "creatingAgreement": "Ihre Vereinbarung wird erstellt",
+      "generatingDescription": "Unsere KI erstellt eine professionelle Arbeitsvereinbarung, die auf Ihre Spezifikationen zugeschnitten ist.",
+      "analyzingRequirements": "Anforderungen werden analysiert",
+      "draftingProvisions": "Bestimmungen werden erstellt",
+      "buildingStructure": "Struktur wird erstellt",
+      "preparingContract": "Ihr Vertrag wird vorbereitet",
+      "settingUpDocument": "Ihr Dokument wird für die Unterschrift eingerichtet...",
+      "generatingPdfDocument": "PDF-Dokument wird erstellt",
+      "configuringSignatureFields": "Unterschriftsfelder werden konfiguriert",
+      "preparingForDelivery": "Vorbereitung für die Zustellung",
+      "usuallyTakesMoments": "Dies dauert normalerweise nur einen Moment...",
+      "ready": "Bereit",
+      "employmentAgreement": "Arbeitsvertrag",
+      "preview": "Vorschau",
+      "page": "Seite",
+      "pages": "Seiten",
+      "zoomOut": "Verkleinern",
+      "zoomIn": "Vergrößern",
+      "fitWidth": "Breite anpassen",
+      "hideSidebar": "Seitenleiste ausblenden",
+      "showSidebar": "Seitenleiste anzeigen",
+      "loadingPreview": "Vorschau wird geladen...",
+      "failedToLoadPdf": "PDF konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+      "noPdfAvailable": "Kein PDF verfügbar",
+      "signatureFields": "Unterschriftsfelder",
+      "fieldsAutomaticallyPlaced": "Felder werden automatisch platziert. Ziehen Sie Felder, um sie neu zu positionieren, Größe ändern durch Ziehen der Ecke.",
+      "fieldsPlaced": "{count} Feld{plural} platziert",
+      "field": "Feld",
+      "fields": "Felder",
+      "documentDetails": "Dokumentendetails",
+      "editDetails": "Details bearbeiten",
+      "downloadPdf": "PDF herunterladen",
+      "sendForSignature": "Zur Unterschrift senden",
+      "noSignatureFieldsInitialized": "Keine Unterschriftsfelder initialisiert. Felder: {fieldCount}, Seiten: {pageCount}",
+      "date": "Datum",
+      "signature": "Unterschrift",
+      "fieldLabels": {
+        "salaryCurrency": "Gehaltswährung",
+        "salaryPeriod": "Gehaltsperiode",
+        "includeConfidentiality": "Vertraulichkeit",
+        "includeIpAssignment": "IP-Zuweisung",
+        "disputeResolution": "Streitbeilegung",
+        "companyName": "Firmenname",
+        "employeeName": "Mitarbeitername",
+        "jobTitle": "Stellenbezeichnung",
+        "startDate": "Startdatum",
+        "workArrangement": "Arbeitsvereinbarung",
+        "workHoursPerWeek": "Stunden pro Woche",
+        "salaryAmount": "Gehaltsbetrag",
+        "includeNonCompete": "Wettbewerbsverbot",
+        "includeNonSolicitation": "Abwerbeverbot",
+        "governingLaw": "Geltendes Recht",
+        "noticePeriod": "Kündigungsfrist"
+      }
+    },
+    "smartFlow": {
+      "welcome": {
+        "title": "Intelligenter Arbeitsvertrag",
+        "subtitle": "KI-gestütztes Formular, das sich an Ihre Gerichtsbarkeit und Rolle anpasst.",
+        "subtitle2": "Schnell, intelligent und auf Ihre Bedürfnisse zugeschnitten.",
+        "feature1": "7 intelligente Bildschirme",
+        "feature2": "Marktstandards angewendet",
+        "feature3": "~3-4 Minuten",
+        "beforeYouBegin": "Bevor Sie beginnen",
+        "notLegalAdvice": "Keine Rechtsberatung:",
+        "notLegalAdviceText": "Dieses Tool bietet keine Rechtsberatung und erstellt Dokumente nur zu Informationszwecken.",
+        "aiGenerated": "KI-generiert:",
+        "aiGeneratedText": "KI ist von Natur aus ungenau. Inhalte können Fehler oder Auslassungen enthalten.",
+        "jurisdiction": "Gerichtsbarkeit:",
+        "jurisdictionText": "Dies ist ein schweizer Produkt, das möglicherweise nicht mit den Gesetzen in Ihrer Gerichtsbarkeit übereinstimmt.",
+        "reviewRequired": "Überprüfung erforderlich:",
+        "reviewRequiredText": "Konsultieren Sie immer einen qualifizierten Rechtsberater, bevor Sie ein generiertes Dokument verwenden.",
+        "verifyHuman": "Bestätigen Sie, dass Sie ein Mensch sind",
+        "verifyHumanDescription": "Bitte vervollständigen Sie die untenstehende Verifizierung, um fortzufahren",
+        "verificationComplete": "Verifizierung abgeschlossen",
+        "verificationFailed": "Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        "verificationExpired": "Verifizierung abgelaufen. Bitte verifizieren Sie erneut.",
+        "turnstileConfigMissing": "Turnstile-Konfiguration fehlt",
+        "turnstileConfigDescription": "Bitte setzen Sie NEXT_PUBLIC_TURNSTILE_SITE_KEY in Ihren Umgebungsvariablen.",
+        "iUnderstandGetStarted": "Ich verstehe, los geht's",
+        "pressEnterToBegin": "Drücken Sie Enter, um zu beginnen"
+      },
+      "navigation": {
+        "back": "Zurück",
+        "continue": "Weiter",
+        "preparingStandards": "Standards werden vorbereitet...",
+        "useStandard": "{jurisdiction} Standard verwenden",
+        "applied": "Angewendet!",
+        "stepXOfY": "Schritt {current} von {total}: {title}"
+      },
+      "salaryWarning": {
+        "title": "Gehaltsbetrag fehlt",
+        "description": "Die endgültige Vereinbarung wird ohne Gehaltsinformationen erstellt. Wählen Sie, wie Sie fortfahren möchten:",
+        "goBackAndEnter": "← Zurückgehen und Gehalt eingeben",
+        "goBackDescription": "Empfohlen für eine vollständige Vereinbarung",
+        "addPlaceholder": "Platzhalter hinzufügen",
+        "addPlaceholderDescription": "Zeigt \"[ZU BESTIMMEN]\" im Dokument an",
+        "skipSalary": "Gehalt vollständig überspringen",
+        "skipSalaryDescription": "Keine Gehaltserwähnung im endgültigen Dokument"
+      },
+      "generation": {
+        "title": "Ihre Vereinbarung wird erstellt",
+        "subtitle": "Bitte warten Sie, während wir Ihren Arbeitsvertrag erstellen",
+        "percentComplete": "{percent}% abgeschlossen",
+        "stepXOfY": "Schritt {current} von {total}",
+        "stages": {
+          "analyzing": {
+            "title": "Ihre Anforderungen werden analysiert",
+            "description": "Überprüfung der Parteien, Rollendetails, Vergütung und Beschäftigungsbedingungen, um Vollständigkeit sicherzustellen."
+          },
+          "drafting": {
+            "title": "Kernbestimmungen werden erstellt",
+            "description": "Erstellung von Beschäftigungsbedingungen, Pflichten und Vergütungsklauseln mit präziser rechtlicher Sprache."
+          },
+          "building": {
+            "title": "Schutzklauseln werden erstellt",
+            "description": "Erstellung von Vertraulichkeits-, IP-Übertragungs- und Wettbewerbsverbotsbestimmungen, die auf Ihre Bedürfnisse zugeschnitten sind."
+          },
+          "structuring": {
+            "title": "Artikel & Präambeln werden strukturiert",
+            "description": "Organisation von Abschnitten, Hinzufügen von Präambeln und Formatieren von Unterschriftsblöcken für professionelle Präsentation."
+          },
+          "generatingPdf": {
+            "title": "PDF-Dokument wird erstellt",
+            "description": "Umwandlung der Vereinbarung in PDF-Format mit ordnungsgemäßer Formatierung, Unterschriften und rechtlicher Struktur."
+          },
+          "qualityAssurance": {
+            "title": "Qualitätssicherung",
+            "description": "Überprüfung definierter Begriffe, Querverweise, Daten und rechtlicher Konsistenz im gesamten Dokument."
+          },
+          "finalizing": {
+            "title": "Dokument wird finalisiert",
+            "description": "Anwendung finaler Formatierungsarbeiten und Vorbereitung Ihres Arbeitsvertrags zur Überprüfung."
+          }
+        },
+        "typicallyTakes": "Dies dauert normalerweise 25-30 Sekunden",
+        "generationFailed": "Erstellung fehlgeschlagen",
+        "goBack": "Zurückgehen",
+        "tryAgain": "Erneut versuchen"
+      },
+      "hint": {
+        "pressEnterToContinue": "Drücken Sie Enter ↵, um fortzufahren"
+      },
+      "steps": {
+        "company": "Unternehmen & Rolle",
+        "employee": "Mitarbeiter",
+        "signing": "Unterschrift",
+        "work": "Arbeit",
+        "compensation": "Vergütung",
+        "legal": "Rechtlich",
+        "review": "Überprüfung",
+        "confirm": "Bestätigen"
+      }
+    }
+  },
+  "footer": {
+    "copyright": "© {year} SELISE Group AG. Alle Rechte vorbehalten.",
+    "tagline": "Bereitstellung kostenloser, zugänglicher Rechtsdokumentvorlagen für alle.",
+    "poweredBy": "Unterstützt von",
+    "privacyPolicy": "Datenschutzerklärung",
+    "softwareDevelopmentTerms": "Softwareentwicklungsbedingungen",
+    "contactUs": "Kontaktieren Sie uns",
+    "requestTemplate": "Vorlage anfordern"
+  },
+  "legalDisclaimer": {
+    "notLegalAdvice": "Keine Rechtsberatung:",
+    "notLegalAdviceText": "Diese Vorlagen werden nur zu Informationszwecken bereitgestellt und stellen keine Rechtsberatung dar.",
+    "switzerlandBased": "Schweizer Produkt:",
+    "switzerlandBasedText": "Dies ist ein schweizer Produkt, das möglicherweise nicht mit den Gesetzen in Ihrer Gerichtsbarkeit oder Ihrem Bundesstaat übereinstimmt.",
+    "aiGenerated": "KI-generierter Inhalt:",
+    "aiGeneratedText": "KI ist von Natur aus ungenau. Konsultieren Sie immer einen qualifizierten Rechtsberater, um dieses Dokument zu überprüfen, bevor Sie es unterschreiben.",
+    "importantLegalDisclaimer": "Wichtiger rechtlicher Haftungsausschluss",
+    "jurisdictionDisclaimer": "Gerichtsbarkeits-Haftungsausschluss:",
+    "jurisdictionDisclaimerText": "Dies ist ein schweizer Produkt. Die bereitgestellten Vorlagen entsprechen möglicherweise nicht den spezifischen Gesetzen, Vorschriften oder Anforderungen Ihrer Gerichtsbarkeit, Ihres Bundesstaates oder Ihres Landes. Gesetze variieren erheblich je nach Standort und ändern sich im Laufe der Zeit.",
+    "professionalReviewRequired": "Professionelle Überprüfung erforderlich:",
+    "professionalReviewRequiredText": "Sie müssen einen qualifizierten Rechtsberater konsultieren, der in Ihrer relevanten Gerichtsbarkeit zugelassen ist, um jedes Dokument zu überprüfen, zu ändern und zu genehmigen, bevor Sie es unterschreiben oder verwenden. Verlassen Sie sich nicht auf diese Vorlagen ohne ordnungsgemäße Rechtsberatung.",
+    "acknowledgment": "Durch die Nutzung dieses Dienstes bestätigen Sie, dass Sie diese Einschränkungen verstehen und sich einverstanden erklären, vor der Verwendung generierter Dokumente angemessene Rechtsberatung einzuholen."
+  }
+}
+

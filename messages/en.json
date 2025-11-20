@@ -1,0 +1,746 @@
+{
+  "common": {
+    "templates": "Templates",
+    "about": "About",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "generateDocument": "Generate Document",
+    "legalTemplates": "Legal Templates",
+    "openMainMenu": "Open main menu",
+    "closeMainMenu": "Close main menu",
+    "above": "above",
+    "below": "below",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "home": {
+    "title": "Professional Legal Documents, Generated Instantly",
+    "subtitle": "Stop paying expensive lawyers for standard documents. Generate customized, plain-English legal templates in minutes— completely free, forever.",
+    "startGeneratingFree": "Start Generating Free",
+    "seeHowItWorks": "See How It Works",
+    "noCreditCardNeeded": "No credit card needed",
+    "noSignUpRequired": "No sign-up required",
+    "instantDownload": "Instant download",
+    "trustedByThousands": "Trusted by thousands",
+    "freeForever": "100% Free",
+    "announcement": "New: Employment Agreement template now available!",
+    "tryItNow": "Try it now →",
+    "features": {
+      "generateInMinutes": {
+        "title": "Generate in Minutes",
+        "description": "Answer a few questions and get your customized legal document instantly—no waiting, no hassle.",
+        "highlight": "2 min avg"
+      },
+      "legallySound": {
+        "title": "Legally Sound",
+        "description": "All templates are drafted following industry best practices and common legal standards.",
+        "highlight": "Professional"
+      },
+      "plainEnglish": {
+        "title": "Plain English",
+        "description": "No confusing legalese. Our templates are written in clear, understandable language.",
+        "highlight": "Easy to read"
+      },
+      "free": {
+        "title": "100% Free",
+        "description": "All templates are completely free to generate, customize, and download. No hidden costs.",
+        "highlight": "Forever free"
+      }
+    },
+    "stats": {
+      "legalTemplates": "5+",
+      "legalTemplatesLabel": "Legal Templates",
+      "freeForever": "100%",
+      "freeForeverLabel": "Free Forever",
+      "avgGeneration": "2 min",
+      "avgGenerationLabel": "Avg. Generation",
+      "available": "24/7",
+      "availableLabel": "Available"
+    },
+    "benefits": {
+      "noSignup": "No sign-up or registration required",
+      "instantPdf": "Instant PDF download",
+      "customizable": "Customizable for your needs",
+      "plainEnglish": "Plain-English, easy to understand",
+      "noHiddenFees": "No hidden fees or subscriptions",
+      "professionalQuality": "Professional quality templates"
+    },
+    "templatesSection": {
+      "badge": "Popular Templates",
+      "title": "Choose Your Template",
+      "description": "Select from our growing library of professional legal templates. More templates added every month.",
+      "generateNow": "Generate Now",
+      "comingSoon": "Coming Soon",
+      "mostPopular": "Most Popular",
+      "needDifferentTemplate": "Need a different template?",
+      "requestTemplate": "Request a template"
+    },
+    "featuresSection": {
+      "badge": "Why Choose Us",
+      "title": "Legal Documents Made Simple",
+      "description": "We believe legal documents should be accessible, understandable, and free for everyone.",
+      "everythingYouNeed": "Everything You Need, Nothing You Don't"
+    },
+    "howItWorks": {
+      "badge": "Quick & Easy",
+      "title": "Generate in 3 Simple Steps",
+      "description": "From zero to legally-sound document in under 2 minutes.",
+      "step1": {
+        "title": "Choose Your Template",
+        "description": "Select the legal document you need from our curated library of professional templates."
+      },
+      "step2": {
+        "title": "Fill in the Details",
+        "description": "Answer simple questions in plain English. No legal knowledge required—we guide you through every field."
+      },
+      "step3": {
+        "title": "Download & Use",
+        "description": "Get your customized, professionally-formatted document as a PDF. Ready to use immediately."
+      }
+    },
+    "finalCta": {
+      "title": "Ready to Create Your Legal Document?",
+      "description": "Join thousands of users generating professional legal documents for free. No credit card. No sign-up. Just instant access.",
+      "getStartedFree": "Get Started Free",
+      "viewAllTemplates": "View All Templates",
+      "generateFirstDocument": "⚡ Generate your first document in under 2 minutes"
+    },
+    "seliseDio": {
+      "badge": "Our DIO Model",
+      "title": "Structured for End-to-End Delivery",
+      "description": "SELISE follows a Design, Implement, Operate rhythm that keeps every template human-centered, technically sound, and continuously optimized.",
+      "design": {
+        "title": "Design",
+        "description": "Collaborative discovery turns requirements into human-centered journeys that respect regional regulations from day one.",
+        "badge": "Insight to Blueprint"
+      },
+      "implement": {
+        "title": "Implement",
+        "description": "Agile sprints with automated QA deliver reliable, scalable document experiences that stay aligned with legal standards.",
+        "badge": "Build with Precision"
+      },
+      "operate": {
+        "title": "Operate",
+        "description": "Continuous monitoring, analytics, and feedback loops keep every template accurate, secure, and always ready to ship.",
+        "badge": "Always On"
+      }
+    },
+    "brandValues": {
+      "badge": "Our Values",
+      "title": "Guided by What Matters",
+      "description": "Every interaction reflects SELISE values—respect, integrity, humility, pragmatism, perseverance, and empowerment.",
+      "respectful": {
+        "title": "Respectful",
+        "description": "We listen first and co-create solutions that empower distributed teams and their clients."
+      },
+      "integrous": {
+        "title": "Integrous",
+        "description": "Transparent processes, audit trails, and responsible data handling build long-lasting trust."
+      },
+      "humble": {
+        "title": "Humble",
+        "description": "We stay curious, iterate fast, and learn with every release to keep improving our craft."
+      },
+      "pragmatic": {
+        "title": "Pragmatic",
+        "description": "Every feature is anchored in measurable impact, making legal delivery simpler and faster."
+      },
+      "persevering": {
+        "title": "Persevering",
+        "description": "We engineer resilient systems that adapt, scale, and keep critical workflows running."
+      },
+      "empowering": {
+        "title": "Empowering",
+        "description": "We transfer knowledge and tools that let teams operate independently with confidence."
+      }
+    }
+  },
+  "templates": {
+    "title": "Explore Our Legal Templates",
+    "description": "SELISE legal templates follow industry best practices, are written in plain English, and take minutes to generate. Start with a live template today or see what's shipping next.",
+    "templateLibrary": "Template Library",
+    "availableNow": "Available Now",
+    "readyToGenerate": "Ready to Generate",
+    "availableDescription": "Launch a tailored document in minutes. We collect the details, apply SELISE best practice content, and deliver a downloadable PDF you can share immediately.",
+    "currentlyLive": "Currently {count} template{plural} live. More arrive every month.",
+    "mostPopular": "Most Popular",
+    "live": "Live",
+    "inProgress": "In Progress",
+    "upcomingTemplates": "Upcoming Templates",
+    "upcomingDescription": "Vote on what we launch next. Tell us what you need, and we'll prioritise new templates accordingly.",
+    "requestEarlyAccess": "Request Early Access",
+    "needDifferentDocument": "Need a different document?",
+    "needDifferentDescription": "We're expanding the library with the requests we receive most. Let us know what would help your team, and our legal specialists will add it to the roadmap.",
+    "sendRequest": "Send a Request",
+    "exploreGenerator": "Explore Generator",
+    "templatesList": {
+      "employment-agreement": {
+        "title": "Employment Agreement",
+        "description": "Comprehensive employment contracts with customizable terms, salary, benefits, and termination clauses."
+      },
+      "founders-agreement": {
+        "title": "Founders' Agreement",
+        "description": "Define equity splits, roles, responsibilities, and decision-making processes for your startup."
+      },
+      "nda": {
+        "title": "Non-Disclosure Agreement",
+        "description": "Protect confidential information with bilateral or unilateral NDA templates."
+      },
+      "dpa": {
+        "title": "Data Processing Agreement",
+        "description": "GDPR-compliant DPA templates for processor-controller relationships."
+      },
+      "ip-assignment": {
+        "title": "IP Assignment Agreement",
+        "description": "Transfer intellectual property rights with clear terms and comprehensive coverage."
+      }
+    }
+  },
+  "about": {
+    "title": "About Legal Template Generator | A SELISE Group AG Initiative",
+    "description": "Discover the mission behind Legal Template Generator, a free subsidiary initiative of SELISE Group AG focused on delivering plain-English legal documents to everyone.",
+    "subsidiaryBadge": "Subsidiary of SELISE Group AG",
+    "freeForeverBadge": "Free Forever",
+    "heading": "Legal clarity for every growing team.",
+    "subheading": "Legal Template Generator is a SELISE initiative dedicated to making professional contracts available to anyone, anywhere, at zero cost. We convert complex legal structures into plain-English documents you can trust from your first hire through global expansion.",
+    "exploreTemplates": "Explore Templates",
+    "talkToSelise": "Talk to SELISE",
+    "whatGuidesOurWork": "What guides our work",
+    "whatGuidesDescription": "Every release centers on accessibility, clarity, and confidence. These pillars keep the experience pragmatic and ready for real-world legal workflows.",
+    "pillars": {
+      "accessibleByDesign": {
+        "title": "Accessible by Design",
+        "description": "We remove friction from standard agreements so founders, operators, and HR leaders get compliant paperwork without legal gatekeeping."
+      },
+      "groundedInLegalCraft": {
+        "title": "Grounded in Legal Craft",
+        "description": "Each template follows industry-aligned structures with clear guidance, so you understand every clause you sign or share."
+      },
+      "humanSupportNetwork": {
+        "title": "Human Support Network",
+        "description": "Need more than a template? Our SELISE network connects you to specialists who can extend, localize, or operationalize what you generate."
+      }
+    },
+    "poweredBySelise": "Powered by SELISE Group AG",
+    "poweredByDescription": "SELISE Group AG is a global digital engineering partner headquartered in Switzerland, known for delivering outcomes through the Design-Implement-Operate (DIO) model. Legal Template Generator extends that mission by translating years of regulatory experience into instant, self-serve solutions for teams that need to move quickly without sacrificing compliance.",
+    "commitments": {
+      "alwaysFree": {
+        "title": "Always Free",
+        "description": "No paywalls, upcharges, or aggressive upsells. Your organization keeps control from draft to signature."
+      },
+      "plainLanguageFirst": {
+        "title": "Plain-Language First",
+        "description": "We translate legal formality into plain English while preserving the obligations you need to stay protected."
+      },
+      "privacyRespectful": {
+        "title": "Privacy-Respectful",
+        "description": "Documents render client-side. We never retain your answers or generated files unless you explicitly opt in."
+      }
+    },
+    "globalFootprint": "Our global footprint",
+    "globalFootprintDescription": "With teams spanning Europe, the Middle East, and Asia, SELISE blends regulatory expertise with engineering depth. This reach lets us keep templates relevant across jurisdictions while sharing best practices gathered from enterprise programs.",
+    "multidisciplinaryTeams": "Multidisciplinary teams aligned to your region and time zone",
+    "experienceSpanning": "Experience spanning regulated industries, scale-ups, and public sector",
+    "governancePractices": "Governance practices rooted in privacy, resilience, and clarity",
+    "dioApproach": "The DIO Approach",
+    "howWeKeepTemplatesReliable": "How we keep templates reliable",
+    "dioDescription": "SELISE's Design-Implement-Operate methodology ensures the generator evolves alongside regulations, technology, and the realities of running a business. Pace without breaking things.",
+    "dioSteps": {
+      "design": {
+        "title": "Design",
+        "accent": "Insight to Blueprint",
+        "description": "We co-create journeys with legal advisors and operational teams to map real approval paths, regional nuances, and stakeholder needs."
+      },
+      "implement": {
+        "title": "Implement",
+        "accent": "Build with Precision",
+        "description": "Engineering sprints stack automation, validation, and performance monitoring so legal content remains dependable at scale."
+      },
+      "operate": {
+        "title": "Operate",
+        "accent": "Always On",
+        "description": "Continuous updates, feedback loops, and analytics keep templates aligned with regulatory shifts and business growth."
+      }
+    },
+    "believeHeading": "We believe legal confidence should be default",
+    "believeDescription": "Whether you are hiring your first employee, protecting IP, or formalizing strategic partnerships, Legal Template Generator keeps the barriers low and the standards high. Consider it your starting point—free today, free tomorrow.",
+    "generateDocument": "Generate a Document",
+    "readFaq": "Read the FAQ"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions | Legal Template Generator",
+    "description": "Find answers about how the Legal Template Generator works, what makes it free, and how SELISE Group AG keeps your documents private and dependable.",
+    "faqHub": "FAQ Hub",
+    "updatedMonthly": "Updated Monthly",
+    "heading": "Answers to keep you moving with confidence.",
+    "subheading": "Legal Template Generator removes the friction from standard agreements. Explore the most common questions about how we stay free, how SELISE safeguards your information, and how to get help from a human if you need it.",
+    "browseTemplates": "Browse Templates",
+    "reachSupport": "Reach Support",
+    "stillNeedHelp": "Still need help?",
+    "oneMessageAway": "We're one message away.",
+    "stillNeedHelpDescription": "Chat with our support team for walkthroughs, enterprise rollouts, or specialized clauses. SELISE advisors can jump in when you need regional nuance or deeper automation.",
+    "contactSelise": "Contact SELISE",
+    "startWithEmploymentAgreement": "Start with Employment Agreement",
+    "sections": {
+      "gettingStarted": {
+        "badge": "Getting Started",
+        "title": "Using the generator",
+        "description": "Everything you need to know to go from idea to ready-to-download template in minutes.",
+        "questions": {
+          "howFast": {
+            "question": "How fast can I generate a document?",
+            "answer": "Most templates are ready in under three minutes. The guided questions collect core facts, render the clauses client-side, and produce both a preview and downloadable PDF immediately."
+          },
+          "needAccount": {
+            "question": "Do I need to create an account?",
+            "answer": "No. Legal Template Generator is intentionally frictionless. Open the template you need, answer the prompts, and export your document—no registration, credit card, or emails required."
+          },
+          "fileFormats": {
+            "question": "What file formats are supported?",
+            "answer": "We currently provide high-resolution PDF downloads optimized for sharing and e-signature. Structured DOCX exports are on the roadmap and will follow once formatting parity is guaranteed."
+          }
+        }
+      },
+      "trustAccuracy": {
+        "badge": "Trust & Accuracy",
+        "title": "Legal quality and privacy",
+        "description": "Why you can rely on our templates and how we safeguard every answer you provide.",
+        "questions": {
+          "legallyBinding": {
+            "question": "Are the templates legally binding?",
+            "answer": "Our templates mirror industry-standard structures crafted with SELISE legal specialists. However, enforceability always depends on local law and proper execution. When in doubt, have counsel review for jurisdiction-specific needs."
+          },
+          "dataHandled": {
+            "question": "How is my data handled?",
+            "answer": "Your inputs stay in your browser session. We never store template responses or generated documents unless you explicitly choose to share them with us. Analytics are anonymized to understand feature usage, not document content."
+          },
+          "regionSpecific": {
+            "question": "Do templates include region-specific clauses?",
+            "answer": "Yes. We bake in conditional language for common jurisdictions and highlight where localized counsel should validate. As regulations shift, SELISE's global compliance team updates those clauses and publishes release notes."
+          }
+        }
+      },
+      "beyondTemplate": {
+        "badge": "Beyond the Template",
+        "title": "Working with SELISE",
+        "description": "How the broader SELISE ecosystem helps when you need more than a self-serve document.",
+        "questions": {
+          "seliseReview": {
+            "question": "Can SELISE review my completed document?",
+            "answer": "Absolutely. Our advisory partners can audit, localize, or customize any generated agreement. Reach out via the contact form and we'll connect you with the right expert squad."
+          },
+          "esignature": {
+            "question": "Do you offer e-signature or workflow tools?",
+            "answer": "Yes. SELISE Signature integrates directly with our templates for drag-and-drop signature placement, automated reminders, and audit trails. The integration roadmap is published in our updates section."
+          },
+          "templateNotListed": {
+            "question": "What if I need a template that's not listed?",
+            "answer": "Use the request form and tell us what you need. We prioritize based on demand and regulatory urgency, then ship new templates with clear changelogs so you always know what's new."
+          }
+        }
+      }
+    }
+  },
+  "employmentAgreement": {
+    "step1": {
+      "title": "Company & role details",
+      "subtitle": "Tell us about the employer and the position",
+      "companyLegalName": "Company legal name",
+      "companyLegalNameHelp": "The full legal name of the employing entity",
+      "companyAddress": "Company address",
+      "companyAddressHelp": "Full address including city, state/province, and country",
+      "jobTitle": "Job title",
+      "jobTitleHelp": "Official job title for this position",
+      "jobResponsibilities": "Job responsibilities (optional)",
+      "jobResponsibilitiesHelp": "Key duties and responsibilities - helps us provide better salary benchmarks",
+      "smartSuggestions": "Smart suggestions",
+      "generatingSuggestions": "Generating suggestions...",
+      "analyzingInBackground": "Analyzing in background...",
+      "analyzingDescription": "Detecting jurisdiction, company details, and role requirements",
+      "jurisdictionDetected": "Jurisdiction detected: {country}{state}",
+      "jurisdictionDetectedDescription": "We'll apply local labor standards and legal requirements automatically.",
+      "industry": "Industry:",
+      "roleAnalysis": "Role Analysis",
+      "level": "level",
+      "typicalSalaryRange": "Typical salary range:",
+      "equityCompensationTypical": "💡 Equity compensation is typical for this role",
+      "stillAnalyzing": "Still analyzing jurisdiction and role in the background...",
+      "analysisComplete": "Analysis complete: {country}{industry}{department}",
+      "helpText": "Once you provide these details, we'll automatically analyze the jurisdiction, role, and compensation benchmarks to prepare smart defaults for the rest of the form.",
+      "errorContinue": "You can continue with manual entry."
+    },
+    "step2": {
+      "title": "Now for the employee",
+      "subtitle": "Personal information about the new hire",
+      "employeeFullName": "Employee full name",
+      "employeeFullNameHelp": "Full legal name as it should appear on the agreement",
+      "employeeAddress": "Employee address",
+      "employeeAddressHelp": "Full residential address of the employee",
+      "reportsTo": "Reports to (optional)",
+      "reportsToHelp": "The name and title of the employee's direct supervisor",
+      "startDate": "Start date",
+      "startDateHelp": "First day of employment",
+      "stillAnalyzing": "Still analyzing jurisdiction and role in the background...",
+      "analysisComplete": "Analysis complete: {country}{industry}{department}"
+    },
+    "step3Work": {
+      "title": "Work arrangement",
+      "subtitle": "Where and when will they work?",
+      "workArrangement": "Work arrangement",
+      "onSite": "On-Site",
+      "onSiteDescription": "Full-time in the office",
+      "remote": "Remote",
+      "remoteDescription": "Work from anywhere",
+      "hybrid": "Hybrid",
+      "hybridDescription": "Mix of office and remote",
+      "standard": "standard",
+      "homeBase": "Home base / Tax residence (optional)",
+      "homeBasePlaceholder": "e.g., Manchester, UK (for tax/legal purposes)",
+      "homeBaseHelp": "Location for tax and legal purposes (not required to work from here)",
+      "officeLocation": "Office location",
+      "officeLocationPlaceholder": "San Francisco, CA",
+      "officeLocationHelp": "Office location where employee will work on-site days",
+      "primaryWorkLocation": "Primary work location",
+      "primaryWorkLocationHelp": "City and state/country where employee will primarily work",
+      "basedOnCompanyAddress": "Based on company address",
+      "hoursPerWeek": "Hours per week",
+      "hoursPerWeekHelp": "Standard work hours per week",
+      "standardWorkWeek": "Standard work week in {jurisdiction}",
+      "typicalWorkWeek": "💡 Typical work week: {workDays}",
+      "clickToCustomize": "click here to customize",
+      "customizeWorkSchedule": "Customize work schedule",
+      "customWorkSchedule": "Custom work schedule",
+      "customWorkScheduleHelp": "Specify custom work days and hours if different from standard",
+      "overtimeEligible": "Employee is eligible for overtime pay"
+    },
+    "step3Signing": {
+      "title": "Signing information",
+      "subtitle": "Who will sign this agreement?",
+      "companyRepresentative": "Company Representative",
+      "companyRepresentativeDescription": "The authorized person who will sign on behalf of {companyName}",
+      "representativeName": "Representative name",
+      "representativeNameHelp": "Full name of the company representative",
+      "representativeTitle": "Representative title/role",
+      "representativeTitleHelp": "Their official title or role in the company",
+      "representativeEmail": "Representative email",
+      "representativeEmailHelp": "Email address to receive the signature request",
+      "representativePhone": "Representative phone (optional)",
+      "representativePhoneHelp": "Phone number for notifications",
+      "employeeInformation": "Employee Information",
+      "employeeInformationDescription": "Contact details for {employeeName}",
+      "employeeEmail": "Employee email",
+      "employeeEmailHelp": "Email address to receive the signature request",
+      "employeePhone": "Employee phone (optional)",
+      "employeePhoneHelp": "Phone number for notifications",
+      "emailsCannotMatch": "Employee and employer emails cannot be the same",
+      "emailsCannotMatchSuggestion": "Please use different email addresses for the employee and company representative",
+      "signatureProcess": "📧 Signature Process: Both parties will receive an email with a link to electronically sign the agreement once it's generated."
+    },
+    "step4": {
+      "title": "Compensation",
+      "subtitle": "Base salary and pay structure",
+      "marketBenchmark": "Market Benchmark for {jobTitle}",
+      "rates": "{frequency} rates",
+      "convertedTo": "(converted to {currency})",
+      "min": "Min",
+      "median": "Median",
+      "max": "Max",
+      "baseSalary": "Base salary",
+      "currency": "Currency",
+      "standardCurrencyIn": "Standard currency in {jurisdiction}",
+      "or": "Or:",
+      "markAsToBeDetermined": "Mark as \"To be determined\"",
+      "noSalaryMentioned": "No salary mentioned",
+      "salaryWillShow": "✓ Salary will show as \"[TO BE DETERMINED]\" in the document",
+      "salaryWillBeOmitted": "✓ Salary will be omitted from the document",
+      "clearAndEnterAmount": "Clear and enter amount",
+      "payFrequency": "Pay frequency",
+      "hourly": "Hourly",
+      "weekly": "Weekly",
+      "biWeekly": "Bi-weekly",
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "recommended": "Recommended",
+      "standardPayFrequency": "💡 {frequency} pay is standard in {jurisdiction}"
+    },
+    "step5": {
+      "title": "Benefits & equity",
+      "subtitle": "Additional compensation and perks",
+      "equityTypical": "💡 Equity is typical for this role",
+      "typicalRange": "Typical range: {min}% - {max}%",
+      "equityOffered": "Equity offered (optional)",
+      "equityOfferedHelp": "Describe equity grant (e.g., stock options, RSUs, percentage)",
+      "signOnBonus": "Sign-on bonus (optional)",
+      "signOnBonusHelp": "One-time signing bonus, if applicable",
+      "equityLessCommon": "Equity compensation is less common for this role. You can skip this section or add if needed.",
+      "paidTimeOff": "Paid time off (PTO)",
+      "paidTimeOffHelp": "Number of PTO days per year",
+      "standardIn": "Standard in {jurisdiction}",
+      "sickLeave": "Sick leave",
+      "sickLeaveHelp": "Sick leave days per year",
+      "statutoryRequirement": "Statutory requirement in {jurisdiction}",
+      "skipBenefitsDetails": "Skip benefits details →"
+    },
+    "step6": {
+      "title": "Legal terms",
+      "subtitle": "Protective clauses and jurisdiction",
+      "governingLaw": "Governing law",
+      "governingLawHelp": "Which jurisdiction's law governs this agreement",
+      "basedOnCompanyLocation": "Based on company location",
+      "standardProtectionClauses": "Standard protection clauses",
+      "confidentiality": "Confidentiality (NDA)",
+      "confidentialityDescription": "Protects company information",
+      "required": "Required",
+      "optional": "Optional",
+      "ipAssignment": "IP Assignment",
+      "ipAssignmentDescription": "Company owns work product",
+      "recommended": "Recommended",
+      "nonCompete": "Non-compete",
+      "nonCompeteEnforceable": "Enforceable in this jurisdiction",
+      "nonCompeteNotEnforceable": "Not enforceable in this jurisdiction",
+      "allowed": "Allowed",
+      "notEnforceable": "Not enforceable",
+      "nonSolicitation": "Non-solicitation",
+      "nonSolicitationDescription": "Prevents poaching employees/clients",
+      "common": "Common",
+      "noticePeriod": "Notice period",
+      "noticePeriodHelp": "Required notice period for termination",
+      "requiredIn": "Required in {jurisdiction}"
+    },
+    "step7": {
+      "title": "Review details",
+      "subtitle": "Confirm the information you've supplied before moving to final confirmations.",
+      "parties": "Parties",
+      "company": "Company",
+      "employee": "Employee",
+      "edit": "Edit",
+      "position": "Position",
+      "title": "Title",
+      "startDate": "Start Date",
+      "workDetails": "Work details",
+      "arrangement": "Arrangement",
+      "hoursPerWeek": "Hours/week",
+      "compensation": "Compensation",
+      "baseSalary": "Base Salary",
+      "criticalIssues": "{count} critical {plural} detected",
+      "issue": "issue",
+      "issues": "issues",
+      "warnings": "{count} {plural}",
+      "warning": "warning",
+      "warningsPlural": "warnings",
+      "suggestions": "{count} {plural}",
+      "suggestion": "suggestion",
+      "suggestionsPlural": "suggestions",
+      "customizationsDetected": "{count} customization{plural} detected",
+      "allTermsAlign": "All terms align with market standards for this role and jurisdiction.",
+      "protectionClausesIncluded": "Protection Clauses Included",
+      "noneSelected": "None selected",
+      "allSet": "All set? Click Continue to complete the quick confirmations before generating your agreement."
+    },
+    "step8": {
+      "title": "Before we generate",
+      "subtitle": "Confirm these quick items while your draft finishes preparing.",
+      "draftReadyToReview": "Draft ready to review",
+      "draftReadyDescription": "We already prepared this agreement in the background. Once you complete the items below, we will open it instantly.",
+      "preparingYourDraft": "Preparing your draft",
+      "preparingDescription": "We are refreshing the agreement behind the scenes. Confirm these details while it finishes.",
+      "willTryAgain": "We will try again",
+      "willTryAgainDescription": "The background draft ran into an issue. We will generate a fresh copy when you continue.",
+      "draftUpdating": "Draft updating",
+      "draftUpdatingDescription": "We noticed new details. Hang tight while we refresh the agreement automatically.",
+      "legalDisclaimer": "These templates are provided for informational purposes only and do not constitute legal advice.",
+      "aiAcknowledgment": "I understand this agreement was generated by AI and I will review the contract carefully before use.",
+      "reviewYourAgreement": "Review Your Agreement",
+      "continueToReview": "Continue to Review",
+      "generateEmploymentAgreement": "Generate Employment Agreement",
+      "completeBeforeContinuing": "Complete before continuing: {actions}",
+      "acceptLegalDisclaimer": "Accept legal disclaimer",
+      "confirmAiReview": "Confirm AI review"
+    },
+    "smartInput": {
+      "aiSuggestion": "AI Suggestion",
+      "confidence": "{confidence} confidence",
+      "applySuggestion": "Apply suggestion"
+    },
+    "reviewPage": {
+      "loadingPdf": "Loading PDF viewer...",
+      "creatingAgreement": "Creating Your Agreement",
+      "generatingDescription": "Our AI is generating a professional employment agreement tailored to your specifications.",
+      "analyzingRequirements": "Analyzing requirements",
+      "draftingProvisions": "Drafting provisions",
+      "buildingStructure": "Building structure",
+      "preparingContract": "Preparing Your Contract",
+      "settingUpDocument": "Setting up your document for signature...",
+      "generatingPdfDocument": "Generating PDF document",
+      "configuringSignatureFields": "Configuring signature fields",
+      "preparingForDelivery": "Preparing for delivery",
+      "usuallyTakesMoments": "This usually takes just a few moments...",
+      "ready": "Ready",
+      "employmentAgreement": "Employment Agreement",
+      "preview": "Preview",
+      "page": "page",
+      "pages": "pages",
+      "zoomOut": "Zoom Out",
+      "zoomIn": "Zoom In",
+      "fitWidth": "Fit Width",
+      "hideSidebar": "Hide sidebar",
+      "showSidebar": "Show sidebar",
+      "loadingPreview": "Loading preview...",
+      "failedToLoadPdf": "Failed to load PDF. Please try again.",
+      "noPdfAvailable": "No PDF available",
+      "signatureFields": "Signature Fields",
+      "fieldsAutomaticallyPlaced": "Fields are automatically placed. Drag fields to reposition, resize by dragging the corner.",
+      "fieldsPlaced": "{count} {plural} placed",
+      "field": "field",
+      "fields": "fields",
+      "documentDetails": "Document Details",
+      "editDetails": "Edit Details",
+      "downloadPdf": "Download PDF",
+      "sendForSignature": "Send for Signature",
+      "noSignatureFieldsInitialized": "No signature fields initialized. Fields: {fieldCount}, Pages: {pageCount}",
+      "date": "Date",
+      "signature": "Signature",
+      "fieldLabels": {
+        "salaryCurrency": "Salary Currency",
+        "salaryPeriod": "Salary Period",
+        "includeConfidentiality": "Confidentiality",
+        "includeIpAssignment": "IP Assignment",
+        "disputeResolution": "Dispute Resolution",
+        "companyName": "Company Name",
+        "employeeName": "Employee Name",
+        "jobTitle": "Job Title",
+        "startDate": "Start Date",
+        "workArrangement": "Work Arrangement",
+        "workHoursPerWeek": "Hours per Week",
+        "salaryAmount": "Salary Amount",
+        "includeNonCompete": "Non-Compete",
+        "includeNonSolicitation": "Non-Solicitation",
+        "governingLaw": "Governing Law",
+        "noticePeriod": "Notice Period"
+      }
+    },
+    "smartFlow": {
+      "welcome": {
+        "title": "Smart Employment Agreement",
+        "subtitle": "AI-powered form that adapts to your jurisdiction and role.",
+        "subtitle2": "Fast, smart, and tailored to your needs.",
+        "feature1": "7 smart screens",
+        "feature2": "Market standards applied",
+        "feature3": "~3-4 minutes",
+        "beforeYouBegin": "Before You Begin",
+        "notLegalAdvice": "Not Legal Advice:",
+        "notLegalAdviceText": "This tool does not provide legal advice and generates documents for informational purposes only.",
+        "aiGenerated": "AI-Generated:",
+        "aiGeneratedText": "AI is inaccurate by nature. Content may contain errors or omissions.",
+        "jurisdiction": "Jurisdiction:",
+        "jurisdictionText": "This is a Switzerland-based product that may not comply with laws in your jurisdiction.",
+        "reviewRequired": "Review Required:",
+        "reviewRequiredText": "Always consult a qualified legal advisor before using any generated document.",
+        "verifyHuman": "Verify you are human",
+        "verifyHumanDescription": "Please complete the verification below to continue",
+        "verificationComplete": "Verification complete",
+        "verificationFailed": "Verification failed. Please try again.",
+        "verificationExpired": "Verification expired. Please verify again.",
+        "turnstileConfigMissing": "Turnstile configuration missing",
+        "turnstileConfigDescription": "Please set NEXT_PUBLIC_TURNSTILE_SITE_KEY in your environment variables.",
+        "iUnderstandGetStarted": "I Understand, Get Started",
+        "pressEnterToBegin": "Press Enter to begin"
+      },
+      "navigation": {
+        "back": "Back",
+        "continue": "Continue",
+        "preparingStandards": "Preparing standards...",
+        "useStandard": "Use {jurisdiction} standard",
+        "applied": "Applied!",
+        "stepXOfY": "Step {current} of {total}: {title}"
+      },
+      "salaryWarning": {
+        "title": "Salary amount missing",
+        "description": "The final agreement will be generated without salary information. Choose how you'd like to proceed:",
+        "goBackAndEnter": "← Go back and enter salary",
+        "goBackDescription": "Recommended for a complete agreement",
+        "addPlaceholder": "Add placeholder",
+        "addPlaceholderDescription": "Shows \"[TO BE DETERMINED]\" in document",
+        "skipSalary": "Skip salary entirely",
+        "skipSalaryDescription": "No salary mention in final document"
+      },
+      "generation": {
+        "title": "Generating your agreement",
+        "subtitle": "Please wait while we craft your employment agreement",
+        "percentComplete": "{percent}% complete",
+        "stepXOfY": "Step {current} of {total}",
+        "stages": {
+          "analyzing": {
+            "title": "Analyzing your requirements",
+            "description": "Reviewing parties, role details, compensation, and employment terms to ensure completeness."
+          },
+          "drafting": {
+            "title": "Drafting core provisions",
+            "description": "Crafting employment terms, duties, and compensation clauses with precise legal language."
+          },
+          "building": {
+            "title": "Building protective clauses",
+            "description": "Generating confidentiality, IP assignment, and restrictive covenant provisions tailored to your needs."
+          },
+          "structuring": {
+            "title": "Structuring articles & recitals",
+            "description": "Organizing sections, adding recitals, and formatting signature blocks for professional presentation."
+          },
+          "generatingPdf": {
+            "title": "Generating PDF document",
+            "description": "Converting the agreement to PDF format with proper formatting, signatures, and legal structure."
+          },
+          "qualityAssurance": {
+            "title": "Quality assurance",
+            "description": "Verifying defined terms, cross-references, dates, and legal consistency throughout the document."
+          },
+          "finalizing": {
+            "title": "Finalizing document",
+            "description": "Applying final formatting touches and preparing your employment agreement for review."
+          }
+        },
+        "typicallyTakes": "This typically takes 25-30 seconds",
+        "generationFailed": "Generation failed",
+        "goBack": "Go back",
+        "tryAgain": "Try again"
+      },
+      "hint": {
+        "pressEnterToContinue": "Press Enter ↵ to continue"
+      },
+      "steps": {
+        "company": "Company & Role",
+        "employee": "Employee",
+        "signing": "Signing",
+        "work": "Work",
+        "compensation": "Compensation",
+        "legal": "Legal",
+        "review": "Review",
+        "confirm": "Confirm"
+      }
+    }
+  },
+  "footer": {
+    "copyright": "© {year} SELISE Group AG. All rights reserved.",
+    "tagline": "Providing free, accessible legal document templates for everyone.",
+    "poweredBy": "Powered by",
+    "privacyPolicy": "Privacy Policy",
+    "softwareDevelopmentTerms": "Software Development Terms",
+    "contactUs": "Contact Us",
+    "requestTemplate": "Request a Template"
+  },
+  "legalDisclaimer": {
+    "notLegalAdvice": "Not Legal Advice:",
+    "notLegalAdviceText": "These templates are provided for informational purposes only and do not constitute legal advice.",
+    "switzerlandBased": "Switzerland-Based Product:",
+    "switzerlandBasedText": "This is a Switzerland-based product that may not be compliant with laws in your jurisdiction or state.",
+    "aiGenerated": "AI-Generated Content:",
+    "aiGeneratedText": "AI is inaccurate by nature. Always consult a qualified legal advisor to review this document before signing.",
+    "importantLegalDisclaimer": "Important Legal Disclaimer",
+    "jurisdictionDisclaimer": "Jurisdiction Disclaimer:",
+    "jurisdictionDisclaimerText": "This is a Switzerland-based product. The templates provided may not be compliant with the specific laws, regulations, or requirements of your jurisdiction, state, or country. Laws vary significantly by location and change over time.",
+    "professionalReviewRequired": "Professional Review Required:",
+    "professionalReviewRequiredText": "You must consult with a qualified legal advisor admitted to practice in your relevant jurisdiction to review, modify, and approve any document before you sign or use it. Do not rely on these templates without proper legal counsel.",
+    "acknowledgment": "By using this service, you acknowledge that you understand these limitations and agree to seek appropriate legal counsel before using any generated documents."
+  }
+}
+

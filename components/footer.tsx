@@ -1,10 +1,12 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import { LegalDisclaimer } from './legal-disclaimer';
 
-export default function Footer() {
+export default async function Footer() {
   const currentYear = new Date().getFullYear();
+  const t = await getTranslations('footer');
 
   return (
     <footer className="relative overflow-hidden border-t border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] py-12">
@@ -28,14 +30,14 @@ export default function Footer() {
         <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
           <div className="text-center sm:text-left">
             <p className="text-sm text-muted-foreground">
-              &copy; {currentYear} SELISE Group AG. All rights reserved.
+              {t('copyright', { year: currentYear })}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Providing free, accessible legal document templates for everyone.
+              {t('tagline')}
             </p>
           </div>
           <div className="flex flex-col items-center gap-2 sm:items-end">
-            <p className="text-xs text-muted-foreground">Powered by</p>
+            <p className="text-xs text-muted-foreground">{t('poweredBy')}</p>
             <Link
               href="https://selisesignature.com/"
               target="_blank"
@@ -61,7 +63,7 @@ export default function Footer() {
             rel="noopener noreferrer"
             className="hover:text-foreground hover:underline"
           >
-            Privacy Policy
+            {t('privacyPolicy')}
           </Link>
           <span>•</span>
           <Link
@@ -70,7 +72,7 @@ export default function Footer() {
             rel="noopener noreferrer"
             className="hover:text-foreground hover:underline"
           >
-            Software Development Terms
+            {t('softwareDevelopmentTerms')}
           </Link>
           <span>•</span>
           <Link
@@ -79,7 +81,7 @@ export default function Footer() {
             rel="noopener noreferrer"
             className="hover:text-foreground hover:underline"
           >
-            Contact Us
+            {t('contactUs')}
           </Link>
           <span>•</span>
           <a
@@ -88,7 +90,7 @@ export default function Footer() {
             rel="noopener noreferrer"
             className="hover:text-foreground hover:underline"
           >
-            Request a Template
+            {t('requestTemplate')}
           </a>
         </div>
       </div>

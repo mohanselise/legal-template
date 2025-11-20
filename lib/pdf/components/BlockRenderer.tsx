@@ -90,7 +90,7 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, level = 0 }
   switch (type) {
     case 'article':
       return (
-        <View style={styles.article} wrap={false}>
+        <View style={styles.article}>
           <Text style={styles.articleTitle}>
             {props.number ? `ARTICLE ${props.number}: ` : ''}{props.title}
           </Text>

@@ -128,9 +128,9 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
         <View style={styles.footer} fixed>
           <View style={styles.footerContent}>
             <Text>{document.metadata.title}</Text>
-            <Text>
-              Page <Text render={({ pageNumber }) => `${pageNumber}`} />
-            </Text>
+            <Text render={({ pageNumber, totalPages }) => (
+              `Page ${pageNumber} of ${totalPages}`
+            )} />
           </View>
         </View>
       </Page>
@@ -143,9 +143,9 @@ export const EmploymentAgreementPDF: React.FC<EmploymentAgreementPDFProps> = ({
         <View style={styles.footer} fixed>
            <View style={styles.footerContent}>
             <Text>{document.metadata.title}</Text>
-            <Text>
-              Page <Text render={({ pageNumber }) => `${pageNumber}`} />
-            </Text>
+            <Text render={({ pageNumber, totalPages }) => (
+              `Page ${pageNumber} of ${totalPages}`
+            )} />
           </View>
         </View>
       </Page>

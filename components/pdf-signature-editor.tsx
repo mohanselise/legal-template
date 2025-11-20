@@ -561,54 +561,53 @@ export function PDFSignatureEditor({
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Validation Summary & Actions */}
-      <div className="p-5 border-t border-gray-200 space-y-3">
-        {/* Validation Status */}
-        {!validation.isValid && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-white text-xs font-bold">!</span>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-amber-900 mb-1">Missing Required Fields</p>
-                <ul className="text-[10px] text-amber-800 space-y-0.5">
-                  {validation.missingFields.map((msg, idx) => (
-                    <li key={idx}>• {msg}</li>
-                  ))}
-                </ul>
+        {/* Validation Summary & Actions */}
+        <div className="p-5 border-t border-gray-200 space-y-3">
+          {/* Validation Status */}
+          {!validation.isValid && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">!</span>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-amber-900 mb-1">Missing Required Fields</p>
+                  <ul className="text-[10px] text-amber-800 space-y-0.5">
+                    {validation.missingFields.map((msg, idx) => (
+                      <li key={idx}>• {msg}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {validation.isValid && fields.length > 0 && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-              <p className="text-xs font-semibold text-green-900">All required fields placed</p>
+          {validation.isValid && fields.length > 0 && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <p className="text-xs font-semibold text-green-900">All required fields placed</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <Button
-          onClick={handleResetFields}
-          variant="outline"
-          size="sm"
-          className="w-full justify-center gap-2 text-xs"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          Reset All Fields
-        </Button>
-        <div className="text-[10px] text-center text-gray-500">
-          <strong className="text-gray-900">{fields.length}</strong> field{fields.length !== 1 ? 's' : ''} added
+          <Button
+            onClick={handleResetFields}
+            variant="outline"
+            size="sm"
+            className="w-full justify-center gap-2 text-xs"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Reset All Fields
+          </Button>
+          <div className="text-[10px] text-center text-gray-500">
+            <strong className="text-gray-900">{fields.length}</strong> field{fields.length !== 1 ? 's' : ''} added
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* Main Content - PDF Viewer */}
+      {/* Main Content - PDF Viewer */}
     <div className="flex-1 flex flex-col">
       {/* Top Toolbar */}
       <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-sm">

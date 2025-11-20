@@ -1,5 +1,51 @@
 import { SIG_PAGE_LAYOUT, getSignatureBlockPosition } from './signature-layout';
 
+// Calculate signature layout positions for employer (index 0) and employee (index 1)
+const employerBlockTop = getSignatureBlockPosition(0);
+const employeeBlockTop = getSignatureBlockPosition(1);
+
+export const SIGNATURE_LAYOUT = {
+  EMPLOYER: {
+    SIGNATURE: {
+      x: SIG_PAGE_LAYOUT.MARGIN_X + SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET,
+      y: employerBlockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET,
+      width: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH,
+      height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
+    },
+    DATE: {
+      x: SIG_PAGE_LAYOUT.MARGIN_X + SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET,
+      y: employerBlockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET,
+      width: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH,
+      height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
+    },
+  },
+  EMPLOYEE: {
+    SIGNATURE: {
+      x: SIG_PAGE_LAYOUT.MARGIN_X + SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET,
+      y: employeeBlockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET,
+      width: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH,
+      height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
+    },
+    DATE: {
+      x: SIG_PAGE_LAYOUT.MARGIN_X + SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET,
+      y: employeeBlockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET,
+      width: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH,
+      height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
+    },
+  },
+};
+
+export const SIGNATURE_FIELD_DEFAULTS = {
+  signature: {
+    width: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH,
+    height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
+  },
+  date: {
+    width: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH,
+    height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
+  },
+};
+
 export interface SignatureFieldMetadata {
   id: string;
   type: 'signature' | 'text' | 'date';

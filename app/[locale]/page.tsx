@@ -249,20 +249,20 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="mx-auto mt-16 grid max-w-6xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto mt-16 grid max-w-6xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
             {templates.map((template) => {
               const Icon = template.icon;
               return (
                 <Card
                   key={template.id}
-                  className={`group relative transition-all hover:shadow-2xl ${
+                  className={`group relative flex h-full flex-col transition-all hover:shadow-2xl ${
                     template.available
                       ? 'border-2 hover:border-[hsl(var(--sky-blue))] hover:-translate-y-1 dark:hover:border-[hsl(var(--sky-blue))]'
                       : 'opacity-60'
                   }`}
                 >
                   {template.popular && template.available && (
-                    <div className="absolute -right-2 -top-2">
+                    <div className="absolute -right-2 -top-2 z-10">
                       <Badge className="bg-gradient-to-r from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] text-[hsl(var(--white))] shadow-lg font-subheading uppercase tracking-[0.12em]">
                         <Star className="mr-1 h-3 w-3 fill-current" />
                         {t('templatesSection.mostPopular')}
@@ -270,7 +270,7 @@ export default async function Home() {
                     </div>
                   )}
                   {!template.available && (
-                    <div className="absolute right-4 top-4">
+                    <div className="absolute right-4 top-4 z-10">
                       <Badge
                         variant="secondary"
                         className="bg-[hsl(var(--brand-surface))] text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--brand-surface-strong))] dark:text-[hsl(var(--sky-blue))] font-subheading uppercase tracking-[0.1em]"
@@ -279,16 +279,16 @@ export default async function Home() {
                       </Badge>
                     </div>
                   )}
-                  <CardHeader className="pb-4">
-                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
+                  <CardHeader className="!flex !flex-1 !flex-col !pb-4 min-h-0">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg flex-shrink-0">
                       <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
                     </div>
-                    <CardTitle className="text-2xl">{tTemplates(`templatesList.${template.id}.title`)}</CardTitle>
-                    <CardDescription className="mt-3 text-base leading-relaxed">
+                    <CardTitle className="text-2xl flex-shrink-0 break-words hyphens-auto">{tTemplates(`templatesList.${template.id}.title`)}</CardTitle>
+                    <CardDescription className="mt-3 text-base leading-relaxed break-words hyphens-auto">
                       {tTemplates(`templatesList.${template.id}.description`)}
                     </CardDescription>
                   </CardHeader>
-                  <CardFooter className="pt-4">
+                  <CardFooter className="mt-auto pt-4 flex-shrink-0">
                     {template.available ? (
                       <Button asChild className="group w-full bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] shadow-md font-subheading">
                         <Link href={template.href}>

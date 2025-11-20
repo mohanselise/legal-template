@@ -136,6 +136,22 @@ export function Step4Compensation() {
     }
   };
 
+  const getFrequencyLabel = (frequency: PayFrequency): string => {
+    switch (frequency) {
+      case 'monthly':
+        return t('monthly');
+      case 'bi-weekly':
+        return t('biWeekly');
+      case 'weekly':
+        return t('weekly');
+      case 'hourly':
+        return t('hourly');
+      case 'annual':
+      default:
+        return t('annual');
+    }
+  };
+
   // Allow continue if salary amount is filled (including placeholders) and currency is set
   const canContinue = formData.salaryAmount && formData.salaryCurrency;
 
@@ -163,10 +179,10 @@ export function Step4Compensation() {
             <TrendingUp className="mt-0.5 h-5 w-5 text-[hsl(var(--brand-primary))]" />
             <div className="flex-1">
               <p className="mb-1 text-sm font-semibold text-[hsl(var(--fg))]">
-                {t('marketBenchmark', { jobTitle: formData.jobTitle })}
+                {t('marketBenchmark', { jobTitle: formData.jobTitle || '' })}
               </p>
               <p className="mb-3 text-xs text-[hsl(var(--brand-muted))]">
-                {t('rates', { frequency: payFrequency === 'annual' ? t('annual') : payFrequency === 'bi-weekly' ? t('biWeekly') : payFrequency === 'monthly' ? t('monthly') : payFrequency === 'weekly' ? t('weekly') : t('hourly') })}
+                {t('rates', { frequency: getFrequencyLabel(payFrequency) })}
                 {formData.salaryCurrency && formData.salaryCurrency !== jobTitleData.typicalSalaryRange.currency && (
                   <span className="ml-1">{t('convertedTo', { currency: formData.salaryCurrency })}</span>
                 )}
@@ -367,7 +383,7 @@ export function Step4Compensation() {
           {marketStandards && (
             <p className="text-xs text-muted-foreground mt-2">
               {t('standardPayFrequency', { 
-                frequency: marketStandards.payFrequency === 'monthly' ? t('monthly') : marketStandards.payFrequency === 'bi-weekly' ? t('biWeekly') : marketStandards.payFrequency === 'weekly' ? t('weekly') : marketStandards.payFrequency === 'hourly' ? t('hourly') : t('annual'),
+                frequency: getFrequencyLabel(marketStandards.payFrequency),
                 jurisdiction: jurisdictionName 
               })}
             </p>

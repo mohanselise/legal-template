@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import { CheckCircle2, Clock, Shield, FileText, Users, Briefcase, Scale, AlertCircle, ArrowRight, Sparkles, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getTranslations } from 'next-intl/server';
+import { JsonLd } from '@/components/json-ld';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('employmentAgreementPage.metadata');
@@ -19,10 +20,33 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function EmploymentAgreementPage() {
+export default async function EmploymentAgreementPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const t = await getTranslations('employmentAgreementPage');
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://legal-template-generator.selise.ch';
+
+  const jsonLdData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": t('hero.title'),
+    "description": t('hero.subtitle'),
+    "image": `${BASE_URL}/graphics/whole-page-bg.webp`,
+    "brand": {
+      "@type": "Brand",
+      "name": "Legal Templates"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock",
+      "url": `${BASE_URL}/${locale}/templates/employment-agreement`
+    }
+  };
+
   return (
     <div className="bg-[hsl(var(--bg))] text-foreground">
+      <JsonLd data={jsonLdData} />
       {/* Hero Section - Above the Fold */}
       <section className="relative bg-gradient-to-br from-[hsl(var(--gradient-dark-from))] via-[hsl(var(--selise-blue))] to-[hsl(var(--gradient-dark-to))] text-[hsl(var(--white))] overflow-hidden">
         {/* Background texture/image */}

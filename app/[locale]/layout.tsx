@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import "../globals.css";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Toaster } from "@/components/ui/sonner";
+import { JsonLd } from "@/components/json-ld";
 
 // SELISE Brand Typography System
 // Primary: Aptos (headlines, primary headings)
@@ -47,7 +48,10 @@ const bahnschrift = localFont({
 });
 
 export function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Metadata {
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://legal-template-generator.selise.ch';
+  
   return {
+    metadataBase: new URL(BASE_URL),
     title: "Free Legal Template Generator | Professional Legal Documents in Minutes",
     description: "Generate customized legal documents instantly with our free template generator. Employment agreements, NDAs, founder agreements, and more. No legal jargon, 100% free, no sign-up required.",
     keywords: ["legal templates", "free legal documents", "employment agreement", "NDA template", "founders agreement", "legal document generator", "free contract templates"],
@@ -57,6 +61,7 @@ export function generateMetadata({ params }: { params: Promise<{ locale: string 
       apple: "/favicon.png",
       shortcut: "/favicon.png",
     },
+    manifest: '/manifest.json',
     openGraph: {
       title: "Free Legal Template Generator | Professional Legal Documents",
       description: "Generate customized, plain-English legal documents in minutes. Completely free, no sign-up required.",
@@ -100,12 +105,26 @@ export default async function RootLayout({
   // Providing all messages to the client
   // side is the easiest way to get started
   const messages = await getMessages();
+  const t = await getTranslations('common');
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://legal-template-generator.selise.ch';
+
+  const jsonLdData = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": t('legalTemplates'),
+    "url": BASE_URL,
+    "logo": `${BASE_URL}/favicon.png`,
+    "sameAs": [
+      "https://selisegroup.com"
+    ]
+  };
 
   return (
     <html lang={locale}>
       <body
         className={`${openSans.variable} ${aptos.variable} ${bahnschrift.variable} antialiased flex flex-col min-h-screen`}
       >
+        <JsonLd data={jsonLdData} />
         <NextIntlClientProvider messages={messages}>
           <Header />
           <main className="flex-1">{children}</main>

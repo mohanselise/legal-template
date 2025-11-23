@@ -194,6 +194,11 @@
         "title": "IP Assignment Agreement",
         "description": "Transfer intellectual property rights with clear terms and comprehensive coverage."
       }
+    },
+    "templatesSection": {
+      "generateNow": "Generate Now",
+      "comingSoon": "Coming Soon",
+      "requestTemplate": "Request a template"
     }
   },
   "about": {

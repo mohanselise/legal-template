@@ -512,7 +512,7 @@ export default async function Home() {
       <section className="relative bg-[hsl(var(--bg))] py-24 sm:py-32 dark:bg-[hsl(var(--background))] overflow-hidden">
         <div className="absolute inset-0">
           <Image
-            src="/graphics/contact-page-whole-bg.webp"
+            src="/graphics/whole-page-bg.webp"
             alt=""
             fill
             className="object-cover opacity-[0.12] dark:opacity-[0.2]"

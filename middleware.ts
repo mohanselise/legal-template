@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import createMiddleware from 'next-intl/middleware';
+import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // German language codes (ISO 639-1)
 const GERMAN_LANGUAGE_CODES = ['de', 'de-de', 'de-at', 'de-ch', 'de-li', 'de-be', 'de-lu'];
@@ -11,7 +11,7 @@ const isProtectedRoute = createRouteMatcher([
   '/:locale/admin(.*)',
 ]);
 
-function detectLocale(request: NextRequest): string | undefined {
+function detectLocale(request: NextRequest): string {
   // 1. Check cookie preference first (highest priority)
   const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
   if (cookieLocale && routing.locales.includes(cookieLocale as any)) {
@@ -43,38 +43,45 @@ function detectLocale(request: NextRequest): string | undefined {
     }
   }
 
-  // 3. Default to English (will use defaultLocale from routing)
-  return undefined;
+  // 3. Default to English
+  return routing.defaultLocale;
 }
 
-// Create the base next-intl middleware
-const intlMiddleware = createMiddleware(routing);
+// Create the next-intl middleware
+const intlMiddleware = createIntlMiddleware(routing);
 
-export default clerkMiddleware(async (auth, request: NextRequest) => {
-  // Protect admin routes
-  if (isProtectedRoute(request)) {
-    await auth.protect();
+export default clerkMiddleware((auth, request: NextRequest) => {
+  const pathname = request.nextUrl.pathname;
+
+  // Skip static files and special Next.js routes
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_vercel') ||
+    pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js)$/)
+  ) {
+    return NextResponse.next();
   }
 
-  // Handle i18n routing
-  const pathname = request.nextUrl.pathname;
+  // Check if path has locale
   const pathnameHasLocale = routing.locales.some(
-    locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
 
-  // If no locale in path and not an API/static route, detect and redirect
-  if (!pathnameHasLocale && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.startsWith('/_vercel') && !pathname.startsWith('/sign-in')) {
-    const detectedLocale = detectLocale(request) || routing.defaultLocale;
-    const newUrl = new URL(`/${detectedLocale}${pathname}`, request.url);
-    // Preserve query parameters
-    newUrl.search = request.nextUrl.search;
-    return Response.redirect(newUrl);
+  // Redirect root or non-localized paths
+  if (!pathnameHasLocale && !pathname.startsWith('/sign-in')) {
+    const locale = detectLocale(request);
+    const newPath = pathname === '/' ? `/${locale}` : `/${locale}${pathname}`;
+    return NextResponse.redirect(new URL(newPath + request.nextUrl.search, request.url));
   }
 
-  // Use the next-intl middleware for everything else
-  // Important: Return the response directly without trying to modify it
-  const response = intlMiddleware(request);
-  return response;
+  // Protect admin routes
+  if (isProtectedRoute(request)) {
+    auth.protect();
+  }
+
+  // Apply intl middleware for localized routes
+  return intlMiddleware(request);
 });
 
 export const config = {

@@ -63,7 +63,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   );
 
   // If no locale in path and not an API/static route, detect and redirect
-  if (!pathnameHasLocale && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.startsWith('/_vercel')) {
+  if (!pathnameHasLocale && !pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.startsWith('/_vercel') && !pathname.startsWith('/sign-in')) {
     const detectedLocale = detectLocale(request) || routing.defaultLocale;
     const newUrl = new URL(`/${detectedLocale}${pathname}`, request.url);
     // Preserve query parameters
@@ -72,7 +72,12 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   }
 
   // Use the next-intl middleware for everything else
-  return intlMiddleware(request);
+  // Important: Return the response directly without trying to modify it
+  const response = intlMiddleware(request);
+  return response;
+}, {
+  // Public routes that don't require authentication
+  publicRoutes: ['/:locale', '/:locale/(.*)', '/sign-in(.*)']
 });
 
 export const config = {

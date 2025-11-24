@@ -75,9 +75,6 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   // Important: Return the response directly without trying to modify it
   const response = intlMiddleware(request);
   return response;
-}, {
-  // Public routes that don't require authentication
-  publicRoutes: ['/:locale', '/:locale/(.*)', '/sign-in(.*)']
 });
 
 export const config = {

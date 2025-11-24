@@ -84,9 +84,8 @@ export const config = {
     '/((?!api|_next|_vercel|.*\\..*).*)',
     // Optional: only run on root (/) URL
     '/',
-    // Include sign-in and sign-up routes
+    // Include sign-in route
     '/sign-in(.*)',
-    '/sign-up(.*)',
   ],
 };
 

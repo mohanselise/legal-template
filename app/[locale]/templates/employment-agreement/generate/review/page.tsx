@@ -13,6 +13,7 @@ import { LegalDisclaimer } from '@/components/legal-disclaimer';
 import { useRouter } from '@/i18n/routing';
 import dynamic from 'next/dynamic';
 import { SignatureFieldOverlay, type SignatureField } from './_components/SignatureFieldOverlay';
+import { SignatureFieldMiniMap } from './_components/SignatureFieldMiniMap';
 import { generateSignatureFieldMetadata, type SignatureFieldMetadata } from '@/lib/pdf/signature-field-metadata';
 
 // Loading component for PDF viewer
@@ -639,6 +640,16 @@ function ReviewContent() {
     setSelectedField(null);
   };
 
+  // Scroll to a specific page
+  const scrollToPage = (page: number) => {
+    setPageNumber(page);
+    // Find the page element and scroll to it
+    const pageElement = document.querySelector(`[data-page-number="${page}"]`);
+    if (pageElement) {
+      pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   // Get signatories from document
   const getSignatories = () => {
     if (!generatedDocument || !formData) return [];
@@ -822,7 +833,7 @@ function ReviewContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <header ref={headerRef} className="sticky top-0 z-40 bg-[hsl(var(--bg))] border-b border-[hsl(var(--border))] shadow-sm">
         <div className="px-6 py-4">
@@ -1000,10 +1011,29 @@ function ReviewContent() {
           </div>
         </div>
 
-        {/* Sidebar */}
+        {/* Mobile sidebar backdrop */}
         {sidebarOpen && (
-          <aside className="w-80 border-l border-[hsl(var(--border))] bg-[hsl(var(--bg))] flex flex-col h-screen sticky top-0">
+          <div
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar - Slide-in on mobile, sticky on desktop */}
+        {sidebarOpen && (
+          <aside className="fixed lg:relative right-0 top-0 w-full sm:w-80 border-l border-[hsl(var(--border))] bg-[hsl(var(--bg))] flex flex-col h-screen z-50 lg:z-auto lg:sticky shadow-2xl lg:shadow-none animate-in slide-in-from-right lg:animate-none">
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Mobile header with close button */}
+              <div className="flex items-center justify-between lg:hidden pb-4 border-b border-[hsl(var(--border))]">
+                <h2 className="font-heading font-semibold text-lg text-[hsl(var(--fg))]">{t('documentDetails')}</h2>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-2 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] rounded-lg transition-colors"
+                >
+                  <PanelRightClose className="w-5 h-5" />
+                </button>
+              </div>
+
               {/* Signature Field Controls */}
               <div>
                 <h3 className="font-semibold text-[hsl(var(--fg))] text-sm mb-3 font-heading">
@@ -1022,6 +1052,19 @@ function ReviewContent() {
                   <strong className="text-[hsl(var(--fg))] font-semibold">{signatureFields.length}</strong> {t('fieldsPlaced', { count: signatureFields.length, plural: signatureFields.length !== 1 ? t('fields') : t('field') })}
                 </div>
               </div>
+
+              {/* Document Overview Mini-Map */}
+              {numPages && numPages > 0 && (
+                <div className="border-t border-[hsl(var(--border))] pt-6">
+                  <SignatureFieldMiniMap
+                    numPages={numPages}
+                    signatureFields={signatureFields}
+                    signatories={getSignatories()}
+                    currentPage={pageNumber}
+                    onPageClick={scrollToPage}
+                  />
+                </div>
+              )}
 
               {/* Document Details */}
               {formData && (

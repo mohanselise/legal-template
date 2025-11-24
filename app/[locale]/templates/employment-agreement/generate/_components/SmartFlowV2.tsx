@@ -31,6 +31,9 @@ import {
 import { LegalDisclaimer } from '@/components/legal-disclaimer';
 import { Turnstile } from 'next-turnstile';
 import { setTurnstileToken as storeTurnstileToken } from '@/lib/turnstile-token-manager';
+import { Stepper, StepperCompact } from '@/components/ui/stepper';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, Clock, Users, Shield } from 'lucide-react';
 
 // Steps where "Use Market Standard" button should appear (Work, Compensation, Legal)
 const MARKET_STANDARD_STEPS = [3, 4, 5];
@@ -155,7 +158,74 @@ function NavigationButtons({
 
   return (
     <>
-      <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t">
+      {/* Market Standard Section - Elevated above navigation */}
+      {showMarketStandardButton && !showSuccessFeedback && (
+        <div className="mt-8 p-4 rounded-xl border-2 border-amber-200 dark:border-amber-700/50 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-500/20 dark:bg-amber-500/30 flex items-center justify-center flex-shrink-0">
+                <Zap className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="font-semibold text-amber-900 dark:text-amber-100">
+                  {t('navigation.saveTimeWith', { jurisdiction: jurisdictionName })}
+                </p>
+                <p className="text-sm text-amber-700/80 dark:text-amber-300/70">
+                  {t('navigation.autoFillDescription')}
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleUseMarketStandard}
+              disabled={isApplyingStandards}
+              className="bg-amber-500 hover:bg-amber-600 text-white border-0 shadow-md hover:shadow-lg transition-all sm:flex-shrink-0"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              {t('navigation.applyStandards')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Success feedback after applying standards */}
+      {showSuccessFeedback && (
+        <div className="mt-8 p-4 rounded-xl border-2 border-green-200 dark:border-green-700/50 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-green-500/20 dark:bg-green-500/30 flex items-center justify-center flex-shrink-0">
+              <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="font-semibold text-green-900 dark:text-green-100">
+                {t('navigation.standardsApplied')}
+              </p>
+              <p className="text-sm text-green-700/80 dark:text-green-300/70">
+                {t('navigation.movingToNextStep')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading placeholder for market standards */}
+      {showLoadingPlaceholder && (
+        <div className="mt-8 p-4 rounded-xl border-2 border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[hsl(var(--brand-primary))]/10 flex items-center justify-center flex-shrink-0">
+              <div className="w-5 h-5 border-2 border-[hsl(var(--brand-primary))] border-t-transparent rounded-full animate-spin" />
+            </div>
+            <div>
+              <p className="font-medium text-[hsl(var(--fg))]">
+                {t('navigation.preparingStandards')}
+              </p>
+              <p className="text-sm text-[hsl(var(--brand-muted))]">
+                {t('navigation.analyzingJurisdiction')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-4 mt-6 pt-6 border-t">
         {/* Left side - Back button */}
         {currentStep > 0 ? (
           <Button
@@ -170,38 +240,8 @@ function NavigationButtons({
           <div></div>
         )}
 
-        {/* Right side - Market Standard + Continue buttons */}
+        {/* Right side - Continue button */}
         <div className="flex items-center gap-3">
-          {/* Loading placeholder */}
-          {showLoadingPlaceholder && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
-              <div className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
-              <span>{t('navigation.preparingStandards')}</span>
-            </div>
-          )}
-
-          {/* Market standard button */}
-          {showMarketStandardButton && (
-            <Button
-              variant="ghost"
-              onClick={handleUseMarketStandard}
-              disabled={isApplyingStandards}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground relative"
-            >
-              {showSuccessFeedback ? (
-                <>
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-green-600">{t('navigation.applied')}</span>
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4" />
-                  {t('navigation.useStandard', { jurisdiction: jurisdictionName })}
-                </>
-              )}
-            </Button>
-          )}
-
           {currentStep < totalSteps - 1 && (
             <Button
               onClick={handleContinue}
@@ -286,7 +326,8 @@ function NavigationButtons({
 function SmartFlowContent() {
   const t = useTranslations('employmentAgreement.smartFlow');
   const tSteps = useTranslations('employmentAgreement.smartFlow.steps');
-  const { currentStep, totalSteps, nextStep, previousStep, formData } = useSmartForm();
+  const tTips = useTranslations('tips');
+  const { currentStep, totalSteps, nextStep, previousStep, formData, goToStep } = useSmartForm();
   const router = useRouter();
   const [showWelcome, setShowWelcome] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -355,6 +396,25 @@ function SmartFlowContent() {
 
   const CurrentStepComponent = STEPS[currentStep].component;
   const progress = ((currentStep + 1) / totalSteps) * 100;
+
+  // Tips to show during loading
+  const GENERATION_TIPS = [
+    tTips('tip1'),
+    tTips('tip2'),
+    tTips('tip3'),
+    tTips('tip4'),
+    tTips('tip5'),
+  ];
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
+
+  // Rotate tips during generation
+  useEffect(() => {
+    if (!isGenerating) return;
+    const interval = setInterval(() => {
+      setCurrentTipIndex((prev) => (prev + 1) % GENERATION_TIPS.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isGenerating, GENERATION_TIPS.length]);
 
   const resetLoadingState = useCallback(() => {
     setIsGenerating(false);
@@ -776,6 +836,52 @@ function SmartFlowContent() {
               {t('generation.typicallyTakes')}
             </motion.p>
           )}
+
+          {/* Tips carousel */}
+          {!generationError && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+              className="mt-6 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[hsl(var(--brand-primary))]/10 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-4 h-4 text-[hsl(var(--brand-primary))]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-[hsl(var(--brand-primary))] uppercase tracking-wide mb-1">
+                    {tTips('didYouKnow')}
+                  </p>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={currentTipIndex}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-sm text-[hsl(var(--brand-muted))] leading-relaxed"
+                    >
+                      {GENERATION_TIPS[currentTipIndex]}
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+              </div>
+              {/* Tip indicator dots */}
+              <div className="flex items-center justify-center gap-1.5 mt-3">
+                {GENERATION_TIPS.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`h-1.5 rounded-full transition-all ${
+                      index === currentTipIndex
+                        ? 'w-4 bg-[hsl(var(--brand-primary))]'
+                        : 'w-1.5 bg-[hsl(var(--brand-border))]'
+                    }`}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
     );
@@ -803,7 +909,8 @@ function SmartFlowContent() {
             <br />
             <span className="text-[hsl(var(--brand-muted))]">{t('welcome.subtitle2')}</span>
           </p>
-          <div className="mb-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          {/* Feature highlights */}
+          <div className="mb-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <div className="flex items-center gap-3 text-base text-[hsl(var(--fg))]">
               <Check className="h-5 w-5 text-[hsl(var(--brand-primary))]" />
               <span>{t('welcome.feature1')}</span>
@@ -818,22 +925,54 @@ function SmartFlowContent() {
             </div>
           </div>
 
-          {/* Disclaimer - Before user starts */}
-          <div className="mb-8 rounded-2xl border border-[hsl(var(--brand-border))] bg-muted p-6 text-left shadow-sm">
-            <div className="mb-3 flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-[hsl(var(--brand-primary))]" />
-              <h3 className="text-lg font-semibold text-[hsl(var(--fg))] font-heading">{t('welcome.beforeYouBegin')}</h3>
+          {/* Trust Stats */}
+          <div className="mb-8 grid grid-cols-3 gap-4 rounded-2xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Users className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
+                <span className="text-2xl font-bold text-[hsl(var(--fg))]">10K+</span>
+              </div>
+              <p className="text-xs text-[hsl(var(--brand-muted))]">{t('welcome.documentsGenerated')}</p>
             </div>
-            <div className="space-y-2 text-sm leading-relaxed text-[hsl(var(--brand-muted))]">
-              <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.notLegalAdvice')}</strong> {t('welcome.notLegalAdviceText')}</p>
-              <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.aiGenerated')}</strong> {t('welcome.aiGeneratedText')}</p>
-              <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.jurisdiction')}</strong> {t('welcome.jurisdictionText')}</p>
-              <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.reviewRequired')}</strong> {t('welcome.reviewRequiredText')}</p>
+            <div className="text-center border-x border-[hsl(var(--brand-border))]">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Shield className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
+                <span className="text-2xl font-bold text-[hsl(var(--fg))]">98%</span>
+              </div>
+              <p className="text-xs text-[hsl(var(--brand-muted))]">{t('welcome.satisfactionRate')}</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Clock className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
+                <span className="text-2xl font-bold text-[hsl(var(--fg))]">&lt;5m</span>
+              </div>
+              <p className="text-xs text-[hsl(var(--brand-muted))]">{t('welcome.averageTime')}</p>
             </div>
           </div>
 
-          {/* Human Verification */}
-          <div className="mb-8 rounded-2xl border border-[hsl(var(--brand-border))] bg-white p-6 shadow-sm">
+          {/* Collapsible Disclaimer */}
+          <Collapsible className="mb-8">
+            <CollapsibleTrigger className="w-full rounded-xl border border-[hsl(var(--brand-border))] bg-muted p-4 text-left hover:bg-muted/80 transition-colors group">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="h-5 w-5 flex-shrink-0 text-[hsl(var(--brand-primary))]" />
+                  <span className="font-medium text-[hsl(var(--fg))]">{t('welcome.viewImportantInfo')}</span>
+                </div>
+                <ChevronDown className="h-5 w-5 text-[hsl(var(--brand-muted))] transition-transform group-data-[state=open]:rotate-180" />
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 rounded-xl border border-[hsl(var(--brand-border))] bg-muted p-6 text-left animate-in slide-in-from-top-2">
+              <div className="space-y-3 text-sm leading-relaxed text-[hsl(var(--brand-muted))]">
+                <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.notLegalAdvice')}</strong> {t('welcome.notLegalAdviceText')}</p>
+                <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.aiGenerated')}</strong> {t('welcome.aiGeneratedText')}</p>
+                <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.jurisdiction')}</strong> {t('welcome.jurisdictionText')}</p>
+                <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.reviewRequired')}</strong> {t('welcome.reviewRequiredText')}</p>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Human Verification - Simplified styling */}
+          <div className="mb-8 rounded-2xl border border-[hsl(var(--brand-border))] bg-card p-6">
             <div className="mb-4 text-center">
               <h3 className="text-lg font-semibold text-[hsl(var(--fg))] font-heading mb-2">
                 {t('welcome.verifyHuman')}
@@ -911,7 +1050,7 @@ function SmartFlowContent() {
             {t('welcome.iUnderstandGetStarted')}
             <ArrowRight className="h-5 w-5" />
           </button>
-          <p className="mt-8 text-sm text-[hsl(var(--brand-muted))]">
+          <p className="hidden md:block mt-8 text-sm text-[hsl(var(--brand-muted))]">
             {t('welcome.pressEnterToBegin')}
           </p>
         </motion.div>
@@ -932,11 +1071,29 @@ function SmartFlowContent() {
         />
       </div>
 
-      {/* Header */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-center max-w-4xl mx-auto">
-          <div className="text-sm text-[hsl(var(--brand-muted))] font-medium">
-            {t('navigation.stepXOfY', { current: currentStep + 1, total: totalSteps, title: STEPS[currentStep].title })}
+      {/* Header with Stepper */}
+      <div className="container mx-auto px-4 pt-6 pb-4">
+        <div className="max-w-4xl mx-auto space-y-4">
+          {/* Step title for context */}
+          <div className="text-center">
+            <p className="text-sm text-[hsl(var(--brand-muted))] font-medium">
+              {t('navigation.stepXOfY', { current: currentStep + 1, total: totalSteps, title: STEPS[currentStep].title })}
+            </p>
+          </div>
+          
+          {/* Horizontal Stepper - visible on larger screens */}
+          <div className="hidden md:block">
+            <Stepper
+              steps={STEPS}
+              currentStep={currentStep}
+              onStepClick={goToStep}
+              allowNavigation={true}
+            />
+          </div>
+          
+          {/* Compact stepper for mobile */}
+          <div className="md:hidden">
+            <StepperCompact steps={STEPS} currentStep={currentStep} />
           </div>
         </div>
       </div>
@@ -953,7 +1110,7 @@ function SmartFlowContent() {
               transition={{ duration: 0.3 }}
             >
               {/* Card Container */}
-              <div className="bg-white rounded-3xl shadow-lg border border-[hsl(var(--border))] p-8 md:p-12">
+              <div className="bg-card rounded-3xl shadow-lg border border-[hsl(var(--border))] p-8 md:p-12">
                 {/* Step Content */}
                 {currentStep === totalSteps - 1 ? (
                   <CurrentStepComponent onStartGeneration={beginManualGeneration} />
@@ -972,9 +1129,9 @@ function SmartFlowContent() {
                 />
               </div>
 
-              {/* Hint */}
+              {/* Hint - Hidden on touch devices */}
               {currentStep < totalSteps - 1 && (
-                <p className="text-center mt-6 text-sm text-[hsl(var(--brand-muted))]">
+                <p className="hidden md:block text-center mt-6 text-sm text-[hsl(var(--brand-muted))]">
                   {t('hint.pressEnterToContinue')}
                 </p>
               )}
@@ -983,21 +1140,8 @@ function SmartFlowContent() {
         </div>
       </div>
 
-      {/* Step Indicators (bottom) */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-center gap-2 max-w-4xl mx-auto">
-          {STEPS.map((step, index) => (
-            <div
-              key={step.id}
-              className={`h-2 rounded-full transition-all ${
-                index <= currentStep
-                  ? 'bg-[hsl(var(--brand-primary))] w-12'
-                  : 'bg-[hsl(var(--border))] w-8'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
+      {/* Bottom padding */}
+      <div className="pb-6" />
     </div>
   );
 }

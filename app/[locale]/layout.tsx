@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
 import localFont from "next/font/local";
+import { ClerkProvider } from '@clerk/nextjs';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -120,19 +121,21 @@ export default async function RootLayout({
   };
 
   return (
-    <html lang={locale}>
-      <body
-        className={`${openSans.variable} ${aptos.variable} ${bahnschrift.variable} antialiased flex flex-col min-h-screen`}
-      >
-        <JsonLd data={jsonLdData} />
-        <NextIntlClientProvider messages={messages}>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <Toaster position="top-center" richColors />
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang={locale}>
+        <body
+          className={`${openSans.variable} ${aptos.variable} ${bahnschrift.variable} antialiased flex flex-col min-h-screen`}
+        >
+          <JsonLd data={jsonLdData} />
+          <NextIntlClientProvider messages={messages}>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <Toaster position="top-center" richColors />
+          </NextIntlClientProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
 

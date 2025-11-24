@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { CheckCircle2, AlertTriangle, Clock, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Clock, ShieldCheck, ShieldAlert, Sparkles, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useSmartForm } from '../SmartFormContext';
 import type { BackgroundGenerationResult } from '../SmartFormContext';
 import { useRouter } from '@/i18n/routing';
@@ -249,42 +250,86 @@ export function Step8ConfirmGenerate({ onStartGeneration }: Step8ConfirmGenerate
         </div>
       )}
 
-      <div className="space-y-3">
-        <label
-          className={`flex items-start gap-3 rounded-xl border p-4 text-sm transition ${
+      <div className="space-y-4">
+        {/* Legal Disclaimer Checkbox */}
+        <div
+          className={`rounded-xl border-2 transition-all ${
             acceptedDisclaimer
-              ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.05]'
-              : 'border-[hsl(var(--brand-border))] bg-white'
+              ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))]/5'
+              : 'border-[hsl(var(--brand-border))] bg-background'
           }`}
         >
-          <input
-            type="checkbox"
-            className="mt-1 h-4 w-4"
-            checked={acceptedDisclaimer}
-            onChange={(event) => setAcceptedDisclaimer(event.target.checked)}
-          />
-          <span>
-            {t('legalDisclaimer')}
-          </span>
-        </label>
+          <label className="flex items-start gap-4 p-5 cursor-pointer">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex-shrink-0">
+              <ShieldAlert className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 rounded border-2 border-[hsl(var(--brand-border))] accent-[hsl(var(--brand-primary))]"
+                  checked={acceptedDisclaimer}
+                  onChange={(event) => setAcceptedDisclaimer(event.target.checked)}
+                />
+                <span className="font-semibold text-base text-[hsl(var(--fg))]">
+                  {t('legalDisclaimerTitle')}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-[hsl(var(--brand-muted))] leading-relaxed">
+                {t('legalDisclaimerShort')}
+              </p>
+            </div>
+          </label>
+          <Collapsible>
+            <CollapsibleTrigger className="w-full px-5 py-3 border-t border-[hsl(var(--brand-border))] flex items-center justify-between text-sm text-[hsl(var(--brand-muted))] hover:bg-[hsl(var(--brand-surface))] transition-colors group">
+              <span>{t('viewFullDisclaimer')}</span>
+              <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="px-5 pb-4 text-sm text-[hsl(var(--brand-muted))] leading-relaxed">
+              {t('legalDisclaimer')}
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
 
-        <label
-          className={`flex items-start gap-3 rounded-xl border p-4 text-sm transition ${
+        {/* AI Acknowledgment Checkbox */}
+        <div
+          className={`rounded-xl border-2 transition-all ${
             acknowledgeAi
-              ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.05]'
-              : 'border-[hsl(var(--brand-border))] bg-white'
+              ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))]/5'
+              : 'border-[hsl(var(--brand-border))] bg-background'
           }`}
         >
-          <input
-            type="checkbox"
-            className="mt-1 h-4 w-4"
-            checked={acknowledgeAi}
-            onChange={(event) => setAcknowledgeAi(event.target.checked)}
-          />
-          <span>
-            {t('aiAcknowledgment')}
-          </span>
-        </label>
+          <label className="flex items-start gap-4 p-5 cursor-pointer">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 rounded border-2 border-[hsl(var(--brand-border))] accent-[hsl(var(--brand-primary))]"
+                  checked={acknowledgeAi}
+                  onChange={(event) => setAcknowledgeAi(event.target.checked)}
+                />
+                <span className="font-semibold text-base text-[hsl(var(--fg))]">
+                  {t('aiAcknowledgmentTitle')}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-[hsl(var(--brand-muted))] leading-relaxed">
+                {t('aiAcknowledgmentShort')}
+              </p>
+            </div>
+          </label>
+          <Collapsible>
+            <CollapsibleTrigger className="w-full px-5 py-3 border-t border-[hsl(var(--brand-border))] flex items-center justify-between text-sm text-[hsl(var(--brand-muted))] hover:bg-[hsl(var(--brand-surface))] transition-colors group">
+              <span>{t('viewFullDetails')}</span>
+              <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="px-5 pb-4 text-sm text-[hsl(var(--brand-muted))] leading-relaxed">
+              {t('aiAcknowledgment')}
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
       </div>
 
       <div className="pt-2">

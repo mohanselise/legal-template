@@ -6,7 +6,7 @@ import { useDebounce } from 'use-debounce';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel, FieldDescription, FieldError } from '@/components/ui/field';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, HelpCircle, AlertCircle, CheckCircle2, Loader2, MapPin } from 'lucide-react';
+import { Sparkles, HelpCircle, AlertCircle, CheckCircle2, Loader2, MapPin, Star, StarHalf } from 'lucide-react';
 import { SmartFieldSuggestion, ValidationWarning } from '@/lib/types/smart-form';
 import { cn } from '@/lib/utils';
 import { usePlacesAutocomplete } from '@/lib/hooks/usePlacesAutocomplete';
@@ -193,6 +193,26 @@ export function SmartInput({
   const hasError = validation?.severity === 'error';
   const isTextarea = type === 'textarea';
 
+  // Show ghost placeholder when field is empty and suggestion exists
+  const showGhostSuggestion = suggestion && !value && !isTextarea;
+  const ghostPlaceholder = showGhostSuggestion ? String(suggestion.value) : placeholder;
+
+  // Convert confidence to star rating (0-3 stars)
+  const getConfidenceStars = (confidence: string): number => {
+    if (confidence === 'high') return 3;
+    if (confidence === 'medium') return 2;
+    return 1;
+  };
+
+  // Apply suggestion handler for inline button
+  const handleApplyInline = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (suggestion && onApplySuggestion) {
+      onApplySuggestion();
+    }
+  };
+
   return (
     <Field
       className="space-y-2"
@@ -251,24 +271,39 @@ export function SmartInput({
             )}
           />
         ) : (
-          <Input
-            id={name}
-            name={name}
-            type={type}
-            value={value}
-            onChange={(e) => handleInputChange(e.target.value)}
-            onFocus={handleInputFocus}
-            onBlur={handleInputBlur}
-            placeholder={placeholder}
-            aria-invalid={hasError}
-            className={cn(
-              'text-base transition-all',
-              validation?.severity === 'error' &&
-              'border-[hsla(var(--destructive)_/_0.45)] focus-visible:border-[hsla(var(--destructive)_/_0.7)] focus-visible:ring-[hsla(var(--destructive)_/_0.35)]',
-              validation?.severity === 'warning' &&
-              'border-[hsla(var(--warning)_/_0.5)] focus-visible:border-[hsla(var(--warning)_/_0.7)] focus-visible:ring-[hsla(var(--warning)_/_0.3)]'
+          <div className="relative">
+            <Input
+              id={name}
+              name={name}
+              type={type}
+              value={value}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
+              placeholder={ghostPlaceholder}
+              aria-invalid={hasError}
+              className={cn(
+                'text-base transition-all',
+                showGhostSuggestion && 'placeholder:text-[hsl(var(--brand-primary))]/40 placeholder:italic',
+                validation?.severity === 'error' &&
+                'border-[hsla(var(--destructive)_/_0.45)] focus-visible:border-[hsla(var(--destructive)_/_0.7)] focus-visible:ring-[hsla(var(--destructive)_/_0.35)]',
+                validation?.severity === 'warning' &&
+                'border-[hsla(var(--warning)_/_0.5)] focus-visible:border-[hsla(var(--warning)_/_0.7)] focus-visible:ring-[hsla(var(--warning)_/_0.3)]',
+                showGhostSuggestion && onApplySuggestion && 'pr-20'
+              )}
+            />
+            {/* Inline Apply button for ghost suggestion */}
+            {showGhostSuggestion && onApplySuggestion && (
+              <button
+                type="button"
+                onClick={handleApplyInline}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-medium text-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))]/10 hover:bg-[hsl(var(--brand-primary))]/20 rounded-md transition-colors flex items-center gap-1"
+              >
+                <Sparkles className="w-3 h-3" />
+                {t('apply')}
+              </button>
             )}
-          />
+          </div>
         )}
 
         {/* Loading indicator */}
@@ -311,8 +346,8 @@ export function SmartInput({
         )}
       </div>
 
-      {/* AI Suggestion badge */}
-      {suggestion && !isSuggestionApplied && (
+      {/* AI Suggestion badge - Show only for textarea or when field has value */}
+      {suggestion && !isSuggestionApplied && (isTextarea || value) && (
         <div className="flex items-start gap-3 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4 shadow-sm">
           <div className="w-8 h-8 rounded-lg bg-[hsl(var(--brand-primary))/0.15] flex items-center justify-center flex-shrink-0">
             <Sparkles className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
@@ -320,12 +355,20 @@ export function SmartInput({
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <p className="text-sm font-semibold text-[hsl(var(--fg))]">{t('aiSuggestion')}</p>
-              <Badge
-                variant="outline"
-                className="text-xs border-[hsl(var(--brand-border))] bg-[hsl(var(--popover))] text-[hsl(var(--brand-muted))]"
-              >
-                {t('confidence', { confidence: suggestion.confidence })}
-              </Badge>
+              {/* Star rating for confidence */}
+              <div className="flex items-center gap-0.5" title={t('confidence', { confidence: suggestion.confidence })}>
+                {Array.from({ length: 3 }, (_, i) => (
+                  <Star
+                    key={i}
+                    className={cn(
+                      'w-3 h-3',
+                      i < getConfidenceStars(suggestion.confidence)
+                        ? 'text-amber-400 fill-amber-400'
+                        : 'text-[hsl(var(--border))]'
+                    )}
+                  />
+                ))}
+              </div>
             </div>
             <p className="text-sm text-[hsl(var(--fg))] font-medium">
               {suggestion.value}

@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { FileText, AlertCircle, CheckCircle2, Edit3, AlertTriangle, Info } from 'lucide-react';
+import { FileText, AlertCircle, CheckCircle2, Edit3, AlertTriangle, Info, Building2, User, Briefcase, Clock, DollarSign } from 'lucide-react';
 import { useSmartForm } from '../SmartFormContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -89,73 +89,118 @@ export function Step7Review() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-4 rounded-lg border bg-card space-y-3">
-          <p className="font-semibold text-sm">{t('parties')}</p>
-          <div className="space-y-2 text-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Parties Card */}
+        <div className="relative p-6 rounded-xl border bg-card space-y-4 group hover:border-[hsl(var(--brand-primary))]/30 transition-colors">
+          {/* Checkmark indicator */}
+          {formData.companyName && formData.employeeName && (
+            <div className="absolute top-4 right-4">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[hsl(var(--brand-primary))]/10 flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-[hsl(var(--brand-primary))]" />
+            </div>
+            <p className="font-semibold text-base">{t('parties')}</p>
+          </div>
+          <div className="space-y-3">
             <div>
-              <p className="text-xs text-muted-foreground">{t('company')}</p>
-              <p className="font-medium">{formData.companyName || '—'}</p>
+              <p className="text-sm text-muted-foreground">{t('company')}</p>
+              <p className="font-medium text-base">{formData.companyName || '—'}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{t('employee')}</p>
-              <p className="font-medium">{formData.employeeName || '—'}</p>
+              <p className="text-sm text-muted-foreground">{t('employee')}</p>
+              <p className="font-medium text-base">{formData.employeeName || '—'}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => goToStep(0)} className="text-xs">
-            <Edit3 className="w-3 h-3 mr-1" />
+          <Button variant="ghost" size="sm" onClick={() => goToStep(0)} className="text-sm text-[hsl(var(--brand-primary))] hover:text-[hsl(var(--brand-primary))] hover:bg-[hsl(var(--brand-primary))]/10">
+            <Edit3 className="w-4 h-4 mr-1.5" />
             {t('edit')}
           </Button>
         </div>
 
-        <div className="p-4 rounded-lg border bg-card space-y-3">
-          <p className="font-semibold text-sm">{t('position')}</p>
-          <div className="space-y-2 text-sm">
+        {/* Position Card */}
+        <div className="relative p-6 rounded-xl border bg-card space-y-4 group hover:border-[hsl(var(--brand-primary))]/30 transition-colors">
+          {formData.jobTitle && formData.startDate && (
+            <div className="absolute top-4 right-4">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[hsl(var(--brand-primary))]/10 flex items-center justify-center">
+              <Briefcase className="w-5 h-5 text-[hsl(var(--brand-primary))]" />
+            </div>
+            <p className="font-semibold text-base">{t('position')}</p>
+          </div>
+          <div className="space-y-3">
             <div>
-              <p className="text-xs text-muted-foreground">{t('title')}</p>
-              <p className="font-medium">{formData.jobTitle || '—'}</p>
+              <p className="text-sm text-muted-foreground">{t('title')}</p>
+              <p className="font-medium text-base">{formData.jobTitle || '—'}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{t('startDate')}</p>
-              <p className="font-medium">{formData.startDate || '—'}</p>
+              <p className="text-sm text-muted-foreground">{t('startDate')}</p>
+              <p className="font-medium text-base">{formData.startDate || '—'}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => goToStep(1)} className="text-xs">
-            <Edit3 className="w-3 h-3 mr-1" />
+          <Button variant="ghost" size="sm" onClick={() => goToStep(1)} className="text-sm text-[hsl(var(--brand-primary))] hover:text-[hsl(var(--brand-primary))] hover:bg-[hsl(var(--brand-primary))]/10">
+            <Edit3 className="w-4 h-4 mr-1.5" />
             {t('edit')}
           </Button>
         </div>
 
-        <div className="p-4 rounded-lg border bg-card space-y-3">
-          <p className="font-semibold text-sm">{t('workDetails')}</p>
-          <div className="space-y-2 text-sm">
+        {/* Work Details Card */}
+        <div className="relative p-6 rounded-xl border bg-card space-y-4 group hover:border-[hsl(var(--brand-primary))]/30 transition-colors">
+          {formData.workArrangement && formData.workHoursPerWeek && (
+            <div className="absolute top-4 right-4">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[hsl(var(--brand-primary))]/10 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-[hsl(var(--brand-primary))]" />
+            </div>
+            <p className="font-semibold text-base">{t('workDetails')}</p>
+          </div>
+          <div className="space-y-3">
             <div>
-              <p className="text-xs text-muted-foreground">{t('arrangement')}</p>
-              <p className="font-medium capitalize">{formData.workArrangement || '—'}</p>
+              <p className="text-sm text-muted-foreground">{t('arrangement')}</p>
+              <p className="font-medium text-base capitalize">{formData.workArrangement || '—'}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{t('hoursPerWeek')}</p>
-              <p className="font-medium">{formData.workHoursPerWeek || '—'}</p>
+              <p className="text-sm text-muted-foreground">{t('hoursPerWeek')}</p>
+              <p className="font-medium text-base">{formData.workHoursPerWeek || '—'}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => goToStep(3)} className="text-xs">
-            <Edit3 className="w-3 h-3 mr-1" />
+          <Button variant="ghost" size="sm" onClick={() => goToStep(3)} className="text-sm text-[hsl(var(--brand-primary))] hover:text-[hsl(var(--brand-primary))] hover:bg-[hsl(var(--brand-primary))]/10">
+            <Edit3 className="w-4 h-4 mr-1.5" />
             {t('edit')}
           </Button>
         </div>
 
-        <div className="p-4 rounded-lg border bg-card space-y-3">
-          <p className="font-semibold text-sm">{t('compensation')}</p>
-          <div className="space-y-2 text-sm">
+        {/* Compensation Card */}
+        <div className="relative p-6 rounded-xl border bg-card space-y-4 group hover:border-[hsl(var(--brand-primary))]/30 transition-colors">
+          {formData.salaryCurrency && (
+            <div className="absolute top-4 right-4">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[hsl(var(--brand-primary))]/10 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-[hsl(var(--brand-primary))]" />
+            </div>
+            <p className="font-semibold text-base">{t('compensation')}</p>
+          </div>
+          <div className="space-y-3">
             <div>
-              <p className="text-xs text-muted-foreground">{t('baseSalary')}</p>
-              <p className="font-medium">
+              <p className="text-sm text-muted-foreground">{t('baseSalary')}</p>
+              <p className="font-medium text-base">
                 {formData.salaryCurrency} {formData.salaryAmount ? parseFloat(formData.salaryAmount).toLocaleString() : '—'}
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => goToStep(4)} className="text-xs">
-            <Edit3 className="w-3 h-3 mr-1" />
+          <Button variant="ghost" size="sm" onClick={() => goToStep(4)} className="text-sm text-[hsl(var(--brand-primary))] hover:text-[hsl(var(--brand-primary))] hover:bg-[hsl(var(--brand-primary))]/10">
+            <Edit3 className="w-4 h-4 mr-1.5" />
             {t('edit')}
           </Button>
         </div>

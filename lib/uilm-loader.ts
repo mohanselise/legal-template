@@ -16,7 +16,9 @@ const MODULES = [
   'employmentAgreement',
   'legalDisclaimer',
   'employmentAgreementPage',
-  'footer'
+  'footer',
+  'tips', // Module ID: 31c9a49e-126c-43af-842b-a13de29ac200
+  'miniMap' // Module ID: 04a716ad-4882-42e5-b574-7ccf1c8d7329
 ];
 
 /**

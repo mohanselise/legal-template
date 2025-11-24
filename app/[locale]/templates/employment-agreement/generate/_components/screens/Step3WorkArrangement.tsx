@@ -91,7 +91,7 @@ export function Step3WorkArrangement() {
                   'hover:border-[hsl(var(--brand-primary))] hover:shadow-md',
                   isSelected
                     ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.05] shadow-md'
-                    : 'border-[hsl(var(--border))] bg-white'
+                    : 'border-[hsl(var(--border))] bg-background'
                 )}
               >
                 {isRecommended && (

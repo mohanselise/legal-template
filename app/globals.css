@@ -299,3 +299,46 @@
     background-position: 1000px 0;
   }
 }
+
+/* Typography Utility Classes */
+@layer utilities {
+  /* Prose with relaxed line-height for long text */
+  .prose-relaxed {
+    line-height: 1.75;
+  }
+
+  /* Heading size variants */
+  .heading-xl {
+    @apply text-4xl md:text-5xl font-heading font-semibold tracking-tight;
+  }
+
+  .heading-lg {
+    @apply text-3xl md:text-4xl font-heading font-semibold tracking-tight;
+  }
+
+  .heading-md {
+    @apply text-2xl md:text-3xl font-heading font-semibold;
+  }
+
+  .heading-sm {
+    @apply text-xl md:text-2xl font-heading font-semibold;
+  }
+
+  /* Body text variants */
+  .body-lg {
+    @apply text-lg leading-relaxed text-[hsl(var(--brand-muted))];
+  }
+
+  .body-md {
+    @apply text-base leading-relaxed;
+  }
+
+  .body-sm {
+    @apply text-sm leading-relaxed text-[hsl(var(--brand-muted))];
+  }
+
+  /* Caption/label text */
+  .label-sm {
+    @apply text-xs font-medium uppercase tracking-wide text-[hsl(var(--brand-muted))];
+  }
+}

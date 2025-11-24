@@ -1,9 +1,15 @@
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { NextRequest } from 'next/server';
 
 // German language codes (ISO 639-1)
 const GERMAN_LANGUAGE_CODES = ['de', 'de-de', 'de-at', 'de-ch', 'de-li', 'de-be', 'de-lu'];
+
+// Define protected routes (admin dashboard and its subroutes)
+const isProtectedRoute = createRouteMatcher([
+  '/:locale/admin(.*)',
+]);
 
 function detectLocale(request: NextRequest): string | undefined {
   // 1. Check cookie preference first (highest priority)
@@ -44,8 +50,13 @@ function detectLocale(request: NextRequest): string | undefined {
 // Create the base next-intl middleware
 const intlMiddleware = createMiddleware(routing);
 
-export default function middleware(request: NextRequest) {
-  // Check if locale is already in the path
+export default clerkMiddleware(async (auth, request: NextRequest) => {
+  // Protect admin routes
+  if (isProtectedRoute(request)) {
+    await auth.protect();
+  }
+
+  // Handle i18n routing
   const pathname = request.nextUrl.pathname;
   const pathnameHasLocale = routing.locales.some(
     locale => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
@@ -60,9 +71,9 @@ export default function middleware(request: NextRequest) {
     return Response.redirect(newUrl);
   }
 
-  // Use the default next-intl middleware for everything else
+  // Use the next-intl middleware for everything else
   return intlMiddleware(request);
-}
+});
 
 export const config = {
   // Match only internationalized pathnames
@@ -73,6 +84,9 @@ export const config = {
     '/((?!api|_next|_vercel|.*\\..*).*)',
     // Optional: only run on root (/) URL
     '/',
+    // Include sign-in and sign-up routes
+    '/sign-in(.*)',
+    '/sign-up(.*)',
   ],
 };
 

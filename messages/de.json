@@ -548,8 +548,14 @@
       "willTryAgainDescription": "Der Hintergrundentwurf ist auf ein Problem gestoßen. Wir erstellen eine neue Kopie, wenn Sie fortfahren.",
       "draftUpdating": "Entwurf wird aktualisiert",
       "draftUpdatingDescription": "Wir haben neue Details bemerkt. Bitte warten Sie, während wir die Vereinbarung automatisch aktualisieren.",
-      "legalDisclaimer": "Diese Vorlagen werden nur zu Informationszwecken bereitgestellt und stellen keine Rechtsberatung dar.",
-      "aiAcknowledgment": "Ich verstehe, dass diese Vereinbarung von KI generiert wurde und werde den Vertrag sorgfältig überprüfen, bevor ich ihn verwende.",
+      "legalDisclaimerTitle": "Ich akzeptiere den Haftungsausschluss",
+      "legalDisclaimerShort": "Dieses Dokument dient nur zu Informationszwecken und stellt keine Rechtsberatung dar.",
+      "legalDisclaimer": "Diese Vorlagen werden nur zu Informationszwecken bereitgestellt und stellen keine Rechtsberatung dar. Konsultieren Sie immer einen qualifizierten Rechtsberater, bevor Sie ein generiertes Dokument für offizielle Zwecke verwenden. Der generierte Inhalt entspricht möglicherweise nicht allen geltenden Gesetzen in Ihrer Gerichtsbarkeit.",
+      "viewFullDisclaimer": "Vollständigen Haftungsausschluss anzeigen",
+      "aiAcknowledgmentTitle": "Ich verstehe, dass dies KI-generiert ist",
+      "aiAcknowledgmentShort": "Ich werde das Dokument sorgfältig überprüfen, bevor ich es verwende.",
+      "aiAcknowledgment": "Ich verstehe, dass diese Vereinbarung von KI generiert wurde und Fehler oder Auslassungen enthalten kann. Ich werde den Vertrag sorgfältig überprüfen, bevor ich ihn verwende, und bei Bedarf einen Rechtsberater konsultieren. KI-generierte Inhalte sind von Natur aus ungenau und sollten überprüft werden.",
+      "viewFullDetails": "Vollständige Details anzeigen",
       "reviewYourAgreement": "Ihre Vereinbarung überprüfen",
       "continueToReview": "Zur Überprüfung fortfahren",
       "generateEmploymentAgreement": "Arbeitsvertrag erstellen",
@@ -560,7 +566,8 @@
     "smartInput": {
       "aiSuggestion": "KI-Vorschlag",
       "confidence": "{confidence} Vertrauen",
-      "applySuggestion": "Vorschlag anwenden"
+      "applySuggestion": "Vorschlag anwenden",
+      "apply": "Anwenden"
     },
     "reviewPage": {
       "loadingPdf": "PDF-Viewer wird geladen...",
@@ -627,6 +634,10 @@
         "feature1": "7 intelligente Bildschirme",
         "feature2": "Marktstandards angewendet",
         "feature3": "~3-4 Minuten",
+        "documentsGenerated": "Dokumente erstellt",
+        "satisfactionRate": "Zufriedenheitsrate",
+        "averageTime": "Durchschnittliche Zeit",
+        "viewImportantInfo": "Wichtige Informationen vor dem Start anzeigen",
         "beforeYouBegin": "Bevor Sie beginnen",
         "notLegalAdvice": "Keine Rechtsberatung:",
         "notLegalAdviceText": "Dieses Tool bietet keine Rechtsberatung und erstellt Dokumente nur zu Informationszwecken.",
@@ -649,10 +660,16 @@
       "navigation": {
         "back": "Zurück",
         "continue": "Weiter",
-        "preparingStandards": "Standards werden vorbereitet...",
+        "preparingStandards": "Intelligente Standardwerte werden geladen",
+        "analyzingJurisdiction": "Rechtliche Anforderungen der Region werden analysiert...",
         "useStandard": "{jurisdiction} Standard verwenden",
         "applied": "Angewendet!",
-        "stepXOfY": "Schritt {current} von {total}: {title}"
+        "stepXOfY": "Schritt {current} von {total}: {title}",
+        "saveTimeWith": "Zeit sparen mit {jurisdiction}-Standards",
+        "autoFillDescription": "Arbeitszeiten, Kündigungsfristen und rechtliche Bedingungen nach lokalen Standards ausfüllen",
+        "applyStandards": "Standards anwenden",
+        "standardsApplied": "Standards angewendet!",
+        "movingToNextStep": "Weiter zum nächsten Schritt..."
       },
       "salaryWarning": {
         "title": "Gehaltsbetrag fehlt",
@@ -950,6 +967,20 @@
       "readyIn5Minutes": "Bereit in 5 Minuten",
       "downloadInstantly": "Sofort herunterladen"
     }
+  },
+  "tips": {
+    "didYouKnow": "Wussten Sie schon?",
+    "tip1": "Arbeitsverträge erfordern von Anwälten normalerweise 2-3 Stunden manueller Arbeit.",
+    "tip2": "Unsere KI hat Tausende von Arbeitsverträgen analysiert, um bewährte Praktiken zu erlernen.",
+    "tip3": "Ihre Vereinbarung enthält rechtsspezifische Klauseln für lokale Compliance.",
+    "tip4": "Gut formulierte Arbeitsverträge können kostspielige Streitigkeiten verhindern.",
+    "tip5": "Das durchschnittliche Unternehmen gibt 1.500-3.000 CHF für Anwaltskosten für einen einzelnen Arbeitsvertrag aus."
+  },
+  "miniMap": {
+    "documentOverview": "Dokumentenübersicht",
+    "signatories": "Unterzeichner",
+    "signatureLabel": "Unterschrift",
+    "dateLabel": "Datum"
   }
 }
 

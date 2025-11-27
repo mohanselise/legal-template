@@ -262,10 +262,11 @@ export function TemplatePDFReview({
     actualPageCount: number
   ): SignatureField[] => {
     return metadataFields.map((field) => {
+      // Convert party to signatoryIndex (0 = employer, 1 = employee)
       const signatoryIndex = field.party === "employer" ? 0 : 1;
-      // Always use actual last page for signature/date fields
-      // The API returns an estimated page count which may not match the actual PDF
-      const pageNumber = actualPageCount;
+
+      // Ensure pageNumber matches actual PDF page count
+      const pageNumber = Math.min(field.pageNumber, actualPageCount);
 
       return {
         id: field.id,

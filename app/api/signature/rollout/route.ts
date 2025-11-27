@@ -503,6 +503,7 @@ function buildPreparePayload({
         });
         console.log(`  ✓ Signature field: ${signatory.name} at (${field.x}, ${field.y}) on page ${pageNumber}`);
       } else if (field.type === 'date') {
+        // Use SAME coordinate treatment as signature fields (no conversion)
         stampPostInfoCoordinates.push({
           ...common,
           EntityName: 'AuditLog',
@@ -512,7 +513,7 @@ function buildPreparePayload({
             FontSize: 12,
           },
         });
-        console.log(`  ✓ Date field: ${signatory.name} at (${field.x}, ${field.y}) on page ${pageNumber}`);
+        console.log(`  ✓ Date field: ${signatory.name} at PDF coords (${field.x}, ${field.y}) -> API coords (${common.X}, ${common.Y}) [same as signature] on page ${pageNumber}`);
       } else if (field.type === 'text') {
         textFieldCoordinates.push({
           ...common,
@@ -547,7 +548,7 @@ function buildPreparePayload({
       const sigWidth = Math.round(SIG_PAGE_LAYOUT.SIG_BOX_WIDTH * DPI_SCALE);
       const sigHeight = Math.round(SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT * DPI_SCALE);
       
-      // Date Position - apply DPI scaling for SELISE
+      // Date Position - apply SAME treatment as signature (DPI scaling only, no conversion)
       const dateX = Math.round((MARGIN_LEFT + SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET) * DPI_SCALE);
       const dateY = Math.round((blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET) * DPI_SCALE);
       const dateWidth = Math.round(SIG_PAGE_LAYOUT.DATE_BOX_WIDTH * DPI_SCALE);
@@ -570,7 +571,7 @@ function buildPreparePayload({
         SignatoryName: signatory.name || 'Signatory',
       });
 
-      // Add Date Field
+      // Add Date Field (same coordinate treatment as signature)
       stampPostInfoCoordinates.push({
         FileId: fileId,
         Width: dateWidth,

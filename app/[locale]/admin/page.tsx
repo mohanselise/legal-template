@@ -1,71 +1,142 @@
-import { currentUser } from '@clerk/nextjs/server';
-import { redirect } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  FileText,
+  Users,
+  BarChart3,
+  Settings,
+  ArrowRight,
+} from "lucide-react";
 
-export default async function AdminDashboard() {
+const adminModules = [
+  {
+    title: "Templates",
+    description: "Manage legal templates",
+    icon: FileText,
+    href: "/admin/templates",
+    details: "Create, edit, and manage all legal document templates.",
+    available: true,
+  },
+  {
+    title: "Users",
+    description: "User management",
+    icon: Users,
+    href: "/admin/users",
+    details: "Manage user accounts and permissions.",
+    available: false,
+  },
+  {
+    title: "Analytics",
+    description: "Usage statistics",
+    icon: BarChart3,
+    href: "/admin/analytics",
+    details: "View document generation and usage analytics.",
+    available: false,
+  },
+  {
+    title: "Settings",
+    description: "System configuration",
+    icon: Settings,
+    href: "/admin/settings",
+    details: "Configure system settings and preferences.",
+    available: true,
+  },
+];
+
+export default async function AdminDashboard({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const user = await currentUser();
 
   if (!user) {
-    redirect('/sign-in');
+    redirect("/sign-in");
   }
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-10 px-4">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-[hsl(var(--fg))]">Admin Dashboard</h1>
+        <h1 className="text-4xl font-bold text-[hsl(var(--fg))] font-heading">
+          Admin Dashboard
+        </h1>
         <p className="text-[hsl(var(--globe-grey))] mt-2">
           Welcome back, {user.firstName || user.emailAddresses[0]?.emailAddress}
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Templates</CardTitle>
-            <CardDescription>Manage legal templates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-[hsl(var(--globe-grey))]">
-              View and manage all legal templates in the system.
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {adminModules.map((module) => {
+          const Icon = module.icon;
+          const CardWrapper = module.available ? Link : "div";
+          const cardProps = module.available
+            ? { href: `/${locale}${module.href}` }
+            : {};
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Users</CardTitle>
-            <CardDescription>User management</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-[hsl(var(--globe-grey))]">
-              Manage user accounts and permissions.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Analytics</CardTitle>
-            <CardDescription>Usage statistics</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-[hsl(var(--globe-grey))]">
-              View document generation and usage analytics.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Settings</CardTitle>
-            <CardDescription>System configuration</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-[hsl(var(--globe-grey))]">
-              Configure system settings and preferences.
-            </p>
-          </CardContent>
-        </Card>
+          return (
+            <CardWrapper
+              key={module.title}
+              {...cardProps}
+              className={`block ${
+                module.available
+                  ? "group cursor-pointer"
+                  : "opacity-60 cursor-not-allowed"
+              }`}
+            >
+              <Card
+                className={`h-full transition-all ${
+                  module.available
+                    ? "hover:shadow-lg hover:border-[hsl(var(--selise-blue))]/30"
+                    : ""
+                }`}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={`flex size-10 items-center justify-center rounded-lg ${
+                        module.available
+                          ? "bg-[hsl(var(--selise-blue))]/10"
+                          : "bg-[hsl(var(--muted))]"
+                      }`}
+                    >
+                      <Icon
+                        className={`size-5 ${
+                          module.available
+                            ? "text-[hsl(var(--selise-blue))]"
+                            : "text-[hsl(var(--globe-grey))]"
+                        }`}
+                      />
+                    </div>
+                    {module.available && (
+                      <ArrowRight className="size-4 text-[hsl(var(--globe-grey))] opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+                    )}
+                  </div>
+                  <CardTitle className="text-lg">{module.title}</CardTitle>
+                  <CardDescription>{module.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-[hsl(var(--globe-grey))]">
+                    {module.details}
+                  </p>
+                  {!module.available && (
+                    <p className="text-xs text-[hsl(var(--globe-grey))] mt-2 italic">
+                      Coming soon
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </CardWrapper>
+          );
+        })}
       </div>
 
       <div className="mt-8">

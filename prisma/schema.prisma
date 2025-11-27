@@ -1,0 +1,106 @@
+// Prisma Schema for Legal Templates
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Template model for legal document templates
+model Template {
+  id               String   @id @default(cuid())
+  slug             String   @unique // e.g., "employment-agreement"
+  title            String
+  description      String
+  icon             String   @default("FileText") // lucide icon name
+  available        Boolean  @default(false)
+  popular          Boolean  @default(false)
+  href             String
+  keywords         String[] @default([])
+  estimatedMinutes Int?
+  systemPromptRole String?  // AI role (e.g., "expert legal drafter")
+  systemPrompt     String?  @db.Text // AI system prompt for document generation
+
+  screens TemplateScreen[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([available])
+  @@index([slug])
+}
+
+// Screen/Step within a template form
+model TemplateScreen {
+  id          String     @id @default(cuid())
+  templateId  String
+  template    Template   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  title       String     // e.g., "Company Information"
+  description String?    // Optional helper text
+  type        ScreenType @default(standard) // Screen type: standard or signatory
+  order       Int        // Display order (0, 1, 2...)
+
+  fields TemplateField[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([templateId])
+  @@index([templateId, order])
+}
+
+// Field within a template screen
+model TemplateField {
+  id        String         @id @default(cuid())
+  screenId  String
+  screen    TemplateScreen @relation(fields: [screenId], references: [id], onDelete: Cascade)
+
+  name        String    // Field key (e.g., "companyName")
+  label       String    // Display label
+  type        FieldType // text, email, date, number, checkbox, select
+  required    Boolean   @default(false)
+  placeholder String?
+  helpText    String?
+  options     String[]  @default([]) // For select fields
+  order       Int       // Display order within screen
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([screenId])
+  @@index([screenId, order])
+}
+
+// Supported field types for form builder
+enum FieldType {
+  text
+  email
+  date
+  number
+  checkbox
+  select
+}
+
+// Screen types for form builder
+enum ScreenType {
+  standard  // Regular form screen with fields
+  signatory // Special screen for collecting signatory information
+}
+
+// System settings for global configuration
+model SystemSettings {
+  id                    String   @id @default(cuid())
+  key                   String   @unique // Setting key (e.g., "commonPromptInstructions")
+  value                 String   @db.Text // Setting value (JSON or text)
+  description           String?  // Human-readable description
+  updatedBy             String?  // User ID who last updated
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([key])
+}

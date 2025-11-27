@@ -55,3 +55,5 @@ yarn-error.log*
 
 # repo-specific ignores
 /SELISE Brand Book.pdf
+
+/lib/generated/prisma

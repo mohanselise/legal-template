@@ -27,11 +27,14 @@ import { Link } from "@/i18n/routing";
 import { getTranslations } from 'next-intl/server';
 import Image from "next/image";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
-import { templates } from "@/data/templates";
+import { getAllTemplates } from "@/lib/templates-db";
 
 export default async function Home() {
   const t = await getTranslations('home');
   const tTemplates = await getTranslations('templates');
+  
+  // Fetch templates from database
+  const templates = await getAllTemplates();
   
   const features = [
     {
@@ -283,9 +286,9 @@ export default async function Home() {
                     <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg flex-shrink-0">
                       <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
                     </div>
-                    <CardTitle className="text-2xl flex-shrink-0 break-words hyphens-auto">{tTemplates(`templatesList.${template.id}.title`)}</CardTitle>
+                    <CardTitle className="text-2xl flex-shrink-0 break-words hyphens-auto">{tTemplates(`templatesList.${template.slug}.title`)}</CardTitle>
                     <CardDescription className="mt-3 text-base leading-relaxed break-words hyphens-auto">
-                      {tTemplates(`templatesList.${template.id}.description`)}
+                      {tTemplates(`templatesList.${template.slug}.description`)}
                     </CardDescription>
                   </CardHeader>
                   <CardFooter className="mt-auto pt-4 flex-shrink-0">

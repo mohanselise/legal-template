@@ -1,0 +1,285 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { openrouter, CONTRACT_GENERATION_MODEL } from "@/lib/openrouter";
+import { validateTurnstileToken } from "next-turnstile";
+import { EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON } from "@/lib/openai";
+import type { LegalDocument } from "@/app/api/templates/employment-agreement/schema";
+
+type RouteParams = {
+  params: Promise<{ templateId: string }>;
+};
+
+/**
+ * POST /api/templates/[templateId]/generate
+ * Generate a legal document from form data using AI
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  const startTime = Date.now();
+  console.log("🚀 [Dynamic Generate API] Request received");
+
+  try {
+    const { templateId } = await params;
+    const body = await request.json();
+    const { formData, turnstileToken } = body;
+
+    if (!formData) {
+      return NextResponse.json(
+        { error: "Form data is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate Turnstile token
+    if (!turnstileToken || typeof turnstileToken !== "string" || !turnstileToken.trim()) {
+      return NextResponse.json(
+        {
+          error: "Human verification is required before generating the document.",
+          details: "Please complete the Turnstile verification.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
+    
+    if (!TURNSTILE_SECRET_KEY) {
+      console.error("⚠️ [Dynamic Generate API] TURNSTILE_SECRET_KEY is not set");
+      return NextResponse.json(
+        { error: "Server configuration error: Turnstile secret key not set" },
+        { status: 500 }
+      );
+    }
+
+    try {
+      const validationResponse = await validateTurnstileToken({
+        token: turnstileToken,
+        secretKey: TURNSTILE_SECRET_KEY,
+        sandbox: false, // Using production keys
+      });
+
+      if (!validationResponse.success) {
+        const errorCodes = (validationResponse as any)["error-codes"] || (validationResponse as any).error_codes || [];
+        console.error("❌ [Dynamic Generate API] Turnstile validation failed:", errorCodes);
+        return NextResponse.json(
+          {
+            error: "Invalid or expired verification token",
+            details: errorCodes.length > 0 ? `Error codes: ${errorCodes.join(", ")}` : undefined,
+          },
+          { status: 403 }
+        );
+      }
+    } catch (validationError) {
+      console.error("❌ [Dynamic Generate API] Turnstile validation error:", validationError);
+      return NextResponse.json(
+        {
+          error: "Failed to validate verification token",
+          details: validationError instanceof Error ? validationError.message : "Unknown error",
+        },
+        { status: 500 }
+      );
+    }
+
+    // Fetch template with system prompt
+    const template = await prisma.template.findUnique({
+      where: { id: templateId },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        systemPromptRole: true,
+        systemPrompt: true,
+      },
+    });
+
+    if (!template) {
+      return NextResponse.json(
+        { error: "Template not found" },
+        { status: 404 }
+      );
+    }
+
+    // Fetch common prompt instructions from settings
+    const commonInstructions = await prisma.systemSettings.findUnique({
+      where: { key: "commonPromptInstructions" },
+    });
+
+    // Build system prompt by combining role + prompt + common instructions
+    const parts: string[] = [];
+
+    // 1. Role (if provided)
+    if (template.systemPromptRole) {
+      parts.push(`You are ${template.systemPromptRole}.`);
+    } else {
+      // Default role if not specified
+      parts.push(`You are an expert legal drafter specializing in ${template.title} documents.`);
+    }
+
+    // 2. Template-specific prompt (if provided)
+    if (template.systemPrompt) {
+      parts.push(template.systemPrompt);
+    } else {
+      // Fallback to default prompt if none provided
+      parts.push(EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON || `Generate a comprehensive, legally sound ${template.title} document based on the provided information.`);
+    }
+
+    // 3. Common instructions from settings (if available)
+    if (commonInstructions?.value) {
+      parts.push("\n\n" + commonInstructions.value);
+    }
+
+    const systemPrompt = parts.join("\n\n");
+
+    // Build user prompt from form data
+    const userPrompt = buildUserPrompt(formData, template.title);
+
+    console.log("🤖 [Dynamic Generate API] Calling OpenRouter...");
+    const apiCallStart = Date.now();
+    
+    const completion = await openrouter.chat.completions.create({
+      model: CONTRACT_GENERATION_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+      max_tokens: 16000,
+    });
+
+    const apiCallDuration = Date.now() - apiCallStart;
+    console.log("✅ [Dynamic Generate API] Response received in", apiCallDuration, "ms");
+
+    const documentContent = completion.choices[0]?.message?.content || "";
+
+    if (!documentContent) {
+      throw new Error("No content generated");
+    }
+
+    // Parse and validate JSON
+    let document: LegalDocument;
+    try {
+      const parsed = JSON.parse(documentContent);
+      
+      // Ensure it matches LegalDocument structure
+      if (!parsed.metadata || !parsed.content) {
+        throw new Error("Invalid document structure");
+      }
+
+      // Set document type and metadata
+      parsed.metadata.documentType = template.slug;
+      parsed.metadata.title = parsed.metadata.title || template.title;
+      parsed.metadata.generatedAt = new Date().toISOString();
+      
+      // Ensure signatories array exists
+      if (!parsed.signatories) {
+        parsed.signatories = extractSignatoriesFromFormData(formData);
+      }
+
+      document = parsed as LegalDocument;
+    } catch (parseError) {
+      console.error("❌ [Dynamic Generate API] JSON parse error:", parseError);
+      throw new Error("Failed to parse generated document");
+    }
+
+    const totalDuration = Date.now() - startTime;
+    console.log("✅ [Dynamic Generate API] Document generated in", totalDuration, "ms");
+    console.log("💰 [Dynamic Generate API] Tokens:", completion.usage);
+
+    return NextResponse.json({
+      document,
+      formData,
+      usage: completion.usage,
+      duration: totalDuration,
+    });
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error("❌ [Dynamic Generate API] Error after", duration, "ms:", error);
+
+    return NextResponse.json(
+      {
+        error: "Failed to generate document",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Build user prompt from form data
+ * Simply combines all form data into a structured format without hardcoded groupings
+ */
+function buildUserPrompt(formData: Record<string, any>, templateTitle: string): string {
+  const sections: string[] = [];
+
+  sections.push(`Generate a ${templateTitle} document with the following information:\n`);
+
+  // Collect all non-empty form fields
+  const formEntries: string[] = [];
+
+  for (const [key, value] of Object.entries(formData)) {
+    // Skip empty values
+    if (value === null || value === undefined || value === "") continue;
+
+    // Format the value based on its type
+    let formattedValue: string;
+    if (typeof value === "object" && !Array.isArray(value)) {
+      // For objects, stringify with pretty formatting
+      formattedValue = JSON.stringify(value, null, 2);
+    } else if (Array.isArray(value)) {
+      // For arrays, join with commas or stringify if complex
+      formattedValue = value.length > 0 ? value.join(", ") : "";
+    } else {
+      // For primitives, convert to string
+      formattedValue = String(value);
+    }
+
+    if (formattedValue) {
+      formEntries.push(`${key}: ${formattedValue}`);
+    }
+  }
+
+  // Add all form entries
+  if (formEntries.length > 0) {
+    sections.push(formEntries.join("\n"));
+    sections.push("");
+  }
+
+  sections.push("Please generate a complete, professional legal document incorporating all the above information.");
+
+  return sections.join("\n");
+}
+
+/**
+ * Extract signatories from form data
+ */
+function extractSignatoriesFromFormData(formData: Record<string, any>): any[] {
+  const signatories: any[] = [];
+
+  // Look for company representative
+  if (formData.companyRepName || formData.companyName) {
+    signatories.push({
+      party: "employer",
+      name: formData.companyRepName || formData.companyName || "Company Representative",
+      title: formData.companyRepTitle || "Authorized Representative",
+      email: formData.companyRepEmail || formData.companyEmail || "",
+      phone: formData.companyRepPhone || formData.companyPhone || undefined,
+    });
+  }
+
+  // Look for employee
+  if (formData.employeeName) {
+    signatories.push({
+      party: "employee",
+      name: formData.employeeName,
+      title: formData.jobTitle || "Employee",
+      email: formData.employeeEmail || "",
+      phone: formData.employeePhone || undefined,
+    });
+  }
+
+  return signatories;
+}

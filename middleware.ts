@@ -6,9 +6,10 @@ import { NextRequest, NextResponse } from 'next/server';
 // German language codes (ISO 639-1)
 const GERMAN_LANGUAGE_CODES = ['de', 'de-de', 'de-at', 'de-ch', 'de-li', 'de-be', 'de-lu'];
 
-// Define protected routes (admin dashboard and its subroutes)
+// Define protected routes (admin dashboard and API routes)
 const isProtectedRoute = createRouteMatcher([
   '/:locale/admin(.*)',
+  '/api/admin(.*)',
 ]);
 
 function detectLocale(request: NextRequest): string {
@@ -54,12 +55,21 @@ export default clerkMiddleware((auth, request: NextRequest) => {
   const pathname = request.nextUrl.pathname;
 
   // Skip static files and special Next.js routes
+  // Note: /api/admin routes are handled below for authentication
   if (
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
+    (pathname.startsWith('/api') && !pathname.startsWith('/api/admin')) ||
     pathname.startsWith('/_vercel') ||
     pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js)$/)
   ) {
+    return NextResponse.next();
+  }
+
+  // Handle admin API routes - check auth and return early
+  if (pathname.startsWith('/api/admin')) {
+    if (isProtectedRoute(request)) {
+      auth.protect();
+    }
     return NextResponse.next();
   }
 
@@ -88,13 +98,15 @@ export const config = {
   // Match only internationalized pathnames
   matcher: [
     // Match all pathnames except for
-    // - … if they start with `/api`, `/_next` or `/_vercel`
+    // - … if they start with `/api` (except /api/admin), `/_next` or `/_vercel`
     // - … the ones containing a dot (e.g. `favicon.ico`)
-    '/((?!api|_next|_vercel|.*\\..*).*)',
+    '/((?!api(?!/admin)|_next|_vercel|.*\\..*).*)',
     // Optional: only run on root (/) URL
     '/',
     // Include sign-in route
     '/sign-in(.*)',
+    // Include admin API routes for authentication
+    '/api/admin(.*)',
   ],
 };
 

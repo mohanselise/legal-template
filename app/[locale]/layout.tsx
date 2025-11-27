@@ -1,52 +1,12 @@
 import type { Metadata } from "next";
-import { Open_Sans } from "next/font/google";
-import localFont from "next/font/local";
-import { ClerkProvider } from '@clerk/nextjs';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
-import "../globals.css";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Toaster } from "@/components/ui/sonner";
 import { JsonLd } from "@/components/json-ld";
-
-// SELISE Brand Typography System
-// Primary: Aptos (headlines, primary headings)
-// Secondary: Bahnschrift (subheadings, supporting text)
-// Body: Open Sans (body text, standard content)
-
-const openSans = Open_Sans({
-  variable: "--font-open-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const aptos = localFont({
-  src: [
-    {
-      path: "../../public/fonts/aptos/aptos-regular.ttf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../../public/fonts/aptos/aptos-bold.ttf",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-aptos",
-  display: "swap",
-  fallback: ["system-ui", "sans-serif"],
-});
-
-const bahnschrift = localFont({
-  src: "../../public/fonts/bahnschrift/bahnschrift-regular.ttf",
-  variable: "--font-bahnschrift",
-  display: "swap",
-  fallback: ["system-ui", "sans-serif"],
-});
 
 export function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Metadata {
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://legal-template-generator.selise.ch';
@@ -89,7 +49,7 @@ export function generateMetadata({ params }: { params: Promise<{ locale: string 
   };
 }
 
-export default async function RootLayout({
+export default async function LocaleLayout({
   children,
   params,
 }: Readonly<{
@@ -103,8 +63,7 @@ export default async function RootLayout({
     notFound();
   }
 
-  // Providing all messages to the client
-  // side is the easiest way to get started
+  // Providing all messages to the client side
   const messages = await getMessages();
   const t = await getTranslations('common');
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://legal-template-generator.selise.ch';
@@ -121,21 +80,17 @@ export default async function RootLayout({
   };
 
   return (
-    <ClerkProvider>
-      <html lang={locale}>
-        <body
-          className={`${openSans.variable} ${aptos.variable} ${bahnschrift.variable} antialiased flex flex-col min-h-screen`}
-        >
-          <JsonLd data={jsonLdData} />
-          <NextIntlClientProvider messages={messages}>
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-            <Toaster position="top-center" richColors />
-          </NextIntlClientProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <>
+      <JsonLd data={jsonLdData} />
+      <NextIntlClientProvider messages={messages}>
+        <div className="flex flex-col min-h-screen" lang={locale}>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <Toaster position="top-center" richColors />
+        </div>
+      </NextIntlClientProvider>
+    </>
   );
 }
 

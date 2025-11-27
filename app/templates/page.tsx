@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { templates } from "@/data/templates";
+import { getAvailableTemplates, getUpcomingTemplates } from "@/lib/templates-db";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,16 +12,17 @@ import {
   CardTitle
 } from "@/components/ui/card";
 
-const availableTemplates = templates.filter((template) => template.available);
-const upcomingTemplates = templates.filter((template) => !template.available);
-
 export const metadata: Metadata = {
   title: "Legal Templates Library | SELISE Legal Template Generator",
   description:
     "Browse SELISE's library of free legal templates. Generate employment agreements today and preview upcoming documents we are preparing for release.",
 };
 
-export default function TemplatesPage() {
+export default async function TemplatesPage() {
+  // Fetch templates from database
+  const availableTemplates = await getAvailableTemplates();
+  const upcomingTemplates = await getUpcomingTemplates();
+  
   return (
     <div className="min-h-screen bg-[hsl(var(--bg))] text-foreground">
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-br from-[hsl(var(--bg))] via-[hsl(var(--gradient-light-to))]/60 to-[hsl(var(--bg))]">

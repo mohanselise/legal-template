@@ -1,0 +1,408 @@
+---
+description: SELISE brand guidelines including typography, colors, logo usage, iconography, and voice & tone
+alwaysApply: true
+---
+
+# SELISE Brand Style Guide
+
+Source: SELISE Brand Book.pdf (Official brand guidelines)
+
+## Brand Philosophy & Mission
+
+**Mission**: Simplify IT Delivery
+- Streamline and enhance the way IT solutions are delivered
+- Remove complexity, optimize efficiency, ensure seamless digital transformation
+
+**Vision**: Become the first choice in our unit categories
+- Establish SELISE as the go-to partner in every category of business we operate in
+- Lead the industry by delivering innovative digital solutions that set new benchmarks
+
+**Who We Are**: A global IT delivery organization specializing in design, implementation, and operation of advanced technology solutions. We follow the DIO (Design, Implement, Operate) approach.
+
+## Brand Values
+
+Our values shape everything we do:
+- **Respectful**: Fostering a culture of trust and collaboration
+- **Integrous**: Uphold honesty and transparency in all actions
+- **Humble**: Always learning and growing
+- **Pragmatic**: Focusing on practical, effective solutions
+- **Persevering**: Pushing through challenges with resilience and determination
+- **Empowering**: Enabling people and clients to succeed and innovate
+
+## Voice & Tone
+
+- Professional yet approachable; avoid legalese unless required by jurisdictional precision
+- Prefer short sentences, active voice, and plain-English explanations
+- Be precise about obligations, dates, and defined terms; include helpful tooltips where needed
+- Maintain trustworthy, clear, efficient, and accessible communication
+
+### What NOT to Do (Voice & Tone)
+
+- **Do NOT** use excessive jargon or technical terms without explanation
+- **Do NOT** use passive voice when active voice is clearer
+- **Do NOT** write in a condescending or overly formal tone
+- **Do NOT** use legalese unless legally required for jurisdictional precision
+- **Do NOT** write long, complex sentences that obscure meaning
+- **Do NOT** use vague language when precise terms are needed
+- **Do NOT** omit helpful context or tooltips for defined terms
+
+## Typography System
+
+SELISE uses a structured typographic hierarchy. Update font imports in `app/layout.tsx` and CSS custom properties in `app/globals.css` accordingly.
+
+**Primary Typeface**: Aptos
+- Usage: Headlines, primary headings, and high-impact text
+- Available in regular and bold weights
+- Web, Print, and Base usage
+
+**Secondary Typeface**: Bahnschrift
+- Usage: Subheadings, supporting text, sections requiring compact, strong presence
+- Slide deck headlines should use Bahnschrift
+
+**Default/Body Typeface**: Open Sans
+- Usage: Body text, standard content, general readability
+- Provides clean, neutral appearance that pairs well with primary and secondary typefaces
+- Slide deck body text uses Open Sans
+
+**Logo Typeface**: Eras and Eras Demi
+- Usage: SELISE logo only to maintain brand identity
+- Do not use for general text
+
+**Fallback (Current)**: Geist Sans and Geist Mono
+- Use until brand fonts are properly installed
+- Plan migration to Aptos (primary), Bahnschrift (secondary), and Open Sans (body)
+
+### What NOT to Do (Typography)
+
+- **Do NOT** use Eras or Eras Demi for general text (logo only)
+- **Do NOT** mix more than three typefaces in a single design
+- **Do NOT** use decorative or script fonts
+- **Do NOT** use all caps for body text or long passages
+- **Do NOT** use fonts outside the approved hierarchy (Aptos, Bahnschrift, Open Sans)
+- **Do NOT** use system default fonts when brand fonts are available
+- **Do NOT** ignore font weight hierarchy (use regular and bold appropriately)
+- **Do NOT** use fonts that clash with the brand aesthetic
+
+## Color System
+
+**CRITICAL**: Use CSS variables as design tokens. **Do not hardcode hex values in components.** Stick to blues, greys, blacks, whites, and occasionally greens.
+
+### Primary Brand Colors
+
+All colors are defined as CSS variables in `app/globals.css`:
+
+```css
+:root {
+  /* SELISE Primary Colors */
+  --selise-blue: 206 100% 35%;        /* #0066B2 - Primary brand color */
+  --globe-grey: 0 0% 48%;             /* #7B7C7F - Secondary/muted */
+  --oxford-blue: 204 100% 11%;        /* #001F35 - Dark accent */
+  --white: 0 0% 100%;                 /* #FFFFFF - Light text/backgrounds */
+  --eerie-black: 180 9% 12%;          /* #1B2021 - Primary text (dark) */
+
+  /* Extended Brand Palette */
+  --sky-blue: 206 95% 57%;            /* #247EC1 - Light blue variant */
+  --light-blue: 207 87% 70%;          /* #6BAEEE - Lighter blue for highlights */
+
+  /* Highlight Colors (use sparingly) */
+  --mauveine: 281 79% 35%;            /* #791E94 - Purple for infographics */
+  --poly-green: 93 46% 19%;           /* #2A4D14 - Dark green for text/info */
+  --lavender: 289 52% 62%;            /* #BC63D7 - Light purple for infographics */
+  --lime-green: 99 44% 54%;           /* #7BC950 - Green for positive outcomes */
+  --crimson: 346 97% 52%;             /* #D80032 - Red for warnings */
+  --pantone-red: 354 85% 57%;         /* #EF233C - Bright red for negative headers */
+
+  /* UI Surface Tokens */
+  --bg: 0 0% 100%;                    /* White background */
+  --fg: 180 9% 12%;                   /* Eerie black text */
+  --card: 0 0% 100%;
+  --card-foreground: 180 9% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 180 9% 12%;
+
+  /* UI States */
+  --border: 0 0% 90%;                 /* Light grey */
+  --input: 0 0% 90%;
+  --ring: var(--selise-blue);
+  --success: 99 44% 54%;              /* Lime green */
+  --warning: 38 92% 50%;
+  --destructive: 354 85% 57%;         /* Pantone red */
+
+  /* Gradients - Light */
+  --gradient-light-from: 0 0% 98%;    /* #F9F9F9 */
+  --gradient-light-to: 0 0% 93%;      /* #EDEDED */
+
+  /* Gradients - Mid (Sky Blue) */
+  --gradient-mid-from: 206 100% 68%;  /* #5BAEFF */
+  --gradient-mid-to: 206 100% 39%;    /* #0073C6 */
+
+  /* Gradients - Dark (Deep Blue) */
+  --gradient-dark-from: 204 100% 32%; /* #0067A3 */
+  --gradient-dark-to: 211 100% 22%;   /* #002D72 */
+}
+```
+
+### Color Usage Guidelines
+
+- **Primary**: SELISE Blue (#0066B2) - Dominates backgrounds, large sections, key branding
+- **Secondary**: Globe Grey (#7B7C7F) - Supports in subheadings, graphics, secondary buttons
+- **Accent**: Use highlight colors sparingly for CTAs, key details, important elements
+- **Text**: Eerie Black (#1B2021) for dark text, White (#FFFFFF) for light text
+- **Consistency**: Maintain proper contrast ratios for WCAG AA accessibility
+- **Prohibited**: Do not use bright colors beyond brand palette (avoid non-brand reds, purples, yellows, oranges)
+
+### Color Ratios
+
+- 3-color palette: 6:3:1 (Primary:Secondary:Accent)
+- 4-color palette: 5:2.5:1.5:1 (Primary:Secondary:Tertiary:Accent)
+
+### Usage with Tailwind
+
+Always use CSS variables through Tailwind utilities:
+
+```tsx
+// Backgrounds
+<div className="bg-[hsl(var(--selise-blue))]">
+<div className="bg-[hsl(var(--bg))]">
+
+// Text
+<p className="text-[hsl(var(--fg))]">
+<h1 className="text-[hsl(var(--selise-blue))]">
+
+// Borders
+<div className="border-[hsl(var(--border))]">
+
+// Gradients
+<div className="bg-gradient-to-r from-[hsl(var(--gradient-mid-from))] to-[hsl(var(--gradient-mid-to))]">
+```
+
+**Never hardcode hex values like `#0066B2` directly in components.**
+
+### What NOT to Do (Colors)
+
+- **Do NOT** hardcode hex color values (e.g., `#0066B2`, `#7B7C7F`) directly in components
+- **Do NOT** use colors outside the approved brand palette
+- **Do NOT** use bright, non-brand colors (reds, purples, yellows, oranges) unless they're in the approved highlight palette
+- **Do NOT** ignore color contrast ratios for accessibility (must meet WCAG AA standards)
+- **Do NOT** use highlight colors excessively (they should be used sparingly)
+- **Do NOT** create custom color variations without updating CSS variables first
+- **Do NOT** use colors that clash with SELISE Blue as the primary brand color
+- **Do NOT** use pure black (#000000) for text - use Eerie Black (#1B2021) instead
+- **Do NOT** use colors that don't align with the brand's professional, trustworthy image
+
+## Logo Guidelines
+
+**Primary Logo**: The SELISE primary logo features a distinctive icon paired with clean, modern typography using Eras and Eras Demi fonts.
+
+**Minimum Sizes**:
+- Primary logo: 90px width (≈1.25 inches) minimum
+- Secondary/icon logo: 50px width (≈0.28 inches) minimum
+
+**Clear Space**: Maintain adequate clear space around the logo (equal to the x-height of the logotype)
+
+**Positioning**:
+- Preferred: Top left or top right of branded materials
+- Alternative: Bottom of materials
+- Prohibited: Odd positions outside these guidelines
+
+**Logo Variations**:
+- Light backgrounds: Use dark logo (blue or black version)
+- Dark backgrounds: Use white logo version
+- Color backgrounds: Ensure sufficient contrast; use semi-transparent overlay if needed
+
+**Do's**:
+- Use on clean, uncluttered backgrounds
+- Display in original proportions without distortion
+- Use approved color variations (black, white, or primary blue)
+- Place prominently where easily recognized
+
+**Don'ts**:
+- Do not place on low-contrast or busy backgrounds
+- Do not alter colors beyond approved palette
+- Do not stretch, skew, or resize disproportionately
+- Do not apply effects (shadows, gradients, outlines)
+- Do not use alongside unapproved colors or clashing graphics
+- Do not place on colorful or patterned backgrounds
+
+### What NOT to Do (Logo)
+
+- **Do NOT** place logo on low-contrast backgrounds where it's hard to see
+- **Do NOT** place logo on busy, cluttered, or patterned backgrounds
+- **Do NOT** alter logo colors beyond approved variations (black, white, primary blue)
+- **Do NOT** stretch, skew, rotate, or distort the logo in any way
+- **Do NOT** apply visual effects to the logo (shadows, gradients, outlines, glows, 3D effects)
+- **Do NOT** resize logo below minimum sizes (90px primary, 50px secondary)
+- **Do NOT** place logo in odd positions outside approved guidelines
+- **Do NOT** use logo alongside unapproved colors or clashing graphics
+- **Do NOT** place logo on colorful backgrounds without ensuring proper contrast
+- **Do NOT** modify the logo design or proportions
+- **Do NOT** use logo variations not approved in brand guidelines
+- **Do NOT** place logo without adequate clear space around it
+
+## Iconography
+
+**Sources**: Use icons only from:
+- **Flaticons**: For UI icons (copy/paste into designs)
+- **unDraw.co**: For illustrations (download and insert)
+- **lucide-react**: For React components in web applications
+
+**Style Guidelines**:
+- Use outlined or flat-style icons for uniformity
+- Do not mix icon styles (outline with filled or 3D)
+- Outlined icons: Simple black or white for clean, modern look
+- White icons on blue: For dark/gradient blue backgrounds
+- Black icons on light: Thin outlined for white/light backgrounds
+
+**Color Matching**:
+- Recolor icons to match SELISE brand palette (blue tones or grayscale)
+- Do not distort, stretch, or add shadow/glow effects
+- Keep icon sizes in `em` where possible for better scaling
+
+**Placement**:
+- Maintain consistent sizing and spacing
+- Align properly with accompanying text (vertically and horizontally)
+- Use icons to enhance content, not distract from it
+
+### What NOT to Do (Iconography)
+
+- **Do NOT** use icons from sources other than Flaticons, unDraw.co, or lucide-react
+- **Do NOT** mix icon styles (e.g., outlined with filled or 3D icons)
+- **Do NOT** distort, stretch, or skew icons
+- **Do NOT** add shadow, glow, or other effects to icons
+- **Do NOT** use icons in colors outside the SELISE brand palette
+- **Do NOT** use icons that clash with the brand's clean, modern aesthetic
+- **Do NOT** use icons that distract from or compete with content
+- **Do NOT** use inconsistent icon sizing or spacing
+- **Do NOT** use icons without proper alignment with accompanying text
+- **Do NOT** use pixel-based icon sizes when `em` units are more appropriate for scaling
+
+## Layout & Spacing
+
+- Use Tailwind spacing scale; 4px baseline (Tailwind `1` = 0.25rem)
+- Constrain main reading width to ~680–780px for long-form template content
+- Maintain visual hierarchy with consistent spacing between elements
+
+### What NOT to Do (Layout & Spacing)
+
+- **Do NOT** use arbitrary spacing values outside the Tailwind scale
+- **Do NOT** create layouts wider than ~780px for long-form content (hurts readability)
+- **Do NOT** ignore visual hierarchy when spacing elements
+- **Do NOT** use inconsistent spacing between similar elements
+- **Do NOT** create cramped layouts with insufficient white space
+- **Do NOT** use spacing that breaks the 4px baseline grid
+
+## Accessibility
+
+- Maintain WCAG AA color contrast for text over backgrounds (minimum 4.5:1 for normal text, 3:1 for large text)
+- Always label inputs and controls; use `aria-*` attributes where necessary
+- Provide footnotes/explanations for defined terms via tooltips or collapsible details
+- Ensure proper contrast between text and background for readability
+- Test designs in various formats to ensure adaptability and quality
+
+### What NOT to Do (Accessibility)
+
+- **Do NOT** use color combinations that fail WCAG AA contrast ratios
+- **Do NOT** rely solely on color to convey information (use text, icons, or patterns too)
+- **Do NOT** create unlabeled inputs or controls
+- **Do NOT** omit `aria-*` attributes for interactive elements
+- **Do NOT** use text that's too small or hard to read
+- **Do NOT** create designs that aren't keyboard navigable
+- **Do NOT** ignore screen reader compatibility
+- **Do NOT** use low contrast text on backgrounds
+
+## Background Images & Photography
+
+**Where to Use**:
+- Corporate presentations, web & digital platforms, marketing materials, event branding
+- Should be high-quality, relevant, aligned with brand color tone
+- Integrate with appropriate opacity to maintain content readability
+
+**Do's**:
+- Use sharp, well-lit, properly exposed images
+- Align imagery with brand message and target audience
+- Use consistent styling across materials
+
+**Don'ts**:
+- Avoid generic stock images lacking authenticity
+- Do not use low-resolution or poorly lit images
+- Avoid excessive editing or filters that distort natural look
+- Do not use overly complex or distracting designs
+- Avoid images with no connection to SELISE brand narrative
+
+### What NOT to Do (Background Images & Photography)
+
+- **Do NOT** use generic, inauthentic stock images
+- **Do NOT** use low-resolution, pixelated, or blurry images
+- **Do NOT** use poorly lit or underexposed images
+- **Do NOT** apply excessive filters, effects, or editing that distorts the natural look
+- **Do NOT** use overly complex or busy images that distract from content
+- **Do NOT** use images with no connection to SELISE's brand narrative or values
+- **Do NOT** use images that clash with brand color tones
+- **Do NOT** use images that reduce content readability (always maintain appropriate opacity)
+- **Do NOT** use images that don't align with the professional brand image
+
+## Brand Elements & Applications
+
+**Co-branding**:
+- When collaborating with partners, place client/partner logo before SELISE logo
+- Maintain equal visual weight and spacing between logos
+- Use neutral backgrounds and consistent typography
+- Ensure all co-branded materials are pre-approved
+
+**Social Media**:
+- Use SELISE primary colors for backgrounds, text overlays, icons
+- Ensure visual alignment with brand tone and message
+- Balance promotional content with value-driven posts
+
+**Social Media Aspect Ratios**:
+- Instagram Posts: 1:1 (1080x1080)
+- Instagram Stories/Reels: 9:16 (vertical)
+- Facebook & LinkedIn Posts: 1.91:1 or 1:1
+- Company logo: 400x400
+- Company cover: 646x220
+
+**Slide Decks**:
+- Use Circle Office Theme for Spring/Summer presentations
+- Use Mountain Theme for Fall/Winter presentations
+- Headline: Bahnschrift
+- Subtitle/key message: Bahnschrift
+- Body text: Open Sans (in slides) or Aptos (general)
+- Stick to blues, greys, blacks, whites, and occasionally greens only
+
+### What NOT to Do (Brand Elements & Applications)
+
+**Co-branding:**
+- **Do NOT** place SELISE logo before partner/client logo
+- **Do NOT** create unequal visual weight between logos
+- **Do NOT** use backgrounds that clash with co-branded materials
+- **Do NOT** use co-branded materials without pre-approval
+
+**Social Media:**
+- **Do NOT** use colors outside SELISE primary palette
+- **Do NOT** ignore aspect ratio requirements for each platform
+- **Do NOT** create content that doesn't align with brand tone
+- **Do NOT** use only promotional content (balance with value-driven posts)
+
+**Slide Decks:**
+- **Do NOT** use wrong theme for season (Circle Office for Spring/Summer, Mountain for Fall/Winter)
+- **Do NOT** use fonts outside approved hierarchy (Bahnschrift for headlines, Open Sans/Aptos for body)
+- **Do NOT** use colors outside approved palette (blues, greys, blacks, whites, occasional greens)
+- **Do NOT** mix themes within a single presentation
+
+## Implementation Notes
+
+- Logo assets and brand elements should be placed in `public/` directory
+- Keep SVG sources and exports under version control
+- Update font imports in `app/layout.tsx` to use Aptos (primary), Bahnschrift (secondary), and Open Sans (body)
+- Define all color tokens in `app/globals.css` using the CSS variables above
+- Always consume colors through Tailwind utilities, never hardcode hex values
+
+### What NOT to Do (Implementation)
+
+- **Do NOT** place logo assets outside the `public/` directory
+- **Do NOT** hardcode colors in components - always use CSS variables
+- **Do NOT** skip updating font imports when brand fonts are available
+- **Do NOT** create color tokens outside `app/globals.css`
+- **Do NOT** use inline styles for brand colors
+- **Do NOT** ignore version control for SVG sources and exports
+- **Do NOT** mix implementation approaches (stick to CSS variables + Tailwind utilities)

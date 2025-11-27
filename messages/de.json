@@ -194,7 +194,22 @@
         "title": "IP-Übertragungsvereinbarung",
         "description": "Übertragen Sie geistige Eigentumsrechte mit klaren Bedingungen und umfassender Abdeckung."
       }
-    }
+    },
+    "templatesSection": {
+      "generateNow": "Jetzt erstellen",
+      "comingSoon": "Demnächst verfügbar",
+      "requestTemplate": "Vorlage anfordern"
+    },
+    "browseAvailableTemplates": "Verfügbare Vorlagen durchsuchen",
+    "alwaysFree": "Immer kostenlos",
+    "createInMinutes": "{template} in Minuten erstellen",
+    "generateYourAgreementNow": "Jetzt Ihre Vereinbarung erstellen",
+    "legallyVetted": "Rechtlich geprüfte Vorlagen",
+    "readyInMinutes": "In 5 Minuten fertig",
+    "fullyCustomizable": "Vollständig anpassbar",
+    "readyToGetStarted": "Bereit loszulegen?",
+    "generateYourTemplateNow": "Erstellen Sie jetzt Ihre {template}. Keine Kreditkarte erforderlich.",
+    "startGenerating": "Jetzt starten"
   },
   "about": {
     "title": "Über den Rechtsvorlagen-Generator | Eine SELISE Group AG Initiative",

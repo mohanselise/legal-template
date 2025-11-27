@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Link } from "@/i18n/routing";
 import { getTranslations } from 'next-intl/server';
 
-import { templates } from "@/data/templates";
+import { getAvailableTemplates, getUpcomingTemplates } from "@/lib/templates-db";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,9 +12,6 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
-
-const availableTemplates = templates.filter((template) => template.available);
-const upcomingTemplates = templates.filter((template) => !template.available);
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('templates');
@@ -31,6 +28,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function TemplatesPage() {
   const t = await getTranslations('templates');
+  
+  // Fetch templates from database
+  const availableTemplates = await getAvailableTemplates();
+  const upcomingTemplates = await getUpcomingTemplates();
+  
   return (
     <div className="min-h-screen bg-[hsl(var(--bg))] text-foreground">
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-br from-[hsl(var(--bg))] via-[hsl(var(--gradient-light-to))]/60 to-[hsl(var(--bg))]">
@@ -108,9 +110,9 @@ export default async function TemplatesPage() {
                     <div className="mt-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
                       <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
                     </div>
-                    <CardTitle className="mt-6 text-2xl">{t(`templatesList.${template.id}.title`)}</CardTitle>
+                    <CardTitle className="mt-6 text-2xl">{t(`templatesList.${template.slug}.title`)}</CardTitle>
                     <CardDescription className="mt-3 text-base leading-relaxed">
-                      {t(`templatesList.${template.id}.description`)}
+                      {t(`templatesList.${template.slug}.description`)}
                     </CardDescription>
                   </CardHeader>
                   <CardFooter className="pt-0">
@@ -159,9 +161,9 @@ export default async function TemplatesPage() {
                     <div className="mt-2 flex h-12 w-12 items-center justify-center rounded-xl bg-[hsl(var(--selise-blue))]/12 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/25 dark:text-[hsl(var(--sky-blue))]">
                       <Icon className="h-6 w-6" />
                     </div>
-                    <CardTitle className="mt-6 text-xl">{t(`templatesList.${template.id}.title`)}</CardTitle>
+                    <CardTitle className="mt-6 text-xl">{t(`templatesList.${template.slug}.title`)}</CardTitle>
                     <CardDescription className="mt-3 text-base leading-relaxed">
-                      {t(`templatesList.${template.id}.description`)}
+                      {t(`templatesList.${template.slug}.description`)}
                     </CardDescription>
                     <CardFooter className="mt-auto px-0 pt-6">
                       <Button

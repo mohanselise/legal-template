@@ -6,6 +6,7 @@ import type { LegalDocument } from '@/app/api/templates/employment-agreement/sch
 import type { JurisdictionIntelligence, CompanyIntelligence, JobTitleAnalysis, MarketStandards } from '@/lib/types/smart-form';
 import { formatAddressByJurisdiction, parseAddressString } from '@/lib/utils/address-formatting';
 import type { StructuredAddress } from '@/lib/utils/address-formatting';
+import { prisma } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -177,12 +178,30 @@ export async function POST(request: NextRequest) {
     const promptLength = userPrompt.length;
     console.log('✅ [Generate API] Prompt built - Length:', promptLength, 'characters');
 
+    // Fetch system prompt from database with fallback to default
+    console.log('📋 [Generate API] Fetching system prompt from database...');
+    let systemPrompt = EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON;
+    try {
+      const template = await prisma.template.findUnique({
+        where: { slug: 'employment-agreement' },
+        select: { systemPrompt: true },
+      });
+      if (template?.systemPrompt) {
+        systemPrompt = template.systemPrompt;
+        console.log('✅ [Generate API] Using custom system prompt from database');
+      } else {
+        console.log('ℹ️ [Generate API] Using default system prompt (no custom prompt set)');
+      }
+    } catch (dbError) {
+      console.warn('⚠️ [Generate API] Failed to fetch system prompt from database, using default:', dbError);
+    }
+
     console.log('🤖 [Generate API] Calling OpenRouter API with Claude 3.5 Sonnet (JSON mode)...');
     const apiCallStart = Date.now();
     const completion = await openrouter.chat.completions.create({
       model: CONTRACT_GENERATION_MODEL,
       messages: [
-        { role: 'system', content: EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       response_format: { type: 'json_object' }, // Enforce JSON output

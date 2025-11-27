@@ -1,37 +1,64 @@
-import { UserButton } from '@clerk/nextjs';
+"use client";
+
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { UserButton } from "@clerk/nextjs";
+import { LayoutDashboard, FileText, Users } from "lucide-react";
+
+const navItems = [
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/templates", label: "Templates", icon: FileText },
+  { href: "/admin/users", label: "Users", icon: Users },
+];
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
+  // Extract locale from pathname (e.g., /en/admin -> en)
+  const locale = pathname.split("/")[1];
+
+  const isActive = (href: string) => {
+    const fullPath = `/${locale}${href}`;
+    if (href === "/admin") {
+      return pathname === fullPath;
+    }
+    return pathname.startsWith(fullPath);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-[hsl(var(--gradient-light-to))]">
       <div className="border-b border-[hsl(var(--border))] bg-[hsl(var(--bg))]">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-6">
-            <h2 className="text-lg font-semibold text-[hsl(var(--selise-blue))]">
+            <Link
+              href={`/${locale}/admin`}
+              className="text-lg font-semibold text-[hsl(var(--selise-blue))] font-heading"
+            >
               Admin Portal
-            </h2>
-            <nav className="hidden md:flex gap-4">
-              <a
-                href="/admin"
-                className="text-sm font-medium text-[hsl(var(--fg))] hover:text-[hsl(var(--selise-blue))] transition-colors"
-              >
-                Dashboard
-              </a>
-              <a
-                href="/admin/templates"
-                className="text-sm font-medium text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--selise-blue))] transition-colors"
-              >
-                Templates
-              </a>
-              <a
-                href="/admin/users"
-                className="text-sm font-medium text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--selise-blue))] transition-colors"
-              >
-                Users
-              </a>
+            </Link>
+            <nav className="hidden md:flex gap-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={`/${locale}${item.href}`}
+                    className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      active
+                        ? "text-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/10"
+                        : "text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--muted))]"
+                    }`}
+                  >
+                    <Icon className="size-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
           <UserButton afterSignOutUrl="/" />

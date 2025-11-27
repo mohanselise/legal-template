@@ -1,17 +1,31 @@
+/**
+ * Template Registry Integration
+ * 
+ * This file integrates the template metadata with the new registry system.
+ * It maintains backward compatibility with existing code that imports `templates`.
+ */
+
 import { FileText, Lock, Shield, Sparkles, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { 
+  registerTemplateMeta, 
+  getAllTemplateMeta,
+  getAvailableTemplateMeta,
+  getUpcomingTemplateMeta,
+  type TemplateMeta 
+} from "@/lib/templates";
 
-export type TemplateMeta = {
-  id: string;
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  available: boolean;
-  href: string;
-  popular?: boolean;
-};
+// Re-export the type for backward compatibility
+export type { TemplateMeta };
 
-export const templates: TemplateMeta[] = [
+/**
+ * Static template metadata definitions
+ * 
+ * These are registered with the template registry on module load.
+ * For fully implemented templates, the config in lib/templates/[template-name]/
+ * will provide additional details like schema, steps, and generation config.
+ */
+const templateDefinitions: TemplateMeta[] = [
   {
     id: "employment-agreement",
     title: "Employment Agreement",
@@ -27,7 +41,7 @@ export const templates: TemplateMeta[] = [
     description: "Define equity splits, roles, responsibilities, and decision-making processes for your startup.",
     icon: Users,
     available: false,
-    href: "#"
+    href: "/templates/founders-agreement"
   },
   {
     id: "nda",
@@ -35,7 +49,7 @@ export const templates: TemplateMeta[] = [
     description: "Protect confidential information with bilateral or unilateral NDA templates.",
     icon: Lock,
     available: false,
-    href: "#"
+    href: "/templates/nda"
   },
   {
     id: "dpa",
@@ -43,7 +57,7 @@ export const templates: TemplateMeta[] = [
     description: "GDPR-compliant DPA templates for processor-controller relationships.",
     icon: Shield,
     available: false,
-    href: "#"
+    href: "/templates/dpa"
   },
   {
     id: "ip-assignment",
@@ -51,6 +65,46 @@ export const templates: TemplateMeta[] = [
     description: "Transfer intellectual property rights with clear terms and comprehensive coverage.",
     icon: Sparkles,
     available: false,
-    href: "#"
+    href: "/templates/ip-assignment"
   }
 ];
+
+// Register all templates with the registry on module load
+templateDefinitions.forEach(registerTemplateMeta);
+
+/**
+ * All templates (for backward compatibility)
+ * 
+ * @deprecated Use `getAllTemplateMeta()` from `@/lib/templates` instead
+ */
+export const templates: TemplateMeta[] = templateDefinitions;
+
+/**
+ * Get templates filtered by availability status
+ * 
+ * @deprecated Use `getAvailableTemplateMeta()` or `getUpcomingTemplateMeta()` instead
+ */
+export function getTemplatesByAvailability(available: boolean): TemplateMeta[] {
+  return available ? getAvailableTemplateMeta() : getUpcomingTemplateMeta();
+}
+
+/**
+ * Get a template by ID
+ */
+export function getTemplateById(id: string): TemplateMeta | undefined {
+  return templateDefinitions.find(t => t.id === id);
+}
+
+/**
+ * Check if a template ID is valid
+ */
+export function isValidTemplate(id: string): boolean {
+  return templateDefinitions.some(t => t.id === id);
+}
+
+/**
+ * Get all template IDs for static generation
+ */
+export function getTemplateIds(): string[] {
+  return templateDefinitions.map(t => t.id);
+}

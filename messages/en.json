@@ -199,7 +199,17 @@
       "generateNow": "Generate Now",
       "comingSoon": "Coming Soon",
       "requestTemplate": "Request a template"
-    }
+    },
+    "browseAvailableTemplates": "Browse Available Templates",
+    "alwaysFree": "Always Free",
+    "createInMinutes": "Create {template}s in Minutes",
+    "generateYourAgreementNow": "Generate Your Agreement Now",
+    "legallyVetted": "Legally vetted templates",
+    "readyInMinutes": "Ready in 5 minutes",
+    "fullyCustomizable": "Fully customizable",
+    "readyToGetStarted": "Ready to Get Started?",
+    "generateYourTemplateNow": "Generate your {template} now. No credit card required.",
+    "startGenerating": "Start Generating"
   },
   "about": {
     "title": "About Legal Template Generator | A SELISE Group AG Initiative",

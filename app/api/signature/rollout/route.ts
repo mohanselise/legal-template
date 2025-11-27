@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import type { EmploymentAgreement } from '@/app/api/templates/employment-agreement/schema';
+import type { LegalDocument } from '@/app/api/templates/employment-agreement/schema';
 import { SIG_PAGE_LAYOUT, getSignatureBlockPosition } from '@/lib/pdf/signature-layout';
 
 interface SignatureField {
@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     const payload = await request.json();
-    const document = payload.document as EmploymentAgreement | undefined;
-    const { formData, signatories, signatureFields, pdfBase64 } = payload;
+    const document = payload.document as LegalDocument | undefined;
+    const { formData, signatories, signatureFields, pdfBase64, templateSlug, templateTitle } = payload;
 
     if (!document || !formData || !Array.isArray(signatories)) {
       return NextResponse.json(
@@ -110,7 +110,8 @@ export async function POST(request: NextRequest) {
     const { fileId, fileName } = await uploadPdfToStorage(
       token,
       pdfBuffer,
-      document
+      document,
+      templateSlug
     );
     console.log(`✅ Uploaded to storage as ${fileName} (FileId: ${fileId})\n`);
 
@@ -124,6 +125,8 @@ export async function POST(request: NextRequest) {
         signatories,
         signatureFields,
         origin,
+        templateSlug,
+        templateTitle,
       });
 
     console.log('🧾 PrepareCommand:', JSON.stringify(prepareCommand, null, 2));
@@ -245,7 +248,7 @@ async function getAccessToken(clientId: string, clientSecret: string) {
 
 async function generatePdfBuffer(
   request: NextRequest,
-  document: EmploymentAgreement,
+  document: LegalDocument,
   formData: unknown
 ) {
   const response = await fetch(
@@ -271,16 +274,28 @@ async function generatePdfBuffer(
 async function uploadPdfToStorage(
   accessToken: string,
   pdfBuffer: Buffer,
-  document: EmploymentAgreement
+  document: LegalDocument,
+  templateSlug?: string
 ) {
   const fileId = randomUUID();
-  const employeeName =
-    document?.parties?.employee?.legalName ||
-    'Employee';
-  const sanitizedEmployeeName = String(employeeName)
+  
+  // Get signatory name for filename - try first signatory or fallback
+  const firstSignatoryName =
+    document?.signatories?.[0]?.name ||
+    'Document';
+  const sanitizedName = String(firstSignatoryName)
     .trim()
-    .replace(/\s+/g, '_');
-  const fileName = `Employment_Agreement_${sanitizedEmployeeName}_${Date.now()}.pdf`;
+    .replace(/\s+/g, '_')
+    .replace(/[^a-zA-Z0-9_-]/g, '');
+  
+  // Use document title or template slug for the filename prefix
+  const documentType = document?.metadata?.title?.replace(/\s+/g, '_') || 
+                       templateSlug?.replace(/-/g, '_') || 
+                       'Legal_Document';
+  const fileName = `${documentType}_${sanitizedName}_${Date.now()}.pdf`;
+  
+  // Create tag based on template slug
+  const tag = templateSlug ? templateSlug.replace(/-/g, '') : 'LegalDocument';
 
   const preSignResponse = await fetch(STORAGE_API, {
     method: 'POST',
@@ -293,7 +308,7 @@ async function uploadPdfToStorage(
       MetaData: '{}',
       Name: fileName,
       ParentDirectoryId: '',
-      Tags: '["File","EmploymentAgreement"]',
+      Tags: `["File","${tag}"]`,
       AccessModifier: 'Private',
     }),
   });
@@ -332,19 +347,23 @@ function buildPreparePayload({
   signatories,
   signatureFields,
   origin,
+  templateSlug,
+  templateTitle,
 }: {
   fileId: string;
-  document: EmploymentAgreement;
+  document: LegalDocument;
   signatories: SignatoryInput[];
   signatureFields?: SignatureField[];
   origin: string;
+  templateSlug?: string;
+  templateTitle?: string;
 }) {
   const trackingId = randomUUID();
-  const employeeName =
-    document?.parties?.employee?.legalName ||
-    document?.metadata?.title ||
-    'Employee';
-  const title = `Employment Agreement - ${employeeName}`;
+  
+  // Build title from document metadata, template title, or first signatory
+  const documentTitle = document?.metadata?.title || templateTitle || 'Legal Document';
+  const firstSignatoryName = signatories[0]?.name || 'Document';
+  const title = `${documentTitle} - ${firstSignatoryName}`;
 
   const sortedSignatories = [...signatories].sort((a, b) => {
     const orderA =
@@ -557,6 +576,9 @@ function buildPreparePayload({
     });
   }
 
+  // Use templateSlug for redirect URL, or fall back to document type
+  const redirectPath = templateSlug || document?.metadata?.documentType || 'templates';
+  
   const prepareCommand = {
     TrackingId: trackingId,
     Title: title,
@@ -571,7 +593,7 @@ function buildPreparePayload({
     FileIds: [fileId],
     AddSignatoryCommands: addSignatoryCommands,
     SigningOrders: signingOrders,
-    RedirectUrl: `${origin}/templates/employment-agreement`,
+    RedirectUrl: `${origin}/templates/${redirectPath}`,
   };
 
   return {

@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const legalDoc = document as LegalDocument;
     let signatories: any[] = [];
 
-    // Priority 1: document.signatories from AI generation
+    // Priority 1: document.signatories (should already be set correctly from form data by generate API)
     if (legalDoc.signatories && Array.isArray(legalDoc.signatories) && legalDoc.signatories.length > 0) {
        signatories = legalDoc.signatories.map(s => ({
          party: s.party,
@@ -33,43 +33,62 @@ export async function POST(request: NextRequest) {
          ...(s.phone && { phone: s.phone })
        }));
     }
-    // Priority 2: Form builder signatory screen fields (party, name, email, title, phone)
-    else if (formData.name && formData.email) {
-      signatories = [
-        {
-          party: formData.party || 'other',
-          name: formData.name,
-          email: formData.email,
-          role: formData.title || formData.party || 'Signatory',
-          ...(formData.phone && { phone: formData.phone }),
-        },
-      ];
-    }
-    // Priority 3: Legacy hardcoded field names (for backward compatibility)
-    else {
-      const employerName = formData.companyName || 'Company';
-      const employeeName = formData.employeeName || 'Employee';
-      
-      // Only add employer if we have employer-related data
-      if (formData.companyRepName || formData.companyRepEmail || formData.companyName) {
-        signatories.push({
-          party: 'employer',
-          name: formData.companyRepName || employerName,
-          email: formData.companyRepEmail || '',
-          role: formData.companyRepTitle || 'Authorized Representative',
-          ...(formData.companyRepPhone && { phone: formData.companyRepPhone }),
-        });
+    
+    // If document doesn't have signatories, extract from form data
+    if (signatories.length === 0) {
+      // Priority 2: Form builder signatory screen fields (party, name, email, title, phone)
+      if (formData.name && formData.email) {
+        signatories = [
+          {
+            party: formData.party || 'other',
+            name: formData.name,
+            email: formData.email,
+            role: formData.title || formData.party || 'Signatory',
+            ...(formData.phone && { phone: formData.phone }),
+          },
+        ];
+      }
+      // Priority 3: Check for numbered signatory pattern (signatory_1_name, signatory_2_name, etc.)
+      else {
+        let signatoryIndex = 1;
+        while (formData[`signatory_${signatoryIndex}_name`]) {
+          signatories.push({
+            party: formData[`signatory_${signatoryIndex}_party`] || 'other',
+            name: formData[`signatory_${signatoryIndex}_name`],
+            email: formData[`signatory_${signatoryIndex}_email`] || '',
+            role: formData[`signatory_${signatoryIndex}_title`] || formData[`signatory_${signatoryIndex}_party`] || 'Signatory',
+            ...(formData[`signatory_${signatoryIndex}_phone`] && { phone: formData[`signatory_${signatoryIndex}_phone`] }),
+          });
+          signatoryIndex++;
+        }
       }
       
-      // Only add employee if we have employee-related data
-      if (formData.employeeName || formData.employeeEmail) {
-        signatories.push({
-          party: 'employee',
-          name: employeeName,
-          email: formData.employeeEmail || '',
-          role: formData.jobTitle || 'Employee',
-          ...(formData.employeePhone && { phone: formData.employeePhone }),
-        });
+      // Priority 4: Legacy hardcoded field names (for backward compatibility)
+      if (signatories.length === 0) {
+        const employerName = formData.companyName || 'Company';
+        const employeeName = formData.employeeName || 'Employee';
+        
+        // Only add employer if we have employer-related data
+        if (formData.companyRepName || formData.companyRepEmail || formData.companyName) {
+          signatories.push({
+            party: 'employer',
+            name: formData.companyRepName || employerName,
+            email: formData.companyRepEmail || '',
+            role: formData.companyRepTitle || 'Authorized Representative',
+            ...(formData.companyRepPhone && { phone: formData.companyRepPhone }),
+          });
+        }
+        
+        // Only add employee if we have employee-related data
+        if (formData.employeeName || formData.employeeEmail) {
+          signatories.push({
+            party: 'employee',
+            name: employeeName,
+            email: formData.employeeEmail || '',
+            role: formData.jobTitle || 'Employee',
+            ...(formData.employeePhone && { phone: formData.employeePhone }),
+          });
+        }
       }
     }
     

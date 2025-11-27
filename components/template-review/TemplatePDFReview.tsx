@@ -58,7 +58,7 @@ function extractSignatories(
 ): Array<{ name: string; email: string; role: string; color: string }> {
   const signatories: Array<{ name: string; email: string; role: string; color: string }> = [];
 
-  // 1. First priority: document.signatories (from AI generation)
+  // 1. First priority: document.signatories (should be set correctly from form data by generate API)
   if (document.signatories && document.signatories.length > 0) {
     document.signatories.forEach((sig, index) => {
       signatories.push({
@@ -71,8 +71,9 @@ function extractSignatories(
     return signatories;
   }
 
-  // 2. Second priority: form builder signatory screen fields (party, name, email, title, phone)
-  // These are the standard field names from the signatory screen in form builder
+  // If document doesn't have signatories, fall back to form data
+
+  // 2. Form builder signatory screen fields (party, name, email, title, phone)
   if (formData.name && formData.email) {
     signatories.push({
       name: formData.name as string,
@@ -83,7 +84,23 @@ function extractSignatories(
     return signatories;
   }
 
-  // 3. Third priority: legacy hardcoded field names (for backward compatibility)
+  // 3. Check for numbered signatory pattern (signatory_1_name, signatory_2_name, etc.)
+  let signatoryIndex = 1;
+  while (formData[`signatory_${signatoryIndex}_name`]) {
+    signatories.push({
+      name: formData[`signatory_${signatoryIndex}_name`] as string,
+      email: (formData[`signatory_${signatoryIndex}_email`] as string) || "",
+      role: (formData[`signatory_${signatoryIndex}_title`] as string) || 
+            (formData[`signatory_${signatoryIndex}_party`] as string) || "Signatory",
+      color: SIGNATORY_COLORS[(signatoryIndex - 1) % SIGNATORY_COLORS.length],
+    });
+    signatoryIndex++;
+  }
+  if (signatories.length > 0) {
+    return signatories;
+  }
+
+  // 4. Legacy hardcoded field names (for backward compatibility)
   // Company/Employer signatory
   if (formData.companyRepName || formData.companyName) {
     signatories.push({
@@ -280,21 +297,18 @@ export function TemplatePDFReview({
     setIsPreparingContract(true);
 
     try {
+      // Convert points to pixels for SELISE Signature API
+      // PDF uses 72 points per inch, SELISE expects 96 DPI pixels
+      const DPI_SCALE = 96 / 72;
+      
       const signatureFieldsForAPI = signatureFields.map((field) => {
-        const DPI_SCALE = 96 / 72;
         const pageNumber = field.pageNumber || 1;
 
-        let x = field.x;
-        let y = field.y;
-        let width = field.width;
-        let height = field.height;
-
-        if (field.type === "signature") {
-          x = field.x * DPI_SCALE;
-          y = field.y * DPI_SCALE;
-          width = field.width * DPI_SCALE;
-          height = field.height * DPI_SCALE;
-        }
+        // Apply DPI scaling to ALL field types (signature AND date)
+        const x = field.x * DPI_SCALE;
+        const y = field.y * DPI_SCALE;
+        const width = field.width * DPI_SCALE;
+        const height = field.height * DPI_SCALE;
 
         return {
           id: field.id,
@@ -309,12 +323,17 @@ export function TemplatePDFReview({
         };
       });
 
-      const signatoriesForAPI = signatories.map((sig, idx) => ({
-        party: idx === 0 ? ("employer" as const) : ("employee" as const),
-        name: sig.name,
-        email: sig.email,
-        role: sig.role,
-      }));
+      // Use document.signatories if available for accurate party info
+      const signatoriesForAPI = signatories.map((sig, idx) => {
+        // Try to get party from document.signatories first
+        const docSignatory = document.signatories?.[idx];
+        return {
+          party: docSignatory?.party || (idx === 0 ? "employer" : "employee") as "employer" | "employee" | "witness" | "other",
+          name: sig.name,
+          email: sig.email,
+          role: sig.role,
+        };
+      });
 
       const pdfBlob = await fetch(pdfUrl).then((res) => res.blob());
       const pdfBuffer = await pdfBlob.arrayBuffer();
@@ -332,6 +351,8 @@ export function TemplatePDFReview({
           formData,
           signatories: signatoriesForAPI,
           signatureFields: signatureFieldsForAPI,
+          templateSlug,
+          templateTitle,
         }),
       });
 
@@ -343,6 +364,26 @@ export function TemplatePDFReview({
       }
 
       const rolloutResult = await rolloutResponse.json();
+      
+      // Store result and payload in sessionStorage for success page
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(
+          'signature-last-result',
+          JSON.stringify(rolloutResult)
+        );
+        // Also store payload for backward compatibility
+        window.sessionStorage.setItem(
+          'signature-last-payload',
+          JSON.stringify({
+            document,
+            formData,
+            signatories: signatoriesForAPI,
+            templateSlug,
+            templateTitle,
+          })
+        );
+      }
+      
       setIsPreparingContract(false);
       router.push(`/${locale}/templates/${templateSlug}/review/success`);
     } catch (error) {

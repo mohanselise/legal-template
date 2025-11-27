@@ -3,7 +3,8 @@ import { prisma } from "@/lib/db";
 import { openrouter, CONTRACT_GENERATION_MODEL } from "@/lib/openrouter";
 import { validateTurnstileToken } from "next-turnstile";
 import { EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON } from "@/lib/openai";
-import type { LegalDocument } from "@/app/api/templates/employment-agreement/schema";
+import type { LegalDocument, SignatoryData } from "@/app/api/templates/employment-agreement/schema";
+import { SIGNATORY_FIELD_NAMES } from "@/lib/templates/signatory-mapper";
 
 type RouteParams = {
   params: Promise<{ templateId: string }>;
@@ -173,9 +174,14 @@ export async function POST(
       parsed.metadata.title = parsed.metadata.title || template.title;
       parsed.metadata.generatedAt = new Date().toISOString();
       
-      // Ensure signatories array exists
-      if (!parsed.signatories) {
-        parsed.signatories = extractSignatoriesFromFormData(formData);
+      // Always set signatories from form data to ensure accuracy
+      // The AI might generate signatories but they may not match user input
+      const extractedSignatories = extractSignatoriesFromFormData(formData);
+      if (extractedSignatories.length > 0) {
+        parsed.signatories = extractedSignatories;
+      } else if (!parsed.signatories) {
+        // Fallback: empty array if no signatories found
+        parsed.signatories = [];
       }
 
       document = parsed as LegalDocument;
@@ -255,10 +261,56 @@ function buildUserPrompt(formData: Record<string, any>, templateTitle: string): 
 
 /**
  * Extract signatories from form data
+ * 
+ * Priority order:
+ * 1. Form builder signatory fields (name, email, party, title, phone)
+ * 2. Legacy hardcoded field names (companyRepName, employeeName, etc.)
  */
-function extractSignatoriesFromFormData(formData: Record<string, any>): any[] {
-  const signatories: any[] = [];
+function extractSignatoriesFromFormData(formData: Record<string, any>): SignatoryData[] {
+  const signatories: SignatoryData[] = [];
 
+  // 1. Check for form builder signatory fields (standard field names)
+  // These are the field names defined in SIGNATORY_FIELD_NAMES
+  if (formData[SIGNATORY_FIELD_NAMES.NAME] && formData[SIGNATORY_FIELD_NAMES.EMAIL]) {
+    const partyValue = formData[SIGNATORY_FIELD_NAMES.PARTY];
+    const validParties = ['employer', 'employee', 'witness', 'other'] as const;
+    const party = validParties.includes(partyValue as typeof validParties[number])
+      ? (partyValue as SignatoryData['party'])
+      : 'other';
+
+    signatories.push({
+      party,
+      name: formData[SIGNATORY_FIELD_NAMES.NAME] as string,
+      email: formData[SIGNATORY_FIELD_NAMES.EMAIL] as string,
+      title: formData[SIGNATORY_FIELD_NAMES.TITLE] as string | undefined,
+      phone: formData[SIGNATORY_FIELD_NAMES.PHONE] as string | undefined,
+    });
+    return signatories;
+  }
+
+  // 2. Check for multiple signatories (signatory_1_name, signatory_2_name pattern)
+  let signatoryIndex = 1;
+  while (formData[`signatory_${signatoryIndex}_name`]) {
+    const partyValue = formData[`signatory_${signatoryIndex}_party`];
+    const validParties = ['employer', 'employee', 'witness', 'other'] as const;
+    const party = validParties.includes(partyValue as typeof validParties[number])
+      ? (partyValue as SignatoryData['party'])
+      : 'other';
+
+    signatories.push({
+      party,
+      name: formData[`signatory_${signatoryIndex}_name`] as string,
+      email: formData[`signatory_${signatoryIndex}_email`] as string | undefined,
+      title: formData[`signatory_${signatoryIndex}_title`] as string | undefined,
+      phone: formData[`signatory_${signatoryIndex}_phone`] as string | undefined,
+    });
+    signatoryIndex++;
+  }
+  if (signatories.length > 0) {
+    return signatories;
+  }
+
+  // 3. Fallback: Legacy hardcoded field names for backward compatibility
   // Look for company representative
   if (formData.companyRepName || formData.companyName) {
     signatories.push({

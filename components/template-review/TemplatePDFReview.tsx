@@ -48,6 +48,9 @@ interface TemplatePDFReviewProps {
   onBack?: () => void;
 }
 
+// Color palette for signatories
+const SIGNATORY_COLORS = ["#0066B2", "#2A4D14", "#791E94", "#D80032"]; // SELISE Blue, Poly Green, Mauveine, Crimson
+
 // Helper to extract signatories from document or form data
 function extractSignatories(
   document: LegalDocument,
@@ -55,33 +58,50 @@ function extractSignatories(
 ): Array<{ name: string; email: string; role: string; color: string }> {
   const signatories: Array<{ name: string; email: string; role: string; color: string }> = [];
 
+  // 1. First priority: document.signatories (from AI generation)
   if (document.signatories && document.signatories.length > 0) {
     document.signatories.forEach((sig, index) => {
       signatories.push({
         name: sig.name,
         email: sig.email || "",
         role: sig.title || sig.party,
-        color: index === 0 ? "#0066B2" : "#2A4D14", // SELISE Blue, Poly Green
+        color: SIGNATORY_COLORS[index % SIGNATORY_COLORS.length],
       });
     });
-  } else {
-    // Fallback: extract from form data
-    if (formData.companyRepName || formData.companyName) {
-      signatories.push({
-        name: (formData.companyRepName as string) || (formData.companyName as string) || "Company",
-        email: (formData.companyRepEmail as string) || (formData.companyEmail as string) || "",
-        role: (formData.companyRepTitle as string) || "Authorized Representative",
-        color: "#0066B2",
-      });
-    }
-    if (formData.employeeName) {
-      signatories.push({
-        name: (formData.employeeName as string) || "Employee",
-        email: (formData.employeeEmail as string) || "",
-        role: (formData.jobTitle as string) || "Employee",
-        color: "#2A4D14",
-      });
-    }
+    return signatories;
+  }
+
+  // 2. Second priority: form builder signatory screen fields (party, name, email, title, phone)
+  // These are the standard field names from the signatory screen in form builder
+  if (formData.name && formData.email) {
+    signatories.push({
+      name: formData.name as string,
+      email: formData.email as string,
+      role: (formData.title as string) || (formData.party as string) || "Signatory",
+      color: SIGNATORY_COLORS[0],
+    });
+    return signatories;
+  }
+
+  // 3. Third priority: legacy hardcoded field names (for backward compatibility)
+  // Company/Employer signatory
+  if (formData.companyRepName || formData.companyName) {
+    signatories.push({
+      name: (formData.companyRepName as string) || (formData.companyName as string) || "Company",
+      email: (formData.companyRepEmail as string) || (formData.companyEmail as string) || "",
+      role: (formData.companyRepTitle as string) || "Authorized Representative",
+      color: SIGNATORY_COLORS[0],
+    });
+  }
+
+  // Employee signatory
+  if (formData.employeeName) {
+    signatories.push({
+      name: formData.employeeName as string,
+      email: (formData.employeeEmail as string) || "",
+      role: (formData.jobTitle as string) || "Employee",
+      color: SIGNATORY_COLORS[1],
+    });
   }
 
   return signatories;

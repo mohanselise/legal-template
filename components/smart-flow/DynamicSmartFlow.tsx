@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -22,6 +22,40 @@ import { Button } from "@/components/ui/button";
 import { Turnstile } from "next-turnstile";
 import { setTurnstileToken as storeTurnstileToken } from "@/lib/turnstile-token-manager";
 import { saveTemplateReview } from "@/components/template-review/TemplateReviewStorage";
+
+// Generation stages for the loading screen
+const GENERATION_STEPS = [
+  {
+    title: "Analyzing your requirements",
+    description: "Reviewing all the information you provided to ensure completeness.",
+    progress: 15,
+    duration: 2500,
+  },
+  {
+    title: "Drafting core provisions",
+    description: "Creating the main clauses with precise legal language.",
+    progress: 40,
+    duration: 3000,
+  },
+  {
+    title: "Building protective clauses",
+    description: "Generating confidentiality, IP, and other protective provisions.",
+    progress: 65,
+    duration: 3500,
+  },
+  {
+    title: "Finalizing document",
+    description: "Adding signature blocks and formatting the final document.",
+    progress: 85,
+    duration: 2500,
+  },
+  {
+    title: "Almost there",
+    description: "Performing final quality checks on your document.",
+    progress: 95,
+    duration: 3000,
+  },
+];
 
 interface DynamicSmartFlowProps {
   config: TemplateConfig;
@@ -50,6 +84,59 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     "success" | "error" | "expired" | "required"
   >("required");
 
+  // Loading screen state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStepIndex, setGenerationStepIndex] = useState(0);
+  const [fakeProgress, setFakeProgress] = useState(0);
+  const isNavigatingRef = useRef(false);
+
+  // Animate through generation steps
+  useEffect(() => {
+    if (!isGenerating || GENERATION_STEPS.length === 0) {
+      setGenerationStepIndex(0);
+      setFakeProgress(0);
+      return;
+    }
+
+    type Timer = ReturnType<typeof setTimeout>;
+    let isActive = true;
+    const timeouts: Timer[] = [];
+    let idleInterval: ReturnType<typeof setInterval> | null = null;
+
+    setGenerationStepIndex(0);
+    setFakeProgress(GENERATION_STEPS[0].progress);
+
+    let cumulativeDelay = 0;
+    for (let index = 1; index < GENERATION_STEPS.length; index++) {
+      cumulativeDelay += GENERATION_STEPS[index - 1].duration;
+      const timeout = setTimeout(() => {
+        if (!isActive) return;
+        setGenerationStepIndex(index);
+        setFakeProgress(GENERATION_STEPS[index].progress);
+      }, cumulativeDelay);
+      timeouts.push(timeout);
+    }
+
+    // After all steps, slowly increment progress to 99
+    cumulativeDelay += GENERATION_STEPS[GENERATION_STEPS.length - 1].duration;
+    const idleTimeout = setTimeout(() => {
+      idleInterval = setInterval(() => {
+        if (!isActive) return;
+        setFakeProgress((prev) => {
+          const next = prev + 0.4 + Math.random() * 1.1;
+          return next >= 99 ? 99 : next;
+        });
+      }, 2000);
+    }, cumulativeDelay);
+    timeouts.push(idleTimeout);
+
+    return () => {
+      isActive = false;
+      timeouts.forEach((timeout) => clearTimeout(timeout));
+      if (idleInterval) clearInterval(idleInterval);
+    };
+  }, [isGenerating]);
+
   if (!config) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -59,6 +146,164 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   }
 
   const currentScreen = config.screens[currentStep];
+  const displayedProgress = Math.round(fakeProgress);
+
+  // Loading Screen - shows during document generation
+  if (isGenerating) {
+    const currentStage =
+      GENERATION_STEPS[Math.min(generationStepIndex, GENERATION_STEPS.length - 1)];
+
+    return (
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[hsl(var(--bg))] px-4">
+        {/* Background gradients */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_hsla(var(--brand-primary)_/_0.14),_transparent_65%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom,_hsla(var(--brand-primary)_/_0.08),_transparent_60%)]" />
+
+        <div className="relative z-10 w-full max-w-2xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="mb-12 space-y-5 text-center"
+          >
+            {/* Animated icon */}
+            <motion.div
+              className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl border-2 border-[hsl(var(--brand-primary)/0.2)] bg-gradient-to-br from-[hsl(var(--brand-primary)/0.1)] to-[hsl(var(--brand-primary)/0.05)] shadow-lg backdrop-blur-sm"
+              animate={{
+                scale: [1, 1.05, 1],
+                boxShadow: [
+                  "0 10px 25px -5px hsla(var(--brand-primary)/0.1)",
+                  "0 15px 35px -5px hsla(var(--brand-primary)/0.2)",
+                  "0 10px 25px -5px hsla(var(--brand-primary)/0.1)",
+                ],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              >
+                <FileText className="h-12 w-12 text-[hsl(var(--brand-primary))]" />
+              </motion.div>
+            </motion.div>
+
+            <h2 className="text-3xl font-bold text-[hsl(var(--fg))] sm:text-4xl font-heading">
+              Creating Your Document
+            </h2>
+            <p className="mx-auto max-w-md text-lg text-[hsl(var(--brand-muted))]">
+              Our AI is generating a professional document tailored to your
+              specifications.
+            </p>
+          </motion.div>
+
+          {/* Progress Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="rounded-3xl border border-[hsl(var(--brand-border))] bg-background p-8 shadow-xl backdrop-blur-sm"
+          >
+            {/* Progress header */}
+            <div className="mb-4 flex items-center justify-between text-sm font-medium">
+              <span className="text-[hsl(var(--brand-muted))]">
+                Step {Math.min(generationStepIndex + 1, GENERATION_STEPS.length)}{" "}
+                of {GENERATION_STEPS.length}
+              </span>
+              <span className="text-[hsl(var(--brand-primary))]">
+                {displayedProgress}%
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="relative h-4 overflow-hidden rounded-full border border-[hsl(var(--brand-primary)/0.25)] bg-[hsl(var(--brand-primary)/0.08)] shadow-inner">
+              {/* Shimmer effect */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-[hsl(var(--brand-primary)/0.15)] to-transparent"
+                animate={{ x: ["-100%", "200%"] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              />
+              {/* Progress fill */}
+              <motion.div
+                className="relative h-full rounded-full bg-gradient-to-r from-[hsl(var(--brand-primary))] to-[hsl(var(--sky-blue))]"
+                initial={{ width: 0 }}
+                animate={{ width: `${fakeProgress}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              >
+                {/* Glowing edge */}
+                <div className="absolute right-0 top-0 h-full w-4 bg-gradient-to-r from-transparent to-white/30" />
+              </motion.div>
+            </div>
+
+            {/* Current stage info */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={generationStepIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="mt-6"
+              >
+                <h3 className="text-lg font-semibold text-[hsl(var(--fg))] font-heading">
+                  {currentStage.title}
+                </h3>
+                <p className="mt-1 text-sm text-[hsl(var(--brand-muted))]">
+                  {currentStage.description}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Stage indicators */}
+            <div className="mt-8 space-y-3">
+              {GENERATION_STEPS.map((stage, index) => {
+                const isCompleted = index < generationStepIndex;
+                const isCurrent = index === generationStepIndex;
+
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className={`flex items-center gap-3 text-sm transition-all duration-300 ${
+                      isCompleted
+                        ? "text-[hsl(var(--brand-primary))]"
+                        : isCurrent
+                          ? "text-[hsl(var(--fg))] font-medium"
+                          : "text-[hsl(var(--muted-foreground))]"
+                    }`}
+                  >
+                    <div
+                      className={`flex h-6 w-6 items-center justify-center rounded-full transition-all ${
+                        isCompleted
+                          ? "bg-[hsl(var(--brand-primary))] text-white"
+                          : isCurrent
+                            ? "border-2 border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary)/0.1)]"
+                            : "border border-[hsl(var(--border))] bg-transparent"
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : isCurrent ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-[hsl(var(--brand-primary))]" />
+                      ) : (
+                        <span className="text-xs">{index + 1}</span>
+                      )}
+                    </div>
+                    <span>{stage.title}</span>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   const handleContinue = () => {
@@ -71,6 +316,10 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     if (!canProceed() || !turnstileToken) return;
 
     setSubmitting(true);
+    setIsGenerating(true);
+    setGenerationStepIndex(0);
+    setFakeProgress(0);
+
     try {
       console.log("🚀 [DynamicSmartFlow] Starting document generation...");
       console.log("📋 [DynamicSmartFlow] Form data:", formData);
@@ -106,16 +355,24 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
       saveTemplateReview(config.slug, reviewData);
 
+      // Set progress to 100 before navigating
+      setFakeProgress(100);
+      isNavigatingRef.current = true;
+
+      // Brief delay to show 100% completion
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // Redirect to review page
       router.push(`/${locale}/templates/${config.slug}/review`);
     } catch (error) {
       console.error("❌ [DynamicSmartFlow] Generation error:", error);
+      setIsGenerating(false);
+      setSubmitting(false);
       alert(
         error instanceof Error
           ? error.message
           : "Failed to generate document. Please try again."
       );
-      setSubmitting(false);
     }
   };
 

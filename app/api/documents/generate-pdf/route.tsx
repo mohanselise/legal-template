@@ -23,36 +23,54 @@ export async function POST(request: NextRequest) {
     const legalDoc = document as LegalDocument;
     let signatories: any[] = [];
 
-    // Logic to extract or create fallback signatories
+    // Priority 1: document.signatories from AI generation
     if (legalDoc.signatories && Array.isArray(legalDoc.signatories) && legalDoc.signatories.length > 0) {
        signatories = legalDoc.signatories.map(s => ({
          party: s.party,
          name: s.name,
-         email: s.email || (s.party === 'employer' ? formData.companyRepEmail : formData.employeeEmail) || '',
-         role: s.title || (s.party === 'employer' ? 'Authorized Representative' : 'Employee'),
+         email: s.email || '',
+         role: s.title || s.party || 'Signatory',
          ...(s.phone && { phone: s.phone })
        }));
-    } else {
-      // Fallback
+    }
+    // Priority 2: Form builder signatory screen fields (party, name, email, title, phone)
+    else if (formData.name && formData.email) {
+      signatories = [
+        {
+          party: formData.party || 'other',
+          name: formData.name,
+          email: formData.email,
+          role: formData.title || formData.party || 'Signatory',
+          ...(formData.phone && { phone: formData.phone }),
+        },
+      ];
+    }
+    // Priority 3: Legacy hardcoded field names (for backward compatibility)
+    else {
       const employerName = formData.companyName || 'Company';
       const employeeName = formData.employeeName || 'Employee';
       
-      signatories = [
-        {
+      // Only add employer if we have employer-related data
+      if (formData.companyRepName || formData.companyRepEmail || formData.companyName) {
+        signatories.push({
           party: 'employer',
           name: formData.companyRepName || employerName,
           email: formData.companyRepEmail || '',
           role: formData.companyRepTitle || 'Authorized Representative',
           ...(formData.companyRepPhone && { phone: formData.companyRepPhone }),
-        },
-        {
+        });
+      }
+      
+      // Only add employee if we have employee-related data
+      if (formData.employeeName || formData.employeeEmail) {
+        signatories.push({
           party: 'employee',
           name: employeeName,
           email: formData.employeeEmail || '',
           role: formData.jobTitle || 'Employee',
           ...(formData.employeePhone && { phone: formData.employeePhone }),
-        },
-      ];
+        });
+      }
     }
     
     // 2. Ensure Document has these signatories (for PDF Renderer)

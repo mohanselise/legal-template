@@ -341,23 +341,15 @@ function ReviewContent() {
         const pageNumber = field.pageNumber || 1;
 
         // Scaling factor: 96 DPI (Screen/API) / 72 DPI (PDF) = 1.3333
+        // SELISE Signature platform expects coordinates in pixels (96 DPI)
+        // The overlay stores coordinates in PDF points (72 DPI)
         const DPI_SCALE = 96 / 72;
 
-        let x = field.x;
-        let y = field.y;
-        let width = field.width;
-        let height = field.height;
-
-        if (field.type === 'signature') {
-          // For signatures, apply DPI scaling only.
-          // The "shifted down by height" report indicates the API uses Top-Left anchor,
-          // so we should NOT add the height. The scaling fixes the main position issue.
-          x = field.x * DPI_SCALE;
-          y = field.y * DPI_SCALE;
-          width = field.width * DPI_SCALE;
-          height = field.height * DPI_SCALE;
-        }
-        // Dates are reported correct as-is (Top-Left, 72 DPI)
+        // Apply DPI scaling to ALL field types (signature AND date)
+        const x = field.x * DPI_SCALE;
+        const y = field.y * DPI_SCALE;
+        const width = field.width * DPI_SCALE;
+        const height = field.height * DPI_SCALE;
 
         return {
           id: field.id,
@@ -452,6 +444,7 @@ function ReviewContent() {
           formData,
           signatories,
           signatureFields: signatureFieldsForAPI,
+          numPages, // Send page count for accurate signature field placement
         }),
       });
 

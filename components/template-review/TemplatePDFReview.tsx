@@ -176,6 +176,25 @@ export function TemplatePDFReview({
     };
   }, [pdfUrl]);
 
+  // Update signature field page numbers when PDF page count is known
+  // This ensures fields are always on the last page, even if they were
+  // initialized with an estimated page count from the API
+  useEffect(() => {
+    if (numPages && numPages > 0 && signatureFields.length > 0) {
+      const lastPage = numPages;
+      const needsUpdate = signatureFields.some(f => f.pageNumber !== lastPage);
+      if (needsUpdate) {
+        console.log('Updating signature field page numbers to last page:', lastPage);
+        const updatedFields = signatureFields.map(f => ({
+          ...f,
+          pageNumber: lastPage
+        }));
+        setSignatureFields(updatedFields);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numPages, apiSignatureFields]);
+
   const generatePdfPreview = async () => {
     setIsLoadingPdf(true);
     try {
@@ -244,7 +263,9 @@ export function TemplatePDFReview({
   ): SignatureField[] => {
     return metadataFields.map((field) => {
       const signatoryIndex = field.party === "employer" ? 0 : 1;
-      const pageNumber = Math.min(field.pageNumber, actualPageCount);
+      // Always use actual last page for signature/date fields
+      // The API returns an estimated page count which may not match the actual PDF
+      const pageNumber = actualPageCount;
 
       return {
         id: field.id,
@@ -353,6 +374,7 @@ export function TemplatePDFReview({
           signatureFields: signatureFieldsForAPI,
           templateSlug,
           templateTitle,
+          numPages, // Send page count for accurate signature field placement
         }),
       });
 

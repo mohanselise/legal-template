@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     const payload = await request.json();
     const document = payload.document as LegalDocument | undefined;
-    const { formData, signatories, signatureFields, pdfBase64, templateSlug, templateTitle } = payload;
+    const { formData, signatories, signatureFields, pdfBase64, templateSlug, templateTitle, numPages } = payload;
 
     if (!document || !formData || !Array.isArray(signatories)) {
       return NextResponse.json(
@@ -127,6 +127,7 @@ export async function POST(request: NextRequest) {
         origin,
         templateSlug,
         templateTitle,
+        numPages,
       });
 
     console.log('🧾 PrepareCommand:', JSON.stringify(prepareCommand, null, 2));
@@ -349,6 +350,7 @@ function buildPreparePayload({
   origin,
   templateSlug,
   templateTitle,
+  numPages,
 }: {
   fileId: string;
   document: LegalDocument;
@@ -357,6 +359,7 @@ function buildPreparePayload({
   origin: string;
   templateSlug?: string;
   templateTitle?: string;
+  numPages?: number;
 }) {
   const trackingId = randomUUID();
   
@@ -523,25 +526,39 @@ function buildPreparePayload({
   if (stampCoordinates.length === 0 && signatoryMeta.length > 0) {
     console.log('⚠️  No signature fields provided, falling back to default positions');
     
+    // DPI scaling: SELISE expects 96 DPI pixels, SIG_PAGE_LAYOUT uses 72 DPI PDF points
+    const DPI_SCALE = 96 / 72;
     const MARGIN_LEFT = SIG_PAGE_LAYOUT.MARGIN_X;
+    
+    // Get page count from parameter if provided, otherwise default to 0 (first page)
+    // The client should send numPages for accurate placement
+    const lastPageIndex = typeof numPages === 'number' && numPages > 0
+      ? numPages - 1  // Convert 1-indexed to 0-indexed
+      : 0;
+    
+    console.log(`   Using page ${lastPageIndex} (0-indexed) for signature fields`);
 
     signatoryMeta.forEach((signatory, index) => {
       const blockTop = getSignatureBlockPosition(index);
       
-      // Signature Position
-      const sigX = MARGIN_LEFT + SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET;
-      const sigY = blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET;
+      // Signature Position - apply DPI scaling for SELISE
+      const sigX = Math.round((MARGIN_LEFT + SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET) * DPI_SCALE);
+      const sigY = Math.round((blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET) * DPI_SCALE);
+      const sigWidth = Math.round(SIG_PAGE_LAYOUT.SIG_BOX_WIDTH * DPI_SCALE);
+      const sigHeight = Math.round(SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT * DPI_SCALE);
       
-      // Date Position
-      const dateX = MARGIN_LEFT + SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET;
-      const dateY = blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET;
+      // Date Position - apply DPI scaling for SELISE
+      const dateX = Math.round((MARGIN_LEFT + SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET) * DPI_SCALE);
+      const dateY = Math.round((blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET) * DPI_SCALE);
+      const dateWidth = Math.round(SIG_PAGE_LAYOUT.DATE_BOX_WIDTH * DPI_SCALE);
+      const dateHeight = Math.round(SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT * DPI_SCALE);
 
       // Add Signature Field
       stampCoordinates.push({
         FileId: fileId,
-        Width: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH,
-        Height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
-        PageNumber: 0, // Default to page 0 if unknown, but usually should be known
+        Width: sigWidth,
+        Height: sigHeight,
+        PageNumber: lastPageIndex,
         X: sigX,
         Y: sigY,
         SignatoryEmail: signatory.email,
@@ -556,9 +573,9 @@ function buildPreparePayload({
       // Add Date Field
       stampPostInfoCoordinates.push({
         FileId: fileId,
-        Width: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH,
-        Height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT, // Same height as signature box
-        PageNumber: 0,
+        Width: dateWidth,
+        Height: dateHeight,
+        PageNumber: lastPageIndex,
         X: dateX,
         Y: dateY,
         EntityName: 'AuditLog',

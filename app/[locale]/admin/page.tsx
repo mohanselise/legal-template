@@ -77,64 +77,66 @@ export default async function AdminDashboard({
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {adminModules.map((module) => {
           const Icon = module.icon;
-          const CardWrapper = module.available ? Link : "div";
-          const cardProps = module.available
-            ? { href: `/${locale}${module.href}` }
-            : {};
-
-          return (
-            <CardWrapper
-              key={module.title}
-              {...cardProps}
-              className={`block ${
+          const cardContent = (
+            <Card
+              className={`h-full transition-all ${
                 module.available
-                  ? "group cursor-pointer"
-                  : "opacity-60 cursor-not-allowed"
+                  ? "hover:shadow-lg hover:border-[hsl(var(--selise-blue))]/30"
+                  : ""
               }`}
             >
-              <Card
-                className={`h-full transition-all ${
-                  module.available
-                    ? "hover:shadow-lg hover:border-[hsl(var(--selise-blue))]/30"
-                    : ""
-                }`}
-              >
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div
-                      className={`flex size-10 items-center justify-center rounded-lg ${
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div
+                    className={`flex size-10 items-center justify-center rounded-lg ${
+                      module.available
+                        ? "bg-[hsl(var(--selise-blue))]/10"
+                        : "bg-[hsl(var(--muted))]"
+                    }`}
+                  >
+                    <Icon
+                      className={`size-5 ${
                         module.available
-                          ? "bg-[hsl(var(--selise-blue))]/10"
-                          : "bg-[hsl(var(--muted))]"
+                          ? "text-[hsl(var(--selise-blue))]"
+                          : "text-[hsl(var(--globe-grey))]"
                       }`}
-                    >
-                      <Icon
-                        className={`size-5 ${
-                          module.available
-                            ? "text-[hsl(var(--selise-blue))]"
-                            : "text-[hsl(var(--globe-grey))]"
-                        }`}
-                      />
-                    </div>
-                    {module.available && (
-                      <ArrowRight className="size-4 text-[hsl(var(--globe-grey))] opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
-                    )}
+                    />
                   </div>
-                  <CardTitle className="text-lg">{module.title}</CardTitle>
-                  <CardDescription>{module.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-[hsl(var(--globe-grey))]">
-                    {module.details}
-                  </p>
-                  {!module.available && (
-                    <p className="text-xs text-[hsl(var(--globe-grey))] mt-2 italic">
-                      Coming soon
-                    </p>
+                  {module.available && (
+                    <ArrowRight className="size-4 text-[hsl(var(--globe-grey))] opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
                   )}
-                </CardContent>
-              </Card>
-            </CardWrapper>
+                </div>
+                <CardTitle className="text-lg">{module.title}</CardTitle>
+                <CardDescription>{module.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-[hsl(var(--globe-grey))]">
+                  {module.details}
+                </p>
+                {!module.available && (
+                  <p className="text-xs text-[hsl(var(--globe-grey))] mt-2 italic">
+                    Coming soon
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          );
+
+          return module.available ? (
+            <Link
+              key={module.title}
+              href={`/${locale}${module.href}`}
+              className={`block group cursor-pointer`}
+            >
+              {cardContent}
+            </Link>
+          ) : (
+            <div
+              key={module.title}
+              className="block opacity-60 cursor-not-allowed"
+            >
+              {cardContent}
+            </div>
           );
         })}
       </div>

@@ -40,7 +40,10 @@ function ReviewContent() {
     // Try to get review data from sessionStorage
     const stored = loadTemplateReview(slug);
     if (stored) {
-      setReviewData(stored);
+      setReviewData({
+        ...stored,
+        storedAt: stored.storedAt || new Date().toISOString(),
+      });
       setIsLoading(false);
       return;
     }

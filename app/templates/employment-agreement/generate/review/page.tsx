@@ -1111,7 +1111,7 @@ function ReviewContent() {
   );
 }
 
-export default function ReviewPageV2() {
+function ReviewPageV2() {
   return (
     <Suspense
       fallback={
@@ -1124,3 +1124,5 @@ export default function ReviewPageV2() {
     </Suspense>
   );
 }
+
+export default ReviewPageV2;

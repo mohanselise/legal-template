@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/db";
+import { prisma, Prisma } from "@/lib/db";
 import { createTemplateSchema } from "./schema";
 import { ZodError } from "zod";
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const available = searchParams.get("available");
 
     // Build where clause
-    const where: Parameters<typeof prisma.template.findMany>[0]["where"] = {};
+    const where: Prisma.TemplateWhereInput = {};
 
     if (search) {
       where.OR = [

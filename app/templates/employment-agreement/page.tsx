@@ -4,6 +4,9 @@ import { Metadata } from 'next';
 import { CheckCircle2, Clock, Shield, FileText, Users, Briefcase, Scale, AlertCircle, ArrowRight, Sparkles, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
+// Force dynamic rendering to avoid prerender issues
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Employment Agreement Template | Free Legal Contract Generator',
   description: 'Create professional employment agreements in minutes. Legally sound, customizable templates for full-time, part-time, and contract employees. No lawyer required.',

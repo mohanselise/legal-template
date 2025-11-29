@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getAvailableTemplates, getUpcomingTemplates } from "@/lib/templates-db";
+
+// Force dynamic rendering to avoid prerender issues
+export const dynamic = 'force-dynamic';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

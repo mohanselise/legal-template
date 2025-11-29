@@ -261,26 +261,30 @@ export function createPartySchema(options: {
   requirePhone?: boolean;
   requireRepresentative?: boolean;
 } = {}) {
-  let schema = basePartySchema;
+  let schema: z.ZodObject<any> = basePartySchema;
   
   if (options.requireEmail) {
-    schema = schema.extend({
+    schema = schema.omit({ email: true }).extend({
       email: z.string().email('Valid email is required'),
-    });
+    }) as z.ZodObject<any>;
   }
   
   if (options.requirePhone) {
-    schema = schema.extend({
+    schema = schema.omit({ phone: true }).extend({
       phone: z.string().min(1, 'Phone number is required'),
-    });
+    }) as z.ZodObject<any>;
   }
   
   if (options.requireRepresentative) {
-    return partyWithRepresentativeSchema.extend({
+    return partyWithRepresentativeSchema.omit({ 
+      representativeName: true,
+      representativeTitle: true,
+      representativeEmail: true,
+    }).extend({
       representativeName: z.string().min(1, 'Representative name is required'),
       representativeTitle: z.string().min(1, 'Representative title is required'),
       representativeEmail: z.string().email('Valid email is required'),
-    });
+    }) as z.ZodObject<any>;
   }
   
   return schema;
@@ -294,6 +298,6 @@ export function mergeSchemas<T extends z.ZodRawShape, U extends z.ZodRawShape>(
   base: z.ZodObject<T>,
   extension: z.ZodObject<U>
 ): z.ZodObject<T & U> {
-  return base.merge(extension);
+  return base.merge(extension) as z.ZodObject<T & U>;
 }
 

@@ -1,6 +1,7 @@
-'use client';
-
 import { SmartFlowV2 } from './_components/SmartFlowV2';
+
+// Force dynamic rendering to avoid prerender issues
+export const dynamic = 'force-dynamic';
 
 /**
  * Employment Agreement Generation Page

@@ -25,5 +25,9 @@ export {
   generateSignatureFieldMetadata,
   createMetadataPayload,
 } from './signature-field-metadata';
-export { signatureLayout } from './signature-layout';
+export { 
+  SIG_PAGE_LAYOUT,
+  CONTENT_WIDTH,
+  getSignatureBlockPosition,
+} from './signature-layout';
 

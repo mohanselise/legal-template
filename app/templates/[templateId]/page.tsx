@@ -6,8 +6,12 @@ import { CheckCircle2, ArrowRight, Sparkles, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getTemplateById, getTemplateIds, isValidTemplate } from '@/data/templates';
 
+// Force dynamic rendering to avoid prerender issues
+export const dynamic = 'force-dynamic';
+
 /**
  * Generate static params for all template IDs
+ * Note: With dynamic = 'force-dynamic', this won't be used, but kept for compatibility
  */
 export function generateStaticParams() {
   return getTemplateIds().map((templateId) => ({

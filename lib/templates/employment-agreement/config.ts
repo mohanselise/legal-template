@@ -7,6 +7,7 @@
 
 import { FileText } from 'lucide-react';
 import type { TemplateConfig, GenerationStage } from '../types';
+import type { z } from 'zod';
 import { 
   employmentAgreementSchema, 
   employmentAgreementDefaultValues,
@@ -208,7 +209,7 @@ export const employmentAgreementConfig: Omit<TemplateConfig<EmploymentAgreementF
     estimatedMinutes: 5,
   },
   
-  schema: employmentAgreementSchema,
+  schema: employmentAgreementSchema as z.ZodType<EmploymentAgreementFormData>,
   
   defaultValues: employmentAgreementDefaultValues,
   

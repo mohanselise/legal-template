@@ -17,6 +17,9 @@ export default function SignInPage() {
               card: 'shadow-lg',
             },
           }}
+          routing="path"
+          path="/sign-in"
+          afterSignInUrl="/en/admin"
         />
       </div>
     </div>

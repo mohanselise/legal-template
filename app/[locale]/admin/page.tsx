@@ -1,5 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
+import { redirect as nextRedirect } from "next/navigation";
 import Link from "next/link";
 import {
   Card,
@@ -60,7 +60,8 @@ export default async function AdminDashboard({
   const user = await currentUser();
 
   if (!user) {
-    redirect("/sign-in");
+    // Redirect to sign-in without locale prefix (sign-in is excluded from i18n)
+    nextRedirect("/sign-in");
   }
 
   return (

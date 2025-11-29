@@ -92,6 +92,24 @@ interface SignaturePageProps {
 }
 
 export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => {
+  const getPartyLabel = (signatory: SignatoryData) => {
+    const upperParty = signatory.party?.toUpperCase();
+
+    if (signatory.party === 'employer') return 'EMPLOYER';
+    if (signatory.party === 'employee') return 'EMPLOYEE';
+    if (signatory.party === 'witness') return 'WITNESS';
+
+    if (upperParty && upperParty !== 'OTHER') {
+      return upperParty;
+    }
+
+    if (signatory.title && signatory.title.trim().length > 0) {
+      return signatory.title.trim().toUpperCase();
+    }
+
+    return 'SIGNATORY';
+  };
+
   return (
     <View style={styles.page}>
       {/* Header */}
@@ -118,7 +136,7 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
             }}
           >
             <Text style={styles.partyLabel}>
-              {signatory.party === 'employer' ? 'EMPLOYER' : 'EMPLOYEE'}
+              {getPartyLabel(signatory)}
             </Text>
             
             <Text style={styles.partyName}>{signatory.name}</Text>

@@ -23,6 +23,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { TemplateScreen, TemplateField } from "@/lib/db";
+import {
+  ADDITIONAL_SIGNATORIES_FIELD_HELP,
+  ADDITIONAL_SIGNATORIES_FIELD_LABEL,
+  ADDITIONAL_SIGNATORIES_FIELD_NAME,
+  STANDARD_SIGNATORY_FIELDS,
+} from "@/lib/templates/signatory-fields";
 
 interface ScreenWithFields extends TemplateScreen {
   fields: TemplateField[];
@@ -43,40 +49,105 @@ interface SignatoryField {
   options?: string[];
 }
 
-// Standard signatory fields
-const STANDARD_SIGNATORY_FIELDS: SignatoryField[] = [
-  { id: "party", name: "party", label: "Party", type: "select", required: true, options: ["employer", "employee", "witness", "other"] },
-  { id: "name", name: "name", label: "Full Name", type: "text", required: true, placeholder: "John Doe" },
-  { id: "email", name: "email", label: "Email", type: "email", required: true, placeholder: "john@example.com" },
-  { id: "title", name: "title", label: "Title/Role", type: "text", required: false, placeholder: "CEO, Employee, etc." },
-  { id: "phone", name: "phone", label: "Phone", type: "text", required: false, placeholder: "+1 (555) 123-4567" },
-];
-
 export function SignatoryInfoManager({ screen, onFieldsUpdated }: SignatoryInfoManagerProps) {
   const [signatoryFields, setSignatoryFields] = useState<SignatoryField[]>([]);
   const [editingField, setEditingField] = useState<SignatoryField | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creatingFields, setCreatingFields] = useState(false);
+  const [additionalEnabled, setAdditionalEnabled] = useState(false);
+  const [updatingAdditional, setUpdatingAdditional] = useState(false);
 
   // Load existing fields or initialize with standard fields
   useEffect(() => {
     if (screen.fields.length > 0) {
       // Convert existing fields to signatory fields
-      const fields: SignatoryField[] = screen.fields.map((field) => ({
-        id: field.id,
-        name: field.name,
-        label: field.label,
-        type: field.type === "email" ? "email" : field.type === "select" ? "select" : "text",
-        required: field.required,
-        placeholder: field.placeholder || undefined,
-        options: field.options.length > 0 ? field.options : undefined,
-      }));
+      const fields: SignatoryField[] = screen.fields
+        .filter((field) => field.name !== ADDITIONAL_SIGNATORIES_FIELD_NAME)
+        .map((field) => ({
+          id: field.id,
+          name: field.name,
+          label: field.label,
+          type: field.type === "email" ? "email" : field.type === "select" ? "select" : "text",
+          required: field.required,
+          placeholder: field.placeholder || undefined,
+          options: field.options.length > 0 ? field.options : undefined,
+        }));
       setSignatoryFields(fields);
     } else {
       // Initialize with standard signatory fields
       setSignatoryFields(STANDARD_SIGNATORY_FIELDS);
     }
   }, [screen.fields]);
+
+  useEffect(() => {
+    const hasAdditionalField = screen.fields.some(
+      (field) => field.name === ADDITIONAL_SIGNATORIES_FIELD_NAME
+    );
+    setAdditionalEnabled(hasAdditionalField);
+  }, [screen.fields]);
+
+  const handleToggleAdditionalSignatories = async (enabled: boolean) => {
+    if (updatingAdditional) return;
+
+    const existingField = screen.fields.find(
+      (field) => field.name === ADDITIONAL_SIGNATORIES_FIELD_NAME
+    );
+
+    if (enabled && existingField) {
+      setAdditionalEnabled(true);
+      return;
+    }
+
+    if (!enabled && !existingField) {
+      setAdditionalEnabled(false);
+      return;
+    }
+
+    setUpdatingAdditional(true);
+    try {
+      if (enabled) {
+        const fieldData = {
+          name: ADDITIONAL_SIGNATORIES_FIELD_NAME,
+          label: ADDITIONAL_SIGNATORIES_FIELD_LABEL,
+          type: "text",
+          required: false,
+          placeholder: "Use the repeater in the form to add more signatories",
+          helpText: ADDITIONAL_SIGNATORIES_FIELD_HELP,
+          options: [] as string[],
+        };
+
+        const response = await fetch(`/api/admin/screens/${screen.id}/fields`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fieldData),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create additional signatories field");
+        }
+        toast.success("Additional signatories enabled");
+      } else if (existingField) {
+        const response = await fetch(`/api/admin/fields/${existingField.id}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to remove additional signatories field");
+        }
+        toast.success("Additional signatories disabled");
+      }
+
+      setAdditionalEnabled(enabled);
+      onFieldsUpdated();
+    } catch (error) {
+      console.error("Error toggling additional signatories:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Unable to update additional signatories"
+      );
+    } finally {
+      setUpdatingAdditional(false);
+    }
+  };
 
   const handleAddField = () => {
     setEditingField({
@@ -206,6 +277,24 @@ export function SignatoryInfoManager({ screen, onFieldsUpdated }: SignatoryInfoM
           <p className="text-sm text-[hsl(var(--globe-grey))] mb-3">
             This is a <strong>Signatory Information</strong> screen. Use this screen to collect information about document signatories (name, email, title, party, etc.). You can add custom fields or use the standard signatory fields below.
           </p>
+          <div className="flex items-start justify-between gap-4 rounded-md border border-dashed border-[hsl(var(--border))] bg-white p-3">
+            <div>
+              <p className="text-sm font-medium text-[hsl(var(--fg))]">
+                Allow Multiple Signatories
+              </p>
+              <p className="text-xs text-[hsl(var(--globe-grey))]">
+                Adds an automatic repeater field named{" "}
+                <code>{ADDITIONAL_SIGNATORIES_FIELD_NAME}</code> so end users can enter as many signatories as needed.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={additionalEnabled}
+              disabled={updatingAdditional}
+              onChange={(event) => handleToggleAdditionalSignatories(event.target.checked)}
+              className="relative h-6 w-11 rounded-full border border-[hsl(var(--border))] bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--selise-blue))] disabled:cursor-not-allowed disabled:opacity-60"
+            />
+          </div>
           {(() => {
             const missingFields = STANDARD_SIGNATORY_FIELDS.filter(
               (standardField) => !screen.fields.some((f) => f.name === standardField.name)
@@ -447,4 +536,3 @@ function SignatoryFieldForm({ field, onSave, onCancel }: SignatoryFieldFormProps
     </form>
   );
 }
-

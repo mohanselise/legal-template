@@ -21,6 +21,7 @@ import dynamic from "next/dynamic";
 import { SignatureFieldOverlay, type SignatureField } from "@/app/[locale]/templates/employment-agreement/generate/review/_components/SignatureFieldOverlay";
 import { SignatureFieldMiniMap } from "@/app/[locale]/templates/employment-agreement/generate/review/_components/SignatureFieldMiniMap";
 import { generateSignatureFieldMetadata } from "@/lib/pdf/signature-field-metadata";
+import { ensureAdditionalSignatoryArray } from "@/lib/templates/signatory-fields";
 
 // Dynamically import react-pdf components to avoid SSR issues
 const Document = dynamic(
@@ -73,26 +74,55 @@ function extractSignatories(
 
   // If document doesn't have signatories, fall back to form data
 
+  const addSignatory = ({
+    name,
+    email,
+    role,
+  }: {
+    name: string;
+    email: string;
+    role?: string;
+  }) => {
+    if (!name || !email) return;
+    signatories.push({
+      name,
+      email,
+      role: role || "Signatory",
+      color: SIGNATORY_COLORS[signatories.length % SIGNATORY_COLORS.length],
+    });
+  };
+
   // 2. Form builder signatory screen fields (party, name, email, title, phone)
   if (formData.name && formData.email) {
-    signatories.push({
+    addSignatory({
       name: formData.name as string,
       email: formData.email as string,
-      role: (formData.title as string) || (formData.party as string) || "Signatory",
-      color: SIGNATORY_COLORS[0],
+      role: (formData.title as string) || (formData.party as string),
     });
+  }
+
+  const additionalEntries = ensureAdditionalSignatoryArray(formData.additionalSignatories);
+  additionalEntries.forEach((entry, index) => {
+    addSignatory({
+      name: entry.name,
+      email: entry.email,
+      role: entry.title || entry.party,
+    });
+  });
+
+  if (signatories.length > 0) {
     return signatories;
   }
 
   // 3. Check for numbered signatory pattern (signatory_1_name, signatory_2_name, etc.)
   let signatoryIndex = 1;
   while (formData[`signatory_${signatoryIndex}_name`]) {
-    signatories.push({
+    addSignatory({
       name: formData[`signatory_${signatoryIndex}_name`] as string,
       email: (formData[`signatory_${signatoryIndex}_email`] as string) || "",
-      role: (formData[`signatory_${signatoryIndex}_title`] as string) || 
-            (formData[`signatory_${signatoryIndex}_party`] as string) || "Signatory",
-      color: SIGNATORY_COLORS[(signatoryIndex - 1) % SIGNATORY_COLORS.length],
+      role:
+        (formData[`signatory_${signatoryIndex}_title`] as string) ||
+        (formData[`signatory_${signatoryIndex}_party`] as string),
     });
     signatoryIndex++;
   }
@@ -785,4 +815,3 @@ export function TemplatePDFReview({
     </div>
   );
 }
-

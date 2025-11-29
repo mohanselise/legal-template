@@ -7,6 +7,12 @@
 
 import type { SignatoryData } from '@/app/api/templates/employment-agreement/schema';
 import type { TemplateField } from '@/lib/db';
+import {
+  ADDITIONAL_SIGNATORIES_FIELD_NAME,
+  AdditionalSignatoryInput,
+  ensureAdditionalSignatoryArray,
+  SIGNATORY_PARTY_OPTIONS,
+} from './signatory-fields';
 
 /**
  * Data from a signatory screen in the form builder
@@ -93,29 +99,69 @@ export function extractSignatoriesFromFormData(
   // Fallback to legacy hardcoded field mapping for backward compatibility
   const signatories: SignatoryData[] = [];
 
-  // Employer signatory (from company info)
-  const employerName = formData.companyRepName || formData.companyName;
-  if (employerName && typeof employerName === 'string') {
+  const normalizeParty = (value: unknown): SignatoryData['party'] => {
+    if (typeof value === 'string') {
+      const lower = value.toLowerCase();
+      if (SIGNATORY_PARTY_OPTIONS.includes(lower as typeof SIGNATORY_PARTY_OPTIONS[number])) {
+        return lower as SignatoryData['party'];
+      }
+    }
+    return 'other';
+  };
+
+  const normalizeText = (value: unknown): string | undefined => {
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  };
+
+  const appendSignatory = (data: {
+    party?: unknown;
+    name?: string;
+    email?: string;
+    title?: string;
+    phone?: string;
+  }) => {
+    const name = normalizeText(data.name);
+    const email = normalizeText(data.email);
+    if (!name || !email) return;
+
     signatories.push({
-      party: 'employer',
-      name: employerName,
-      email: formData.companyRepEmail as string | undefined,
-      title: formData.companyRepTitle as string | undefined,
-      phone: formData.companyRepPhone as string | undefined,
+      party: normalizeParty(data.party),
+      name,
+      email,
+      title: normalizeText(data.title),
+      phone: normalizeText(data.phone),
     });
-  }
+  };
+
+  // Additional signatories array (if present)
+  const additionalEntries = ensureAdditionalSignatoryArray(
+    formData[ADDITIONAL_SIGNATORIES_FIELD_NAME]
+  );
+  additionalEntries.forEach((entry: AdditionalSignatoryInput) => {
+    appendSignatory(entry);
+  });
+
+  // Employer signatory (from company info)
+  appendSignatory({
+    party: 'employer',
+    name:
+      (formData.companyRepName as string | undefined) ??
+      (formData.companyName as string | undefined),
+    email: formData.companyRepEmail as string | undefined,
+    title: formData.companyRepTitle as string | undefined,
+    phone: formData.companyRepPhone as string | undefined,
+  });
 
   // Employee signatory
-  const employeeName = formData.employeeName;
-  if (employeeName && typeof employeeName === 'string') {
-    signatories.push({
-      party: 'employee',
-      name: employeeName,
-      email: formData.employeeEmail as string | undefined,
-      title: formData.jobTitle as string | undefined,
-      phone: formData.employeePhone as string | undefined,
-    });
-  }
+  appendSignatory({
+    party: 'employee',
+    name: formData.employeeName as string | undefined,
+    email: formData.employeeEmail as string | undefined,
+    title: formData.jobTitle as string | undefined,
+    phone: formData.employeePhone as string | undefined,
+  });
 
   return signatories;
 }
@@ -183,4 +229,3 @@ export function validateSignatoriesForSigning(signatories: SignatoryData[]): {
     signatoryErrors,
   };
 }
-

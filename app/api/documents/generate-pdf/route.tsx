@@ -4,6 +4,7 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import { EmploymentAgreementPDF } from '@/lib/pdf/EmploymentAgreementPDF';
 import { generateSignatureFieldMetadata, createMetadataPayload } from '@/lib/pdf/signature-field-metadata';
 import type { LegalDocument, SignatoryData } from '@/app/api/templates/employment-agreement/schema';
+import { ensureAdditionalSignatoryArray } from '@/lib/templates/signatory-fields';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,34 +37,55 @@ export async function POST(request: NextRequest) {
     
     // If document doesn't have signatories, extract from form data
     if (signatories.length === 0) {
+      const collected: SignatoryData[] = [];
+
       // Priority 2: Form builder signatory screen fields (party, name, email, title, phone)
       if (formData.name && formData.email) {
-        signatories = [
-          {
-            party: formData.party || 'other',
-            name: formData.name,
-            email: formData.email,
-            role: formData.title || formData.party || 'Signatory',
-            ...(formData.phone && { phone: formData.phone }),
-          },
-        ];
-      }
-      // Priority 3: Check for numbered signatory pattern (signatory_1_name, signatory_2_name, etc.)
-      else {
+        collected.push({
+          party: (formData.party as SignatoryData['party']) || 'other',
+          name: formData.name as string,
+          email: formData.email as string,
+          role: (formData.title as string) || (formData.party as string) || 'Signatory',
+          ...(formData.phone && { phone: formData.phone as string }),
+        });
+      } else {
+        // Priority 3: Check for numbered signatory pattern (signatory_1_name, signatory_2_name, etc.)
         let signatoryIndex = 1;
         while (formData[`signatory_${signatoryIndex}_name`]) {
-          signatories.push({
-            party: formData[`signatory_${signatoryIndex}_party`] || 'other',
-            name: formData[`signatory_${signatoryIndex}_name`],
-            email: formData[`signatory_${signatoryIndex}_email`] || '',
-            role: formData[`signatory_${signatoryIndex}_title`] || formData[`signatory_${signatoryIndex}_party`] || 'Signatory',
-            ...(formData[`signatory_${signatoryIndex}_phone`] && { phone: formData[`signatory_${signatoryIndex}_phone`] }),
+          collected.push({
+            party: (formData[`signatory_${signatoryIndex}_party`] as SignatoryData['party']) || 'other',
+            name: formData[`signatory_${signatoryIndex}_name`] as string,
+            email: (formData[`signatory_${signatoryIndex}_email`] as string) || '',
+            role:
+              (formData[`signatory_${signatoryIndex}_title`] as string) ||
+              (formData[`signatory_${signatoryIndex}_party`] as string) ||
+              'Signatory',
+            ...(formData[`signatory_${signatoryIndex}_phone`] && {
+              phone: formData[`signatory_${signatoryIndex}_phone`] as string,
+            }),
           });
           signatoryIndex++;
         }
       }
+
+      // Priority 4: Additional signatories repeater
+      const additionalEntries = ensureAdditionalSignatoryArray(formData.additionalSignatories);
+      additionalEntries.forEach((entry) => {
+        if (!entry.name || !entry.email) return;
+        collected.push({
+          party: (entry.party as SignatoryData['party']) || 'other',
+          name: entry.name,
+          email: entry.email,
+          role: entry.title || entry.party || 'Signatory',
+          ...(entry.phone && { phone: entry.phone }),
+        });
+      });
+
+      if (collected.length > 0) {
+        signatories = collected;
+      }
       
-      // Priority 4: Legacy hardcoded field names (for backward compatibility)
+      // Priority 5: Legacy hardcoded field names (for backward compatibility)
       if (signatories.length === 0) {
         const employerName = formData.companyName || 'Company';
         const employeeName = formData.employeeName || 'Employee';

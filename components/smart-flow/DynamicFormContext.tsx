@@ -2,6 +2,11 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 import type { TemplateScreen, TemplateField } from "@/lib/db";
+import {
+  ADDITIONAL_SIGNATORIES_FIELD_NAME,
+  AdditionalSignatoryInput,
+  ensureAdditionalSignatoryArray,
+} from "@/lib/templates/signatory-fields";
 
 export interface ScreenWithFields extends TemplateScreen {
   fields: TemplateField[];
@@ -52,6 +57,42 @@ interface DynamicFormProviderProps {
   initialData?: Record<string, unknown>;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateAdditionalSignatories(value: unknown): {
+  valid: boolean;
+  message?: string;
+} {
+  const entries = ensureAdditionalSignatoryArray(value);
+  const activeEntries = entries.filter((entry) => {
+    const stringsToCheck = [entry.name, entry.email, entry.title, entry.phone];
+    return stringsToCheck.some((text) => typeof text === "string" && text.trim().length > 0);
+  });
+
+  if (activeEntries.length === 0) {
+    return { valid: true };
+  }
+
+  for (let index = 0; index < activeEntries.length; index++) {
+    const entry = activeEntries[index] as AdditionalSignatoryInput;
+    const label = `Additional signatory #${index + 1}`;
+
+    if (!entry.name?.trim()) {
+      return { valid: false, message: `${label} requires a name.` };
+    }
+
+    if (!entry.email?.trim()) {
+      return { valid: false, message: `${label} requires an email address.` };
+    }
+
+    if (!EMAIL_REGEX.test(entry.email.trim())) {
+      return { valid: false, message: `${label} email address is invalid.` };
+    }
+  }
+
+  return { valid: true };
+}
+
 export function DynamicFormProvider({
   children,
   config,
@@ -85,6 +126,24 @@ export function DynamicFormProvider({
       const field = screen.fields.find((f) => f.name === name);
       if (field) {
         const value = formData[name];
+
+        if (field.name === ADDITIONAL_SIGNATORIES_FIELD_NAME) {
+          const validation = validateAdditionalSignatories(value);
+          if (!validation.valid) {
+            setErrors((prev) => ({
+              ...prev,
+              [name]: validation.message || "Please review additional signatories",
+            }));
+            return false;
+          }
+
+          setErrors((prev) => {
+            const next = { ...prev };
+            delete next[name];
+            return next;
+          });
+          return true;
+        }
         
         // Check required
         if (field.required) {
@@ -99,8 +158,7 @@ export function DynamicFormProvider({
         
         // Check email format
         if (field.type === "email" && value) {
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(value as string)) {
+          if (!EMAIL_REGEX.test(value as string)) {
             setErrors((prev) => ({
               ...prev,
               [name]: "Please enter a valid email address",
@@ -131,6 +189,15 @@ export function DynamicFormProvider({
     for (const field of screen.fields) {
       const value = formData[field.name];
 
+       if (field.name === ADDITIONAL_SIGNATORIES_FIELD_NAME) {
+        const validation = validateAdditionalSignatories(value);
+        if (!validation.valid) {
+          newErrors[field.name] = validation.message || "Please review additional signatories";
+          isValid = false;
+        }
+        continue;
+      }
+
       // Check required
       if (field.required) {
         if (value === undefined || value === null || value === "") {
@@ -142,8 +209,7 @@ export function DynamicFormProvider({
 
       // Check email format
       if (field.type === "email" && value) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value as string)) {
+        if (!EMAIL_REGEX.test(value as string)) {
           newErrors[field.name] = "Please enter a valid email address";
           isValid = false;
         }
@@ -218,4 +284,3 @@ export function useDynamicForm() {
   }
   return context;
 }
-

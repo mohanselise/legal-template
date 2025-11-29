@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -9,7 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import type { FieldType } from "@/lib/db";
+import {
+  ADDITIONAL_SIGNATORIES_FIELD_NAME,
+  AdditionalSignatoryInput,
+  SIGNATORY_PARTY_OPTIONS,
+  createBlankAdditionalSignatory,
+  ensureAdditionalSignatoryArray,
+} from "@/lib/templates/signatory-fields";
 
 export interface FieldConfig {
   id: string;
@@ -197,11 +207,168 @@ export function SelectField({ field, value, onChange, error }: FieldRendererProp
 }
 
 /**
+ * Additional Signatories Field Renderer
+ */
+export function AdditionalSignatoriesField({
+  field,
+  value,
+  onChange,
+  error,
+}: FieldRendererProps) {
+  const [entries, setEntries] = useState<AdditionalSignatoryInput[]>(
+    ensureAdditionalSignatoryArray(value)
+  );
+
+  useEffect(() => {
+    setEntries(ensureAdditionalSignatoryArray(value));
+  }, [value]);
+
+  const updateEntries = (next: AdditionalSignatoryInput[]) => {
+    setEntries(next);
+    onChange(field.name, next);
+  };
+
+  const handleEntryChange = (
+    index: number,
+    key: keyof AdditionalSignatoryInput,
+    fieldValue: string
+  ) => {
+    updateEntries(
+      entries.map((entry, idx) =>
+        idx === index ? { ...entry, [key]: fieldValue } : entry
+      )
+    );
+  };
+
+  const handleAddEntry = () => {
+    updateEntries([...entries, createBlankAdditionalSignatory()]);
+  };
+
+  const handleRemoveEntry = (index: number) => {
+    updateEntries(entries.filter((_, idx) => idx !== index));
+  };
+
+  const renderEntry = (entry: AdditionalSignatoryInput, index: number) => {
+    const baseId = entry.id || `${field.name}-${index}`;
+    return (
+      <div
+        key={baseId}
+        className="rounded-lg border border-[hsl(var(--border))] bg-white p-4 space-y-3"
+      >
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-[hsl(var(--fg))]">
+            Additional Signatory #{index + 1}
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleRemoveEntry(index)}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor={`${baseId}-name`}>Full Name *</Label>
+            <Input
+              id={`${baseId}-name`}
+              placeholder="Jane Doe"
+              value={entry.name || ""}
+              onChange={(e) => handleEntryChange(index, "name", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${baseId}-email`}>Email *</Label>
+            <Input
+              id={`${baseId}-email`}
+              type="email"
+              placeholder="jane@example.com"
+              value={entry.email || ""}
+              onChange={(e) => handleEntryChange(index, "email", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${baseId}-party`}>Party</Label>
+            <Select
+              value={entry.party}
+              onValueChange={(val) => handleEntryChange(index, "party", val)}
+            >
+              <SelectTrigger id={`${baseId}-party`}>
+                <SelectValue placeholder="Select party" />
+              </SelectTrigger>
+              <SelectContent>
+                {SIGNATORY_PARTY_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${baseId}-title`}>Title / Role</Label>
+            <Input
+              id={`${baseId}-title`}
+              placeholder="Authorized Signatory"
+              value={entry.title || ""}
+              onChange={(e) => handleEntryChange(index, "title", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor={`${baseId}-phone`}>Phone</Label>
+            <Input
+              id={`${baseId}-phone`}
+              placeholder="+1 (555) 123-4567"
+              value={entry.phone || ""}
+              onChange={(e) => handleEntryChange(index, "phone", e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Label className="text-base">
+          {field.label}
+          {field.required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+        <Button type="button" variant="outline" size="sm" onClick={handleAddEntry}>
+          <Plus className="h-4 w-4 mr-1" />
+          Add Signatory
+        </Button>
+      </div>
+      {field.helpText && (
+        <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
+      )}
+      {entries.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 p-4 text-sm text-[hsl(var(--globe-grey))]">
+          No additional signatories yet. Click “Add Signatory” to include more parties on this document.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {entries.map((entry, index) => renderEntry(entry, index))}
+        </div>
+      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+/**
  * Dynamic Field Renderer
  * Renders the appropriate field component based on field type
  */
 export function DynamicField(props: FieldRendererProps) {
   const { field } = props;
+
+  if (field.name === ADDITIONAL_SIGNATORIES_FIELD_NAME) {
+    return <AdditionalSignatoriesField {...props} />;
+  }
 
   switch (field.type) {
     case "text":
@@ -222,4 +389,3 @@ export function DynamicField(props: FieldRendererProps) {
 }
 
 export default DynamicField;
-

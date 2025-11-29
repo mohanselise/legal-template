@@ -39,6 +39,7 @@ export interface SignatoryData {
   party: 'employer' | 'employee' | 'witness' | 'other';
   name: string;
   title?: string;
+  role?: string;
   email?: string;
   phone?: string;
 }

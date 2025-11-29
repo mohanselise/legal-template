@@ -82,7 +82,7 @@ export default async function LocaleLayout({
   return (
     <>
       <JsonLd data={jsonLdData} />
-      <NextIntlClientProvider messages={messages}>
+      <NextIntlClientProvider locale={locale} messages={messages}>
         <div className="flex flex-col min-h-screen" lang={locale}>
           <Header />
           <main className="flex-1">{children}</main>
@@ -93,4 +93,3 @@ export default async function LocaleLayout({
     </>
   );
 }
-

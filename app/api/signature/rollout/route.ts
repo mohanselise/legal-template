@@ -23,6 +23,27 @@ interface SignatoryInput {
   phone?: string;
 }
 
+const CLIENT_TO_STAMP_POST_INFO_SCALE = 72 / 96;
+const DATE_FIELD_X_OFFSET = 8;
+const DATE_FIELD_Y_OFFSET = 4;
+
+/**
+ * SELISE renders the StampPostInfo text with internal padding, which makes it appear slightly
+ * down and to the right when we pass the overlay's exact top-left coordinates. It also expects
+ * coordinates in PDF points (72 DPI) instead of the 96 DPI units we use for signature stamps.
+ */
+function mapDateFieldToStampPostInfoUnits(field: Pick<SignatureField, 'x' | 'y' | 'width' | 'height'>) {
+  const toStampPostInfoUnit = (value: number) =>
+    Math.round(value * CLIENT_TO_STAMP_POST_INFO_SCALE);
+
+  return {
+    x: Math.max(0, toStampPostInfoUnit(field.x - DATE_FIELD_X_OFFSET)),
+    y: Math.max(0, toStampPostInfoUnit(field.y - DATE_FIELD_Y_OFFSET)),
+    width: Math.max(1, toStampPostInfoUnit(field.width)),
+    height: Math.max(1, toStampPostInfoUnit(field.height)),
+  };
+}
+
 const IDENTITY_API = 'https://selise.app/api/identity/v100/identity/token';
 const STORAGE_API =
   'https://selise.app/api/storageservice/v100/StorageService/StorageQuery/GetPreSignedUrlForUpload';
@@ -503,9 +524,13 @@ function buildPreparePayload({
         });
         console.log(`  ✓ Signature field: ${signatory.name} at (${field.x}, ${field.y}) on page ${pageNumber}`);
       } else if (field.type === 'date') {
-        // Use SAME coordinate treatment as signature fields (no conversion)
+        const adjusted = mapDateFieldToStampPostInfoUnits(field);
         stampPostInfoCoordinates.push({
           ...common,
+          Width: adjusted.width,
+          Height: adjusted.height,
+          X: adjusted.x,
+          Y: adjusted.y,
           EntityName: 'AuditLog',
           PropertyName: '{StampTime}',
           FontDetails: {
@@ -553,6 +578,12 @@ function buildPreparePayload({
       const dateY = Math.round((blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET) * DPI_SCALE);
       const dateWidth = Math.round(SIG_PAGE_LAYOUT.DATE_BOX_WIDTH * DPI_SCALE);
       const dateHeight = Math.round(SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT * DPI_SCALE);
+      const datePosition = mapDateFieldToStampPostInfoUnits({
+        x: dateX,
+        y: dateY,
+        width: dateWidth,
+        height: dateHeight,
+      });
 
       // Add Signature Field
       stampCoordinates.push({
@@ -574,11 +605,11 @@ function buildPreparePayload({
       // Add Date Field (same coordinate treatment as signature)
       stampPostInfoCoordinates.push({
         FileId: fileId,
-        Width: dateWidth,
-        Height: dateHeight,
+        Width: datePosition.width,
+        Height: datePosition.height,
         PageNumber: lastPageIndex,
-        X: dateX,
-        Y: dateY,
+        X: datePosition.x,
+        Y: datePosition.y,
         EntityName: 'AuditLog',
         PropertyName: '{StampTime}',
         SignatoryEmail: signatory.email,
@@ -825,4 +856,3 @@ async function waitForRolloutSuccess(accessToken: string, documentId: string) {
 
   return lastParsed;
 }
-

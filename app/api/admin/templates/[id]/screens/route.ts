@@ -9,6 +9,7 @@ const createScreenSchema = z.object({
   description: z.string().optional(),
   type: z.enum(["standard", "signatory"]).default("standard"),
   order: z.number().int().min(0).optional(),
+  aiPrompt: z.string().optional(),
 });
 
 // Schema for reordering screens
@@ -102,7 +103,7 @@ export async function POST(
       );
     }
 
-    const { title, description, type, order } = validation.data;
+    const { title, description, type, order, aiPrompt } = validation.data;
 
     // If order not provided, add to end
     let finalOrder = order;
@@ -123,6 +124,7 @@ export async function POST(
         description,
         type: type || "standard",
         order: finalOrder,
+        aiPrompt,
       },
     });
 

@@ -44,6 +44,7 @@ model TemplateScreen {
   description String?    // Optional helper text
   type        ScreenType @default(standard) // Screen type: standard or signatory
   order       Int        // Display order (0, 1, 2...)
+  aiPrompt    String?    @db.Text // AI prompt to run on step completion
 
   fields TemplateField[]
 

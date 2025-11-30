@@ -10,6 +10,7 @@ import {
 
 export interface ScreenWithFields extends TemplateScreen {
   fields: TemplateField[];
+  aiPrompt?: string | null;
 }
 
 export interface TemplateConfig {
@@ -23,18 +24,18 @@ export interface TemplateConfig {
 interface DynamicFormContextType {
   // Template configuration
   config: TemplateConfig | null;
-  
+
   // Form data
   formData: Record<string, unknown>;
   updateFormData: (updates: Record<string, unknown>) => void;
   setFieldValue: (name: string, value: unknown) => void;
-  
+
   // Validation
   errors: Record<string, string>;
   validateField: (name: string) => boolean;
   validateScreen: (screenIndex: number) => boolean;
   clearErrors: () => void;
-  
+
   // Navigation
   currentStep: number;
   totalSteps: number;
@@ -42,11 +43,15 @@ interface DynamicFormContextType {
   nextStep: () => void;
   previousStep: () => void;
   canProceed: () => boolean;
-  
+
   // Status
   isLoading: boolean;
   isSubmitting: boolean;
   setSubmitting: (value: boolean) => void;
+
+  // AI Enrichment
+  enrichmentContext: Record<string, any>;
+  setEnrichmentContext: (context: Record<string, any>) => void;
 }
 
 const DynamicFormContext = createContext<DynamicFormContextType | undefined>(undefined);
@@ -103,6 +108,7 @@ export function DynamicFormProvider({
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [enrichmentContext, setEnrichmentContextState] = useState<Record<string, any>>({});
 
   const totalSteps = config.screens.length;
 
@@ -144,7 +150,7 @@ export function DynamicFormProvider({
           });
           return true;
         }
-        
+
         // Check required
         if (field.required) {
           if (value === undefined || value === null || value === "") {
@@ -155,7 +161,7 @@ export function DynamicFormProvider({
             return false;
           }
         }
-        
+
         // Check email format
         if (field.type === "email" && value) {
           if (!EMAIL_REGEX.test(value as string)) {
@@ -166,7 +172,7 @@ export function DynamicFormProvider({
             return false;
           }
         }
-        
+
         // Clear error if valid
         setErrors((prev) => {
           const next = { ...prev };
@@ -189,7 +195,7 @@ export function DynamicFormProvider({
     for (const field of screen.fields) {
       const value = formData[field.name];
 
-       if (field.name === ADDITIONAL_SIGNATORIES_FIELD_NAME) {
+      if (field.name === ADDITIONAL_SIGNATORIES_FIELD_NAME) {
         const validation = validateAdditionalSignatories(value);
         if (!validation.valid) {
           newErrors[field.name] = validation.message || "Please review additional signatories";
@@ -250,6 +256,10 @@ export function DynamicFormProvider({
     setIsSubmitting(value);
   }, []);
 
+  const setEnrichmentContext = useCallback((context: Record<string, any>) => {
+    setEnrichmentContextState((prev) => ({ ...prev, ...context }));
+  }, []);
+
   const value: DynamicFormContextType = {
     config,
     formData,
@@ -268,6 +278,8 @@ export function DynamicFormProvider({
     isLoading,
     isSubmitting,
     setSubmitting,
+    enrichmentContext,
+    setEnrichmentContext,
   };
 
   return (

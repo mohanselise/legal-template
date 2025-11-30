@@ -9,6 +9,7 @@ const updateScreenSchema = z.object({
   description: z.string().nullable().optional(),
   type: z.enum(["standard", "signatory"]).optional(),
   order: z.number().int().min(0).optional(),
+  aiPrompt: z.string().optional(),
 });
 
 /**

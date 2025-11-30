@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -16,6 +16,7 @@ import {
   DynamicFormProvider,
   useDynamicForm,
   type TemplateConfig,
+  type ScreenWithFields,
 } from "./DynamicFormContext";
 import { DynamicField, type FieldConfig } from "./field-renderers";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,15 @@ interface DynamicSmartFlowProps {
   locale: string;
 }
 
+function cloneFormData<T extends Record<string, unknown>>(data: T): T {
+  try {
+    return structuredClone(data);
+  } catch (error) {
+    // Fallback when structuredClone isn't available (should be rare in modern browsers)
+    return JSON.parse(JSON.stringify(data));
+  }
+}
+
 function DynamicSmartFlowContent({ locale }: { locale: string }) {
   const {
     config,
@@ -75,6 +85,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     canProceed,
     isSubmitting,
     setSubmitting,
+    setEnrichmentContext,
   } = useDynamicForm();
 
   const router = useRouter();
@@ -147,6 +158,43 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
   const currentScreen = config.screens[currentStep];
   const displayedProgress = Math.round(fakeProgress);
+  const runAiEnrichmentInBackground = useCallback((screen: ScreenWithFields | undefined) => {
+    if (!screen?.aiPrompt) {
+      return;
+    }
+
+    const payload = {
+      prompt: screen.aiPrompt,
+      formData: cloneFormData(formData),
+    };
+
+    // Fire-and-forget so navigation isn't blocked
+    void (async () => {
+      try {
+        console.log("✨ Executing AI Enrichment in background...");
+        const response = await fetch("/api/ai/enrich-context", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          const message =
+            (typeof data?.error === "string" && data.error) ||
+            (typeof data?.message === "string" && data.message) ||
+            `Failed to enrich context (status ${response.status})`;
+          throw new Error(message);
+        }
+
+        console.log("✅ AI Enrichment Result:", data);
+        setEnrichmentContext(data);
+      } catch (error) {
+        console.error("❌ AI Enrichment Error:", error);
+      }
+    })();
+  }, [formData, setEnrichmentContext]);
 
   // Loading Screen - shows during document generation
   if (isGenerating) {
@@ -269,22 +317,20 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className={`flex items-center gap-3 text-sm transition-all duration-300 ${
-                      isCompleted
+                    className={`flex items-center gap-3 text-sm transition-all duration-300 ${isCompleted
                         ? "text-[hsl(var(--brand-primary))]"
                         : isCurrent
                           ? "text-[hsl(var(--fg))] font-medium"
                           : "text-[hsl(var(--muted-foreground))]"
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`flex h-6 w-6 items-center justify-center rounded-full transition-all ${
-                        isCompleted
+                      className={`flex h-6 w-6 items-center justify-center rounded-full transition-all ${isCompleted
                           ? "bg-[hsl(var(--brand-primary))] text-white"
                           : isCurrent
                             ? "border-2 border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary)/0.1)]"
                             : "border border-[hsl(var(--border))] bg-transparent"
-                      }`}
+                        }`}
                     >
                       {isCompleted ? (
                         <Check className="h-3.5 w-3.5" />
@@ -308,6 +354,11 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
   const handleContinue = () => {
     if (canProceed()) {
+      const screen = config.screens[currentStep];
+
+      // Trigger AI enrichment without waiting for the response
+      runAiEnrichmentInBackground(screen);
+
       nextStep();
     }
   };
@@ -635,11 +686,10 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
           {config.screens.map((screen, index) => (
             <div
               key={screen.id}
-              className={`h-2 rounded-full transition-all ${
-                index <= currentStep
+              className={`h-2 rounded-full transition-all ${index <= currentStep
                   ? "bg-[hsl(var(--brand-primary))] w-12"
                   : "bg-[hsl(var(--border))] w-8"
-              }`}
+                }`}
             />
           ))}
         </div>
@@ -657,4 +707,3 @@ export function DynamicSmartFlow({ config, locale }: DynamicSmartFlowProps) {
 }
 
 export default DynamicSmartFlow;
-

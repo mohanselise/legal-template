@@ -32,10 +32,10 @@ import { getAllTemplates } from "@/lib/templates-db";
 export default async function Home() {
   const t = await getTranslations('home');
   const tTemplates = await getTranslations('templates');
-  
+
   // Fetch templates from database
   const templates = await getAllTemplates();
-  
+
   const features = [
     {
       icon: Clock,
@@ -132,7 +132,7 @@ export default async function Home() {
       icon: Rocket
     }
   ];
-  
+
   return (
     <div className="min-h-screen bg-background font-sans">
       {/* Announcement Bar */}
@@ -258,11 +258,10 @@ export default async function Home() {
               return (
                 <Card
                   key={template.id}
-                  className={`group relative flex h-full flex-col transition-all hover:shadow-2xl ${
-                    template.available
-                      ? 'border-2 hover:border-[hsl(var(--sky-blue))] hover:-translate-y-1 dark:hover:border-[hsl(var(--sky-blue))]'
-                      : 'opacity-60'
-                  }`}
+                  className={`group relative flex h-full flex-col transition-all hover:shadow-2xl ${template.available
+                    ? 'border-2 hover:border-[hsl(var(--sky-blue))] hover:-translate-y-1 dark:hover:border-[hsl(var(--sky-blue))]'
+                    : 'opacity-60'
+                    }`}
                 >
                   {template.popular && template.available && (
                     <div className="absolute -right-2 -top-2 z-10">

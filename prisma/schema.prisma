@@ -105,3 +105,47 @@ model SystemSettings {
 
   @@index([key])
 }
+
+// Analytics: OpenRouter API Usage Logs
+model ApiUsageLog {
+  id            String   @id @default(cuid())
+  
+  // Session & Context
+  sessionId     String   // Anonymous session UUID
+  templateSlug  String?  // e.g., "employment-agreement"
+  endpoint      String   // API route path
+  
+  // OpenRouter Metrics
+  model         String   // e.g., "anthropic/claude-3.5-sonnet"
+  promptTokens  Int
+  completionTokens Int
+  totalTokens   Int
+  
+  // Cost Tracking
+  cost          Float    // In USD (actual from API or calculated)
+  costMethod    String   // "api" or "calculated"
+  
+  // Request Metadata
+  responseTime  Int     // In milliseconds
+  success       Boolean @default(true)
+  errorMessage  String? @db.Text
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  
+  @@index([createdAt])
+  @@index([templateSlug, createdAt])
+  @@index([endpoint, createdAt])
+  @@index([sessionId])
+}
+
+// Analytics: Cost configuration per model (fallback)
+model ModelPricing {
+  id                String   @id @default(cuid())
+  model             String   @unique
+  promptCostPer1k   Float    // Cost per 1k prompt tokens in USD
+  completionCostPer1k Float  // Cost per 1k completion tokens in USD
+  updatedAt         DateTime @updatedAt
+  
+  @@index([model])
+}

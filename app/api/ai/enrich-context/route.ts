@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { openrouter } from "@/lib/openrouter";
+import { openrouter, createCompletionWithTracking } from "@/lib/openrouter";
+import { getSessionId } from "@/lib/analytics/session";
 
 const enrichContextSchema = z.object({
     prompt: z.string().min(1, "Prompt is required"),
@@ -39,13 +40,19 @@ User Prompt: ${interpolatedPrompt}
 
 Generate a JSON response based on the prompt.`;
 
-        const completion = await openrouter.chat.completions.create({
+        // Get session ID for analytics
+        const sessionId = await getSessionId();
+
+        const completion = await createCompletionWithTracking({
             model: "anthropic/claude-3.5-sonnet",
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userMessage },
             ],
             response_format: { type: "json_object" },
+        }, {
+            sessionId,
+            endpoint: '/api/ai/enrich-context',
         });
 
         const content = completion.choices[0].message.content;

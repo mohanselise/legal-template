@@ -39,7 +39,7 @@ const adminModules = [
     icon: BarChart3,
     href: "/admin/analytics",
     details: "View document generation and usage analytics.",
-    available: false,
+    available: true,
   },
   {
     title: "Settings",
@@ -80,27 +80,24 @@ export default async function AdminDashboard({
           const Icon = module.icon;
           const cardContent = (
             <Card
-              className={`h-full transition-all ${
-                module.available
+              className={`h-full transition-all ${module.available
                   ? "hover:shadow-lg hover:border-[hsl(var(--selise-blue))]/30"
                   : ""
-              }`}
+                }`}
             >
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div
-                    className={`flex size-10 items-center justify-center rounded-lg ${
-                      module.available
+                    className={`flex size-10 items-center justify-center rounded-lg ${module.available
                         ? "bg-[hsl(var(--selise-blue))]/10"
                         : "bg-[hsl(var(--muted))]"
-                    }`}
+                      }`}
                   >
                     <Icon
-                      className={`size-5 ${
-                        module.available
+                      className={`size-5 ${module.available
                           ? "text-[hsl(var(--selise-blue))]"
                           : "text-[hsl(var(--globe-grey))]"
-                      }`}
+                        }`}
                     />
                   </div>
                   {module.available && (

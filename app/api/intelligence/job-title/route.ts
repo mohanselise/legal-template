@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openrouter, JURISDICTION_MODEL } from '@/lib/openrouter';
+import { openrouter, JURISDICTION_MODEL, createCompletionWithTracking } from '@/lib/openrouter';
+import { getSessionId } from '@/lib/analytics/session';
 import { JobTitleAnalysis } from '@/lib/types/smart-form';
 
 interface JobTitleAnalysisRequest {
@@ -38,8 +39,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get session ID for analytics
+    const sessionId = await getSessionId();
+
     // Use llama-4-scout via OpenRouter for fast job title analysis
-    const completion = await openrouter.chat.completions.create({
+    const completion = await createCompletionWithTracking({
       model: JURISDICTION_MODEL,
       messages: [
         {
@@ -119,6 +123,9 @@ Asia-Pacific: Varies widely`,
       temperature: 0.3,
       max_tokens: 600,
       response_format: { type: 'json_object' },
+    }, {
+      sessionId,
+      endpoint: '/api/intelligence/job-title',
     });
 
     const result = completion.choices[0]?.message?.content;

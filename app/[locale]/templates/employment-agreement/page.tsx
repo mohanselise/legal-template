@@ -63,7 +63,7 @@ export default async function EmploymentAgreementPage({ params }: { params: Prom
         {/* Decorative gradient orbs */}
         <div className="absolute left-0 top-0 h-96 w-96 rounded-full bg-[hsl(var(--sky-blue))]/20 blur-3xl" />
         <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-[hsl(var(--light-blue))]/20 blur-3xl" />
-        
+
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
             <div className="relative z-10">
@@ -245,7 +245,7 @@ export default async function EmploymentAgreementPage({ params }: { params: Prom
             className="opacity-[0.015] dark:opacity-[0.04] animate-[spin_60s_linear_infinite]"
           />
         </div>
-        
+
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <Badge className="mb-4 bg-[hsl(var(--lime-green))]/15 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/25 dark:text-[hsl(var(--lime-green))] font-subheading uppercase tracking-[0.12em]">
@@ -614,7 +614,7 @@ export default async function EmploymentAgreementPage({ params }: { params: Prom
         {/* Decorative elements */}
         <div className="absolute left-0 bottom-0 h-96 w-96 rounded-full bg-[hsl(var(--sky-blue))]/20 blur-3xl" />
         <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-[hsl(var(--light-blue))]/20 blur-3xl" />
-        
+
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="mb-6">
             <Badge className="bg-[hsl(var(--white))]/20 text-[hsl(var(--white))] border-[hsl(var(--white))]/30 backdrop-blur-sm font-subheading uppercase tracking-[0.12em]">
@@ -622,7 +622,7 @@ export default async function EmploymentAgreementPage({ params }: { params: Prom
               {t('finalCta.badge')}
             </Badge>
           </div>
-          
+
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
             {t('finalCta.title')}
           </h2>

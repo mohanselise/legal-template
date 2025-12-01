@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openrouter, JURISDICTION_MODEL } from '@/lib/openrouter';
+import { openrouter, JURISDICTION_MODEL, createCompletionWithTracking } from '@/lib/openrouter';
+import { getSessionId } from '@/lib/analytics/session';
 import { CompanyIntelligence, JurisdictionIntelligence } from '@/lib/types/smart-form';
 import { safeValidateJurisdictionResponse, getValidationErrorMessage } from '@/lib/validation/jurisdiction-schema';
 
@@ -46,8 +47,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get session ID for analytics
+    const sessionId = await getSessionId();
+
     // Use OpenRouter with llama-4-scout for jurisdiction detection
-    const completion = await openrouter.chat.completions.create({
+    const completion = await createCompletionWithTracking({
       model: JURISDICTION_MODEL,
       messages: [
         {
@@ -181,6 +185,9 @@ Always research the specific jurisdiction based on the address provided. Use you
       temperature: 0.2,
       max_tokens: 1000,
       response_format: { type: 'json_object' },
+    }, {
+      sessionId,
+      endpoint: '/api/intelligence/company',
     });
 
     const result = completion.choices[0]?.message?.content;

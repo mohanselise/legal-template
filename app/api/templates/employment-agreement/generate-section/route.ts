@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openrouter } from '@/lib/openrouter';
+import { openrouter, createCompletionWithTracking } from '@/lib/openrouter';
+import { getSessionId } from '@/lib/analytics/session';
 
 type SectionKey = 'basics' | 'compensation' | 'workTerms' | 'legalTerms';
 
@@ -10,7 +11,7 @@ type SectionKey = 'basics' | 'compensation' | 'workTerms' | 'legalTerms';
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   console.log('🔧 [Section API] Section generation request received:', new Date().toISOString());
-  
+
   try {
     const { section, data } = await request.json();
     console.log('📋 [Section API] Generating section:', section);
@@ -18,7 +19,10 @@ export async function POST(request: NextRequest) {
     const prompt = buildSectionPrompt(section, data);
     console.log('🤖 [Section API] Calling OpenRouter for section:', section);
 
-    const completion = await openrouter.chat.completions.create({
+    // Get session ID for analytics
+    const sessionId = await getSessionId();
+
+    const completion = await createCompletionWithTracking({
       model: 'anthropic/claude-3.5-sonnet',
       messages: [
         {
@@ -30,11 +34,15 @@ export async function POST(request: NextRequest) {
       ],
       temperature: 0.3,
       max_tokens: 1500,
+    }, {
+      sessionId,
+      templateSlug: 'employment-agreement',
+      endpoint: '/api/templates/employment-agreement/generate-section',
     });
 
     const sectionContent = completion.choices[0]?.message?.content || '';
     const duration = Date.now() - startTime;
-    
+
     console.log('✅ [Section API] Section generated in', duration, 'ms');
     console.log('📄 [Section API] Content length:', sectionContent.length);
 
@@ -46,7 +54,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('❌ [Section API] Error after', duration, 'ms:', error);
-    
+
     return NextResponse.json(
       { error: 'Failed to generate section', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

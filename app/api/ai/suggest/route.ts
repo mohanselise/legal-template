@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openrouter, JURISDICTION_MODEL } from '@/lib/openrouter';
+import { openrouter, JURISDICTION_MODEL, createCompletionWithTracking } from '@/lib/openrouter';
+import { getSessionId } from '@/lib/analytics/session';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +13,10 @@ Keep suggestions practical, professional, and brief (1-2 sentences max).`;
 
     const userPrompt = buildSuggestionPrompt(question, context, field);
 
-    const completion = await openrouter.chat.completions.create({
+    // Get session ID for analytics
+    const sessionId = await getSessionId();
+
+    const completion = await createCompletionWithTracking({
       model: JURISDICTION_MODEL, // Use llama-4-scout for small AI tasks
       messages: [
         { role: 'system', content: systemPrompt },
@@ -20,6 +24,9 @@ Keep suggestions practical, professional, and brief (1-2 sentences max).`;
       ],
       temperature: 0.7,
       max_tokens: 100,
+    }, {
+      sessionId,
+      endpoint: '/api/ai/suggest',
     });
 
     const suggestion = completion.choices[0]?.message?.content?.trim() || '';

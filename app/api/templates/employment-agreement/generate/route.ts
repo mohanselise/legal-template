@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON } from '@/lib/openai';
-import { openrouter, CONTRACT_GENERATION_MODEL } from '@/lib/openrouter';
+import { openrouter, CONTRACT_GENERATION_MODEL, createCompletionWithTracking } from '@/lib/openrouter';
+import { getSessionId } from '@/lib/analytics/session';
 import { validateTurnstileToken } from 'next-turnstile';
 import type { LegalDocument } from '@/app/api/templates/employment-agreement/schema';
 import type { JurisdictionIntelligence, CompanyIntelligence, JobTitleAnalysis, MarketStandards } from '@/lib/types/smart-form';
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     // Validate Turnstile token on server for ALL requests
     const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
     const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-    
+
     if (!TURNSTILE_SECRET_KEY) {
       console.error('⚠️ [Generate API] TURNSTILE_SECRET_KEY is not set');
       return NextResponse.json(
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    
+
     // Debug logging in development to help diagnose key mismatches
     if (process.env.NODE_ENV === 'development') {
       console.log('🔍 [Generate API] Turnstile keys check:');
@@ -92,11 +93,11 @@ export async function POST(request: NextRequest) {
       if (!validationResponse.success) {
         const errorCodes = (validationResponse as any)['error-codes'] || (validationResponse as any).error_codes || [];
         console.error('[Generate API] Turnstile validation failed:', errorCodes);
-        
+
         // Provide more specific error messages based on error codes
         let errorMessage = 'Human verification failed. Please verify again.';
         let isTokenExpiration = false;
-        
+
         if (errorCodes.includes('timeout-or-duplicate')) {
           errorMessage = 'Your verification has expired. Please verify again.';
           isTokenExpiration = true;
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
             console.error('⚠️ [Generate API] Please verify that TURNSTILE_SECRET_KEY matches the secret key for your site key.');
           }
         }
-        
+
         return NextResponse.json(
           {
             error: errorMessage,
@@ -198,7 +199,11 @@ export async function POST(request: NextRequest) {
 
     console.log('🤖 [Generate API] Calling OpenRouter API with Claude 3.5 Sonnet (JSON mode)...');
     const apiCallStart = Date.now();
-    const completion = await openrouter.chat.completions.create({
+
+    // Get session ID for analytics
+    const sessionId = await getSessionId();
+
+    const completion = await createCompletionWithTracking({
       model: CONTRACT_GENERATION_MODEL,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -207,6 +212,10 @@ export async function POST(request: NextRequest) {
       response_format: { type: 'json_object' }, // Enforce JSON output
       temperature: 0.3, // Lower temperature for more consistent legal text
       max_tokens: 16000, // Claude 3.5 Sonnet supports longer outputs for comprehensive legal documents
+    }, {
+      sessionId,
+      templateSlug: 'employment-agreement',
+      endpoint: '/api/templates/employment-agreement/generate',
     });
     const apiCallDuration = Date.now() - apiCallStart;
     console.log('✅ [Generate API] OpenRouter response received in', apiCallDuration, 'ms');
@@ -226,7 +235,7 @@ export async function POST(request: NextRequest) {
       document = JSON.parse(documentContent);
       console.log('✅ [Generate API] JSON parsed successfully');
       console.log('📊 [Generate API] Content blocks count:', document.content?.length);
-      
+
       // Clean up placeholder phone numbers
       document = removePlaceholderPhoneNumbers(document, formData);
       console.log('🧹 [Generate API] Cleaned up placeholder phone numbers');
@@ -254,7 +263,7 @@ export async function POST(request: NextRequest) {
       stack: error instanceof Error ? error.stack : undefined,
     });
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    
+
     return NextResponse.json(
       { error: 'Failed to generate document', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -363,7 +372,7 @@ function buildJurisdictionContext(formData: any, enrichment?: EnrichmentData): s
   if (enrichment.company?.industryDetected) {
     context += `**Industry Context:** ${enrichment.company.industryDetected}\n`;
     if (enrichment.company.industryDetected.toLowerCase().includes('tech') ||
-        enrichment.company.industryDetected.toLowerCase().includes('software')) {
+      enrichment.company.industryDetected.toLowerCase().includes('software')) {
       context += `- Include comprehensive IP assignment provisions (Article 8)\n`;
       context += `- Address remote work policies and equipment in Work Schedule article\n`;
       context += `- Consider equity/stock option provisions if offered\n`;
@@ -421,10 +430,10 @@ function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string
   // Use structured address if available, otherwise fall back to parsing or raw string
   const employerStructured: StructuredAddress | null = data.companyAddressStructured || null;
   const employeeStructured: StructuredAddress | null = data.employeeAddressStructured || null;
-  
+
   // Get jurisdiction country code for formatting
   const jurisdictionCountryCode = enrichment?.jurisdiction?.countryCode;
-  
+
   let employerAddress: string;
   if (employerStructured) {
     employerAddress = formatAddressByJurisdiction(employerStructured, jurisdictionCountryCode);
@@ -509,13 +518,13 @@ function buildPromptFromFormData(data: any, enrichment?: EnrichmentData): string
   prompt += `**EMPLOYER:**\n`;
   prompt += `- Legal Name: ${data.companyName || '[Company Name Required]'}\n`;
   if (data.companyIndustry) prompt += `- Industry: ${data.companyIndustry}\n`;
-  prompt += `- Registered Address: ${employerAddress || '[Address]' }\n`;
+  prompt += `- Registered Address: ${employerAddress || '[Address]'}\n`;
   if (data.companyWebsite) prompt += `- Website: ${data.companyWebsite}\n`;
   if (companyContact) prompt += `- Primary Contact: ${companyContact}\n`;
   if (data.companyContactEmail) prompt += `- Contact Email: ${data.companyContactEmail}\n`;
   if (data.companyContactPhone) prompt += `- Contact Phone: ${data.companyContactPhone}\n`;
   prompt += `- Referred to as: "EMPLOYER" or "COMPANY"\n`;
-  
+
   // Add company representative signing information
   if (data.companyRepName || data.companyRepTitle || data.companyRepEmail) {
     prompt += `\n**Authorized Company Representative (for execution):**\n`;

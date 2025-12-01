@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openrouter, JURISDICTION_MODEL } from '@/lib/openrouter';
+import { openrouter, JURISDICTION_MODEL, createCompletionWithTracking } from '@/lib/openrouter';
+import { getSessionId } from '@/lib/analytics/session';
 
 type Answer = {
   questionId: string;
@@ -46,7 +47,10 @@ IMPORTANT:
 
     const userPrompt = buildPrompt(answers);
 
-    const completion = await openrouter.chat.completions.create({
+    // Get session ID for analytics
+    const sessionId = await getSessionId();
+
+    const completion = await createCompletionWithTracking({
       model: JURISDICTION_MODEL, // Use llama-4-scout for small AI tasks
       messages: [
         { role: 'system', content: systemPrompt },
@@ -54,6 +58,9 @@ IMPORTANT:
       ],
       temperature: 0.7,
       response_format: { type: 'json_object' },
+    }, {
+      sessionId,
+      endpoint: '/api/ai/next-question',
     });
 
     const response = JSON.parse(completion.choices[0]?.message?.content || '{}');

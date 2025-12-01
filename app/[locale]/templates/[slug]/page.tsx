@@ -21,14 +21,14 @@ export async function generateStaticParams() {
 /**
  * Generate metadata for each template page
  */
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: Promise<{ slug: string; locale: string }> 
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ slug: string; locale: string }>
 }): Promise<Metadata> {
   const { slug } = await params;
   const template = await getTemplateBySlug(slug);
-  
+
   if (!template) {
     return {
       title: 'Template Not Found',
@@ -52,16 +52,16 @@ export async function generateMetadata({
  * This page serves as a landing page for any template.
  * It shows template information and links to the generate page.
  */
-export default async function TemplateLandingPage({ 
-  params 
-}: { 
-  params: Promise<{ slug: string; locale: string }> 
+export default async function TemplateLandingPage({
+  params
+}: {
+  params: Promise<{ slug: string; locale: string }>
 }) {
   const { slug } = await params;
   const t = await getTranslations('templates');
-  
+
   const template = await getTemplateBySlug(slug);
-  
+
   if (!template) {
     notFound();
   }
@@ -82,26 +82,26 @@ export default async function TemplateLandingPage({
               priority
             />
           </div>
-          
+
           <div className="relative mx-auto max-w-4xl px-4 py-24 sm:py-32 text-center">
             <div className="mb-6 flex justify-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[hsl(var(--white))]/15 backdrop-blur-sm">
                 <Icon className="h-10 w-10 text-[hsl(var(--white))]" />
               </div>
             </div>
-            
+
             <Badge className="mb-6 bg-[hsl(var(--white))]/15 text-[hsl(var(--white))] border-[hsl(var(--white))]/30 backdrop-blur-sm font-subheading uppercase tracking-[0.12em]">
               {t('templatesSection.comingSoon')}
             </Badge>
-            
+
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-6 font-heading">
               {template.title}
             </h1>
-            
+
             <p className="text-lg sm:text-xl text-[hsl(var(--white))]/85 leading-relaxed max-w-2xl mx-auto mb-10">
               {template.description}
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))]/90 shadow-2xl h-auto px-8 py-4 text-lg">
                 <Link href="mailto:hello@selise.ch?subject=Template%20request">
@@ -137,7 +137,7 @@ export default async function TemplateLandingPage({
 
         <div className="absolute left-0 top-0 h-96 w-96 rounded-full bg-[hsl(var(--sky-blue))]/20 blur-3xl" />
         <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-[hsl(var(--light-blue))]/20 blur-3xl" />
-        
+
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:py-28 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <div className="mb-6 flex flex-wrap items-center justify-center gap-3">
@@ -156,7 +156,7 @@ export default async function TemplateLandingPage({
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl mb-6 font-heading">
               {t('createInMinutes', { template: template.title })}
             </h1>
-            
+
             <p className="text-lg sm:text-xl text-[hsl(var(--white))]/85 leading-relaxed mb-10">
               {template.description}
             </p>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { openrouter, CONTRACT_GENERATION_MODEL } from "@/lib/openrouter";
+import { openrouter, CONTRACT_GENERATION_MODEL, createCompletionWithTracking } from "@/lib/openrouter";
+import { getSessionId } from "@/lib/analytics/session";
 import { validateTurnstileToken } from "next-turnstile";
 import { EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON } from "@/lib/openai";
 import type { LegalDocument, SignatoryData } from "@/app/api/templates/employment-agreement/schema";
@@ -52,7 +53,7 @@ export async function POST(
     }
 
     const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
-    
+
     if (!TURNSTILE_SECRET_KEY) {
       console.error("⚠️ [Dynamic Generate API] TURNSTILE_SECRET_KEY is not set");
       return NextResponse.json(
@@ -145,8 +146,11 @@ export async function POST(
 
     console.log("🤖 [Dynamic Generate API] Calling OpenRouter...");
     const apiCallStart = Date.now();
-    
-    const completion = await openrouter.chat.completions.create({
+
+    // Get session ID for analytics
+    const sessionId = await getSessionId();
+
+    const completion = await createCompletionWithTracking({
       model: CONTRACT_GENERATION_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
@@ -155,6 +159,10 @@ export async function POST(
       response_format: { type: "json_object" },
       temperature: 0.3,
       max_tokens: 16000,
+    }, {
+      sessionId,
+      templateSlug: template.slug,
+      endpoint: `/api/templates/${template.slug}/generate`,
     });
 
     const apiCallDuration = Date.now() - apiCallStart;
@@ -170,7 +178,7 @@ export async function POST(
     let document: LegalDocument;
     try {
       const parsed = JSON.parse(documentContent);
-      
+
       // Ensure it matches LegalDocument structure
       if (!parsed.metadata || !parsed.content) {
         throw new Error("Invalid document structure");
@@ -180,7 +188,7 @@ export async function POST(
       parsed.metadata.documentType = template.slug;
       parsed.metadata.title = parsed.metadata.title || template.title;
       parsed.metadata.generatedAt = new Date().toISOString();
-      
+
       // Always set signatories from form data to ensure accuracy
       // The AI might generate signatories but they may not match user input
       const extractedSignatories = extractSignatoriesFromFormData(formData);

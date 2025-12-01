@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openrouter, JURISDICTION_MODEL } from '@/lib/openrouter';
+import { openrouter, JURISDICTION_MODEL, createCompletionWithTracking } from '@/lib/openrouter';
+import { getSessionId } from '@/lib/analytics/session';
 import { CompanyIntelligence, JurisdictionIntelligence, JobTitleAnalysis } from '@/lib/types/smart-form';
 import { safeValidateJurisdictionResponse, getValidationErrorMessage } from '@/lib/validation/jurisdiction-schema';
 
@@ -50,8 +51,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get session ID for analytics
+    const sessionId = await getSessionId();
+
     // Use OpenRouter with llama-4-scout for jurisdiction and market standards detection
-    const completion = await openrouter.chat.completions.create({
+    const completion = await createCompletionWithTracking({
       model: JURISDICTION_MODEL,
       messages: [
         {
@@ -257,7 +261,7 @@ Always research the specific jurisdiction based on the address provided. Combine
 
 7. All numeric fields: MUST be actual numbers, not strings
 
-Pick the single best match from the allowed values. Your response will be validated against a strict TypeScript schema.`,
+8. Pick the single best match from the allowed values. Your response will be validated against a strict TypeScript schema.`,
         },
         {
           role: 'user',
@@ -269,6 +273,9 @@ Job Title: ${jobTitle}${jobResponsibilities ? `\nJob Responsibilities: ${jobResp
       temperature: 0.2,
       max_tokens: 1500,
       response_format: { type: 'json_object' },
+    }, {
+      sessionId,
+      endpoint: '/api/intelligence/company-and-role',
     });
 
     const result = completion.choices[0]?.message?.content;

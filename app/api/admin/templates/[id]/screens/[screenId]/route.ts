@@ -10,6 +10,7 @@ const updateScreenSchema = z.object({
   type: z.enum(["standard", "signatory"]).optional(),
   order: z.number().int().min(0).optional(),
   aiPrompt: z.string().optional(),
+  aiOutputSchema: z.string().optional(),
 });
 
 /**

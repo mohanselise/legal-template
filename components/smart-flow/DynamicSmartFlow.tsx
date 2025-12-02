@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -20,6 +20,7 @@ import {
 } from "./DynamicFormContext";
 import { DynamicField, type FieldConfig } from "./field-renderers";
 import { Button } from "@/components/ui/button";
+import { Stepper, StepperCompact } from "@/components/ui/stepper";
 import { Turnstile } from "next-turnstile";
 import { setTurnstileToken as storeTurnstileToken } from "@/lib/turnstile-token-manager";
 import { saveTemplateReview } from "@/components/template-review/TemplateReviewStorage";
@@ -63,6 +64,11 @@ interface DynamicSmartFlowProps {
   locale: string;
 }
 
+type AiEnrichmentIndicatorState =
+  | { status: "idle" }
+  | { status: "running"; screenTitle?: string }
+  | { status: "error"; message: string; screenTitle?: string };
+
 function cloneFormData<T extends Record<string, unknown>>(data: T): T {
   try {
     return structuredClone(data);
@@ -80,6 +86,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     errors,
     currentStep,
     totalSteps,
+    goToStep,
     nextStep,
     previousStep,
     canProceed,
@@ -94,12 +101,17 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   const [turnstileStatus, setTurnstileStatus] = useState<
     "success" | "error" | "expired" | "required"
   >("required");
+  const [aiEnrichmentState, setAiEnrichmentState] = useState<AiEnrichmentIndicatorState>({
+    status: "idle",
+  });
 
   // Loading screen state
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStepIndex, setGenerationStepIndex] = useState(0);
   const [fakeProgress, setFakeProgress] = useState(0);
   const isNavigatingRef = useRef(false);
+  const aiEnrichmentPendingCount = useRef(0);
+  const aiEnrichmentResetTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Animate through generation steps
   useEffect(() => {
@@ -148,6 +160,14 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     };
   }, [isGenerating]);
 
+  useEffect(() => {
+    return () => {
+      if (aiEnrichmentResetTimeout.current) {
+        clearTimeout(aiEnrichmentResetTimeout.current);
+      }
+    };
+  }, []);
+
   if (!config) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -157,44 +177,93 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   }
 
   const currentScreen = config.screens[currentStep];
+  const stepDefinitions = useMemo(
+    () =>
+      config.screens.map((screen) => ({
+        id: screen.id,
+        title: screen.title,
+      })),
+    [config.screens]
+  );
   const displayedProgress = Math.round(fakeProgress);
-  const runAiEnrichmentInBackground = useCallback((screen: ScreenWithFields | undefined) => {
-    if (!screen?.aiPrompt) {
-      return;
-    }
-
-    const payload = {
-      prompt: screen.aiPrompt,
-      formData: cloneFormData(formData),
-    };
-
-    // Fire-and-forget so navigation isn't blocked
-    void (async () => {
-      try {
-        console.log("✨ Executing AI Enrichment in background...");
-        const response = await fetch("/api/ai/enrich-context", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          const message =
-            (typeof data?.error === "string" && data.error) ||
-            (typeof data?.message === "string" && data.message) ||
-            `Failed to enrich context (status ${response.status})`;
-          throw new Error(message);
-        }
-
-        console.log("✅ AI Enrichment Result:", data);
-        setEnrichmentContext(data);
-      } catch (error) {
-        console.error("❌ AI Enrichment Error:", error);
+  const runAiEnrichmentInBackground = useCallback(
+    (screen: ScreenWithFields | undefined) => {
+      if (!screen?.aiPrompt) {
+        return;
       }
-    })();
-  }, [formData, setEnrichmentContext]);
+
+      aiEnrichmentPendingCount.current += 1;
+      setAiEnrichmentState({
+        status: "running",
+        screenTitle: screen.title,
+      });
+
+      const payload = {
+        prompt: screen.aiPrompt,
+        formData: cloneFormData(formData),
+      };
+
+      // Fire-and-forget so navigation isn't blocked
+      void (async () => {
+        try {
+          console.log("✨ Executing AI Enrichment in background...");
+          const response = await fetch("/api/ai/enrich-context", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            const message =
+              (typeof data?.error === "string" && data.error) ||
+              (typeof data?.message === "string" && data.message) ||
+              `Failed to enrich context (status ${response.status})`;
+            throw new Error(message);
+          }
+
+          console.log("✅ AI Enrichment Result:", data);
+          setEnrichmentContext(data);
+          aiEnrichmentPendingCount.current = Math.max(
+            0,
+            aiEnrichmentPendingCount.current - 1
+          );
+          if (aiEnrichmentPendingCount.current === 0) {
+            if (aiEnrichmentResetTimeout.current) {
+              clearTimeout(aiEnrichmentResetTimeout.current);
+              aiEnrichmentResetTimeout.current = null;
+            }
+            setAiEnrichmentState({ status: "idle" });
+          }
+        } catch (error) {
+          aiEnrichmentPendingCount.current = Math.max(
+            0,
+            aiEnrichmentPendingCount.current - 1
+          );
+          const friendlyMessage =
+            (error instanceof Error && error.message) ||
+            "AI enrichment is temporarily unavailable.";
+          console.error("❌ AI Enrichment Error:", error);
+          if (aiEnrichmentResetTimeout.current) {
+            clearTimeout(aiEnrichmentResetTimeout.current);
+          }
+          setAiEnrichmentState({
+            status: "error",
+            screenTitle: screen.title,
+            message: friendlyMessage,
+          });
+          aiEnrichmentResetTimeout.current = setTimeout(() => {
+            if (aiEnrichmentPendingCount.current === 0) {
+              setAiEnrichmentState({ status: "idle" });
+              aiEnrichmentResetTimeout.current = null;
+            }
+          }, 5000);
+        }
+      })();
+    },
+    [formData, setEnrichmentContext]
+  );
 
   // Loading Screen - shows during document generation
   if (isGenerating) {
@@ -572,11 +641,68 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
       {/* Header */}
       <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-center max-w-4xl mx-auto">
-          <div className="text-sm text-[hsl(var(--brand-muted))] font-medium">
+        <div className="max-w-4xl mx-auto space-y-4">
+          <div className="text-center text-sm text-[hsl(var(--brand-muted))] font-medium">
             Step {currentStep + 1} of {totalSteps}:{" "}
             {currentScreen?.title || "Review"}
           </div>
+
+          <div className="hidden md:block">
+            <Stepper
+              steps={stepDefinitions}
+              currentStep={currentStep}
+              onStepClick={goToStep}
+              allowNavigation
+            />
+          </div>
+          <div className="md:hidden">
+            <StepperCompact steps={stepDefinitions} currentStep={currentStep} />
+          </div>
+
+          <AnimatePresence>
+            {aiEnrichmentState.status !== "idle" && (
+              <motion.div
+                key={`ai-indicator-${aiEnrichmentState.status}`}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2 }}
+                className={`flex w-full items-center gap-3 rounded-full border px-4 py-2 text-xs sm:text-sm ${aiEnrichmentState.status === "running"
+                    ? "border-[hsl(var(--selise-blue))]/40 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
+                    : "border-amber-200 bg-amber-50 text-amber-800"
+                  }`}
+                aria-live="polite"
+              >
+                {aiEnrichmentState.status === "running" ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <div className="flex flex-col">
+                      <span className="font-semibold">
+                        Analyzing{" "}
+                        {aiEnrichmentState.screenTitle
+                          ? `${aiEnrichmentState.screenTitle}...`
+                          : "your answers..."}
+                      </span>
+                      <span className="text-[10px] sm:text-[11px] text-[hsl(var(--brand-muted))]">
+                        AI is enriching your inputs in the background.
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <div className="flex flex-col">
+                      <span className="font-semibold">AI enrichment issue</span>
+                      <span className="text-[10px] sm:text-[11px]">
+                        {aiEnrichmentState.message ||
+                          "We couldn't enhance this step. You can keep going."}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

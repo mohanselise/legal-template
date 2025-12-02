@@ -893,6 +893,7 @@ export default function EditTemplatePage() {
                   <ScreenAIPrompt
                     templateId={templateId}
                     screen={selectedScreen}
+                    allScreens={screens}
                     onSaved={handleFieldsUpdated}
                   />
                 </>

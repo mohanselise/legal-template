@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Wand2, Copy, Code } from "lucide-react";
+import { Loader2, Wand2, Copy, Code, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -30,18 +30,31 @@ interface ScreenWithFields extends TemplateScreen {
     fields: TemplateField[];
 }
 
+interface ContextVariable {
+    screenTitle: string;
+    fieldName: string;
+    fieldType: string;
+    variableSyntax: string;
+}
+
 interface ScreenAIPromptProps {
     templateId: string;
     screen: ScreenWithFields;
+    allScreens: TemplateScreen[];
     onSaved: () => void;
 }
 
 export function ScreenAIPrompt({
     templateId,
     screen,
+    allScreens,
     onSaved,
 }: ScreenAIPromptProps) {
     const [isSaving, setIsSaving] = useState(false);
+    const [contextVariables, setContextVariables] = useState<ContextVariable[]>([]);
+    const [previousFormFields, setPreviousFormFields] = useState<ContextVariable[]>([]);
+    const [showPreviousFields, setShowPreviousFields] = useState(false);
+    const [showPreviousContext, setShowPreviousContext] = useState(false);
 
     const {
         register,
@@ -92,14 +105,82 @@ export function ScreenAIPrompt({
         }
     };
 
-    const insertVariable = (fieldName: string) => {
+    const insertVariable = (variableSyntax: string) => {
         const currentPrompt = watch("aiPrompt") || "";
-        const variable = `{{${fieldName}}}`;
-        setValue("aiPrompt", currentPrompt + (currentPrompt ? " " : "") + variable, {
+        setValue("aiPrompt", currentPrompt + (currentPrompt ? " " : "") + variableSyntax, {
             shouldDirty: true,
         });
-        toast.success(`Inserted ${variable}`);
+        toast.success(`Inserted ${variableSyntax}`);
     };
+
+    // Parse context variables from previous screens (AI output schemas)
+    useEffect(() => {
+        const variables: ContextVariable[] = [];
+
+        // Get previous screens (those with order < current screen's order)
+        const previousScreens = allScreens
+            .filter((s) => s.order < screen.order)
+            .sort((a, b) => a.order - b.order);
+
+        previousScreens.forEach((prevScreen) => {
+            const schemaStr = (prevScreen as any).aiOutputSchema;
+            if (!schemaStr) return;
+
+            try {
+                const schema = JSON.parse(schemaStr);
+                if (schema.type === "object" && schema.properties) {
+                    // Flatten schema properties to get all fields
+                    const flattenProperties = (properties: any, prefix = ""): void => {
+                        Object.entries(properties).forEach(([key, value]: [string, any]) => {
+                            const fullKey = prefix ? `${prefix}.${key}` : key;
+                            variables.push({
+                                screenTitle: prevScreen.title,
+                                fieldName: fullKey,
+                                fieldType: value.type || "unknown",
+                                variableSyntax: `{{${prevScreen.title}.${fullKey}}}`,
+                            });
+
+                            // Recursively handle nested objects
+                            if (value.type === "object" && value.properties) {
+                                flattenProperties(value.properties, fullKey);
+                            }
+                        });
+                    };
+
+                    flattenProperties(schema.properties);
+                }
+            } catch (e) {
+                console.error(`Failed to parse schema for screen ${prevScreen.title}`, e);
+            }
+        });
+
+        setContextVariables(variables);
+    }, [allScreens, screen.order]);
+
+    // Collect form fields from previous screens
+    useEffect(() => {
+        const variables: ContextVariable[] = [];
+
+        const previousScreens = allScreens
+            .filter((s) => s.order < screen.order)
+            .sort((a, b) => a.order - b.order);
+
+        previousScreens.forEach((prevScreen) => {
+            const screenWithFields = prevScreen as any;
+            if (screenWithFields.fields && screenWithFields.fields.length > 0) {
+                screenWithFields.fields.forEach((field: TemplateField) => {
+                    variables.push({
+                        screenTitle: prevScreen.title,
+                        fieldName: field.name,
+                        fieldType: field.type,
+                        variableSyntax: `{{${prevScreen.title}.${field.name}}}`,
+                    });
+                });
+            }
+        });
+
+        setPreviousFormFields(variables);
+    }, [allScreens, screen.order]);
 
     return (
         <Card className="border-[hsl(var(--border))]">
@@ -130,7 +211,7 @@ export function ScreenAIPrompt({
                                         key={field.id}
                                         variant="secondary"
                                         className="cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] transition-colors"
-                                        onClick={() => insertVariable(field.name)}
+                                        onClick={() => insertVariable(`{{${field.name}}}`)}
                                     >
                                         <Copy className="h-3 w-3 mr-1" />
                                         {field.name}
@@ -139,6 +220,88 @@ export function ScreenAIPrompt({
                             )}
                         </div>
                     </div>
+
+                    {/* Form Fields from Previous Screens */}
+                    {previousFormFields.length > 0 && (
+                        <div className="space-y-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowPreviousFields(!showPreviousFields)}
+                                className="flex items-center gap-2 w-full hover:opacity-70 transition-opacity"
+                            >
+                                {showPreviousFields ? (
+                                    <ChevronUp className="h-3 w-3 text-[hsl(var(--globe-grey))]" />
+                                ) : (
+                                    <ChevronDown className="h-3 w-3 text-[hsl(var(--globe-grey))]" />
+                                )}
+                                <Label className="text-xs font-medium text-[hsl(var(--globe-grey))] uppercase tracking-wider cursor-pointer">
+                                    Form Fields from Previous Steps ({previousFormFields.length})
+                                </Label>
+                            </button>
+                            {showPreviousFields && (
+                                <>
+                                    <div className="flex flex-wrap gap-2">
+                                        {previousFormFields.map((field, idx) => (
+                                            <Badge
+                                                key={idx}
+                                                variant="secondary"
+                                                className="cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] transition-colors"
+                                                onClick={() => insertVariable(field.variableSyntax)}
+                                            >
+                                                <Copy className="h-3 w-3 mr-1" />
+                                                {field.screenTitle}.{field.fieldName}
+                                                <span className="ml-1 text-[10px] opacity-60">({field.fieldType})</span>
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-[hsl(var(--globe-grey))] italic">
+                                        These are user-input fields from previous screens.
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Context Variables from Previous Screens */}
+                    {contextVariables.length > 0 && (
+                        <div className="space-y-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowPreviousContext(!showPreviousContext)}
+                                className="flex items-center gap-2 w-full hover:opacity-70 transition-opacity"
+                            >
+                                {showPreviousContext ? (
+                                    <ChevronUp className="h-3 w-3 text-[hsl(var(--globe-grey))]" />
+                                ) : (
+                                    <ChevronDown className="h-3 w-3 text-[hsl(var(--globe-grey))]" />
+                                )}
+                                <Label className="text-xs font-medium text-[hsl(var(--globe-grey))] uppercase tracking-wider cursor-pointer">
+                                    AI Context from Previous Steps ({contextVariables.length})
+                                </Label>
+                            </button>
+                            {showPreviousContext && (
+                                <>
+                                    <div className="flex flex-wrap gap-2">
+                                        {contextVariables.map((ctx, idx) => (
+                                            <Badge
+                                                key={idx}
+                                                variant="outline"
+                                                className="cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] hover:border-[hsl(var(--selise-blue))] transition-colors"
+                                                onClick={() => insertVariable(ctx.variableSyntax)}
+                                            >
+                                                <Copy className="h-3 w-3 mr-1" />
+                                                {ctx.screenTitle}.{ctx.fieldName}
+                                                <span className="ml-1 text-[10px] opacity-60">({ctx.fieldType})</span>
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-[hsl(var(--globe-grey))] italic">
+                                        These fields are populated by AI prompts in previous screens.
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                    )}
 
                     {/* Prompt Input */}
                     <div className="space-y-2">

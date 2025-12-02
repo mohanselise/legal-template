@@ -29,7 +29,6 @@ const screenSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
   type: z.enum(["standard", "signatory"]).default("standard"),
-  aiPrompt: z.string().optional(),
 });
 
 type ScreenFormData = z.infer<typeof screenSchema>;
@@ -65,7 +64,6 @@ export function ScreenEditor({
       title: "",
       description: "",
       type: "standard",
-      aiPrompt: "",
     },
   });
 
@@ -76,7 +74,6 @@ export function ScreenEditor({
         title: screen?.title || "",
         description: screen?.description || "",
         type: (screen as any)?.type || "standard",
-        aiPrompt: (screen as any)?.aiPrompt || "",
       });
       setError(null);
     }
@@ -178,21 +175,7 @@ export function ScreenEditor({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="aiPrompt" className="flex items-center gap-2">
-                <span className="text-[hsl(var(--selise-blue))]">✨</span>
-                AI Enrichment Prompt
-              </Label>
-              <textarea
-                id="aiPrompt"
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="e.g., Based on the company name and address, estimate the trading currency and jurisdiction."
-                {...register("aiPrompt")}
-              />
-              <p className="text-xs text-[hsl(var(--globe-grey))]">
-                This prompt will run when the user completes this step. The result will be stored as context for future steps.
-              </p>
-            </div>
+
 
             {error && (
               <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">

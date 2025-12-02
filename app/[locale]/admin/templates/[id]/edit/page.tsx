@@ -72,6 +72,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Template, TemplateScreen, TemplateField } from "@/lib/db";
 import { ScreenEditor } from "../builder/_components/screen-editor";
 import { FieldList } from "../builder/_components/field-list";
+import { ScreenAIPrompt } from "../builder/_components/screen-ai-prompt";
 import { DeleteDialog } from "../builder/_components/delete-dialog";
 
 // Icon options
@@ -171,11 +172,10 @@ function SortableScreenItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-colors ${
-        isSelected
-          ? "bg-[hsl(var(--selise-blue))]/10 border border-[hsl(var(--selise-blue))]/20"
-          : "hover:bg-[hsl(var(--border))]/50"
-      } ${isDragging ? "z-50" : ""}`}
+      className={`group flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-colors ${isSelected
+        ? "bg-[hsl(var(--selise-blue))]/10 border border-[hsl(var(--selise-blue))]/20"
+        : "hover:bg-[hsl(var(--border))]/50"
+        } ${isDragging ? "z-50" : ""}`}
       onClick={onSelect}
     >
       <div
@@ -217,11 +217,10 @@ function SortableScreenItem({
         </Button>
       </div>
       <ChevronRight
-        className={`h-4 w-4 transition-colors ${
-          isSelected
-            ? "text-[hsl(var(--selise-blue))]"
-            : "text-[hsl(var(--globe-grey))]"
-        }`}
+        className={`h-4 w-4 transition-colors ${isSelected
+          ? "text-[hsl(var(--selise-blue))]"
+          : "text-[hsl(var(--globe-grey))]"
+          }`}
       />
     </div>
   );
@@ -304,7 +303,7 @@ export default function EditTemplatePage() {
       }
       const data = await response.json();
       setScreens(data);
-      
+
       // Auto-select first screen if none selected
       if (data.length > 0) {
         setSelectedScreenId((prev) => prev ?? data[0].id);
@@ -394,7 +393,7 @@ export default function EditTemplatePage() {
       );
       await fetchScreens();
       setDeleteDialogOpen(false);
-      
+
       // If deleted screen was selected, select first available
       if (deletingScreen.id === selectedScreenId) {
         const remainingScreens = screens.filter(s => s.id !== deletingScreen.id);
@@ -884,12 +883,19 @@ export default function EditTemplatePage() {
             </div>
 
             {/* Fields Panel */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-6">
               {selectedScreen ? (
-                <FieldList
-                  screen={selectedScreen}
-                  onFieldsUpdated={handleFieldsUpdated}
-                />
+                <>
+                  <FieldList
+                    screen={selectedScreen}
+                    onFieldsUpdated={handleFieldsUpdated}
+                  />
+                  <ScreenAIPrompt
+                    templateId={templateId}
+                    screen={selectedScreen}
+                    onSaved={handleFieldsUpdated}
+                  />
+                </>
               ) : (
                 <Card className="border-[hsl(var(--border))] h-full min-h-[400px]">
                   <CardContent className="h-full flex items-center justify-center">

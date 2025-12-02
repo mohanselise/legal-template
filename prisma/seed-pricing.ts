@@ -20,25 +20,25 @@ async function main() {
         // Add other models if needed
     ];
 
-    for (const m of models) {
-        await prisma.modelPricing.upsert({
-            where: { model: m.model },
-            update: {
-                promptCostPer1k: m.promptCostPer1k,
-                completionCostPer1k: m.completionCostPer1k,
-            },
-            create: m,
-        });
-    }
+    try {
+        for (const m of models) {
+            await prisma.modelPricing.upsert({
+                where: { model: m.model },
+                update: {
+                    promptCostPer1k: m.promptCostPer1k,
+                    completionCostPer1k: m.completionCostPer1k,
+                },
+                create: m,
+            });
+        }
 
-    console.log('✅ Model pricing seeded.');
+        console.log('✅ Model pricing seeded.');
+    } finally {
+        await prisma.$disconnect();
+    }
 }
 
-main()
-    .catch((e) => {
-        console.error(e);
-        process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
+main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+});

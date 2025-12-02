@@ -10,7 +10,6 @@ import {
 
 export interface ScreenWithFields extends TemplateScreen {
   fields: TemplateField[];
-  aiPrompt?: string | null;
 }
 
 export interface TemplateConfig {

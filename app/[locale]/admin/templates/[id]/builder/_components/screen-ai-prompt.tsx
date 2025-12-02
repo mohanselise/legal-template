@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import type { TemplateScreen, TemplateField } from "@/lib/db";
 import { SchemaBuilder } from "./schema-builder";
@@ -44,6 +45,10 @@ interface ScreenAIPromptProps {
     onSaved: () => void;
 }
 
+function computePromptEnabled(screen: ScreenWithFields): boolean {
+    return Boolean(screen.aiPrompt?.trim() || screen.aiOutputSchema?.trim());
+}
+
 export function ScreenAIPrompt({
     templateId,
     screen,
@@ -51,6 +56,8 @@ export function ScreenAIPrompt({
     onSaved,
 }: ScreenAIPromptProps) {
     const [isSaving, setIsSaving] = useState(false);
+    const [aiPromptEnabled, setAiPromptEnabled] = useState(() => computePromptEnabled(screen));
+    const [initialToggleState, setInitialToggleState] = useState(() => computePromptEnabled(screen));
     const [contextVariables, setContextVariables] = useState<ContextVariable[]>([]);
     const [previousFormFields, setPreviousFormFields] = useState<ContextVariable[]>([]);
     const [showPreviousFields, setShowPreviousFields] = useState(false);
@@ -66,27 +73,46 @@ export function ScreenAIPrompt({
     } = useForm<PromptFormData>({
         resolver: zodResolver(promptSchema),
         defaultValues: {
-            aiPrompt: (screen as any).aiPrompt || "",
-            aiOutputSchema: (screen as any).aiOutputSchema || "",
+            aiPrompt: screen.aiPrompt || "",
+            aiOutputSchema: screen.aiOutputSchema || "",
         },
     });
 
     useEffect(() => {
+        const nextEnabled = computePromptEnabled(screen);
         reset({
-            aiPrompt: (screen as any).aiPrompt || "",
-            aiOutputSchema: (screen as any).aiOutputSchema || "",
+            aiPrompt: screen.aiPrompt || "",
+            aiOutputSchema: screen.aiOutputSchema || "",
         });
+        setAiPromptEnabled(nextEnabled);
+        setInitialToggleState(nextEnabled);
     }, [screen, reset]);
+
+    const hasToggleChanged = aiPromptEnabled !== initialToggleState;
+    const isSaveDisabled = isSaving || (!isDirty && !hasToggleChanged);
 
     const onSubmit = async (data: PromptFormData) => {
         setIsSaving(true);
         try {
+            const normalizedPrompt = data.aiPrompt?.trim() || null;
+            const normalizedSchema = data.aiOutputSchema?.trim() || null;
+
+            const payload = aiPromptEnabled
+                ? {
+                    aiPrompt: normalizedPrompt,
+                    aiOutputSchema: normalizedSchema,
+                }
+                : {
+                    aiPrompt: null,
+                    aiOutputSchema: null,
+                };
+
             const response = await fetch(
                 `/api/admin/templates/${templateId}/screens/${screen.id}`,
                 {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
+                    body: JSON.stringify(payload),
                 }
             );
 
@@ -96,7 +122,11 @@ export function ScreenAIPrompt({
 
             toast.success("AI prompt saved successfully");
             onSaved();
-            reset(data); // Reset dirty state with new values
+            reset({
+                aiPrompt: payload.aiPrompt ?? "",
+                aiOutputSchema: payload.aiOutputSchema ?? "",
+            }); // Reset dirty state with new values
+            setInitialToggleState(aiPromptEnabled);
         } catch (error) {
             console.error("Error saving AI prompt:", error);
             toast.error("Failed to save AI prompt");
@@ -106,11 +136,20 @@ export function ScreenAIPrompt({
     };
 
     const insertVariable = (variableSyntax: string) => {
+        if (!aiPromptEnabled) {
+            toast.info("Enable the AI prompt to insert variables.");
+            return;
+        }
+
         const currentPrompt = watch("aiPrompt") || "";
         setValue("aiPrompt", currentPrompt + (currentPrompt ? " " : "") + variableSyntax, {
             shouldDirty: true,
         });
         toast.success(`Inserted ${variableSyntax}`);
+    };
+
+    const handleToggleChange = (checked: boolean) => {
+        setAiPromptEnabled(checked);
     };
 
     // Parse context variables from previous screens (AI output schemas)
@@ -123,7 +162,7 @@ export function ScreenAIPrompt({
             .sort((a, b) => a.order - b.order);
 
         previousScreens.forEach((prevScreen) => {
-            const schemaStr = (prevScreen as any).aiOutputSchema;
+            const schemaStr = prevScreen.aiOutputSchema;
             if (!schemaStr) return;
 
             try {
@@ -195,6 +234,29 @@ export function ScreenAIPrompt({
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    {/* Enable / Disable */}
+                    <div className="flex items-center justify-between rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 p-4">
+                        <div>
+                            <p className="text-sm font-semibold text-[hsl(var(--fg))]">
+                                AI Enrichment
+                            </p>
+                            <p className="text-xs text-[hsl(var(--globe-grey))]">
+                                Run the AI prompt after this screen to add extra context for later steps.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium uppercase tracking-widest text-[hsl(var(--globe-grey))]">
+                                {aiPromptEnabled ? "ON" : "OFF"}
+                            </span>
+                            <Switch checked={aiPromptEnabled} onCheckedChange={handleToggleChange} />
+                        </div>
+                    </div>
+
+                    {!aiPromptEnabled && (
+                        <p className="text-xs text-[hsl(var(--globe-grey))] italic">
+                            Variables are view-only while AI Enrichment is turned off.
+                        </p>
+                    )}
                     {/* Dynamic Variables */}
                     <div className="space-y-2">
                         <Label className="text-xs font-medium text-[hsl(var(--globe-grey))] uppercase tracking-wider">
@@ -210,8 +272,15 @@ export function ScreenAIPrompt({
                                     <Badge
                                         key={field.id}
                                         variant="secondary"
-                                        className="cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] transition-colors"
-                                        onClick={() => insertVariable(`{{${field.name}}}`)}
+                                        className={`${aiPromptEnabled
+                                                ? "cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))]"
+                                                : "cursor-default opacity-60"
+                                            } transition-colors`}
+                                        onClick={
+                                            aiPromptEnabled
+                                                ? () => insertVariable(`{{${field.name}}}`)
+                                                : undefined
+                                        }
                                     >
                                         <Copy className="h-3 w-3 mr-1" />
                                         {field.name}
@@ -245,8 +314,15 @@ export function ScreenAIPrompt({
                                             <Badge
                                                 key={idx}
                                                 variant="secondary"
-                                                className="cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] transition-colors"
-                                                onClick={() => insertVariable(field.variableSyntax)}
+                                                className={`${aiPromptEnabled
+                                                        ? "cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))]"
+                                                        : "cursor-default opacity-60"
+                                                    } transition-colors`}
+                                                onClick={
+                                                    aiPromptEnabled
+                                                        ? () => insertVariable(field.variableSyntax)
+                                                        : undefined
+                                                }
                                             >
                                                 <Copy className="h-3 w-3 mr-1" />
                                                 {field.screenTitle}.{field.fieldName}
@@ -286,8 +362,15 @@ export function ScreenAIPrompt({
                                             <Badge
                                                 key={idx}
                                                 variant="outline"
-                                                className="cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] hover:border-[hsl(var(--selise-blue))] transition-colors"
-                                                onClick={() => insertVariable(ctx.variableSyntax)}
+                                                className={`${aiPromptEnabled
+                                                        ? "cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] hover:border-[hsl(var(--selise-blue))]"
+                                                        : "cursor-default opacity-60"
+                                                    } transition-colors`}
+                                                onClick={
+                                                    aiPromptEnabled
+                                                        ? () => insertVariable(ctx.variableSyntax)
+                                                        : undefined
+                                                }
                                             >
                                                 <Copy className="h-3 w-3 mr-1" />
                                                 {ctx.screenTitle}.{ctx.fieldName}
@@ -311,11 +394,17 @@ export function ScreenAIPrompt({
                             className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono"
                             placeholder="e.g., Based on the {{companyName}} and {{address}}, estimate the trading currency and jurisdiction."
                             {...register("aiPrompt")}
+                            disabled={!aiPromptEnabled}
                         />
                         <p className="text-xs text-[hsl(var(--globe-grey))]">
                             Use the variables above to dynamically insert user input into the
                             prompt.
                         </p>
+                        {!aiPromptEnabled && (
+                            <p className="text-xs text-[hsl(var(--globe-grey))] italic">
+                                Enable the AI Enrichment toggle to edit the prompt.
+                            </p>
+                        )}
                     </div>
 
                     {/* Output Schema */}
@@ -324,12 +413,19 @@ export function ScreenAIPrompt({
                             <Code className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
                             <Label>Output Schema</Label>
                         </div>
-                        <SchemaBuilder
-                            value={watch("aiOutputSchema") || ""}
-                            onChange={(value) =>
-                                setValue("aiOutputSchema", value, { shouldDirty: true })
-                            }
-                        />
+                        <div className={`relative ${aiPromptEnabled ? "" : "opacity-60"}`}>
+                            <SchemaBuilder
+                                value={watch("aiOutputSchema") || ""}
+                                onChange={(value) =>
+                                    setValue("aiOutputSchema", value, { shouldDirty: true })
+                                }
+                            />
+                            {!aiPromptEnabled && (
+                                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg border border-dashed border-[hsl(var(--border))] bg-background/80 text-xs font-medium text-[hsl(var(--globe-grey))]">
+                                    Enable AI Enrichment to edit the schema
+                                </div>
+                            )}
+                        </div>
                         <p className="text-xs text-[hsl(var(--globe-grey))]">
                             Define the expected JSON structure for the AI output using the
                             visual builder or raw JSON.
@@ -337,7 +433,7 @@ export function ScreenAIPrompt({
                     </div>
 
                     <div className="flex justify-end">
-                        <Button type="submit" disabled={isSaving || !isDirty}>
+                        <Button type="submit" disabled={isSaveDisabled}>
                             {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                             Save Configuration
                         </Button>

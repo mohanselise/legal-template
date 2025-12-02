@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     Plus,
     Trash2,
@@ -130,21 +130,25 @@ const convertStateToSchema = (fields: SchemaField[]): string => {
 
 export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
     const [mode, setMode] = useState<"visual" | "code">("visual");
-    const [fields, setFields] = useState<SchemaField[]>([]);
+    const [fields, setFields] = useState<SchemaField[]>(() => parseSchemaToState(value));
     const [jsonError, setJsonError] = useState<string | null>(null);
+    const lastSyncedSchema = useRef<string>(value);
 
-    // Initialize state from props
+    // Keep local fields in sync with incoming value when using the visual builder
     useEffect(() => {
-        if (value) {
-            setFields(parseSchemaToState(value));
-        }
-    }, []); // Only run once on mount to avoid loops, subsequent updates handled by mode switch
+        if (mode !== "visual") return;
+        if (value === lastSyncedSchema.current) return;
+
+        setFields(parseSchemaToState(value));
+        lastSyncedSchema.current = value;
+    }, [value, mode]);
 
     // Handle mode switch
     const toggleMode = () => {
         if (mode === "visual") {
             // Switching to code: generate JSON from state
             const schema = convertStateToSchema(fields);
+            lastSyncedSchema.current = schema;
             onChange(schema);
             setMode("code");
         } else {
@@ -152,6 +156,7 @@ export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
             try {
                 const parsed = parseSchemaToState(value);
                 setFields(parsed);
+                lastSyncedSchema.current = value;
                 setJsonError(null);
                 setMode("visual");
             } catch (e) {
@@ -162,13 +167,14 @@ export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
 
     // Update parent when fields change (if in visual mode)
     useEffect(() => {
-        if (mode === "visual") {
-            const schema = convertStateToSchema(fields);
-            if (schema !== value) {
-                onChange(schema);
-            }
+        if (mode !== "visual") return;
+
+        const schema = convertStateToSchema(fields);
+        lastSyncedSchema.current = schema;
+        if (schema !== value) {
+            onChange(schema);
         }
-    }, [fields, mode]); // Removed 'value' and 'onChange' from deps to prevent loop
+    }, [fields, mode, onChange, value]);
 
     const addField = (parentId?: string, isArrayItem?: boolean) => {
         const newField: SchemaField = {

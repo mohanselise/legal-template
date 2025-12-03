@@ -179,39 +179,54 @@ export async function POST(request: NextRequest) {
     const promptLength = userPrompt.length;
     console.log('✅ [Generate API] Prompt built - Length:', promptLength, 'characters');
 
-    // Fetch system prompt from database with fallback to default
-    console.log('📋 [Generate API] Fetching system prompt from database...');
+    // Fetch system prompt and AI model from database with fallbacks
+    console.log('📋 [Generate API] Fetching system prompt and AI model from database...');
     let systemPrompt = EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON;
+    let aiModel = CONTRACT_GENERATION_MODEL;
+    
     try {
-      const template = await prisma.template.findUnique({
-        where: { slug: 'employment-agreement' },
-        select: { systemPrompt: true },
-      });
+      const [template, aiModelSetting] = await Promise.all([
+        prisma.template.findUnique({
+          where: { slug: 'employment-agreement' },
+          select: { systemPrompt: true },
+        }),
+        prisma.systemSettings.findUnique({
+          where: { key: 'documentGenerationAiModel' },
+        }),
+      ]);
+      
       if (template?.systemPrompt) {
         systemPrompt = template.systemPrompt;
         console.log('✅ [Generate API] Using custom system prompt from database');
       } else {
         console.log('ℹ️ [Generate API] Using default system prompt (no custom prompt set)');
       }
+      
+      if (aiModelSetting?.value) {
+        aiModel = aiModelSetting.value;
+        console.log('✅ [Generate API] Using AI model from settings:', aiModel);
+      } else {
+        console.log('ℹ️ [Generate API] Using default AI model:', aiModel);
+      }
     } catch (dbError) {
-      console.warn('⚠️ [Generate API] Failed to fetch system prompt from database, using default:', dbError);
+      console.warn('⚠️ [Generate API] Failed to fetch settings from database, using defaults:', dbError);
     }
 
-    console.log('🤖 [Generate API] Calling OpenRouter API with Claude 3.5 Sonnet (JSON mode)...');
+    console.log('🤖 [Generate API] Calling OpenRouter API with model:', aiModel);
     const apiCallStart = Date.now();
 
     // Get session ID for analytics
     const sessionId = await getSessionId();
 
     const completion = await createCompletionWithTracking({
-      model: CONTRACT_GENERATION_MODEL,
+      model: aiModel,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       response_format: { type: 'json_object' }, // Enforce JSON output
       temperature: 0.3, // Lower temperature for more consistent legal text
-      max_tokens: 16000, // Claude 3.5 Sonnet supports longer outputs for comprehensive legal documents
+      max_tokens: 16000, // Supports longer outputs for comprehensive legal documents
     }, {
       sessionId,
       templateSlug: 'employment-agreement',

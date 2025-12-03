@@ -111,10 +111,14 @@ export async function POST(
       );
     }
 
-    // Fetch common prompt instructions from settings
-    const commonInstructions = await prisma.systemSettings.findUnique({
-      where: { key: "commonPromptInstructions" },
-    });
+    // Fetch settings (AI model and common instructions)
+    const [aiModelSetting, commonInstructions] = await Promise.all([
+      prisma.systemSettings.findUnique({ where: { key: "documentGenerationAiModel" } }),
+      prisma.systemSettings.findUnique({ where: { key: "commonPromptInstructions" } }),
+    ]);
+    
+    // Use configured model or fallback to default
+    const aiModel = aiModelSetting?.value || CONTRACT_GENERATION_MODEL;
 
     // Build system prompt by combining role + prompt + common instructions
     const parts: string[] = [];
@@ -145,14 +149,14 @@ export async function POST(
     // Build user prompt from form data
     const userPrompt = buildUserPrompt(formData, template.title);
 
-    console.log("🤖 [Dynamic Generate API] Calling OpenRouter...");
+    console.log("🤖 [Dynamic Generate API] Calling OpenRouter with model:", aiModel);
     const apiCallStart = Date.now();
 
     // Get session ID for analytics
     const sessionId = await getSessionId();
 
     const completion = await createCompletionWithTracking({
-      model: CONTRACT_GENERATION_MODEL,
+      model: aiModel,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

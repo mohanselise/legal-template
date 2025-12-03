@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createCompletionWithTracking } from "@/lib/openrouter";
 import { getSessionId } from "@/lib/analytics/session";
-import { FieldType } from "@/lib/db";
+import { FieldType, prisma } from "@/lib/db";
+
+const DEFAULT_AI_MODEL = "meta-llama/llama-4-scout:nitro";
 
 const generateFieldsSchema = z.object({
   prompt: z.string().min(1, "Prompt is required"),
@@ -80,6 +82,15 @@ export async function POST(request: NextRequest) {
 
     const { prompt, formData, enrichmentContext, maxFields, screenTitle, screenDescription } = validation.data;
 
+    // Fetch AI settings from system settings
+    const [aiModelSetting, systemPromptSetting] = await Promise.all([
+      prisma.systemSettings.findUnique({ where: { key: "dynamicFormAiModel" } }),
+      prisma.systemSettings.findUnique({ where: { key: "dynamicFormSystemPrompt" } }),
+    ]);
+
+    const aiModel = aiModelSetting?.value || null;
+    const customSystemPrompt = systemPromptSetting?.value || null;
+
     // Combine formData and enrichmentContext for variable interpolation
     const allContext = { ...formData, ...enrichmentContext };
 
@@ -104,7 +115,8 @@ export async function POST(request: NextRequest) {
     const fieldSchemaDoc = generateFieldSchemaDocumentation();
     const fieldTypesList = SUPPORTED_FIELD_TYPES.join(", ");
 
-    const systemPrompt = `You are an AI assistant helping to create dynamic form fields for a legal document generator.
+    // Use custom system prompt if provided, otherwise use default
+    const systemPrompt = customSystemPrompt?.trim() || `You are an AI assistant helping to create dynamic form fields for a legal document generator.
 
 Your task is to generate relevant form questions based on the user's context and requirements.
 
@@ -120,9 +132,10 @@ ${fieldSchemaDoc}
 4. For "select" type fields, you MUST include an "options" array with string values
 5. Make fields contextually relevant to the legal document being created
 6. Include helpful "helpText" that explains why this information is needed (legal context)
-7. Set "required" to true for critical information, false for optional details
+7. **ALL fields should be OPTIONAL (required: false)** - users can skip this screen entirely
 8. Generate fields that would gather information not already provided in the context
 9. Choose the most appropriate field type for each question
+10. **IMPORTANT**: For each field, provide a "standardValue" - this is the jurisdiction-specific standard/default answer that would typically be used in professional agreements for the detected jurisdiction
 
 ## OUTPUT FORMAT
 
@@ -133,14 +146,19 @@ Return a JSON object with this exact structure:
       "name": "fieldNameInCamelCase",
       "label": "Human Readable Label",
       "type": "${fieldTypesList}",
-      "required": true|false,
+      "required": false,
       "placeholder": "Optional placeholder text (not for checkbox)",
       "helpText": "Explanation of why this is needed in legal context",
-      "options": ["only", "for", "select", "type"]
+      "options": ["only", "for", "select", "type"],
+      "standardValue": "The jurisdiction-specific standard/default value for this field"
     }
   ],
-  "reasoning": "Brief explanation of why these fields were chosen based on the jurisdiction/context"
+  "reasoning": "Brief explanation of why these fields were chosen based on the jurisdiction/context",
+  "jurisdictionName": "Short name of the detected jurisdiction (e.g., 'Swiss', 'US', 'UK', 'EU')"
 }`;
+
+    // Determine which model to use
+    const modelToUse = aiModel?.trim() || DEFAULT_AI_MODEL;
 
     const userMessage = `Context from previous form steps:
 ${JSON.stringify(allContext, null, 2)}
@@ -159,9 +177,11 @@ Generate appropriate form fields based on this context. Remember:
     // Get session ID for analytics
     const sessionId = await getSessionId();
 
+    console.log(`🤖 [Dynamic Fields] Using model: ${modelToUse}`);
+    
     const completion = await createCompletionWithTracking(
       {
-        model: "anthropic/claude-3.5-sonnet",
+        model: modelToUse,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },
@@ -188,6 +208,7 @@ Generate appropriate form fields based on this context. Remember:
     return NextResponse.json({
       fields: validatedFields,
       reasoning: jsonResponse.reasoning || null,
+      jurisdictionName: jsonResponse.jurisdictionName || null,
       generatedAt: new Date().toISOString(),
     });
   } catch (error) {
@@ -226,6 +247,7 @@ function validateAndSanitizeFields(
   placeholder?: string;
   helpText?: string;
   options: string[];
+  standardValue?: string;
 }> {
   if (!Array.isArray(fields)) return [];
 
@@ -238,6 +260,7 @@ function validateAndSanitizeFields(
     placeholder?: string;
     helpText?: string;
     options: string[];
+    standardValue?: string;
   }> = [];
 
   const usedNames = new Set<string>();
@@ -283,10 +306,11 @@ function validateAndSanitizeFields(
       name,
       label: String(f.label).trim(),
       type,
-      required: Boolean(f.required),
+      required: false, // Always optional for dynamic fields - users can skip the screen
       placeholder: typeof f.placeholder === "string" ? f.placeholder : undefined,
       helpText: typeof f.helpText === "string" ? f.helpText : undefined,
       options,
+      standardValue: typeof f.standardValue === "string" ? f.standardValue : undefined,
     });
   }
 

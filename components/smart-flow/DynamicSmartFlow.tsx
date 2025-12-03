@@ -11,6 +11,8 @@ import {
   AlertTriangle,
   Loader2,
   Wand2,
+  Zap,
+  SkipForward,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -73,7 +75,7 @@ type AiEnrichmentIndicatorState =
   | { status: "error"; message: string; screenTitle?: string };
 
 // Type for dynamically generated fields
-interface DynamicField {
+interface DynamicFieldType {
   id: string;
   name: string;
   label: string;
@@ -82,10 +84,14 @@ interface DynamicField {
   placeholder?: string;
   helpText?: string;
   options: string[];
+  standardValue?: string;
 }
 
 // Cache for generated dynamic fields per screen
-type DynamicFieldsCache = Record<string, DynamicField[]>;
+type DynamicFieldsCache = Record<string, DynamicFieldType[]>;
+
+// Cache for jurisdiction info per screen
+type JurisdictionCache = Record<string, string | null>;
 
 function cloneFormData<T extends Record<string, unknown>>(data: T): T {
   try {
@@ -137,6 +143,9 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   const [dynamicFieldsLoading, setDynamicFieldsLoading] = useState(false);
   const [dynamicFieldsError, setDynamicFieldsError] = useState<string | null>(null);
   const dynamicFieldsFetchedRef = useRef<Set<string>>(new Set());
+  const [jurisdictionCache, setJurisdictionCache] = useState<JurisdictionCache>({});
+  const [applyingStandard, setApplyingStandard] = useState(false);
+  const [appliedStandard, setAppliedStandard] = useState(false);
 
   // Animate through generation steps
   useEffect(() => {
@@ -193,6 +202,12 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     };
   }, []);
 
+  // Reset applied standard state when step changes
+  useEffect(() => {
+    setAppliedStandard(false);
+    setApplyingStandard(false);
+  }, [currentStep]);
+
   // Fetch dynamic fields when entering a dynamic screen
   useEffect(() => {
     const screen = config?.screens[currentStep];
@@ -244,6 +259,14 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
           ...prev,
           [screen.id]: result.fields,
         }));
+        
+        // Store jurisdiction name if provided
+        if (result.jurisdictionName) {
+          setJurisdictionCache((prev) => ({
+            ...prev,
+            [screen.id]: result.jurisdictionName,
+          }));
+        }
       } catch (error) {
         console.error("❌ Dynamic field generation error:", error);
         setDynamicFieldsError(
@@ -259,24 +282,21 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     fetchDynamicFields();
   }, [config, currentStep, formData, enrichmentContext, dynamicFieldsCache]);
 
-  if (!config) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--selise-blue))]" />
-      </div>
-    );
-  }
-
-  const currentScreen = config.screens[currentStep];
+  // Create step definitions - must be before early return to satisfy React Hooks rules
   const stepDefinitions = useMemo(
-    () =>
-      config.screens.map((screen) => ({
-        id: screen.id,
-        title: screen.title,
-      })),
-    [config.screens]
+    () => {
+      if (!config?.screens || !Array.isArray(config.screens) || config.screens.length === 0) {
+        return [];
+      }
+      return config.screens.map((screen, index) => ({
+        id: screen.id || `step-${index}`,
+        title: screen.title || `Step ${index + 1}`,
+      }));
+    },
+    [config?.screens]
   );
-  const displayedProgress = Math.round(fakeProgress);
+
+  // AI enrichment callback - must be before early return to satisfy React Hooks rules
   const runAiEnrichmentInBackground = useCallback(
     (screen: ScreenWithFields | undefined) => {
       if (!screen?.aiPrompt) {
@@ -355,6 +375,17 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     },
     [formData, setEnrichmentContext]
   );
+
+  if (!config) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--selise-blue))]" />
+      </div>
+    );
+  }
+
+  const currentScreen = config.screens[currentStep];
+  const displayedProgress = Math.round(fakeProgress);
 
   // Loading Screen - shows during document generation
   if (isGenerating) {
@@ -738,17 +769,30 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
             {currentScreen?.title || "Review"}
           </div>
 
-          <div className="hidden md:block">
-            <Stepper
-              steps={stepDefinitions}
-              currentStep={currentStep}
-              onStepClick={goToStep}
-              allowNavigation
-            />
-          </div>
-          <div className="md:hidden">
-            <StepperCompact steps={stepDefinitions} currentStep={currentStep} />
-          </div>
+          {stepDefinitions.length > 0 ? (
+            <>
+              <div className="hidden md:block">
+                <Stepper
+                  key={`stepper-${stepDefinitions.length}-${currentStep}`}
+                  steps={stepDefinitions}
+                  currentStep={currentStep}
+                  onStepClick={goToStep}
+                  allowNavigation
+                />
+              </div>
+              <div className="md:hidden">
+                <StepperCompact 
+                  key={`stepper-compact-${stepDefinitions.length}-${currentStep}`}
+                  steps={stepDefinitions} 
+                  currentStep={currentStep} 
+                />
+              </div>
+            </>
+          ) : (
+            <div className="h-20 flex items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-[hsl(var(--selise-blue))]" />
+            </div>
+          )}
 
           <AnimatePresence>
             {aiEnrichmentState.status !== "idle" && (
@@ -894,10 +938,15 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                           animate={{ opacity: 1, y: 0 }}
                           className="space-y-6"
                         >
-                          {/* AI Generated Badge */}
-                          <div className="flex items-center gap-2 text-xs text-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/5 px-3 py-2 rounded-lg border border-[hsl(var(--selise-blue))]/20">
-                            <Wand2 className="h-3.5 w-3.5" />
-                            <span>AI-generated questions based on your context</span>
+                          {/* AI Generated Badge with Optional indicator */}
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <div className="flex items-center gap-2 text-xs text-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/5 px-3 py-2 rounded-lg border border-[hsl(var(--selise-blue))]/20">
+                              <Wand2 className="h-3.5 w-3.5" />
+                              <span>AI-generated questions based on your context</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-[hsl(var(--globe-grey))] bg-[hsl(var(--muted))] px-3 py-2 rounded-lg">
+                              <span>All fields are optional — you can skip this screen</span>
+                            </div>
                           </div>
                           
                           {dynamicFieldsCache[currentScreen.id].map((field) => (
@@ -964,45 +1013,106 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                     <div></div>
                   )}
 
-                  {currentStep < totalSteps - 1 ? (
-                    <Button
-                      onClick={handleContinue}
-                      disabled={dynamicFieldsLoading || ((currentScreen as any)?.type === "dynamic" && !dynamicFieldsCache[currentScreen?.id || ""])}
-                      className="flex items-center gap-3 px-8 py-4"
-                      size="lg"
-                    >
-                      {dynamicFieldsLoading ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Loading...
-                        </>
-                      ) : (
-                        <>
-                          Continue
-                          <ArrowRight className="w-5 h-5" />
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={isSubmitting || !turnstileToken || turnstileStatus !== "success"}
-                      className="flex items-center gap-3 px-8 py-4 bg-[hsl(var(--lime-green))] hover:bg-[hsl(var(--poly-green))]"
-                      size="lg"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="w-5 h-5" />
-                          Generate Document
-                        </>
-                      )}
-                    </Button>
-                  )}
+                  {/* Right side buttons */}
+                  <div className="flex items-center gap-3">
+                    {/* Dynamic screen buttons: Apply Standard and Skip */}
+                    {(currentScreen as any)?.type === "dynamic" && 
+                     dynamicFieldsCache[currentScreen?.id || ""] &&
+                     currentStep < totalSteps - 1 && (
+                      <>
+                        {/* Apply Standard button */}
+                        {dynamicFieldsCache[currentScreen.id].some(f => f.standardValue) && (
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setApplyingStandard(true);
+                              const fields = dynamicFieldsCache[currentScreen.id];
+                              fields.forEach((field) => {
+                                if (field.standardValue) {
+                                  setFieldValue(field.name, field.standardValue);
+                                }
+                              });
+                              // Show success feedback
+                              setAppliedStandard(true);
+                              setTimeout(() => {
+                                setAppliedStandard(false);
+                                setApplyingStandard(false);
+                                // Auto-advance to next step
+                                nextStep();
+                              }, 600);
+                            }}
+                            disabled={applyingStandard}
+                            className="flex items-center gap-2 text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--fg))]"
+                          >
+                            {appliedStandard ? (
+                              <>
+                                <Check className="w-4 h-4 text-[hsl(var(--lime-green))]" />
+                                <span className="text-[hsl(var(--lime-green))]">Applied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Zap className="w-4 h-4" />
+                                Use {jurisdictionCache[currentScreen.id] || "standard"}
+                              </>
+                            )}
+                          </Button>
+                        )}
+
+                        {/* Skip button */}
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            // Skip without filling any fields
+                            nextStep();
+                          }}
+                          className="flex items-center gap-2 text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--fg))]"
+                        >
+                          <SkipForward className="w-4 h-4" />
+                          Skip
+                        </Button>
+                      </>
+                    )}
+
+                    {currentStep < totalSteps - 1 ? (
+                      <Button
+                        onClick={handleContinue}
+                        disabled={dynamicFieldsLoading || ((currentScreen as any)?.type === "dynamic" && !dynamicFieldsCache[currentScreen?.id || ""])}
+                        className="flex items-center gap-3 px-8 py-4"
+                        size="lg"
+                      >
+                        {dynamicFieldsLoading ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            Continue
+                            <ArrowRight className="w-5 h-5" />
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleSubmit}
+                        disabled={isSubmitting || !turnstileToken || turnstileStatus !== "success"}
+                        className="flex items-center gap-3 px-8 py-4 bg-[hsl(var(--lime-green))] hover:bg-[hsl(var(--poly-green))]"
+                        size="lg"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="w-5 h-5" />
+                            Generate Document
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
 

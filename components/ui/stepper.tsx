@@ -68,7 +68,7 @@ function Stepper({
               <span
                 aria-hidden="true"
                 className={cn(
-                  'absolute top-8 left-0 w-1/2 h-0.5 transition-colors duration-300 -translate-y-px',
+                  'absolute top-[32px] left-0 w-1/2 h-0.5 transition-colors duration-300',
                   leftSegmentActive
                     ? 'bg-[hsl(var(--selise-blue))]'
                     : 'bg-[hsl(var(--border))]'
@@ -79,7 +79,7 @@ function Stepper({
               <span
                 aria-hidden="true"
                 className={cn(
-                  'absolute top-8 left-1/2 w-1/2 h-0.5 transition-colors duration-300 -translate-y-px',
+                  'absolute top-[32px] left-1/2 w-1/2 h-0.5 transition-colors duration-300',
                   rightSegmentActive
                     ? 'bg-[hsl(var(--selise-blue))]'
                     : 'bg-[hsl(var(--border))]'

@@ -354,6 +354,18 @@ export function ScreenEditor({
                       </p>
                     </div>
 
+                    {/* Note about AI settings location */}
+                    <div className="rounded-lg border border-[hsl(var(--selise-blue))]/20 bg-[hsl(var(--selise-blue))]/5 p-3">
+                      <p className="text-xs text-[hsl(var(--globe-grey))]">
+                        <span className="font-medium text-[hsl(var(--fg))]">AI Model & System Prompt:</span>{" "}
+                        Configure the AI model and system prompt in{" "}
+                        <a href="/en/admin/settings" className="text-[hsl(var(--selise-blue))] underline hover:no-underline">
+                          System Settings
+                        </a>
+                        . These settings apply to all Dynamic AI Screens.
+                      </p>
+                    </div>
+
                     {/* Available Variables */}
                     {availableVariables.length > 0 && (
                       <div className="space-y-2">

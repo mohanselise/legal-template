@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Plus,
   GripVertical,
@@ -12,6 +12,7 @@ import {
   Hash,
   CheckSquare,
   List,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +23,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FieldEditor } from "./field-editor";
+import { FieldEditor, type AvailableContextKey } from "./field-editor";
 import { DeleteDialog } from "./delete-dialog";
 import { SignatoryInfoManager } from "./signatory-info-manager";
 import type { TemplateScreen, TemplateField, FieldType } from "@/lib/db";
@@ -33,6 +34,7 @@ interface ScreenWithFields extends TemplateScreen {
 
 interface FieldListProps {
   screen: ScreenWithFields;
+  allScreens?: ScreenWithFields[];
   onFieldsUpdated: () => void;
 }
 
@@ -54,11 +56,90 @@ const fieldTypeLabels: Record<FieldType, string> = {
   select: "Select",
 };
 
-export function FieldList({ screen, onFieldsUpdated }: FieldListProps) {
+// Interface for available form fields from previous screens
+export interface AvailableFormField {
+  screenTitle: string;
+  fieldName: string;
+  fieldLabel: string;
+  fieldType: string;
+  variableSyntax: string; // e.g., {{fieldName}}
+}
+
+export function FieldList({ screen, allScreens = [], onFieldsUpdated }: FieldListProps) {
   const [fieldEditorOpen, setFieldEditorOpen] = useState(false);
   const [editingField, setEditingField] = useState<TemplateField | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingField, setDeletingField] = useState<TemplateField | null>(null);
+
+  // Compute available form fields from previous screens
+  const availableFormFields = useMemo(() => {
+    const fields: AvailableFormField[] = [];
+    
+    const previousScreens = allScreens
+      .filter((s) => s.order < screen.order)
+      .sort((a, b) => a.order - b.order);
+
+    previousScreens.forEach((prevScreen) => {
+      const screenWithFields = prevScreen as ScreenWithFields;
+      if (screenWithFields.fields && screenWithFields.fields.length > 0) {
+        screenWithFields.fields.forEach((field: TemplateField) => {
+          fields.push({
+            screenTitle: prevScreen.title,
+            fieldName: field.name,
+            fieldLabel: field.label,
+            fieldType: field.type,
+            variableSyntax: `{{${field.name}}}`,
+          });
+        });
+      }
+    });
+
+    return fields;
+  }, [allScreens, screen.order]);
+
+  // Compute available AI context keys from previous screens
+  const availableContextKeys = useMemo(() => {
+    const keys: AvailableContextKey[] = [];
+    
+    // Get previous screens (those with order < current screen's order)
+    const previousScreens = allScreens
+      .filter((s) => s.order < screen.order)
+      .sort((a, b) => a.order - b.order);
+
+    previousScreens.forEach((prevScreen) => {
+      const schemaStr = prevScreen.aiOutputSchema;
+      if (!schemaStr || !schemaStr.trim()) return;
+
+      try {
+        const schema = JSON.parse(schemaStr);
+        if (schema.type === "object" && schema.properties) {
+          // Flatten schema properties to get all fields
+          const flattenProperties = (properties: Record<string, any>, prefix = ""): void => {
+            Object.entries(properties).forEach(([key, value]: [string, any]) => {
+              const fullKey = prefix ? `${prefix}.${key}` : key;
+              keys.push({
+                screenTitle: prevScreen.title,
+                key: fullKey,
+                type: value.type || "unknown",
+                fullPath: fullKey,
+              });
+
+              // Recursively handle nested objects
+              if (value.type === "object" && value.properties) {
+                flattenProperties(value.properties, fullKey);
+              }
+            });
+          };
+
+          flattenProperties(schema.properties);
+        }
+      } catch (e) {
+        console.error(`Failed to parse schema for screen ${prevScreen.title}`, e);
+      }
+    });
+
+    return keys;
+  }, [allScreens, screen.order]);
 
   const handleAddField = () => {
     setEditingField(null);
@@ -162,6 +243,15 @@ export function FieldList({ screen, onFieldsUpdated }: FieldListProps) {
                           Required
                         </Badge>
                       )}
+                      {(field as any).aiSuggestionEnabled && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] gap-1"
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          AI
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <code className="text-xs text-[hsl(var(--globe-grey))] bg-[hsl(var(--border))]/50 px-1.5 py-0.5 rounded">
@@ -211,6 +301,8 @@ export function FieldList({ screen, onFieldsUpdated }: FieldListProps) {
         screenId={screen.id}
         field={editingField}
         onSaved={handleFieldSaved}
+        availableContextKeys={availableContextKeys}
+        availableFormFields={availableFormFields}
       />
 
       {/* Delete Confirmation Dialog */}

@@ -71,6 +71,10 @@ model TemplateField {
   options     String[]  @default([]) // For select fields
   order       Int       // Display order within screen
 
+  // AI Smart Suggestions - auto-fill from enrichment context
+  aiSuggestionEnabled Boolean @default(false)
+  aiSuggestionKey     String? // Key path in enrichmentContext (e.g., "suggestedEmail" or "Company Info.currency")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

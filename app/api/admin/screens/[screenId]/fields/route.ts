@@ -13,6 +13,9 @@ const createFieldSchema = z.object({
   helpText: z.string().optional(),
   options: z.array(z.string()).default([]),
   order: z.number().int().min(0).optional(),
+  // AI Smart Suggestions from enrichment context
+  aiSuggestionEnabled: z.boolean().default(false),
+  aiSuggestionKey: z.string().nullable().optional(),
 });
 
 // Schema for reordering fields
@@ -95,7 +98,7 @@ export async function POST(
       );
     }
 
-    const { name, label, type, required, placeholder, helpText, options, order } =
+    const { name, label, type, required, placeholder, helpText, options, order, aiSuggestionEnabled, aiSuggestionKey } =
       validation.data;
 
     // Check for duplicate field name within the same screen
@@ -134,6 +137,9 @@ export async function POST(
         helpText,
         options,
         order: finalOrder,
+        aiSuggestionEnabled: aiSuggestionEnabled ?? false,
+        // Only set aiSuggestionKey if it has a value, otherwise null
+        aiSuggestionKey: aiSuggestionKey?.trim() || null,
       },
     });
 

@@ -92,6 +92,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     canProceed,
     isSubmitting,
     setSubmitting,
+    enrichmentContext,
     setEnrichmentContext,
   } = useDynamicForm();
 
@@ -740,6 +741,8 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                       value={formData[field.name]}
                       onChange={setFieldValue}
                       error={errors[field.name]}
+                      enrichmentContext={enrichmentContext}
+                      formData={formData}
                     />
                   ))}
                 </div>

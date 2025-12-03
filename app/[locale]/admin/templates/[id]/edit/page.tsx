@@ -888,6 +888,7 @@ export default function EditTemplatePage() {
                 <>
                   <FieldList
                     screen={selectedScreen}
+                    allScreens={screens}
                     onFieldsUpdated={handleFieldsUpdated}
                   />
                   <ScreenAIPrompt

@@ -13,6 +13,9 @@ const updateFieldSchema = z.object({
   helpText: z.string().nullable().optional(),
   options: z.array(z.string()).optional(),
   order: z.number().int().min(0).optional(),
+  // AI Smart Suggestions from enrichment context
+  aiSuggestionEnabled: z.boolean().optional(),
+  aiSuggestionKey: z.string().nullable().optional().transform(val => val?.trim() || null),
 });
 
 /**
@@ -106,6 +109,11 @@ export async function PATCH(
     const updateData: Record<string, unknown> = { ...validation.data };
     if (validation.data.type) {
       updateData.type = validation.data.type as FieldType;
+    }
+    
+    // Handle aiSuggestionKey - convert empty string to null
+    if ('aiSuggestionKey' in updateData) {
+      updateData.aiSuggestionKey = updateData.aiSuggestionKey?.trim() || null;
     }
 
     const field = await prisma.templateField.update({

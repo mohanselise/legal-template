@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Sparkles, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -30,6 +30,9 @@ export interface FieldConfig {
   placeholder?: string | null;
   helpText?: string | null;
   options: string[];
+  // AI Smart Suggestions
+  aiSuggestionEnabled?: boolean;
+  aiSuggestionKey?: string | null;
 }
 
 export interface FieldRendererProps {
@@ -37,28 +40,145 @@ export interface FieldRendererProps {
   value: unknown;
   onChange: (name: string, value: unknown) => void;
   error?: string;
+  enrichmentContext?: Record<string, unknown>;
+  formData?: Record<string, unknown>;
+}
+
+/**
+ * Get nested value from object using dot notation
+ */
+function getNestedValue(obj: Record<string, unknown>, key: string): unknown {
+  return key.split('.').reduce((acc: unknown, part: string) => {
+    if (acc && typeof acc === 'object' && part in (acc as Record<string, unknown>)) {
+      return (acc as Record<string, unknown>)[part];
+    }
+    return undefined;
+  }, obj);
+}
+
+/**
+ * Resolve template variables in a string
+ * Supports {{variableName}} syntax
+ * Looks up values from formData first, then enrichmentContext
+ * Falls back to showing the variable name if not found
+ */
+function resolveTemplateVariables(
+  template: string | null | undefined,
+  formData?: Record<string, unknown>,
+  enrichmentContext?: Record<string, unknown>
+): string {
+  if (!template) return "";
+  
+  // Match all {{variableName}} patterns
+  return template.replace(/\{\{([^}]+)\}\}/g, (match, variableName) => {
+    const trimmedName = variableName.trim();
+    
+    // Try to get value from formData first
+    if (formData) {
+      const formValue = getNestedValue(formData, trimmedName);
+      if (formValue !== undefined && formValue !== null && formValue !== "") {
+        return String(formValue);
+      }
+    }
+    
+    // Try to get value from enrichmentContext
+    if (enrichmentContext) {
+      const contextValue = getNestedValue(enrichmentContext, trimmedName);
+      if (contextValue !== undefined && contextValue !== null && contextValue !== "") {
+        return String(contextValue);
+      }
+    }
+    
+    // Fallback: return a placeholder indicating the variable name
+    return `[${trimmedName}]`;
+  });
+}
+
+/**
+ * AI Suggestion Badge - shows suggested value and allows one-click apply
+ */
+function AISuggestionBadge({
+  suggestionKey,
+  enrichmentContext,
+  currentValue,
+  onApply,
+}: {
+  suggestionKey: string;
+  enrichmentContext?: Record<string, unknown>;
+  currentValue: unknown;
+  onApply: (value: unknown) => void;
+}) {
+  if (!enrichmentContext || !suggestionKey) return null;
+
+  const suggestedValue = getNestedValue(enrichmentContext, suggestionKey);
+  
+  // Don't show if no suggestion or if current value matches
+  if (suggestedValue === undefined || suggestedValue === null) return null;
+  if (String(suggestedValue) === String(currentValue)) return null;
+
+  const displayValue = typeof suggestedValue === 'object' 
+    ? JSON.stringify(suggestedValue)
+    : String(suggestedValue);
+
+  // Truncate long values for display
+  const truncatedValue = displayValue.length > 40 
+    ? displayValue.substring(0, 40) + '...' 
+    : displayValue;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onApply(suggestedValue)}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full 
+        bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] 
+        hover:bg-[hsl(var(--selise-blue))]/20 transition-colors cursor-pointer
+        border border-[hsl(var(--selise-blue))]/20"
+      title={`Click to use: ${displayValue}`}
+    >
+      <Sparkles className="h-3 w-3" />
+      <span>Use: {truncatedValue}</span>
+      <Check className="h-3 w-3 opacity-60" />
+    </button>
+  );
 }
 
 /**
  * Text Field Renderer
  */
-export function TextField({ field, value, onChange, error }: FieldRendererProps) {
+export function TextField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
+  const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
+  
+  // Resolve template variables in label, placeholder, and helpText
+  const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
+  const resolvedPlaceholder = resolveTemplateVariables(field.placeholder, formData, enrichmentContext);
+  const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
+
   return (
     <div className="space-y-2">
-      <Label htmlFor={field.name}>
-        {field.label}
-        {field.required && <span className="text-destructive ml-1">*</span>}
-      </Label>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <Label htmlFor={field.name}>
+          {resolvedLabel}
+          {field.required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+        {showSuggestion && (
+          <AISuggestionBadge
+            suggestionKey={field.aiSuggestionKey!}
+            enrichmentContext={enrichmentContext}
+            currentValue={value}
+            onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
+          />
+        )}
+      </div>
       <Input
         id={field.name}
         type="text"
-        placeholder={field.placeholder || undefined}
+        placeholder={resolvedPlaceholder || undefined}
         value={(value as string) || ""}
         onChange={(e) => onChange(field.name, e.target.value)}
         className={error ? "border-destructive" : ""}
       />
-      {field.helpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
+      {resolvedHelpText && (
+        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
@@ -68,23 +188,40 @@ export function TextField({ field, value, onChange, error }: FieldRendererProps)
 /**
  * Email Field Renderer
  */
-export function EmailField({ field, value, onChange, error }: FieldRendererProps) {
+export function EmailField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
+  const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
+  
+  // Resolve template variables
+  const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
+  const resolvedPlaceholder = resolveTemplateVariables(field.placeholder, formData, enrichmentContext);
+  const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
+
   return (
     <div className="space-y-2">
-      <Label htmlFor={field.name}>
-        {field.label}
-        {field.required && <span className="text-destructive ml-1">*</span>}
-      </Label>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <Label htmlFor={field.name}>
+          {resolvedLabel}
+          {field.required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+        {showSuggestion && (
+          <AISuggestionBadge
+            suggestionKey={field.aiSuggestionKey!}
+            enrichmentContext={enrichmentContext}
+            currentValue={value}
+            onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
+          />
+        )}
+      </div>
       <Input
         id={field.name}
         type="email"
-        placeholder={field.placeholder || "email@example.com"}
+        placeholder={resolvedPlaceholder || "email@example.com"}
         value={(value as string) || ""}
         onChange={(e) => onChange(field.name, e.target.value)}
         className={error ? "border-destructive" : ""}
       />
-      {field.helpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
+      {resolvedHelpText && (
+        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
@@ -94,13 +231,29 @@ export function EmailField({ field, value, onChange, error }: FieldRendererProps
 /**
  * Date Field Renderer
  */
-export function DateField({ field, value, onChange, error }: FieldRendererProps) {
+export function DateField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
+  const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
+  
+  // Resolve template variables
+  const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
+  const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
+
   return (
     <div className="space-y-2">
-      <Label htmlFor={field.name}>
-        {field.label}
-        {field.required && <span className="text-destructive ml-1">*</span>}
-      </Label>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <Label htmlFor={field.name}>
+          {resolvedLabel}
+          {field.required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+        {showSuggestion && (
+          <AISuggestionBadge
+            suggestionKey={field.aiSuggestionKey!}
+            enrichmentContext={enrichmentContext}
+            currentValue={value}
+            onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
+          />
+        )}
+      </div>
       <Input
         id={field.name}
         type="date"
@@ -108,8 +261,8 @@ export function DateField({ field, value, onChange, error }: FieldRendererProps)
         onChange={(e) => onChange(field.name, e.target.value)}
         className={error ? "border-destructive" : ""}
       />
-      {field.helpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
+      {resolvedHelpText && (
+        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
@@ -119,23 +272,40 @@ export function DateField({ field, value, onChange, error }: FieldRendererProps)
 /**
  * Number Field Renderer
  */
-export function NumberField({ field, value, onChange, error }: FieldRendererProps) {
+export function NumberField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
+  const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
+  
+  // Resolve template variables
+  const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
+  const resolvedPlaceholder = resolveTemplateVariables(field.placeholder, formData, enrichmentContext);
+  const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
+
   return (
     <div className="space-y-2">
-      <Label htmlFor={field.name}>
-        {field.label}
-        {field.required && <span className="text-destructive ml-1">*</span>}
-      </Label>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <Label htmlFor={field.name}>
+          {resolvedLabel}
+          {field.required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+        {showSuggestion && (
+          <AISuggestionBadge
+            suggestionKey={field.aiSuggestionKey!}
+            enrichmentContext={enrichmentContext}
+            currentValue={value}
+            onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
+          />
+        )}
+      </div>
       <Input
         id={field.name}
         type="number"
-        placeholder={field.placeholder || undefined}
+        placeholder={resolvedPlaceholder || undefined}
         value={(value as string | number) || ""}
         onChange={(e) => onChange(field.name, e.target.value)}
         className={error ? "border-destructive" : ""}
       />
-      {field.helpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
+      {resolvedHelpText && (
+        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
@@ -145,7 +315,11 @@ export function NumberField({ field, value, onChange, error }: FieldRendererProp
 /**
  * Checkbox Field Renderer
  */
-export function CheckboxField({ field, value, onChange, error }: FieldRendererProps) {
+export function CheckboxField({ field, value, onChange, error, formData, enrichmentContext }: FieldRendererProps) {
+  // Resolve template variables
+  const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
+  const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
+
   return (
     <div className="space-y-2">
       <div className="flex items-start gap-3">
@@ -158,12 +332,12 @@ export function CheckboxField({ field, value, onChange, error }: FieldRendererPr
         />
         <div>
           <Label htmlFor={field.name} className="cursor-pointer">
-            {field.label}
+            {resolvedLabel}
             {field.required && <span className="text-destructive ml-1">*</span>}
           </Label>
-          {field.helpText && (
+          {resolvedHelpText && (
             <p className="text-xs text-[hsl(var(--globe-grey))] mt-0.5">
-              {field.helpText}
+              {resolvedHelpText}
             </p>
           )}
         </div>
@@ -176,19 +350,36 @@ export function CheckboxField({ field, value, onChange, error }: FieldRendererPr
 /**
  * Select Field Renderer
  */
-export function SelectField({ field, value, onChange, error }: FieldRendererProps) {
+export function SelectField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
+  const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
+  
+  // Resolve template variables
+  const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
+  const resolvedPlaceholder = resolveTemplateVariables(field.placeholder, formData, enrichmentContext);
+  const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
+
   return (
     <div className="space-y-2">
-      <Label htmlFor={field.name}>
-        {field.label}
-        {field.required && <span className="text-destructive ml-1">*</span>}
-      </Label>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <Label htmlFor={field.name}>
+          {resolvedLabel}
+          {field.required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+        {showSuggestion && (
+          <AISuggestionBadge
+            suggestionKey={field.aiSuggestionKey!}
+            enrichmentContext={enrichmentContext}
+            currentValue={value}
+            onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
+          />
+        )}
+      </div>
       <Select
         value={(value as string) || ""}
         onValueChange={(val) => onChange(field.name, val)}
       >
         <SelectTrigger className={error ? "border-destructive" : ""}>
-          <SelectValue placeholder={field.placeholder || `Select ${field.label.toLowerCase()}`} />
+          <SelectValue placeholder={resolvedPlaceholder || `Select ${resolvedLabel.toLowerCase()}`} />
         </SelectTrigger>
         <SelectContent>
           {field.options.map((option) => (
@@ -198,8 +389,8 @@ export function SelectField({ field, value, onChange, error }: FieldRendererProp
           ))}
         </SelectContent>
       </Select>
-      {field.helpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
+      {resolvedHelpText && (
+        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>

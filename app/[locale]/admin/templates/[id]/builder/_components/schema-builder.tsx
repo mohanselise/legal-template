@@ -44,6 +44,9 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 // Helper to parse JSON schema into internal state
 const parseSchemaToState = (schemaStr: string): SchemaField[] => {
     try {
+        // Handle empty or invalid schema strings
+        if (!schemaStr || !schemaStr.trim()) return [];
+        
         const schema = JSON.parse(schemaStr);
         if (schema.type !== "object" || !schema.properties) return [];
 

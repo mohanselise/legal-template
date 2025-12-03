@@ -10,6 +10,8 @@ const settingsSchema = z.object({
   // Dynamic form AI settings
   dynamicFormAiModel: z.string().optional(),
   dynamicFormSystemPrompt: z.string().optional(),
+  // Form enrichment AI settings
+  formEnrichmentAiModel: z.string().optional(),
 });
 
 /**
@@ -24,11 +26,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all settings
-    const [documentGenerationAiModel, commonPromptInstructions, dynamicFormAiModel, dynamicFormSystemPrompt] = await Promise.all([
+    const [documentGenerationAiModel, commonPromptInstructions, dynamicFormAiModel, dynamicFormSystemPrompt, formEnrichmentAiModel] = await Promise.all([
       prisma.systemSettings.findUnique({ where: { key: "documentGenerationAiModel" } }),
       prisma.systemSettings.findUnique({ where: { key: "commonPromptInstructions" } }),
       prisma.systemSettings.findUnique({ where: { key: "dynamicFormAiModel" } }),
       prisma.systemSettings.findUnique({ where: { key: "dynamicFormSystemPrompt" } }),
+      prisma.systemSettings.findUnique({ where: { key: "formEnrichmentAiModel" } }),
     ]);
 
     // If not found, return empty (will use default in frontend)
@@ -37,6 +40,7 @@ export async function GET(request: NextRequest) {
       commonPromptInstructions: commonPromptInstructions?.value || null,
       dynamicFormAiModel: dynamicFormAiModel?.value || null,
       dynamicFormSystemPrompt: dynamicFormSystemPrompt?.value || null,
+      formEnrichmentAiModel: formEnrichmentAiModel?.value || null,
     });
   } catch (error) {
     console.error("[SETTINGS_GET]", error);
@@ -68,7 +72,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { documentGenerationAiModel, commonPromptInstructions, dynamicFormAiModel, dynamicFormSystemPrompt } = validation.data;
+    const { documentGenerationAiModel, commonPromptInstructions, dynamicFormAiModel, dynamicFormSystemPrompt, formEnrichmentAiModel } = validation.data;
 
     // Upsert settings in parallel
     const upsertPromises = [];
@@ -143,6 +147,25 @@ export async function PUT(request: NextRequest) {
             key: "dynamicFormSystemPrompt",
             value: dynamicFormSystemPrompt,
             description: "System prompt for generating dynamic form fields",
+            updatedBy: userId,
+          },
+        })
+      );
+    }
+
+    // Form enrichment AI model
+    if (formEnrichmentAiModel !== undefined) {
+      upsertPromises.push(
+        prisma.systemSettings.upsert({
+          where: { key: "formEnrichmentAiModel" },
+          update: {
+            value: formEnrichmentAiModel,
+            updatedBy: userId,
+          },
+          create: {
+            key: "formEnrichmentAiModel",
+            value: formEnrichmentAiModel,
+            description: "AI model used for form enrichment and smart suggestions",
             updatedBy: userId,
           },
         })

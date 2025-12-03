@@ -16,6 +16,11 @@ const updateFieldSchema = z.object({
   // AI Smart Suggestions from enrichment context
   aiSuggestionEnabled: z.boolean().optional(),
   aiSuggestionKey: z.string().nullable().optional().transform(val => val?.trim() || null),
+  // UILM Translation Keys
+  uilmLabelKey: z.string().nullable().optional(),
+  uilmPlaceholderKey: z.string().nullable().optional(),
+  uilmHelpTextKey: z.string().nullable().optional(),
+  uilmOptionsKeys: z.array(z.string()).optional(),
 });
 
 /**

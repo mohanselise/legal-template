@@ -17,6 +17,9 @@ const updateScreenSchema = z.object({
   dynamicMaxFields: z.number().int().min(1).max(20).nullable().optional(),
   // Signatory screen configuration (JSON string)
   signatoryConfig: z.string().nullable().optional(),
+  // UILM Translation Keys
+  uilmTitleKey: z.string().nullable().optional(),
+  uilmDescriptionKey: z.string().nullable().optional(),
 });
 
 /**

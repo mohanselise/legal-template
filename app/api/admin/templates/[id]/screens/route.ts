@@ -15,6 +15,9 @@ const createScreenSchema = z.object({
   // Dynamic screen fields
   dynamicPrompt: z.string().nullable().optional(),
   dynamicMaxFields: z.number().int().min(1).max(20).nullable().optional(),
+  // UILM Translation Keys
+  uilmTitleKey: z.string().nullable().optional(),
+  uilmDescriptionKey: z.string().nullable().optional(),
 });
 
 // Schema for reordering screens

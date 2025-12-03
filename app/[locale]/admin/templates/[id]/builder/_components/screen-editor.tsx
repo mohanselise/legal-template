@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Sparkles, Wand2, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Loader2, Sparkles, Wand2, ChevronDown, ChevronUp, Info, Languages } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,9 @@ const screenSchema = z.object({
   // Dynamic screen configuration
   dynamicPrompt: z.string().optional(),
   dynamicMaxFields: z.number().int().min(1).max(20).optional().default(5),
+  // UILM Translation Keys
+  uilmTitleKey: z.string().optional(),
+  uilmDescriptionKey: z.string().optional(),
 });
 
 type ScreenFormData = z.infer<typeof screenSchema>;
@@ -64,6 +67,7 @@ export function ScreenEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dynamicConfigExpanded, setDynamicConfigExpanded] = useState(false);
+  const [uilmConfigExpanded, setUilmConfigExpanded] = useState(false);
 
   const {
     register,
@@ -80,6 +84,8 @@ export function ScreenEditor({
       type: "standard",
       dynamicPrompt: "",
       dynamicMaxFields: 5,
+      uilmTitleKey: "",
+      uilmDescriptionKey: "",
     },
   });
 
@@ -140,10 +146,14 @@ export function ScreenEditor({
         type: ((screen as any)?.type as "standard" | "signatory" | "dynamic") || "standard",
         dynamicPrompt: (screen as any)?.dynamicPrompt || "",
         dynamicMaxFields: (screen as any)?.dynamicMaxFields ?? 5,
+        uilmTitleKey: (screen as any)?.uilmTitleKey || "",
+        uilmDescriptionKey: (screen as any)?.uilmDescriptionKey || "",
       });
       setError(null);
       // Expand dynamic config section if it's a dynamic screen
       setDynamicConfigExpanded((screen as any)?.type === "dynamic");
+      // Expand UILM config if any key exists
+      setUilmConfigExpanded(!!(screen as any)?.uilmTitleKey || !!(screen as any)?.uilmDescriptionKey);
     }
   }, [open, screen, reset]);
 
@@ -167,6 +177,9 @@ export function ScreenEditor({
         title: data.title,
         description: data.description,
         type: data.type,
+        // UILM Translation Keys
+        uilmTitleKey: data.uilmTitleKey?.trim() || null,
+        uilmDescriptionKey: data.uilmDescriptionKey?.trim() || null,
       };
 
       // Include dynamic screen configuration if type is dynamic
@@ -276,6 +289,69 @@ export function ScreenEditor({
                 <p className="text-sm text-destructive">
                   {errors.type.message}
                 </p>
+              )}
+            </div>
+
+            {/* UILM Translations Configuration */}
+            <div className="border border-[hsl(var(--poly-green))]/30 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setUilmConfigExpanded(!uilmConfigExpanded)}
+                className="w-full flex items-center justify-between p-3 bg-[hsl(var(--poly-green))]/5 hover:bg-[hsl(var(--poly-green))]/10 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Languages className="h-4 w-4 text-[hsl(var(--poly-green))]" />
+                  <span className="font-medium text-sm text-[hsl(var(--fg))]">
+                    Translations (UILM)
+                  </span>
+                  {(watch("uilmTitleKey") || watch("uilmDescriptionKey")) && (
+                    <Badge 
+                      variant="secondary" 
+                      className="text-xs bg-[hsl(var(--poly-green))]/10 text-[hsl(var(--poly-green))]"
+                    >
+                      Configured
+                    </Badge>
+                  )}
+                </div>
+                {uilmConfigExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                )}
+              </button>
+
+              {uilmConfigExpanded && (
+                <div className="p-4 space-y-4 border-t border-[hsl(var(--poly-green))]/20">
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Map screen content to UILM keys for multi-language support. Keys should be created in SELISE Blocks first.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="uilmTitleKey" className="text-sm">Title Key</Label>
+                      <Input
+                        id="uilmTitleKey"
+                        placeholder="e.g., COMPANY_INFO_TITLE"
+                        {...register("uilmTitleKey")}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="uilmDescriptionKey" className="text-sm">Description Key</Label>
+                      <Input
+                        id="uilmDescriptionKey"
+                        placeholder="e.g., COMPANY_INFO_DESCRIPTION"
+                        {...register("uilmDescriptionKey")}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-[hsl(var(--globe-grey))] p-2 bg-[hsl(var(--muted))]/30 rounded-md">
+                    Module: templates (ID: 03e5475d-506d-4ad1-8d07-23fa768a7925)
+                  </div>
+                </div>
               )}
             </div>
 

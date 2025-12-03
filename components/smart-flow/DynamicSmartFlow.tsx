@@ -300,7 +300,15 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   const runAiEnrichmentInBackground = useCallback(
     (screen: ScreenWithFields | undefined) => {
       if (!screen?.aiPrompt) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[AI Enrichment] Skipped - no aiPrompt configured for screen:', screen?.title);
+        }
         return;
+      }
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AI Enrichment] Starting for screen:', screen.title);
+        console.log('[AI Enrichment] Prompt:', screen.aiPrompt.substring(0, 100) + '...');
       }
 
       aiEnrichmentPendingCount.current += 1;
@@ -312,6 +320,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
       const payload = {
         prompt: screen.aiPrompt,
         formData: cloneFormData(formData),
+        outputSchema: screen.aiOutputSchema || null,
       };
 
       // Fire-and-forget so navigation isn't blocked
@@ -335,6 +344,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
           }
 
           console.log("✅ AI Enrichment Result:", data);
+          console.log("✅ AI Enrichment Keys:", Object.keys(data));
           setEnrichmentContext(data);
           aiEnrichmentPendingCount.current = Math.max(
             0,
@@ -984,17 +994,31 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                     />
                   ) : (
                     /* Standard Screen: Show regular fields */
-                    currentScreen?.fields.map((field) => (
-                      <DynamicField
-                        key={field.id}
-                        field={field as FieldConfig}
-                        value={formData[field.name]}
-                        onChange={setFieldValue}
-                        error={errors[field.name]}
-                        enrichmentContext={enrichmentContext}
-                        formData={formData}
-                      />
-                    ))
+                    <>
+                      {process.env.NODE_ENV === 'development' && (
+                        <div className="mb-4 p-3 bg-slate-100 rounded-lg text-xs font-mono">
+                          <details>
+                            <summary className="cursor-pointer text-slate-600 font-medium">
+                              🔧 Debug: Enrichment Context ({Object.keys(enrichmentContext).length} keys)
+                            </summary>
+                            <pre className="mt-2 overflow-auto max-h-32 text-slate-500">
+                              {JSON.stringify(enrichmentContext, null, 2) || '(empty)'}
+                            </pre>
+                          </details>
+                        </div>
+                      )}
+                      {currentScreen?.fields.map((field) => (
+                        <DynamicField
+                          key={field.id}
+                          field={field as FieldConfig}
+                          value={formData[field.name]}
+                          onChange={setFieldValue}
+                          error={errors[field.name]}
+                          enrichmentContext={enrichmentContext}
+                          formData={formData}
+                        />
+                      ))}
+                    </>
                   )}
                 </div>
 

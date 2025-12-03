@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Plus, X, Sparkles, ChevronDown, ChevronUp, Copy, Variable } from "lucide-react";
+import { Loader2, Plus, X, Sparkles, ChevronDown, ChevronUp, Copy, Variable, Languages } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -58,6 +58,11 @@ const fieldSchema = z.object({
   // AI Smart Suggestions from enrichment context
   aiSuggestionEnabled: z.boolean().default(false),
   aiSuggestionKey: z.string().optional(),
+  // UILM Translation Keys
+  uilmLabelKey: z.string().optional(),
+  uilmPlaceholderKey: z.string().optional(),
+  uilmHelpTextKey: z.string().optional(),
+  uilmOptionsKeys: z.array(z.string()).default([]),
 });
 
 type FieldFormData = z.infer<typeof fieldSchema>;
@@ -96,7 +101,9 @@ export function FieldEditor({
   const [newOption, setNewOption] = useState("");
   const [aiSectionExpanded, setAiSectionExpanded] = useState(false);
   const [variablesSectionExpanded, setVariablesSectionExpanded] = useState(false);
+  const [uilmSectionExpanded, setUilmSectionExpanded] = useState(false);
   const [activeInputField, setActiveInputField] = useState<"label" | "placeholder" | "helpText" | null>(null);
+  const [uilmOptionsKeys, setUilmOptionsKeys] = useState<string[]>([]);
 
   // Check if there are any variables available
   const hasVariables = availableFormFields.length > 0 || availableContextKeys.length > 0;
@@ -131,6 +138,10 @@ export function FieldEditor({
       options: [],
       aiSuggestionEnabled: false,
       aiSuggestionKey: "",
+      uilmLabelKey: "",
+      uilmPlaceholderKey: "",
+      uilmHelpTextKey: "",
+      uilmOptionsKeys: [],
     },
   });
 
@@ -141,6 +152,7 @@ export function FieldEditor({
     if (open) {
       if (field) {
         const aiEnabled = (field as any).aiSuggestionEnabled ?? false;
+        const hasUilmKeys = !!(field as any).uilmLabelKey || !!(field as any).uilmPlaceholderKey || !!(field as any).uilmHelpTextKey;
         reset({
           name: field.name,
           label: field.label,
@@ -151,9 +163,15 @@ export function FieldEditor({
           options: field.options || [],
           aiSuggestionEnabled: aiEnabled,
           aiSuggestionKey: (field as any).aiSuggestionKey || "",
+          uilmLabelKey: (field as any).uilmLabelKey || "",
+          uilmPlaceholderKey: (field as any).uilmPlaceholderKey || "",
+          uilmHelpTextKey: (field as any).uilmHelpTextKey || "",
+          uilmOptionsKeys: (field as any).uilmOptionsKeys || [],
         });
         setOptions(field.options || []);
+        setUilmOptionsKeys((field as any).uilmOptionsKeys || []);
         setAiSectionExpanded(aiEnabled);
+        setUilmSectionExpanded(hasUilmKeys);
       } else {
         reset({
           name: "",
@@ -165,9 +183,15 @@ export function FieldEditor({
           options: [],
           aiSuggestionEnabled: false,
           aiSuggestionKey: "",
+          uilmLabelKey: "",
+          uilmPlaceholderKey: "",
+          uilmHelpTextKey: "",
+          uilmOptionsKeys: [],
         });
         setOptions([]);
+        setUilmOptionsKeys([]);
         setAiSectionExpanded(false);
+        setUilmSectionExpanded(false);
       }
       setError(null);
       setNewOption("");
@@ -199,6 +223,11 @@ export function FieldEditor({
         ...data,
         options: fieldType === "select" ? options : [],
         aiSuggestionEnabled: data.aiSuggestionEnabled ?? false,
+        // UILM Translation Keys
+        uilmLabelKey: data.uilmLabelKey?.trim() || null,
+        uilmPlaceholderKey: data.uilmPlaceholderKey?.trim() || null,
+        uilmHelpTextKey: data.uilmHelpTextKey?.trim() || null,
+        uilmOptionsKeys: fieldType === "select" ? uilmOptionsKeys : [],
       };
       
       // Only include aiSuggestionKey if it has a value, otherwise don't include it
@@ -564,6 +593,108 @@ export function FieldEditor({
                       )}
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+
+            {/* UILM Translations Section */}
+            <div className="border border-[hsl(var(--poly-green))]/30 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setUilmSectionExpanded(!uilmSectionExpanded)}
+                className="w-full flex items-center justify-between p-3 bg-[hsl(var(--poly-green))]/5 hover:bg-[hsl(var(--poly-green))]/10 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Languages className="h-4 w-4 text-[hsl(var(--poly-green))]" />
+                  <span className="font-medium text-sm text-[hsl(var(--fg))]">
+                    Translations (UILM)
+                  </span>
+                  {(watch("uilmLabelKey") || watch("uilmPlaceholderKey") || watch("uilmHelpTextKey")) && (
+                    <Badge variant="secondary" className="text-xs bg-[hsl(var(--poly-green))]/10 text-[hsl(var(--poly-green))]">
+                      Configured
+                    </Badge>
+                  )}
+                </div>
+                {uilmSectionExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                )}
+              </button>
+              
+              {uilmSectionExpanded && (
+                <div className="p-4 space-y-4 border-t border-[hsl(var(--poly-green))]/20">
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Map field content to UILM keys for multi-language support.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="uilmLabelKey" className="text-sm">Label Key</Label>
+                      <Input
+                        id="uilmLabelKey"
+                        placeholder="e.g., FIELD_COMPANY_NAME_LABEL"
+                        {...register("uilmLabelKey")}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                    
+                    {fieldType !== "checkbox" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="uilmPlaceholderKey" className="text-sm">Placeholder Key</Label>
+                        <Input
+                          id="uilmPlaceholderKey"
+                          placeholder="e.g., FIELD_COMPANY_NAME_PLACEHOLDER"
+                          {...register("uilmPlaceholderKey")}
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="uilmHelpTextKey" className="text-sm">Help Text Key</Label>
+                      <Input
+                        id="uilmHelpTextKey"
+                        placeholder="e.g., FIELD_COMPANY_NAME_HELP"
+                        {...register("uilmHelpTextKey")}
+                        className="font-mono text-sm"
+                      />
+                    </div>
+
+                    {/* UILM Options Keys (for select type) */}
+                    {fieldType === "select" && options.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm">Option Keys</Label>
+                        <p className="text-xs text-[hsl(var(--globe-grey))]">
+                          UILM keys for each select option (in same order as options above)
+                        </p>
+                        <div className="space-y-2">
+                          {options.map((option, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <span className="text-xs text-[hsl(var(--globe-grey))] min-w-[100px] truncate">
+                                {option}:
+                              </span>
+                              <Input
+                                placeholder={`e.g., OPTION_${option.toUpperCase().replace(/\s+/g, '_')}`}
+                                value={uilmOptionsKeys[index] || ""}
+                                onChange={(e) => {
+                                  const newKeys = [...uilmOptionsKeys];
+                                  newKeys[index] = e.target.value;
+                                  setUilmOptionsKeys(newKeys);
+                                  setValue("uilmOptionsKeys", newKeys, { shouldDirty: true });
+                                }}
+                                className="font-mono text-sm flex-1"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="text-xs text-[hsl(var(--globe-grey))] p-2 bg-[hsl(var(--muted))]/30 rounded-md">
+                    Module: templates (ID: 03e5475d-506d-4ad1-8d07-23fa768a7925)
+                  </div>
                 </div>
               )}
             </div>

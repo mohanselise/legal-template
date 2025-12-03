@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { openrouter, createCompletionWithTracking } from "@/lib/openrouter";
 import { getSessionId } from "@/lib/analytics/session";
+import { prisma } from "@/lib/db";
+
+// Default model if not configured in settings
+const DEFAULT_FORM_ENRICHMENT_MODEL = "meta-llama/llama-4-scout:nitro";
 
 const enrichContextSchema = z.object({
     prompt: z.string().min(1, "Prompt is required"),
     formData: z.record(z.any()),
+    outputSchema: z.string().nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -20,7 +25,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const { prompt, formData } = validation.data;
+        const { prompt, formData, outputSchema } = validation.data;
 
         // Interpolate variables in the prompt (e.g., {{companyName}})
         let interpolatedPrompt = prompt;
@@ -30,21 +35,66 @@ export async function POST(request: NextRequest) {
             }
         });
 
+        // Also handle nested object interpolation (e.g., {{company.name}})
+        const getNestedValue = (obj: Record<string, any>, path: string): any => {
+            return path.split('.').reduce((acc, part) => acc?.[part], obj);
+        };
+        
+        interpolatedPrompt = interpolatedPrompt.replace(/{{([^}]+)}}/g, (match, path) => {
+            const value = getNestedValue(formData, path.trim());
+            return value !== undefined && value !== null ? String(value) : match;
+        });
+
         const systemPrompt = `You are an AI assistant helping to fill out a legal document form.
 Your task is to analyze the provided form data and the user's prompt to generate useful context or suggestions for subsequent form steps.
 Return your response in a valid JSON format. Do not include any markdown formatting or explanations outside the JSON.`;
 
-        const userMessage = `Form Data: ${JSON.stringify(formData, null, 2)}
+        // Build user message with schema if provided
+        let userMessage = `Form Data: ${JSON.stringify(formData, null, 2)}
 
-User Prompt: ${interpolatedPrompt}
+User Prompt: ${interpolatedPrompt}`;
 
-Generate a JSON response based on the prompt.`;
+        if (outputSchema && outputSchema.trim()) {
+            try {
+                const schema = JSON.parse(outputSchema);
+                userMessage += `\n\nRequired Output Schema:\n${JSON.stringify(schema, null, 2)}\n\nYou MUST return a JSON object that matches this schema exactly. Include all required properties with appropriate values based on the form data and prompt.`;
+            } catch (e) {
+                console.warn("[AI_ENRICH_CONTEXT] Invalid output schema, ignoring:", e);
+            }
+        } else {
+            userMessage += `\n\nGenerate a JSON response based on the prompt.`;
+        }
+
+        // Debug logging in development
+        if (process.env.NODE_ENV === 'development') {
+            console.log('[AI_ENRICH_CONTEXT] System Prompt:', systemPrompt);
+            console.log('[AI_ENRICH_CONTEXT] User Message:', userMessage.substring(0, 500) + '...');
+            console.log('[AI_ENRICH_CONTEXT] Has Output Schema:', !!outputSchema);
+            if (outputSchema) {
+                try {
+                    const schema = JSON.parse(outputSchema);
+                    console.log('[AI_ENRICH_CONTEXT] Output Schema Keys:', Object.keys(schema.properties || {}));
+                } catch (e) {
+                    console.warn('[AI_ENRICH_CONTEXT] Schema parse error:', e);
+                }
+            }
+        }
 
         // Get session ID for analytics
         const sessionId = await getSessionId();
 
+        // Fetch AI model from settings
+        const aiModelSetting = await prisma.systemSettings.findUnique({
+            where: { key: "formEnrichmentAiModel" },
+        });
+        const aiModel = aiModelSetting?.value || DEFAULT_FORM_ENRICHMENT_MODEL;
+
+        if (process.env.NODE_ENV === 'development') {
+            console.log('[AI_ENRICH_CONTEXT] Using AI model:', aiModel);
+        }
+
         const completion = await createCompletionWithTracking({
-            model: "anthropic/claude-3.5-sonnet",
+            model: aiModel,
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userMessage },

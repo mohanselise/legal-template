@@ -25,26 +25,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-// Available AI models
-const AI_MODEL_OPTIONS = [
-  { value: "anthropic/claude-3.5-sonnet", label: "Claude 3.5 Sonnet" },
-  { value: "anthropic/claude-sonnet-4", label: "Claude Sonnet 4" },
-  { value: "meta-llama/llama-4-scout:nitro", label: "Llama 4 Scout" },
-  { value: "openai/gpt-4o", label: "GPT-4o" },
-  { value: "openai/gpt-4o-mini", label: "GPT-4o Mini" },
-  { value: "google/gemini-2.0-flash-001", label: "Gemini 2.0 Flash" },
-] as const;
+import { ModelSelector } from "@/components/admin/model-selector";
 
 const DEFAULT_DYNAMIC_AI_MODEL = "meta-llama/llama-4-scout:nitro";
 const DEFAULT_DOCUMENT_GENERATION_MODEL = "anthropic/claude-3.5-sonnet";
+const DEFAULT_FORM_ENRICHMENT_MODEL = "meta-llama/llama-4-scout:nitro";
 
 const settingsSchema = z.object({
   // Document generation settings
@@ -53,6 +38,8 @@ const settingsSchema = z.object({
   // Dynamic form AI settings
   dynamicFormAiModel: z.string().optional(),
   dynamicFormSystemPrompt: z.string().optional(),
+  // Form enrichment AI settings
+  formEnrichmentAiModel: z.string().optional(),
 });
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -171,6 +158,7 @@ export default function SettingsPage() {
       commonPromptInstructions: "",
       dynamicFormAiModel: DEFAULT_DYNAMIC_AI_MODEL,
       dynamicFormSystemPrompt: "",
+      formEnrichmentAiModel: DEFAULT_FORM_ENRICHMENT_MODEL,
     },
   });
 
@@ -188,6 +176,7 @@ export default function SettingsPage() {
           commonPromptInstructions: data.commonPromptInstructions || DEFAULT_COMMON_PROMPT_INSTRUCTIONS,
           dynamicFormAiModel: data.dynamicFormAiModel || DEFAULT_DYNAMIC_AI_MODEL,
           dynamicFormSystemPrompt: data.dynamicFormSystemPrompt || DEFAULT_DYNAMIC_FORM_SYSTEM_PROMPT,
+          formEnrichmentAiModel: data.formEnrichmentAiModel || DEFAULT_FORM_ENRICHMENT_MODEL,
         });
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -198,6 +187,7 @@ export default function SettingsPage() {
           commonPromptInstructions: DEFAULT_COMMON_PROMPT_INSTRUCTIONS,
           dynamicFormAiModel: DEFAULT_DYNAMIC_AI_MODEL,
           dynamicFormSystemPrompt: DEFAULT_DYNAMIC_FORM_SYSTEM_PROMPT,
+          formEnrichmentAiModel: DEFAULT_FORM_ENRICHMENT_MODEL,
         });
       } finally {
         setIsLoading(false);
@@ -315,21 +305,14 @@ export default function SettingsPage() {
               <p className="text-xs text-[hsl(var(--globe-grey))]">
                 Select the AI model used for generating legal documents.
               </p>
-              <Select
-                value={form.watch("documentGenerationAiModel") || DEFAULT_DOCUMENT_GENERATION_MODEL}
-                onValueChange={(value) => form.setValue("documentGenerationAiModel", value)}
-              >
-                <SelectTrigger className="w-full max-w-md">
-                  <SelectValue placeholder="Select AI model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {AI_MODEL_OPTIONS.map((model) => (
-                    <SelectItem key={model.value} value={model.value}>
-                      {model.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="max-w-md">
+                <ModelSelector
+                  value={form.watch("documentGenerationAiModel") || DEFAULT_DOCUMENT_GENERATION_MODEL}
+                  onChange={(value) => form.setValue("documentGenerationAiModel", value)}
+                  useCase="documentGeneration"
+                  placeholder="Select AI model"
+                />
+              </div>
             </div>
 
             {/* Common Instructions */}
@@ -353,6 +336,53 @@ export default function SettingsPage() {
                   </span>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Form Enrichment AI Settings */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Wand2 className="h-5 w-5 text-[hsl(var(--lime-green))]" />
+                <div>
+                  <CardTitle>Form Enrichment AI Settings</CardTitle>
+                  <CardDescription>
+                    Configure the AI model used for enriching form context and generating smart suggestions.
+                    This runs when users complete a screen with AI Enrichment enabled.
+                  </CardDescription>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  form.setValue("formEnrichmentAiModel", DEFAULT_FORM_ENRICHMENT_MODEL);
+                  toast.info("Reset form enrichment AI model to default");
+                }}
+                className="gap-2"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Reset to Default
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="formEnrichmentAiModel">AI Model</Label>
+              <p className="text-xs text-[hsl(var(--globe-grey))]">
+                Select the AI model used for AI Enrichment prompts (analyzing form data to generate context for smart suggestions).
+              </p>
+              <div className="max-w-md">
+                <ModelSelector
+                  value={form.watch("formEnrichmentAiModel") || DEFAULT_FORM_ENRICHMENT_MODEL}
+                  onChange={(value) => form.setValue("formEnrichmentAiModel", value)}
+                  useCase="formEnrichment"
+                  placeholder="Select AI model"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -390,21 +420,14 @@ export default function SettingsPage() {
               <p className="text-xs text-[hsl(var(--globe-grey))]">
                 Select the AI model to use for generating dynamic form fields.
               </p>
-              <Select
-                value={form.watch("dynamicFormAiModel") || DEFAULT_DYNAMIC_AI_MODEL}
-                onValueChange={(value) => form.setValue("dynamicFormAiModel", value)}
-              >
-                <SelectTrigger className="w-full max-w-md">
-                  <SelectValue placeholder="Select AI model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {AI_MODEL_OPTIONS.map((model) => (
-                    <SelectItem key={model.value} value={model.value}>
-                      {model.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="max-w-md">
+                <ModelSelector
+                  value={form.watch("dynamicFormAiModel") || DEFAULT_DYNAMIC_AI_MODEL}
+                  onChange={(value) => form.setValue("dynamicFormAiModel", value)}
+                  useCase="dynamicForm"
+                  placeholder="Select AI model"
+                />
+              </div>
             </div>
 
             {/* System Prompt */}

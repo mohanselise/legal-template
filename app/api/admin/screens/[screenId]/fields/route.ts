@@ -16,6 +16,11 @@ const createFieldSchema = z.object({
   // AI Smart Suggestions from enrichment context
   aiSuggestionEnabled: z.boolean().default(false),
   aiSuggestionKey: z.string().nullable().optional(),
+  // UILM Translation Keys
+  uilmLabelKey: z.string().nullable().optional(),
+  uilmPlaceholderKey: z.string().nullable().optional(),
+  uilmHelpTextKey: z.string().nullable().optional(),
+  uilmOptionsKeys: z.array(z.string()).default([]),
 });
 
 // Schema for reordering fields

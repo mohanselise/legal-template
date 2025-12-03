@@ -36,6 +36,8 @@ import {
   Pencil,
   Trash2,
   ChevronRight,
+  Languages,
+  ExternalLink,
 } from "lucide-react";
 import {
   DndContext,
@@ -124,6 +126,9 @@ const formSchema = z.object({
   estimatedMinutes: z.number().int().positive().optional().nullable(),
   systemPromptRole: z.string().optional().nullable(),
   systemPrompt: z.string().optional().nullable(),
+  // UILM Translation Keys (Module: templates, ID: 03e5475d-506d-4ad1-8d07-23fa768a7925)
+  uilmTitleKey: z.string().optional().nullable(),
+  uilmDescriptionKey: z.string().optional().nullable(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -239,6 +244,7 @@ export default function EditTemplatePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [keywordInput, setKeywordInput] = useState("");
   const [aiConfigExpanded, setAiConfigExpanded] = useState(false);
+  const [uilmConfigExpanded, setUilmConfigExpanded] = useState(false);
 
   // Form builder dialog states
   const [screenEditorOpen, setScreenEditorOpen] = useState(false);
@@ -259,6 +265,8 @@ export default function EditTemplatePage() {
       estimatedMinutes: null,
       systemPromptRole: null,
       systemPrompt: null,
+      uilmTitleKey: null,
+      uilmDescriptionKey: null,
     },
   });
 
@@ -283,10 +291,14 @@ export default function EditTemplatePage() {
         estimatedMinutes: data.template.estimatedMinutes,
         systemPromptRole: (data.template as any).systemPromptRole || null,
         systemPrompt: data.template.systemPrompt,
+        uilmTitleKey: (data.template as any).uilmTitleKey || null,
+        uilmDescriptionKey: (data.template as any).uilmDescriptionKey || null,
       });
 
       // Auto-expand AI config if prompt or role exists
       setAiConfigExpanded(!!data.template.systemPrompt || !!(data.template as any).systemPromptRole);
+      // Auto-expand UILM config if any key exists
+      setUilmConfigExpanded(!!(data.template as any).uilmTitleKey || !!(data.template as any).uilmDescriptionKey);
     } catch (error) {
       console.error("Error fetching template:", error);
       toast.error("Failed to load template");
@@ -805,6 +817,94 @@ export default function EditTemplatePage() {
                         </Button>
                       </div>
                     )}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+
+            {/* UILM Translations Card */}
+            <Card className="mb-6">
+              <CardHeader
+                className="cursor-pointer"
+                onClick={() => setUilmConfigExpanded(!uilmConfigExpanded)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Languages className="h-5 w-5 text-[hsl(var(--poly-green))]" />
+                    <CardTitle>Translations (UILM)</CardTitle>
+                    {(form.watch("uilmTitleKey") || form.watch("uilmDescriptionKey")) && (
+                      <Badge variant="secondary" className="text-xs bg-[hsl(var(--poly-green))]/10 text-[hsl(var(--poly-green))]">
+                        Configured
+                      </Badge>
+                    )}
+                  </div>
+                  {uilmConfigExpanded ? (
+                    <ChevronUp className="h-5 w-5 text-[hsl(var(--globe-grey))]" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-[hsl(var(--globe-grey))]" />
+                  )}
+                </div>
+                <CardDescription>
+                  Map template content to UILM keys for multi-language support
+                </CardDescription>
+              </CardHeader>
+              {uilmConfigExpanded && (
+                <CardContent className="space-y-4">
+                  <div className="p-3 bg-[hsl(var(--poly-green))]/5 rounded-lg border border-[hsl(var(--poly-green))]/20">
+                    <div className="flex items-start gap-2">
+                      <Languages className="h-4 w-4 text-[hsl(var(--poly-green))] mt-0.5" />
+                      <div className="text-xs text-[hsl(var(--globe-grey))]">
+                        <p className="font-medium text-[hsl(var(--fg))] mb-1">SELISE Blocks UILM Integration</p>
+                        <p>
+                          Add keys from the <strong>templates</strong> module to enable German translations.
+                          Keys should be created in UILM first, then referenced here.
+                        </p>
+                        <a
+                          href="https://blocks.selise.ch"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[hsl(var(--selise-blue))] hover:underline mt-1"
+                        >
+                          Open SELISE Blocks
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="uilmTitleKey">Title Key</Label>
+                      <Input
+                        id="uilmTitleKey"
+                        placeholder="e.g., EMPLOYMENT_AGREEMENT_TITLE"
+                        {...form.register("uilmTitleKey")}
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-[hsl(var(--globe-grey))]">
+                        UILM key for the template title
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="uilmDescriptionKey">Description Key</Label>
+                      <Input
+                        id="uilmDescriptionKey"
+                        placeholder="e.g., EMPLOYMENT_AGREEMENT_DESCRIPTION"
+                        {...form.register("uilmDescriptionKey")}
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-[hsl(var(--globe-grey))]">
+                        UILM key for the template description
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-[hsl(var(--globe-grey))] p-2 bg-[hsl(var(--muted))]/30 rounded-md">
+                    <p className="font-medium mb-1">Module Details:</p>
+                    <code className="text-[10px] block">
+                      Module: templates<br />
+                      ID: 03e5475d-506d-4ad1-8d07-23fa768a7925
+                    </code>
                   </div>
                 </CardContent>
               )}

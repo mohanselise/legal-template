@@ -108,12 +108,58 @@ function AISuggestionBadge({
   currentValue: unknown;
   onApply: (value: unknown) => void;
 }) {
-  if (!enrichmentContext || !suggestionKey) return null;
+  // Debug logging in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[AISuggestionBadge] Checking:', {
+      suggestionKey,
+      hasEnrichmentContext: !!enrichmentContext,
+      enrichmentContextKeys: enrichmentContext ? Object.keys(enrichmentContext) : [],
+      currentValue,
+    });
+  }
+
+  if (!suggestionKey) return null;
+  
+  // If enrichment context is empty, show waiting indicator
+  if (!enrichmentContext || Object.keys(enrichmentContext).length === 0) {
+    return (
+      <span 
+        className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full 
+          bg-[hsl(var(--globe-grey))]/10 text-[hsl(var(--globe-grey))]"
+        title={`AI suggestion will appear after completing the previous step with AI enrichment (key: ${suggestionKey})`}
+      >
+        <Sparkles className="h-3 w-3 opacity-50" />
+        <span className="opacity-70">AI</span>
+      </span>
+    );
+  }
 
   const suggestedValue = getNestedValue(enrichmentContext, suggestionKey);
   
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[AISuggestionBadge] Value lookup:', {
+      suggestionKey,
+      suggestedValue,
+      found: suggestedValue !== undefined && suggestedValue !== null,
+    });
+  }
+  
   // Don't show if no suggestion or if current value matches
-  if (suggestedValue === undefined || suggestedValue === null) return null;
+  if (suggestedValue === undefined || suggestedValue === null) {
+    // Show that suggestion is configured but value not found
+    return (
+      <span 
+        className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full 
+          bg-amber-100 text-amber-700"
+        title={`AI suggestion configured (key: ${suggestionKey}) but no value found in context. Available keys: ${Object.keys(enrichmentContext).join(', ')}`}
+      >
+        <Sparkles className="h-3 w-3" />
+        <span>AI (no match)</span>
+      </span>
+    );
+  }
+  
   if (String(suggestedValue) === String(currentValue)) return null;
 
   const displayValue = typeof suggestedValue === 'object' 
@@ -147,6 +193,16 @@ function AISuggestionBadge({
  */
 export function TextField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
   const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
+  
+  // Debug logging in development
+  if (process.env.NODE_ENV === 'development' && (field.aiSuggestionEnabled || field.aiSuggestionKey)) {
+    console.log('[TextField] AI Suggestion config:', {
+      fieldName: field.name,
+      aiSuggestionEnabled: field.aiSuggestionEnabled,
+      aiSuggestionKey: field.aiSuggestionKey,
+      showSuggestion,
+    });
+  }
   
   // Resolve template variables in label, placeholder, and helpText
   const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);

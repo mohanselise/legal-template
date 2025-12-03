@@ -50,6 +50,9 @@ export const createTemplateSchema = z.object({
   estimatedMinutes: z.number().int().positive().optional().nullable(),
   systemPromptRole: z.string().optional().nullable(),
   systemPrompt: z.string().optional().nullable(),
+  // UILM Translation Keys (Module: templates, ID: 03e5475d-506d-4ad1-8d07-23fa768a7925)
+  uilmTitleKey: z.string().optional().nullable(),
+  uilmDescriptionKey: z.string().optional().nullable(),
 });
 
 export const updateTemplateSchema = createTemplateSchema.partial();

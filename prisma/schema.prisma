@@ -25,6 +25,11 @@ model Template {
   systemPromptRole String?  // AI role (e.g., "expert legal drafter")
   systemPrompt     String?  @db.Text // AI system prompt for document generation
 
+  // UILM Translation Keys (for multi-language support via SELISE Blocks)
+  // Module: templates (ID: 03e5475d-506d-4ad1-8d07-23fa768a7925)
+  uilmTitleKey       String? // UILM key for translated title
+  uilmDescriptionKey String? // UILM key for translated description
+
   screens TemplateScreen[]
 
   createdAt DateTime @default(now())
@@ -54,6 +59,10 @@ model TemplateScreen {
   // Signatory screen configuration (for type=signatory)
   signatoryConfig   String? @db.Text // JSON config: {partyTypes, allowMultiple, minSignatories, maxSignatories, requiredParties, collectPhone, collectTitle}
 
+  // UILM Translation Keys (for multi-language support via SELISE Blocks)
+  uilmTitleKey       String? // UILM key for translated screen title
+  uilmDescriptionKey String? // UILM key for translated screen description
+
   fields TemplateField[]
 
   createdAt DateTime @default(now())
@@ -81,6 +90,12 @@ model TemplateField {
   // AI Smart Suggestions - auto-fill from enrichment context
   aiSuggestionEnabled Boolean @default(false)
   aiSuggestionKey     String? // Key path in enrichmentContext (e.g., "suggestedEmail" or "Company Info.currency")
+
+  // UILM Translation Keys (for multi-language support via SELISE Blocks)
+  uilmLabelKey       String? // UILM key for translated field label
+  uilmPlaceholderKey String? // UILM key for translated placeholder text
+  uilmHelpTextKey    String? // UILM key for translated help text
+  uilmOptionsKeys    String[] @default([]) // UILM keys for translated select options (parallel array to options)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

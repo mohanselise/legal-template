@@ -24,7 +24,7 @@ import {
   Rocket
 } from "lucide-react";
 import { Link } from "@/i18n/routing";
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getMessages } from 'next-intl/server';
 import Image from "next/image";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { getAllTemplates } from "@/lib/templates-db";
@@ -32,9 +32,88 @@ import { getAllTemplates } from "@/lib/templates-db";
 export default async function Home() {
   const t = await getTranslations('home');
   const tTemplates = await getTranslations('templates');
+  const messages = await getMessages();
 
   // Fetch templates from database
   const templates = await getAllTemplates();
+
+  // Helper to safely get template translation with fallback to database value
+  // Priority: 1. UILM key (if configured), 2. Static translation key, 3. Database value
+  const getTemplateText = (
+    template: typeof templates[0],
+    field: 'title' | 'description'
+  ) => {
+    const slug = template.slug;
+    const fallback = field === 'title' ? template.title : template.description;
+    
+    // 1. Check for UILM key (for dynamically created templates)
+    const uilmKey = field === 'title' 
+      ? (template as any).uilmTitleKey 
+      : (template as any).uilmDescriptionKey;
+    
+    if (uilmKey) {
+      // UILM keys are stored in templates module - try to find them
+      // The UILM loader converts SNAKE_CASE to camelCase, so we need to check both
+      const templatesModule = (messages as any)?.templates;
+      if (templatesModule) {
+        // Try 1: Direct key lookup (original format - UILM loader also stores original)
+        if (templatesModule[uilmKey]) {
+          return templatesModule[uilmKey];
+        }
+        
+        // Try 2: camelCase version (UILM loader converts STUDENT_AGREEMENT_TITLE -> studentAgreementTitle)
+        const camelKey = uilmKey.toLowerCase().replace(/_([a-z0-9])/g, (g: string) => g[1].toUpperCase());
+        if (templatesModule[camelKey]) {
+          return templatesModule[camelKey];
+        }
+        
+        // Try 3: Lowercase with underscores (some variations)
+        const lowerKey = uilmKey.toLowerCase();
+        if (templatesModule[lowerKey]) {
+          return templatesModule[lowerKey];
+        }
+        
+        // Try 4: Check if key exists in nested structure (templatesList)
+        const templatesList = templatesModule.templatesList;
+        if (templatesList) {
+          // Check if there's a nested structure for this slug
+          const slugData = templatesList[slug];
+          if (slugData && slugData[field]) {
+            return slugData[field];
+          }
+        }
+        
+        // Debug: Log available keys for troubleshooting (only in dev)
+        if (process.env.NODE_ENV === 'development') {
+          const availableKeys = Object.keys(templatesModule).slice(0, 30);
+          const matchingKeys = availableKeys.filter(k => 
+            k.toLowerCase().includes(uilmKey.toLowerCase().split('_')[0])
+          );
+          console.log(`[UILM Debug] Template: ${slug}, Field: ${field}`);
+          console.log(`[UILM Debug] Looking for UILM key: "${uilmKey}"`);
+          console.log(`[UILM Debug] Tried: "${uilmKey}", "${camelKey}", "${lowerKey}"`);
+          console.log(`[UILM Debug] Available keys (first 30):`, availableKeys);
+          if (matchingKeys.length > 0) {
+            console.log(`[UILM Debug] Keys containing "${uilmKey.split('_')[0]}":`, matchingKeys);
+          }
+        }
+      } else {
+        // Debug: templates module not found
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[UILM Debug] templates module not found in messages for template: ${slug}`);
+        }
+      }
+    }
+    
+    // 2. Check for static translation key (for pre-defined templates)
+    const templatesMessages = (messages as any)?.templates?.templatesList?.[slug];
+    if (templatesMessages?.[field]) {
+      return tTemplates(`templatesList.${slug}.${field}`);
+    }
+    
+    // 3. Fallback to database value
+    return fallback;
+  };
 
   const features = [
     {
@@ -285,9 +364,9 @@ export default async function Home() {
                     <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg flex-shrink-0">
                       <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
                     </div>
-                    <CardTitle className="text-2xl flex-shrink-0 break-words hyphens-auto">{tTemplates(`templatesList.${template.slug}.title`)}</CardTitle>
+                    <CardTitle className="text-2xl flex-shrink-0 break-words hyphens-auto">{getTemplateText(template, 'title')}</CardTitle>
                     <CardDescription className="mt-3 text-base leading-relaxed break-words hyphens-auto">
-                      {tTemplates(`templatesList.${template.slug}.description`)}
+                      {getTemplateText(template, 'description')}
                     </CardDescription>
                   </CardHeader>
                   <CardFooter className="mt-auto pt-4 flex-shrink-0">

@@ -77,6 +77,36 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
     lineHeight: 1.5,
   },
+  
+  // Table styles
+  table: {
+    marginBottom: 12,
+    borderWidth: 0.5,
+    borderColor: '#d1d5db',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#d1d5db',
+  },
+  tableHeaderRow: {
+    flexDirection: 'row',
+    backgroundColor: '#f3f4f6',
+    borderBottomWidth: 1,
+    borderBottomColor: '#9ca3af',
+  },
+  tableCell: {
+    flex: 1,
+    padding: 6,
+    fontSize: 9,
+    fontFamily: 'Helvetica',
+  },
+  tableHeaderCell: {
+    flex: 1,
+    padding: 6,
+    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+  },
 });
 
 interface BlockRendererProps {
@@ -161,6 +191,41 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, level = 0 }
           <Text style={styles.definitionDef}>{text}</Text>
         </View>
       );
+
+    case 'table':
+      return (
+        <View style={styles.table}>
+          {children.map((child, index) => (
+            <BlockRenderer key={child.id || index} block={child} level={level + 1} />
+          ))}
+        </View>
+      );
+
+    case 'table_row':
+      const isHeader = props.header === true;
+      return (
+        <View style={isHeader ? styles.tableHeaderRow : styles.tableRow}>
+          {children.map((child, index) => (
+            <BlockRenderer 
+              key={child.id || index} 
+              block={{ ...child, props: { ...child.props, isHeader } }} 
+              level={level + 1} 
+            />
+          ))}
+        </View>
+      );
+
+    case 'table_cell':
+      return (
+        <Text style={props.isHeader ? styles.tableHeaderCell : styles.tableCell}>
+          {text}
+        </Text>
+      );
+
+    case 'page_break':
+      // Page breaks are handled at the document level, not in BlockRenderer
+      // This is a placeholder that returns null
+      return null;
 
     default:
       // Fallback for unknown blocks: just render children

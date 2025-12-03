@@ -1,4 +1,4 @@
-import { SIG_PAGE_LAYOUT, getSignatureBlockPosition } from './signature-layout';
+import { SIG_PAGE_LAYOUT, getSignatureBlockPosition, getSignaturePageNumber, calculateSignaturePages } from './signature-layout';
 
 // Calculate signature layout positions for employer (index 0) and employee (index 1)
 const employerBlockTop = getSignatureBlockPosition(0);
@@ -69,24 +69,45 @@ export interface SignatoryInfo {
   company?: string;
 }
 
+/**
+ * Generates signature field metadata for all signatories.
+ * 
+ * This function creates overlay position data that EXACTLY matches
+ * the PDF rendering positions from SignaturePage.tsx because both
+ * use the same getSignatureBlockPosition() function.
+ * 
+ * @param signatories Array of signatory info from AI-generated document
+ * @param numPages Total pages in the document (content pages, signature page(s) will be added)
+ * @returns Array of signature field metadata for overlay positioning
+ */
 export function generateSignatureFieldMetadata(
   signatories: SignatoryInfo[],
   numPages: number
 ): SignatureFieldMetadata[] {
-  const lastPage = numPages;
+  // Calculate content pages (everything before signature pages)
+  // If numPages already includes signature pages, we need to adjust
+  const signaturePageCount = calculateSignaturePages(signatories.length);
+  const contentPages = Math.max(1, numPages - signaturePageCount);
 
   return signatories.flatMap((signatory, index) => {
+    // Get the Y position for this signatory (handles pagination)
     const blockTop = getSignatureBlockPosition(index);
+    
+    // Get which page this signatory's block will appear on
+    const pageNumber = getSignaturePageNumber(index, contentPages);
     
     // Absolute X position relative to page
     const blockLeft = SIG_PAGE_LAYOUT.MARGIN_X;
     
+    // Create a sanitized party identifier for field IDs
+    const partyId = (signatory.party || 'signatory').replace(/\s+/g, '_').toLowerCase();
+    
     const signatureField: SignatureFieldMetadata = {
-      id: `sig-${index}-${signatory.party}`,
+      id: `sig-${index}-${partyId}`,
       type: 'signature',
-      party: signatory.party,
+      party: signatory.party || 'signatory',
       label: `${signatory.name} - Signature`,
-      pageNumber: lastPage,
+      pageNumber,
       signatoryIndex: index,
       x: blockLeft + SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET,
       y: blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET,
@@ -95,14 +116,14 @@ export function generateSignatureFieldMetadata(
     };
 
     const dateField: SignatureFieldMetadata = {
-      id: `date-${index}-${signatory.party}`,
+      id: `date-${index}-${partyId}`,
       type: 'date',
-      party: signatory.party,
+      party: signatory.party || 'signatory',
       label: 'Date',
-      pageNumber: lastPage,
+      pageNumber,
       signatoryIndex: index,
       x: blockLeft + SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET,
-      y: blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET, // Same Y as signature box start
+      y: blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET,
       width: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH,
       height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
     };

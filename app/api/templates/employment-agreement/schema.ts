@@ -35,13 +35,34 @@ export interface LegalDocument {
   signatories: SignatoryData[]; // Data for the signature page
 }
 
+/**
+ * Signatory data for signature pages
+ * The AI should extract this from form data and return appropriate signatories
+ * based on the document type and parties involved.
+ */
 export interface SignatoryData {
-  party: 'employer' | 'employee' | 'witness' | 'other';
+  /** 
+   * Party type - flexible string to support any document type:
+   * - Employment: 'employer', 'employee'
+   * - NDA: 'disclosingParty', 'receivingParty'
+   * - Contract: 'client', 'vendor', 'contractor'
+   * - Generic: 'witness', 'guarantor', 'other'
+   */
+  party: string;
+  /** Full legal name of the signatory */
   name: string;
+  /** Title or role (e.g., "CEO", "Software Engineer") */
   title?: string;
+  /** Display role for the signature block */
   role?: string;
+  /** Email address for signature notification */
   email?: string;
+  /** Phone number */
   phone?: string;
+  /** Company or organization name */
+  company?: string;
+  /** Signatory's address */
+  address?: string;
 }
 
 // ==========================================

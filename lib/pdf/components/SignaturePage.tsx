@@ -91,20 +91,47 @@ interface SignaturePageProps {
   signatories: SignatoryData[];
 }
 
+// Party type display name mapping
+const PARTY_LABELS: Record<string, string> = {
+  employer: 'EMPLOYER',
+  employee: 'EMPLOYEE',
+  witness: 'WITNESS',
+  guarantor: 'GUARANTOR',
+  contractor: 'CONTRACTOR',
+  client: 'CLIENT',
+  vendor: 'VENDOR',
+  disclosingParty: 'DISCLOSING PARTY',
+  receivingParty: 'RECEIVING PARTY',
+  disclosing_party: 'DISCLOSING PARTY',
+  receiving_party: 'RECEIVING PARTY',
+  other: 'SIGNATORY',
+};
+
 export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => {
   const getPartyLabel = (signatory: SignatoryData) => {
-    const upperParty = signatory.party?.toUpperCase();
-
-    if (signatory.party === 'employer') return 'EMPLOYER';
-    if (signatory.party === 'employee') return 'EMPLOYEE';
-    if (signatory.party === 'witness') return 'WITNESS';
-
-    if (upperParty && upperParty !== 'OTHER') {
-      return upperParty;
+    // Check known party types first
+    const knownLabel = PARTY_LABELS[signatory.party?.toLowerCase()];
+    if (knownLabel && knownLabel !== 'SIGNATORY') {
+      return knownLabel;
     }
 
+    // Use party as-is if it looks like a valid label
+    const upperParty = signatory.party?.toUpperCase();
+    if (upperParty && upperParty !== 'OTHER' && upperParty.length > 1) {
+      // Convert camelCase/snake_case to TITLE CASE
+      return upperParty
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/_/g, ' ')
+        .toUpperCase();
+    }
+
+    // Fall back to title/role
     if (signatory.title && signatory.title.trim().length > 0) {
       return signatory.title.trim().toUpperCase();
+    }
+
+    if (signatory.role && signatory.role.trim().length > 0) {
+      return signatory.role.trim().toUpperCase();
     }
 
     return 'SIGNATORY';
@@ -140,8 +167,10 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
             </Text>
             
             <Text style={styles.partyName}>{signatory.name}</Text>
-            {signatory.title && (
-              <Text style={styles.partyTitle}>{signatory.title}</Text>
+            {(signatory.title || signatory.company) && (
+              <Text style={styles.partyTitle}>
+                {[signatory.title, signatory.company].filter(Boolean).join(' • ')}
+              </Text>
             )}
 
             {/* Visual Signature Line */}

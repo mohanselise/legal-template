@@ -20,6 +20,9 @@ export const DEFAULT_PARTY_TYPES = [
   { value: "vendor", label: "Vendor", description: "Service provider or supplier" },
   { value: "witness", label: "Witness", description: "A witness to the agreement" },
   { value: "guarantor", label: "Guarantor", description: "A guarantor or co-signer" },
+  { value: "schoolRepresentative", label: "School Representative", description: "Official representative of the educational institution" },
+  { value: "student", label: "Student", description: "The student party" },
+  { value: "parent", label: "Parent/Guardian", description: "Parent or legal guardian" },
   { value: "other", label: "Other", description: "Other party type" },
 ] as const;
 
@@ -29,6 +32,42 @@ export interface PartyTypeConfig {
   value: string;
   label: string;
   description?: string;
+}
+
+// ============================================================================
+// Pre-defined Signatory Types
+// ============================================================================
+
+/** Field mapping for pre-filling signatory data from previous form steps */
+export interface SignatoryFieldMapping {
+  /** Target field on signatory (name, email, title, phone, company, address) */
+  targetField: "name" | "email" | "title" | "phone" | "company" | "address";
+  /** Source field name from form data (e.g., "studentEmail", "companyName") */
+  sourceField: string;
+  /** Optional screen ID to scope the source field lookup */
+  sourceScreenId?: string;
+}
+
+/** Pre-defined signatory slot configured by admin */
+export interface PredefinedSignatory {
+  /** Unique identifier for this slot */
+  id: string;
+  /** Party type for this signatory (from partyTypes) */
+  partyType: string;
+  /** Custom label for this signatory slot (e.g., "School Representative", "Student") */
+  label: string;
+  /** Description shown to the end user */
+  description?: string;
+  /** Whether this signatory is required */
+  required: boolean;
+  /** Whether the end user can remove this signatory */
+  canRemove: boolean;
+  /** Whether the end user can change the party type */
+  canChangePartyType: boolean;
+  /** Field mappings for pre-filling data from previous steps */
+  fieldMappings: SignatoryFieldMapping[];
+  /** Order in which this signatory appears */
+  order: number;
 }
 
 // ============================================================================
@@ -47,6 +86,10 @@ export interface SignatoryEntry {
   address?: string;
   /** Custom fields defined by admin */
   customFields?: Record<string, string>;
+  /** Reference to pre-defined signatory ID (if created from predefined slot) */
+  predefinedId?: string;
+  /** Whether this signatory was pre-filled from form data */
+  isPrefilled?: boolean;
 }
 
 /** Validation result for a signatory */
@@ -93,6 +136,11 @@ export interface SignatoryScreenConfig {
   // Required parties (at least one signatory must be of each type)
   requiredPartyTypes: string[];
 
+  // Pre-defined signatories (admin-configured slots)
+  // When set, the signatory screen will show these pre-defined slots
+  // instead of starting with blank signatories
+  predefinedSignatories: PredefinedSignatory[];
+
   // Standard fields to collect
   collectFields: {
     name: boolean;       // Always true, can't disable
@@ -112,6 +160,7 @@ export interface SignatoryScreenConfig {
     showPartyDescriptions: boolean;  // Show party type descriptions
     compactMode: boolean;            // Use compact card layout
     allowReordering: boolean;        // Allow drag-to-reorder signatories
+    showPredefinedLabels: boolean;   // Show custom labels for pre-defined signatories
   };
 }
 
@@ -133,6 +182,8 @@ export const DEFAULT_SIGNATORY_CONFIG: SignatoryScreenConfig = {
   maxSignatories: 10,
 
   requiredPartyTypes: [],
+  
+  predefinedSignatories: [], // Empty = use dynamic signatory creation
 
   collectFields: {
     name: true,
@@ -150,6 +201,7 @@ export const DEFAULT_SIGNATORY_CONFIG: SignatoryScreenConfig = {
     showPartyDescriptions: true,
     compactMode: false,
     allowReordering: true,
+    showPredefinedLabels: true,
   },
 };
 
@@ -170,6 +222,7 @@ export function parseSignatoryConfig(jsonString: string | null | undefined): Sig
     return {
       ...DEFAULT_SIGNATORY_CONFIG,
       ...parsed,
+      predefinedSignatories: parsed.predefinedSignatories || [],
       collectFields: {
         ...DEFAULT_SIGNATORY_CONFIG.collectFields,
         ...parsed.collectFields,
@@ -210,6 +263,109 @@ export function createBlankSignatory(partyType: string = "other"): SignatoryEntr
     address: "",
     customFields: {},
   };
+}
+
+/**
+ * Create a new pre-defined signatory configuration
+ */
+export function createPredefinedSignatory(
+  partyType: string,
+  label: string,
+  order: number
+): PredefinedSignatory {
+  return {
+    id: `predef_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    partyType,
+    label,
+    description: "",
+    required: true,
+    canRemove: false,
+    canChangePartyType: false,
+    fieldMappings: [],
+    order,
+  };
+}
+
+/**
+ * Apply field mappings to pre-fill signatory data from form data
+ */
+export function applyFieldMappings(
+  signatory: SignatoryEntry,
+  predefined: PredefinedSignatory,
+  formData: Record<string, unknown>
+): SignatoryEntry {
+  const updated = { ...signatory };
+  
+  for (const mapping of predefined.fieldMappings) {
+    const sourceValue = formData[mapping.sourceField];
+    if (sourceValue && typeof sourceValue === "string") {
+      updated[mapping.targetField] = sourceValue;
+    }
+  }
+  
+  return updated;
+}
+
+/**
+ * Initialize signatories from pre-defined configuration with field mappings applied
+ */
+export function initializeFromPredefined(
+  config: SignatoryScreenConfig,
+  formData: Record<string, unknown>
+): SignatoryEntry[] {
+  if (config.predefinedSignatories.length === 0) {
+    // No pre-defined signatories, use default behavior
+    return [];
+  }
+
+  // Sort by order and create signatories
+  const sorted = [...config.predefinedSignatories].sort((a, b) => a.order - b.order);
+  
+  return sorted.map(predefined => {
+    // Create a signatory with the pre-defined party type
+    const signatory = createBlankSignatory(predefined.partyType);
+    signatory.predefinedId = predefined.id;
+    
+    // Apply field mappings to pre-fill data
+    const withMappings = applyFieldMappings(signatory, predefined, formData);
+    
+    // Mark as pre-filled if any data was applied
+    const hasPrefilled = predefined.fieldMappings.some(
+      mapping => formData[mapping.sourceField]
+    );
+    withMappings.isPrefilled = hasPrefilled;
+    
+    return withMappings;
+  });
+}
+
+/**
+ * Get the pre-defined signatory config for a signatory entry
+ */
+export function getPredefinedConfig(
+  signatory: SignatoryEntry,
+  config: SignatoryScreenConfig
+): PredefinedSignatory | undefined {
+  if (!signatory.predefinedId) return undefined;
+  return config.predefinedSignatories.find(p => p.id === signatory.predefinedId);
+}
+
+/**
+ * Check if a signatory can be removed based on its pre-defined config
+ */
+export function canRemoveSignatory(
+  signatory: SignatoryEntry,
+  config: SignatoryScreenConfig,
+  totalCount: number
+): boolean {
+  // Check minimum count
+  if (totalCount <= config.minSignatories) return false;
+  
+  // Check pre-defined config
+  const predefined = getPredefinedConfig(signatory, config);
+  if (predefined && !predefined.canRemove) return false;
+  
+  return true;
 }
 
 /**

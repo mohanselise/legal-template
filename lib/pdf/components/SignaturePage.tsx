@@ -45,13 +45,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Helvetica-Bold',
   },
-  partyTitle: {
+  partyDetails: {
     position: 'absolute',
-    top: SIG_PAGE_LAYOUT.TITLE_Y,
+    top: SIG_PAGE_LAYOUT.DETAILS_Y,
     left: SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET,
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'Helvetica',
     color: '#64748b',
+  },
+  partyDetailLine: {
+    marginBottom: 2,
   },
   
   // Visual Lines (centered horizontally)
@@ -91,50 +94,87 @@ interface SignaturePageProps {
   signatories: SignatoryData[];
 }
 
-// Party type display name mapping
-const PARTY_LABELS: Record<string, string> = {
-  employer: 'EMPLOYER',
-  employee: 'EMPLOYEE',
-  witness: 'WITNESS',
-  guarantor: 'GUARANTOR',
-  contractor: 'CONTRACTOR',
-  client: 'CLIENT',
-  vendor: 'VENDOR',
-  disclosingParty: 'DISCLOSING PARTY',
-  receivingParty: 'RECEIVING PARTY',
-  disclosing_party: 'DISCLOSING PARTY',
-  receiving_party: 'RECEIVING PARTY',
-  other: 'SIGNATORY',
-};
-
 export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => {
-  const getPartyLabel = (signatory: SignatoryData) => {
-    // Check known party types first
-    const knownLabel = PARTY_LABELS[signatory.party?.toLowerCase()];
-    if (knownLabel && knownLabel !== 'SIGNATORY') {
-      return knownLabel;
+  /**
+   * Format any party type string for display
+   * Converts camelCase, snake_case, kebab-case → TITLE CASE
+   * 
+   * Examples:
+   *   "disclosingParty" → "DISCLOSING PARTY"
+   *   "receiving_party" → "RECEIVING PARTY"
+   *   "service-provider" → "SERVICE PROVIDER"
+   *   "EMPLOYER" → "EMPLOYER"
+   */
+  const formatPartyType = (party: string): string => {
+    return party
+      .replace(/([a-z])([A-Z])/g, '$1 $2')  // camelCase → camel Case
+      .replace(/[_-]/g, ' ')                 // snake_case/kebab-case → spaces
+      .toUpperCase()
+      .trim();
+  };
+
+  /**
+   * Get the display label for a signatory's party type
+   * Uses AI-provided party type directly, with smart fallbacks
+   * Priority: formatted party → title → role → company → "SIGNATORY"
+   */
+  const getPartyLabel = (signatory: SignatoryData): string => {
+    const party = signatory.party?.trim();
+    
+    // 1. Use the party type from AI (skip generic "other")
+    if (party && party.toLowerCase() !== 'other' && party.length > 1) {
+      return formatPartyType(party);
     }
 
-    // Use party as-is if it looks like a valid label
-    const upperParty = signatory.party?.toUpperCase();
-    if (upperParty && upperParty !== 'OTHER' && upperParty.length > 1) {
-      // Convert camelCase/snake_case to TITLE CASE
-      return upperParty
-        .replace(/([a-z])([A-Z])/g, '$1 $2')
-        .replace(/_/g, ' ')
-        .toUpperCase();
-    }
-
-    // Fall back to title/role
+    // 2. Fall back to title if meaningful
     if (signatory.title && signatory.title.trim().length > 0) {
       return signatory.title.trim().toUpperCase();
     }
 
+    // 3. Fall back to role if meaningful
     if (signatory.role && signatory.role.trim().length > 0) {
       return signatory.role.trim().toUpperCase();
     }
 
+    // 4. Fall back to company name
+    if (signatory.company && signatory.company.trim().length > 0) {
+      return `FOR ${signatory.company.trim().toUpperCase()}`;
+    }
+
+    // 5. Default fallback
     return 'SIGNATORY';
+  };
+
+  /**
+   * Build the detail lines to show under the signatory name
+   * Shows: title/role, company, email (if available and appropriate)
+   */
+  const getDetailLines = (signatory: SignatoryData): string[] => {
+    const lines: string[] = [];
+    
+    // Line 1: Title and/or Company
+    const titleCompanyParts: string[] = [];
+    if (signatory.title && signatory.title.trim()) {
+      titleCompanyParts.push(signatory.title.trim());
+    }
+    if (signatory.company && signatory.company.trim()) {
+      titleCompanyParts.push(signatory.company.trim());
+    }
+    if (titleCompanyParts.length > 0) {
+      lines.push(titleCompanyParts.join(' • '));
+    }
+
+    // Line 2: Address (if available)
+    if (signatory.address && signatory.address.trim()) {
+      lines.push(signatory.address.trim());
+    }
+
+    // Line 3: Email (useful for identification)
+    if (signatory.email && signatory.email.trim()) {
+      lines.push(signatory.email.trim());
+    }
+
+    return lines;
   };
 
   return (
@@ -150,6 +190,7 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
       {/* Absolute Positioned Signature Blocks */}
       {signatories.map((signatory, index) => {
         const blockTop = getSignatureBlockPosition(index);
+        const detailLines = getDetailLines(signatory);
         
         return (
           <View 
@@ -162,15 +203,23 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
               height: SIG_PAGE_LAYOUT.BLOCK_HEIGHT,
             }}
           >
+            {/* Party Type Label (e.g., EMPLOYER, DISCLOSING PARTY) */}
             <Text style={styles.partyLabel}>
               {getPartyLabel(signatory)}
             </Text>
             
+            {/* Signatory Name */}
             <Text style={styles.partyName}>{signatory.name}</Text>
-            {(signatory.title || signatory.company) && (
-              <Text style={styles.partyTitle}>
-                {[signatory.title, signatory.company].filter(Boolean).join(' • ')}
-              </Text>
+            
+            {/* Additional Details (title, company, email, etc.) */}
+            {detailLines.length > 0 && (
+              <View style={styles.partyDetails}>
+                {detailLines.map((line, lineIndex) => (
+                  <Text key={lineIndex} style={styles.partyDetailLine}>
+                    {line}
+                  </Text>
+                ))}
+              </View>
             )}
 
             {/* Visual Signature Line */}

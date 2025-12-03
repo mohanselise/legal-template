@@ -203,7 +203,7 @@ export function FieldList({ screen, allScreens = [], onFieldsUpdated }: FieldLis
         </CardHeader>
         <CardContent>
           {isSignatoryScreen ? (
-            <SignatoryInfoManager screen={screen} onFieldsUpdated={onFieldsUpdated} />
+            <SignatoryInfoManager screen={screen} allScreens={allScreens} onConfigUpdated={onFieldsUpdated} />
           ) : (
             screen.fields.length === 0 ? (
             <div className="text-center py-12 text-[hsl(var(--globe-grey))] border-2 border-dashed border-[hsl(var(--border))] rounded-lg">

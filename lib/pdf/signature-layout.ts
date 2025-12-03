@@ -26,8 +26,8 @@ export const SIG_PAGE_LAYOUT = {
   
   // Internal Element Offsets (Relative to Block Top)
   LABEL_Y: 0,         // Party label (e.g., "EMPLOYER", "DISCLOSING PARTY")
-  NAME_Y: 15,         // Signatory Name
-  TITLE_Y: 30,        // Signatory Title/Company
+  NAME_Y: 12,         // Signatory Name
+  DETAILS_Y: 26,      // Details section (title, company, email, address)
   
   // Visual Lines (The underline)
   LINE_Y: 80,         

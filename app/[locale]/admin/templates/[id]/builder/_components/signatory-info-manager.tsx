@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Plus,
   User,
@@ -58,23 +58,58 @@ import {
   parseSignatoryConfig,
   stringifySignatoryConfig,
 } from "@/lib/templates/signatory-config";
+import { SignatoryConfigEditor } from "./signatory-config-editor";
 
 interface ScreenWithFields extends TemplateScreen {
   fields: TemplateField[];
 }
 
+interface AvailableField {
+  name: string;
+  label: string;
+  screenTitle: string;
+  screenId: string;
+  type: string;
+}
+
 interface SignatoryInfoManagerProps {
   screen: ScreenWithFields;
+  allScreens?: ScreenWithFields[];
   onConfigUpdated: () => void;
 }
 
-export function SignatoryInfoManager({ screen, onConfigUpdated }: SignatoryInfoManagerProps) {
+export function SignatoryInfoManager({ screen, allScreens = [], onConfigUpdated }: SignatoryInfoManagerProps) {
   const [config, setConfig] = useState<SignatoryScreenConfig>(DEFAULT_SIGNATORY_CONFIG);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["parties", "fields"])
+    new Set(["predefined", "parties", "fields"])
   );
+
+  // Compute available form fields from previous screens
+  const availableFields: AvailableField[] = useMemo(() => {
+    const fields: AvailableField[] = [];
+    
+    const previousScreens = allScreens
+      .filter((s) => s.order < screen.order)
+      .sort((a, b) => a.order - b.order);
+
+    previousScreens.forEach((prevScreen) => {
+      if (prevScreen.fields && prevScreen.fields.length > 0) {
+        prevScreen.fields.forEach((field: TemplateField) => {
+          fields.push({
+            screenTitle: prevScreen.title,
+            screenId: prevScreen.id,
+            name: field.name,
+            label: field.label,
+            type: field.type,
+          });
+        });
+      }
+    });
+
+    return fields;
+  }, [allScreens, screen.order]);
 
   // Custom field editor
   const [customFieldDialogOpen, setCustomFieldDialogOpen] = useState(false);
@@ -111,11 +146,14 @@ export function SignatoryInfoManager({ screen, onConfigUpdated }: SignatoryInfoM
   const handleSave = async () => {
     setSaving(true);
     try {
+      const configJson = stringifySignatoryConfig(config);
+      console.log("[SignatoryInfoManager] Saving config with", config.predefinedSignatories.length, "predefined signatories");
+      
       const response = await fetch(`/api/admin/templates/${screen.templateId}/screens/${screen.id}`, {
         method: "PATCH",
           headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          signatoryConfig: stringifySignatoryConfig(config),
+          signatoryConfig: configJson,
         }),
         });
 
@@ -292,7 +330,29 @@ export function SignatoryInfoManager({ screen, onConfigUpdated }: SignatoryInfoM
             Users can add multiple signatories with party types, names, emails, and optional fields.
           </p>
         </div>
-        </div>
+      </div>
+
+      {/* Pre-defined Signatories Section */}
+      <Card className="border border-[hsl(var(--border))] overflow-hidden">
+        {renderSectionHeader(
+          "predefined",
+          "Pre-defined Signatories",
+          "Configure fixed signatory slots with pre-filled data",
+          <Users className="h-4 w-4" />
+        )}
+        {expandedSections.has("predefined") && (
+          <CardContent className="p-4 pt-0 space-y-4 border-t border-[hsl(var(--border))]">
+            <SignatoryConfigEditor
+              config={config}
+              onChange={(newConfig) => {
+                setConfig(newConfig);
+                setHasChanges(true);
+              }}
+              availableFields={availableFields}
+            />
+          </CardContent>
+        )}
+      </Card>
 
       {/* Party Types Section */}
       <Card className="border border-[hsl(var(--border))] overflow-hidden">

@@ -15,6 +15,8 @@ const updateScreenSchema = z.object({
   // Dynamic screen fields
   dynamicPrompt: z.string().nullable().optional(),
   dynamicMaxFields: z.number().int().min(1).max(20).nullable().optional(),
+  // Signatory screen configuration (JSON string)
+  signatoryConfig: z.string().nullable().optional(),
 });
 
 /**

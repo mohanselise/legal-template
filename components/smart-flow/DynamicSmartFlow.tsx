@@ -931,6 +931,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                       value={(formData.signatories as SignatoryEntry[]) || []}
                       onChange={(signatories) => setFieldValue("signatories", signatories)}
                       errors={errors}
+                      formData={formData}
                     />
                   ) : (
                     /* Standard Screen: Show regular fields */

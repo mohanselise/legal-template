@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles, Wand2, ChevronDown, ChevronUp, Info } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -28,16 +29,27 @@ import type { TemplateScreen } from "@/lib/db";
 const screenSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  type: z.enum(["standard", "signatory"]).default("standard"),
+  type: z.enum(["standard", "signatory", "dynamic"]).default("standard"),
+  // Dynamic screen configuration
+  dynamicPrompt: z.string().optional(),
+  dynamicMaxFields: z.number().int().min(1).max(20).optional().default(5),
 });
 
 type ScreenFormData = z.infer<typeof screenSchema>;
+
+// Interface for available variables from previous screens
+interface AvailableVariable {
+  name: string;
+  screenTitle: string;
+  source: "field" | "enrichment";
+}
 
 interface ScreenEditorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   templateId: string;
   screen: TemplateScreen | null;
+  allScreens?: TemplateScreen[]; // All screens to compute available variables
   onSaved: () => void;
 }
 
@@ -46,10 +58,12 @@ export function ScreenEditor({
   onOpenChange,
   templateId,
   screen,
+  allScreens = [],
   onSaved,
 }: ScreenEditorProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dynamicConfigExpanded, setDynamicConfigExpanded] = useState(false);
 
   const {
     register,
@@ -64,8 +78,58 @@ export function ScreenEditor({
       title: "",
       description: "",
       type: "standard",
+      dynamicPrompt: "",
+      dynamicMaxFields: 5,
     },
   });
+
+  const screenType = watch("type");
+
+  // Compute available variables from previous screens
+  const availableVariables = useMemo(() => {
+    const variables: AvailableVariable[] = [];
+    
+    // Get the order of current screen (or last position if new screen)
+    const currentOrder = screen?.order ?? allScreens.length;
+    
+    // Get previous screens
+    const previousScreens = allScreens
+      .filter((s) => s.order < currentOrder)
+      .sort((a, b) => a.order - b.order);
+    
+    previousScreens.forEach((prevScreen) => {
+      // Add field variables
+      if ((prevScreen as any).fields) {
+        ((prevScreen as any).fields as any[]).forEach((field) => {
+          variables.push({
+            name: field.name,
+            screenTitle: prevScreen.title,
+            source: "field",
+          });
+        });
+      }
+      
+      // Add enrichment context variables from AI output schema
+      if (prevScreen.aiOutputSchema) {
+        try {
+          const schema = JSON.parse(prevScreen.aiOutputSchema);
+          if (schema.properties) {
+            Object.keys(schema.properties).forEach((key) => {
+              variables.push({
+                name: key,
+                screenTitle: prevScreen.title,
+                source: "enrichment",
+              });
+            });
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    });
+    
+    return variables;
+  }, [allScreens, screen?.order]);
 
   // Reset form when dialog opens/closes or screen changes
   useEffect(() => {
@@ -73,11 +137,21 @@ export function ScreenEditor({
       reset({
         title: screen?.title || "",
         description: screen?.description || "",
-        type: (screen as any)?.type || "standard",
+        type: ((screen as any)?.type as "standard" | "signatory" | "dynamic") || "standard",
+        dynamicPrompt: (screen as any)?.dynamicPrompt || "",
+        dynamicMaxFields: (screen as any)?.dynamicMaxFields ?? 5,
       });
       setError(null);
+      // Expand dynamic config section if it's a dynamic screen
+      setDynamicConfigExpanded((screen as any)?.type === "dynamic");
     }
   }, [open, screen, reset]);
+
+  // Insert variable into dynamic prompt at cursor position
+  const insertVariable = (varName: string) => {
+    const currentPrompt = watch("dynamicPrompt") || "";
+    setValue("dynamicPrompt", currentPrompt + `{{${varName}}}`, { shouldDirty: true });
+  };
 
   const onSubmit = async (data: ScreenFormData) => {
     setSaving(true);
@@ -88,10 +162,27 @@ export function ScreenEditor({
         ? `/api/admin/templates/${templateId}/screens/${screen.id}`
         : `/api/admin/templates/${templateId}/screens`;
 
+      // Prepare payload with dynamic fields
+      const payload: Record<string, unknown> = {
+        title: data.title,
+        description: data.description,
+        type: data.type,
+      };
+
+      // Include dynamic screen configuration if type is dynamic
+      if (data.type === "dynamic") {
+        payload.dynamicPrompt = data.dynamicPrompt || null;
+        payload.dynamicMaxFields = data.dynamicMaxFields ?? 5;
+      } else {
+        // Clear dynamic fields for non-dynamic screens
+        payload.dynamicPrompt = null;
+        payload.dynamicMaxFields = null;
+      }
+
       const response = await fetch(url, {
         method: screen ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -109,7 +200,7 @@ export function ScreenEditor({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>
@@ -153,7 +244,12 @@ export function ScreenEditor({
               <Label htmlFor="type">Screen Type</Label>
               <Select
                 value={watch("type")}
-                onValueChange={(value) => setValue("type", value as "standard" | "signatory")}
+                onValueChange={(value) => {
+                  setValue("type", value as "standard" | "signatory" | "dynamic");
+                  if (value === "dynamic") {
+                    setDynamicConfigExpanded(true);
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select screen type" />
@@ -161,11 +257,19 @@ export function ScreenEditor({
                 <SelectContent>
                   <SelectItem value="standard">Standard</SelectItem>
                   <SelectItem value="signatory">Signatory Information</SelectItem>
+                  <SelectItem value="dynamic">
+                    <div className="flex items-center gap-2">
+                      <Wand2 className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+                      <span>Dynamic AI Screen</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-[hsl(var(--globe-grey))]">
-                {watch("type") === "signatory"
+                {screenType === "signatory"
                   ? "Special screen for collecting signatory information (name, email, title, etc.)"
+                  : screenType === "dynamic"
+                  ? "AI-generated form fields based on context from previous steps"
                   : "Regular form screen with custom fields"}
               </p>
               {errors.type && (
@@ -175,7 +279,114 @@ export function ScreenEditor({
               )}
             </div>
 
+            {/* Dynamic Screen Configuration */}
+            {screenType === "dynamic" && (
+              <div className="border border-[hsl(var(--selise-blue))]/30 rounded-lg overflow-hidden bg-[hsl(var(--selise-blue))]/5">
+                <button
+                  type="button"
+                  onClick={() => setDynamicConfigExpanded(!dynamicConfigExpanded)}
+                  className="w-full flex items-center justify-between p-3 hover:bg-[hsl(var(--selise-blue))]/10 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Wand2 className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+                    <span className="font-medium text-sm text-[hsl(var(--fg))]">
+                      Dynamic Screen Configuration
+                    </span>
+                    {watch("dynamicPrompt") && (
+                      <Badge 
+                        variant="secondary" 
+                        className="text-xs bg-[hsl(var(--selise-blue))]/20 text-[hsl(var(--selise-blue))]"
+                      >
+                        Configured
+                      </Badge>
+                    )}
+                  </div>
+                  {dynamicConfigExpanded ? (
+                    <ChevronUp className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                  )}
+                </button>
 
+                {dynamicConfigExpanded && (
+                  <div className="p-4 space-y-4 border-t border-[hsl(var(--selise-blue))]/20">
+                    {/* Info Box */}
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-[hsl(var(--selise-blue))]/10">
+                      <Info className="h-4 w-4 text-[hsl(var(--selise-blue))] mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-[hsl(var(--fg))]">
+                        This screen will generate form fields dynamically using AI based on your prompt. 
+                        Use <code className="px-1 py-0.5 bg-[hsl(var(--bg))] rounded text-[hsl(var(--selise-blue))]">{"{{variableName}}"}</code> to 
+                        reference values from previous steps.
+                      </p>
+                    </div>
+
+                    {/* AI Prompt */}
+                    <div className="space-y-2">
+                      <Label htmlFor="dynamicPrompt" className="text-sm font-medium">
+                        AI Prompt for Field Generation *
+                      </Label>
+                      <textarea
+                        id="dynamicPrompt"
+                        {...register("dynamicPrompt")}
+                        placeholder="e.g., Based on {{jurisdiction}}, what additional questions should we ask for drafting an NDA for {{purpose}}?"
+                        className="w-full min-h-[100px] p-3 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--bg))] text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[hsl(var(--selise-blue))] focus:border-transparent"
+                      />
+                      <p className="text-xs text-[hsl(var(--globe-grey))]">
+                        The AI will generate relevant form fields based on this prompt and context from previous steps.
+                      </p>
+                    </div>
+
+                    {/* Max Fields */}
+                    <div className="space-y-2">
+                      <Label htmlFor="dynamicMaxFields" className="text-sm font-medium">
+                        Maximum Fields to Generate
+                      </Label>
+                      <Input
+                        id="dynamicMaxFields"
+                        type="number"
+                        min={1}
+                        max={20}
+                        {...register("dynamicMaxFields", { valueAsNumber: true })}
+                        className="w-32"
+                      />
+                      <p className="text-xs text-[hsl(var(--globe-grey))]">
+                        Limit the number of fields the AI can generate (1-20).
+                      </p>
+                    </div>
+
+                    {/* Available Variables */}
+                    {availableVariables.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-[hsl(var(--globe-grey))] uppercase tracking-wider">
+                          Available Variables from Previous Steps
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {availableVariables.map((v, idx) => (
+                            <Badge
+                              key={idx}
+                              variant="outline"
+                              className="cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] hover:border-[hsl(var(--selise-blue))] transition-colors"
+                              onClick={() => insertVariable(v.name)}
+                            >
+                              {v.source === "enrichment" ? (
+                                <Sparkles className="h-3 w-3 mr-1 text-[hsl(var(--selise-blue))]" />
+                              ) : null}
+                              {v.name}
+                              <span className="ml-1 text-[10px] opacity-50">
+                                ({v.screenTitle})
+                              </span>
+                            </Badge>
+                          ))}
+                        </div>
+                        <p className="text-xs text-[hsl(var(--globe-grey))] italic">
+                          Click a variable to insert it into your prompt.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {error && (
               <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">

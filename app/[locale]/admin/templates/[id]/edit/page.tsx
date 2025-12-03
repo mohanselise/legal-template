@@ -922,6 +922,7 @@ export default function EditTemplatePage() {
         onOpenChange={setScreenEditorOpen}
         templateId={templateId}
         screen={editingScreen}
+        allScreens={screens}
         onSaved={handleScreenSaved}
       />
 

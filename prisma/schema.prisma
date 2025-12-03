@@ -42,10 +42,14 @@ model TemplateScreen {
 
   title       String     // e.g., "Company Information"
   description String?    // Optional helper text
-  type        ScreenType @default(standard) // Screen type: standard or signatory
+  type        ScreenType @default(standard) // Screen type: standard, signatory, or dynamic
   order       Int        // Display order (0, 1, 2...)
   aiPrompt    String?    @db.Text // AI prompt to run on step completion
   aiOutputSchema String? @db.Text // JSON schema for AI output
+  
+  // Dynamic screen configuration (for type=dynamic)
+  dynamicPrompt     String? @db.Text // AI prompt to generate form fields on-the-fly
+  dynamicMaxFields  Int?    @default(5) // Maximum number of fields to generate
 
   fields TemplateField[]
 
@@ -96,6 +100,7 @@ enum FieldType {
 enum ScreenType {
   standard  // Regular form screen with fields
   signatory // Special screen for collecting signatory information
+  dynamic   // AI-generated screen with fields created on-the-fly
 }
 
 // System settings for global configuration

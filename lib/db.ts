@@ -59,7 +59,7 @@ export type {
 } from "./generated/prisma/client";
 
 // Export enums
-export { FieldType } from "./generated/prisma/client";
+export { FieldType, ScreenType } from "./generated/prisma/client";
 
 // Export Prisma namespace for type utilities
 export { Prisma } from "./generated/prisma/client";

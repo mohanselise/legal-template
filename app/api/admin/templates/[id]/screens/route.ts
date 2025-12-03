@@ -2,14 +2,19 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { $Enums } from "@/lib/generated/prisma/client";
 
 // Schema for creating a screen
 const createScreenSchema = z.object({
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  type: z.enum(["standard", "signatory"]).default("standard"),
+  type: z.enum(["standard", "signatory", "dynamic"]).default("standard"),
   order: z.number().int().min(0).optional(),
   aiPrompt: z.string().optional(),
+  aiOutputSchema: z.string().optional(),
+  // Dynamic screen fields
+  dynamicPrompt: z.string().nullable().optional(),
+  dynamicMaxFields: z.number().int().min(1).max(20).nullable().optional(),
 });
 
 // Schema for reordering screens
@@ -103,7 +108,7 @@ export async function POST(
       );
     }
 
-    const { title, description, type, order, aiPrompt } = validation.data;
+    const { title, description, type, order, aiPrompt, aiOutputSchema, dynamicPrompt, dynamicMaxFields } = validation.data;
 
     // If order not provided, add to end
     let finalOrder = order;
@@ -117,14 +122,20 @@ export async function POST(
 
     // Create screen without include to avoid implicit transaction
     // (Neon HTTP adapter does not support transactions)
+    const screenType = (type || "standard") as $Enums.ScreenType;
+    const isDynamic = screenType === $Enums.ScreenType.dynamic;
     const screen = await prisma.templateScreen.create({
       data: {
         templateId,
         title,
         description,
-        type: type || "standard",
+        type: screenType,
         order: finalOrder,
         aiPrompt,
+        aiOutputSchema,
+        // Dynamic screen configuration
+        dynamicPrompt: isDynamic ? dynamicPrompt : null,
+        dynamicMaxFields: isDynamic ? (dynamicMaxFields ?? 5) : null,
       },
     });
 

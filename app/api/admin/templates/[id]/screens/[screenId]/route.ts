@@ -2,15 +2,19 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { $Enums } from "@/lib/generated/prisma/client";
 
 // Schema for updating a screen
 const updateScreenSchema = z.object({
   title: z.string().min(1, "Title is required").optional(),
   description: z.string().nullable().optional(),
-  type: z.enum(["standard", "signatory"]).optional(),
+  type: z.enum(["standard", "signatory", "dynamic"]).optional(),
   order: z.number().int().min(0).optional(),
   aiPrompt: z.string().nullable().optional(),
   aiOutputSchema: z.string().nullable().optional(),
+  // Dynamic screen fields
+  dynamicPrompt: z.string().nullable().optional(),
+  dynamicMaxFields: z.number().int().min(1).max(20).nullable().optional(),
 });
 
 /**
@@ -89,9 +93,15 @@ export async function PATCH(
 
     // Update screen without include to avoid implicit transaction
     // (Neon HTTP adapter does not support transactions)
+    // Transform type to ScreenType enum if provided
+    const updateData: Record<string, unknown> = { ...validation.data };
+    if (validation.data.type) {
+      updateData.type = validation.data.type as $Enums.ScreenType;
+    }
+    
     await prisma.templateScreen.update({
       where: { id: screenId },
-      data: validation.data,
+      data: updateData,
     });
 
     // Fetch updated screen with fields in separate query

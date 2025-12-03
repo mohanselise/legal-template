@@ -10,6 +10,7 @@ import {
   Sparkles,
   AlertTriangle,
   Loader2,
+  Wand2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -69,6 +70,21 @@ type AiEnrichmentIndicatorState =
   | { status: "running"; screenTitle?: string }
   | { status: "error"; message: string; screenTitle?: string };
 
+// Type for dynamically generated fields
+interface DynamicField {
+  id: string;
+  name: string;
+  label: string;
+  type: string;
+  required: boolean;
+  placeholder?: string;
+  helpText?: string;
+  options: string[];
+}
+
+// Cache for generated dynamic fields per screen
+type DynamicFieldsCache = Record<string, DynamicField[]>;
+
 function cloneFormData<T extends Record<string, unknown>>(data: T): T {
   try {
     return structuredClone(data);
@@ -113,6 +129,12 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   const isNavigatingRef = useRef(false);
   const aiEnrichmentPendingCount = useRef(0);
   const aiEnrichmentResetTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Dynamic screen state
+  const [dynamicFieldsCache, setDynamicFieldsCache] = useState<DynamicFieldsCache>({});
+  const [dynamicFieldsLoading, setDynamicFieldsLoading] = useState(false);
+  const [dynamicFieldsError, setDynamicFieldsError] = useState<string | null>(null);
+  const dynamicFieldsFetchedRef = useRef<Set<string>>(new Set());
 
   // Animate through generation steps
   useEffect(() => {
@@ -168,6 +190,72 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
       }
     };
   }, []);
+
+  // Fetch dynamic fields when entering a dynamic screen
+  useEffect(() => {
+    const screen = config?.screens[currentStep];
+    if (!screen) return;
+
+    // Check if this is a dynamic screen
+    const screenType = (screen as any).type;
+    const dynamicPrompt = (screen as any).dynamicPrompt;
+    const dynamicMaxFields = (screen as any).dynamicMaxFields || 5;
+
+    if (screenType !== "dynamic" || !dynamicPrompt) return;
+
+    // Check if we already have cached fields for this screen
+    if (dynamicFieldsCache[screen.id]) return;
+
+    // Check if we already fetched for this screen (avoid double-fetch)
+    if (dynamicFieldsFetchedRef.current.has(screen.id)) return;
+    dynamicFieldsFetchedRef.current.add(screen.id);
+
+    // Fetch dynamic fields
+    const fetchDynamicFields = async () => {
+      setDynamicFieldsLoading(true);
+      setDynamicFieldsError(null);
+
+      try {
+        console.log("🔮 Generating dynamic fields for screen:", screen.title);
+        const response = await fetch("/api/ai/generate-dynamic-fields", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: dynamicPrompt,
+            formData: cloneFormData(formData),
+            enrichmentContext: cloneFormData(enrichmentContext),
+            maxFields: dynamicMaxFields,
+            screenTitle: screen.title,
+            screenDescription: screen.description,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Failed to generate dynamic fields");
+        }
+
+        const result = await response.json();
+        console.log("✅ Dynamic fields generated:", result.fields);
+
+        setDynamicFieldsCache((prev) => ({
+          ...prev,
+          [screen.id]: result.fields,
+        }));
+      } catch (error) {
+        console.error("❌ Dynamic field generation error:", error);
+        setDynamicFieldsError(
+          error instanceof Error ? error.message : "Failed to generate fields"
+        );
+        // Remove from fetched set so user can retry
+        dynamicFieldsFetchedRef.current.delete(screen.id);
+      } finally {
+        setDynamicFieldsLoading(false);
+      }
+    };
+
+    fetchDynamicFields();
+  }, [config, currentStep, formData, enrichmentContext, dynamicFieldsCache]);
 
   if (!config) {
     return (
@@ -734,17 +822,120 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
                 {/* Fields */}
                 <div className="space-y-6">
-                  {currentScreen?.fields.map((field) => (
-                    <DynamicField
-                      key={field.id}
-                      field={field as FieldConfig}
-                      value={formData[field.name]}
-                      onChange={setFieldValue}
-                      error={errors[field.name]}
-                      enrichmentContext={enrichmentContext}
-                      formData={formData}
-                    />
-                  ))}
+                  {/* Dynamic Screen: Show loading or generated fields */}
+                  {(currentScreen as any)?.type === "dynamic" ? (
+                    <>
+                      {dynamicFieldsLoading && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex flex-col items-center justify-center py-12 space-y-4"
+                        >
+                          <div className="relative">
+                            <div className="h-16 w-16 rounded-full border-4 border-[hsl(var(--selise-blue))]/20" />
+                            <motion.div
+                              className="absolute inset-0 h-16 w-16 rounded-full border-4 border-transparent border-t-[hsl(var(--selise-blue))]"
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            />
+                            <Wand2 className="absolute inset-0 m-auto h-6 w-6 text-[hsl(var(--selise-blue))]" />
+                          </div>
+                          <div className="text-center">
+                            <p className="font-medium text-[hsl(var(--fg))]">
+                              Generating smart questions...
+                            </p>
+                            <p className="text-sm text-[hsl(var(--brand-muted))] mt-1">
+                              AI is analyzing your context to create relevant questions
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {dynamicFieldsError && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex flex-col items-center justify-center py-8 space-y-4"
+                        >
+                          <div className="h-16 w-16 rounded-full bg-red-50 flex items-center justify-center">
+                            <AlertTriangle className="h-8 w-8 text-red-500" />
+                          </div>
+                          <div className="text-center">
+                            <p className="font-medium text-red-600">
+                              Failed to generate questions
+                            </p>
+                            <p className="text-sm text-[hsl(var(--brand-muted))] mt-1">
+                              {dynamicFieldsError}
+                            </p>
+                            <button
+                              onClick={() => {
+                                // Allow retry by removing from cache and ref
+                                dynamicFieldsFetchedRef.current.delete(currentScreen.id);
+                                setDynamicFieldsError(null);
+                                setDynamicFieldsCache((prev) => {
+                                  const newCache = { ...prev };
+                                  delete newCache[currentScreen.id];
+                                  return newCache;
+                                });
+                              }}
+                              className="mt-4 px-4 py-2 text-sm font-medium text-[hsl(var(--selise-blue))] border border-[hsl(var(--selise-blue))] rounded-lg hover:bg-[hsl(var(--selise-blue))]/5 transition-colors"
+                            >
+                              Try Again
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {!dynamicFieldsLoading && !dynamicFieldsError && dynamicFieldsCache[currentScreen.id] && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="space-y-6"
+                        >
+                          {/* AI Generated Badge */}
+                          <div className="flex items-center gap-2 text-xs text-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/5 px-3 py-2 rounded-lg border border-[hsl(var(--selise-blue))]/20">
+                            <Wand2 className="h-3.5 w-3.5" />
+                            <span>AI-generated questions based on your context</span>
+                          </div>
+                          
+                          {dynamicFieldsCache[currentScreen.id].map((field) => (
+                            <DynamicField
+                              key={field.id}
+                              field={{
+                                ...field,
+                                type: field.type as any,
+                              } as FieldConfig}
+                              value={formData[field.name]}
+                              onChange={setFieldValue}
+                              error={errors[field.name]}
+                              enrichmentContext={enrichmentContext}
+                              formData={formData}
+                            />
+                          ))}
+                        </motion.div>
+                      )}
+
+                      {/* Show nothing while waiting but no error */}
+                      {!dynamicFieldsLoading && !dynamicFieldsError && !dynamicFieldsCache[currentScreen.id] && (
+                        <div className="py-8 text-center text-[hsl(var(--brand-muted))]">
+                          <p>Preparing dynamic questions...</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    /* Standard/Signatory Screen: Show regular fields */
+                    currentScreen?.fields.map((field) => (
+                      <DynamicField
+                        key={field.id}
+                        field={field as FieldConfig}
+                        value={formData[field.name]}
+                        onChange={setFieldValue}
+                        error={errors[field.name]}
+                        enrichmentContext={enrichmentContext}
+                        formData={formData}
+                      />
+                    ))
+                  )}
                 </div>
 
                 {/* Navigation Buttons */}
@@ -765,11 +956,21 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                   {currentStep < totalSteps - 1 ? (
                     <Button
                       onClick={handleContinue}
+                      disabled={dynamicFieldsLoading || ((currentScreen as any)?.type === "dynamic" && !dynamicFieldsCache[currentScreen?.id || ""])}
                       className="flex items-center gap-3 px-8 py-4"
                       size="lg"
                     >
-                      Continue
-                      <ArrowRight className="w-5 h-5" />
+                      {dynamicFieldsLoading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          Continue
+                          <ArrowRight className="w-5 h-5" />
+                        </>
+                      )}
                     </Button>
                   ) : (
                     <Button

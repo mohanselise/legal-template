@@ -22,6 +22,7 @@ import { SignatureFieldOverlay, type SignatureField } from "@/app/[locale]/templ
 import { SignatureFieldMiniMap } from "@/app/[locale]/templates/employment-agreement/generate/review/_components/SignatureFieldMiniMap";
 import { generateSignatureFieldMetadata } from "@/lib/pdf/signature-field-metadata";
 import { ensureAdditionalSignatoryArray } from "@/lib/templates/signatory-fields";
+import type { SignatoryEntry } from "@/lib/templates/signatory-config";
 
 // Dynamically import react-pdf components to avoid SSR issues
 const Document = dynamic(
@@ -92,7 +93,19 @@ function extractSignatories(
     });
   };
 
-  // 2. Form builder signatory screen fields (party, name, email, title, phone)
+  // 2. NEW Signatory Screen format (formData.signatories array from SignatoryScreenRenderer)
+  if (Array.isArray(formData.signatories) && formData.signatories.length > 0) {
+    (formData.signatories as SignatoryEntry[]).forEach((entry) => {
+      addSignatory({
+        name: entry.name,
+        email: entry.email,
+        role: entry.title || entry.partyType,
+      });
+    });
+    return signatories;
+  }
+
+  // 3. Form builder signatory screen fields (party, name, email, title, phone)
   if (formData.name && formData.email) {
     addSignatory({
       name: formData.name as string,
@@ -102,7 +115,7 @@ function extractSignatories(
   }
 
   const additionalEntries = ensureAdditionalSignatoryArray(formData.additionalSignatories);
-  additionalEntries.forEach((entry, index) => {
+  additionalEntries.forEach((entry) => {
     addSignatory({
       name: entry.name,
       email: entry.email,
@@ -276,7 +289,7 @@ export function TemplatePDFReview({
       // Generate default signature fields
       const metadataFields = generateSignatureFieldMetadata(
         signatories.map((sig, idx) => ({
-          party: idx === 0 ? ("employer" as const) : ("employee" as const),
+          party: sig.role || `signatory_${idx}`, // Use role as party type or generate a unique one
           name: sig.name,
           email: sig.email,
         })),
@@ -292,8 +305,8 @@ export function TemplatePDFReview({
     actualPageCount: number
   ): SignatureField[] => {
     return metadataFields.map((field) => {
-      // Convert party to signatoryIndex (0 = employer, 1 = employee)
-      const signatoryIndex = field.party === "employer" ? 0 : 1;
+      // Use signatoryIndex from field if available, otherwise infer from position
+      const signatoryIndex = field.signatoryIndex ?? (field.party === "employer" ? 0 : 1);
 
       // Ensure pageNumber matches actual PDF page count
       const pageNumber = Math.min(field.pageNumber, actualPageCount);
@@ -380,7 +393,7 @@ export function TemplatePDFReview({
         // Try to get party from document.signatories first
         const docSignatory = document.signatories?.[idx];
         return {
-          party: docSignatory?.party || (idx === 0 ? "employer" : "employee") as "employer" | "employee" | "witness" | "other",
+          party: docSignatory?.party || sig.role || `signatory_${idx}`,
           name: sig.name,
           email: sig.email,
           role: sig.role,

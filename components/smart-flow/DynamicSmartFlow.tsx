@@ -20,6 +20,8 @@ import {
   type ScreenWithFields,
 } from "./DynamicFormContext";
 import { DynamicField, type FieldConfig } from "./field-renderers";
+import { SignatoryScreenRenderer } from "./SignatoryScreenRenderer";
+import { SignatoryEntry } from "@/lib/templates/signatory-config";
 import { Button } from "@/components/ui/button";
 import { Stepper, StepperCompact } from "@/components/ui/stepper";
 import { Turnstile } from "next-turnstile";
@@ -922,8 +924,16 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                         </div>
                       )}
                     </>
+                  ) : (currentScreen as any)?.type === "signatory" ? (
+                    /* Signatory Screen: Show dedicated signatory collection UI */
+                    <SignatoryScreenRenderer
+                      configJson={(currentScreen as any).signatoryConfig}
+                      value={(formData.signatories as SignatoryEntry[]) || []}
+                      onChange={(signatories) => setFieldValue("signatories", signatories)}
+                      errors={errors}
+                    />
                   ) : (
-                    /* Standard/Signatory Screen: Show regular fields */
+                    /* Standard Screen: Show regular fields */
                     currentScreen?.fields.map((field) => (
                       <DynamicField
                         key={field.id}

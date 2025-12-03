@@ -13,6 +13,7 @@ import {
   formatAdditionalSignatoriesForPrompt,
   SIGNATORY_PARTY_OPTIONS,
 } from "@/lib/templates/signatory-fields";
+import type { SignatoryEntry } from "@/lib/templates/signatory-config";
 
 type RouteParams = {
   params: Promise<{ templateId: string }>;
@@ -285,10 +286,11 @@ function buildUserPrompt(formData: Record<string, any>, templateTitle: string): 
  * Extract signatories from form data
  * 
  * Priority order:
- * 1. Form builder signatory fields (name, email, party, title, phone)
- * 2. Additional signatories repeater
- * 3. Numbered signatory_* fields
- * 4. Legacy hardcoded field names (companyRepName, employeeName, etc.)
+ * 1. NEW Signatory Screen format (formData.signatories array from SignatoryScreenRenderer)
+ * 2. Form builder signatory fields (name, email, party, title, phone)
+ * 3. Additional signatories repeater
+ * 4. Numbered signatory_* fields
+ * 5. Legacy hardcoded field names (companyRepName, employeeName, etc.)
  */
 function extractSignatoriesFromFormData(formData: Record<string, any>): SignatoryData[] {
   const signatories: SignatoryData[] = [];
@@ -329,7 +331,24 @@ function extractSignatoriesFromFormData(formData: Record<string, any>): Signator
     });
   };
 
-  // 1. Primary signatory fields from the signatory screen
+  // 1. NEW Signatory Screen format (formData.signatories array from SignatoryScreenRenderer)
+  if (Array.isArray(formData.signatories) && formData.signatories.length > 0) {
+    (formData.signatories as SignatoryEntry[]).forEach((entry) => {
+      appendSignatory({
+        party: entry.partyType,
+        name: entry.name,
+        email: entry.email,
+        title: entry.title,
+        phone: entry.phone,
+      });
+    });
+    // If we have signatories from the new format, return early
+    if (signatories.length > 0) {
+      return signatories;
+    }
+  }
+
+  // 2. Primary signatory fields from the signatory screen (legacy)
   appendSignatory({
     party: formData[SIGNATORY_FIELD_NAMES.PARTY],
     name: formData[SIGNATORY_FIELD_NAMES.NAME],
@@ -338,7 +357,7 @@ function extractSignatoriesFromFormData(formData: Record<string, any>): Signator
     phone: formData[SIGNATORY_FIELD_NAMES.PHONE],
   });
 
-  // 2. Additional signatories captured via repeater
+  // 3. Additional signatories captured via repeater
   const additionalEntries = ensureAdditionalSignatoryArray(
     formData[ADDITIONAL_SIGNATORIES_FIELD_NAME]
   );

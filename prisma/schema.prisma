@@ -51,6 +51,9 @@ model TemplateScreen {
   dynamicPrompt     String? @db.Text // AI prompt to generate form fields on-the-fly
   dynamicMaxFields  Int?    @default(5) // Maximum number of fields to generate
 
+  // Signatory screen configuration (for type=signatory)
+  signatoryConfig   String? @db.Text // JSON config: {partyTypes, allowMultiple, minSignatories, maxSignatories, requiredParties, collectPhone, collectTitle}
+
   fields TemplateField[]
 
   createdAt DateTime @default(now())

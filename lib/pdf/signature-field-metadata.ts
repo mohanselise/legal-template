@@ -49,7 +49,7 @@ export const SIGNATURE_FIELD_DEFAULTS = {
 export interface SignatureFieldMetadata {
   id: string;
   type: 'signature' | 'text' | 'date';
-  party: 'employer' | 'employee';
+  party: string; // Flexible party type (employer, employee, disclosingParty, receivingParty, witness, etc.)
   label: string;
   x: number;
   y: number;
@@ -60,11 +60,13 @@ export interface SignatureFieldMetadata {
 }
 
 export interface SignatoryInfo {
-  party: 'employer' | 'employee';
+  party: string; // Flexible party type (employer, employee, disclosingParty, receivingParty, witness, etc.)
   name: string;
   email: string;
   role?: string;
+  title?: string;
   phone?: string;
+  company?: string;
 }
 
 export function generateSignatureFieldMetadata(

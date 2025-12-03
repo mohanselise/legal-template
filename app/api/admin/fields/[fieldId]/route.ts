@@ -112,8 +112,9 @@ export async function PATCH(
     }
     
     // Handle aiSuggestionKey - convert empty string to null
-    if ('aiSuggestionKey' in updateData) {
-      updateData.aiSuggestionKey = updateData.aiSuggestionKey?.trim() || null;
+    // The zod schema already handles trimming, but we ensure it's properly set
+    if (validation.data.aiSuggestionKey !== undefined) {
+      updateData.aiSuggestionKey = validation.data.aiSuggestionKey;
     }
 
     const field = await prisma.templateField.update({

@@ -7,11 +7,14 @@ const settingsSchema = z.object({
   // Document generation settings
   documentGenerationAiModel: z.string().optional(),
   commonPromptInstructions: z.string().optional(),
+  documentGenerationOutputInUserLocale: z.boolean().optional(),
   // Dynamic form AI settings
   dynamicFormAiModel: z.string().optional(),
   dynamicFormSystemPrompt: z.string().optional(),
+  dynamicFormOutputInUserLocale: z.boolean().optional(),
   // Form enrichment AI settings
   formEnrichmentAiModel: z.string().optional(),
+  formEnrichmentOutputInUserLocale: z.boolean().optional(),
 });
 
 /**
@@ -26,21 +29,36 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all settings
-    const [documentGenerationAiModel, commonPromptInstructions, dynamicFormAiModel, dynamicFormSystemPrompt, formEnrichmentAiModel] = await Promise.all([
+    const [
+      documentGenerationAiModel,
+      commonPromptInstructions,
+      documentGenerationOutputInUserLocale,
+      dynamicFormAiModel,
+      dynamicFormSystemPrompt,
+      dynamicFormOutputInUserLocale,
+      formEnrichmentAiModel,
+      formEnrichmentOutputInUserLocale,
+    ] = await Promise.all([
       prisma.systemSettings.findUnique({ where: { key: "documentGenerationAiModel" } }),
       prisma.systemSettings.findUnique({ where: { key: "commonPromptInstructions" } }),
+      prisma.systemSettings.findUnique({ where: { key: "documentGenerationOutputInUserLocale" } }),
       prisma.systemSettings.findUnique({ where: { key: "dynamicFormAiModel" } }),
       prisma.systemSettings.findUnique({ where: { key: "dynamicFormSystemPrompt" } }),
+      prisma.systemSettings.findUnique({ where: { key: "dynamicFormOutputInUserLocale" } }),
       prisma.systemSettings.findUnique({ where: { key: "formEnrichmentAiModel" } }),
+      prisma.systemSettings.findUnique({ where: { key: "formEnrichmentOutputInUserLocale" } }),
     ]);
 
     // If not found, return empty (will use default in frontend)
     return NextResponse.json({
       documentGenerationAiModel: documentGenerationAiModel?.value || null,
       commonPromptInstructions: commonPromptInstructions?.value || null,
+      documentGenerationOutputInUserLocale: documentGenerationOutputInUserLocale?.value === "true",
       dynamicFormAiModel: dynamicFormAiModel?.value || null,
       dynamicFormSystemPrompt: dynamicFormSystemPrompt?.value || null,
+      dynamicFormOutputInUserLocale: dynamicFormOutputInUserLocale?.value === "true",
       formEnrichmentAiModel: formEnrichmentAiModel?.value || null,
+      formEnrichmentOutputInUserLocale: formEnrichmentOutputInUserLocale?.value === "true",
     });
   } catch (error) {
     console.error("[SETTINGS_GET]", error);
@@ -72,7 +90,16 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const { documentGenerationAiModel, commonPromptInstructions, dynamicFormAiModel, dynamicFormSystemPrompt, formEnrichmentAiModel } = validation.data;
+    const {
+      documentGenerationAiModel,
+      commonPromptInstructions,
+      documentGenerationOutputInUserLocale,
+      dynamicFormAiModel,
+      dynamicFormSystemPrompt,
+      dynamicFormOutputInUserLocale,
+      formEnrichmentAiModel,
+      formEnrichmentOutputInUserLocale,
+    } = validation.data;
 
     // Upsert settings in parallel
     const upsertPromises = [];
@@ -109,6 +136,25 @@ export async function PUT(request: NextRequest) {
             key: "commonPromptInstructions",
             value: commonPromptInstructions,
             description: "Common prompt instructions appended to all template system prompts",
+            updatedBy: userId,
+          },
+        })
+      );
+    }
+
+    // Document generation output in user locale
+    if (documentGenerationOutputInUserLocale !== undefined) {
+      upsertPromises.push(
+        prisma.systemSettings.upsert({
+          where: { key: "documentGenerationOutputInUserLocale" },
+          update: {
+            value: String(documentGenerationOutputInUserLocale),
+            updatedBy: userId,
+          },
+          create: {
+            key: "documentGenerationOutputInUserLocale",
+            value: String(documentGenerationOutputInUserLocale),
+            description: "Output document generation results in the user's selected locale",
             updatedBy: userId,
           },
         })
@@ -153,6 +199,25 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Dynamic form output in user locale
+    if (dynamicFormOutputInUserLocale !== undefined) {
+      upsertPromises.push(
+        prisma.systemSettings.upsert({
+          where: { key: "dynamicFormOutputInUserLocale" },
+          update: {
+            value: String(dynamicFormOutputInUserLocale),
+            updatedBy: userId,
+          },
+          create: {
+            key: "dynamicFormOutputInUserLocale",
+            value: String(dynamicFormOutputInUserLocale),
+            description: "Output dynamic form fields in the user's selected locale",
+            updatedBy: userId,
+          },
+        })
+      );
+    }
+
     // Form enrichment AI model
     if (formEnrichmentAiModel !== undefined) {
       upsertPromises.push(
@@ -166,6 +231,25 @@ export async function PUT(request: NextRequest) {
             key: "formEnrichmentAiModel",
             value: formEnrichmentAiModel,
             description: "AI model used for form enrichment and smart suggestions",
+            updatedBy: userId,
+          },
+        })
+      );
+    }
+
+    // Form enrichment output in user locale
+    if (formEnrichmentOutputInUserLocale !== undefined) {
+      upsertPromises.push(
+        prisma.systemSettings.upsert({
+          where: { key: "formEnrichmentOutputInUserLocale" },
+          update: {
+            value: String(formEnrichmentOutputInUserLocale),
+            updatedBy: userId,
+          },
+          create: {
+            key: "formEnrichmentOutputInUserLocale",
+            value: String(formEnrichmentOutputInUserLocale),
+            description: "Output form enrichment results in the user's selected locale",
             updatedBy: userId,
           },
         })

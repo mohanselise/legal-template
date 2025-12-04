@@ -13,6 +13,7 @@ import {
   Save,
   RotateCcw,
   Wand2,
+  Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -35,11 +36,14 @@ const settingsSchema = z.object({
   // Document generation settings
   documentGenerationAiModel: z.string().optional(),
   commonPromptInstructions: z.string().optional(),
+  documentGenerationOutputInUserLocale: z.boolean().default(false),
   // Dynamic form AI settings
   dynamicFormAiModel: z.string().optional(),
   dynamicFormSystemPrompt: z.string().optional(),
+  dynamicFormOutputInUserLocale: z.boolean().default(false),
   // Form enrichment AI settings
   formEnrichmentAiModel: z.string().optional(),
+  formEnrichmentOutputInUserLocale: z.boolean().default(false),
 });
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -156,9 +160,12 @@ export default function SettingsPage() {
     defaultValues: {
       documentGenerationAiModel: DEFAULT_DOCUMENT_GENERATION_MODEL,
       commonPromptInstructions: "",
+      documentGenerationOutputInUserLocale: false,
       dynamicFormAiModel: DEFAULT_DYNAMIC_AI_MODEL,
       dynamicFormSystemPrompt: "",
+      dynamicFormOutputInUserLocale: false,
       formEnrichmentAiModel: DEFAULT_FORM_ENRICHMENT_MODEL,
+      formEnrichmentOutputInUserLocale: false,
     },
   });
 
@@ -174,9 +181,12 @@ export default function SettingsPage() {
         form.reset({
           documentGenerationAiModel: data.documentGenerationAiModel || DEFAULT_DOCUMENT_GENERATION_MODEL,
           commonPromptInstructions: data.commonPromptInstructions || DEFAULT_COMMON_PROMPT_INSTRUCTIONS,
+          documentGenerationOutputInUserLocale: data.documentGenerationOutputInUserLocale ?? false,
           dynamicFormAiModel: data.dynamicFormAiModel || DEFAULT_DYNAMIC_AI_MODEL,
           dynamicFormSystemPrompt: data.dynamicFormSystemPrompt || DEFAULT_DYNAMIC_FORM_SYSTEM_PROMPT,
+          dynamicFormOutputInUserLocale: data.dynamicFormOutputInUserLocale ?? false,
           formEnrichmentAiModel: data.formEnrichmentAiModel || DEFAULT_FORM_ENRICHMENT_MODEL,
+          formEnrichmentOutputInUserLocale: data.formEnrichmentOutputInUserLocale ?? false,
         });
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -185,9 +195,12 @@ export default function SettingsPage() {
         form.reset({
           documentGenerationAiModel: DEFAULT_DOCUMENT_GENERATION_MODEL,
           commonPromptInstructions: DEFAULT_COMMON_PROMPT_INSTRUCTIONS,
+          documentGenerationOutputInUserLocale: false,
           dynamicFormAiModel: DEFAULT_DYNAMIC_AI_MODEL,
           dynamicFormSystemPrompt: DEFAULT_DYNAMIC_FORM_SYSTEM_PROMPT,
+          dynamicFormOutputInUserLocale: false,
           formEnrichmentAiModel: DEFAULT_FORM_ENRICHMENT_MODEL,
+          formEnrichmentOutputInUserLocale: false,
         });
       } finally {
         setIsLoading(false);
@@ -337,6 +350,26 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+
+            {/* Locale-aware output toggle */}
+            <div className="flex items-start gap-3 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--poly-green))]/5">
+              <input
+                type="checkbox"
+                id="documentGenerationOutputInUserLocale"
+                checked={form.watch("documentGenerationOutputInUserLocale")}
+                onChange={(e) => form.setValue("documentGenerationOutputInUserLocale", e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
+              />
+              <div className="flex-1">
+                <Label htmlFor="documentGenerationOutputInUserLocale" className="cursor-pointer flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-[hsl(var(--poly-green))]" />
+                  Output in user&apos;s locale
+                </Label>
+                <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
+                  When enabled, adds an instruction for the AI to generate documents in the user&apos;s selected language (e.g., German for /de visitors).
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -382,6 +415,26 @@ export default function SettingsPage() {
                   useCase="formEnrichment"
                   placeholder="Select AI model"
                 />
+              </div>
+            </div>
+
+            {/* Locale-aware output toggle */}
+            <div className="flex items-start gap-3 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--poly-green))]/5">
+              <input
+                type="checkbox"
+                id="formEnrichmentOutputInUserLocale"
+                checked={form.watch("formEnrichmentOutputInUserLocale")}
+                onChange={(e) => form.setValue("formEnrichmentOutputInUserLocale", e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
+              />
+              <div className="flex-1">
+                <Label htmlFor="formEnrichmentOutputInUserLocale" className="cursor-pointer flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-[hsl(var(--poly-green))]" />
+                  Output in user&apos;s locale
+                </Label>
+                <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
+                  When enabled, adds an instruction for the AI to return enrichment values in the user&apos;s selected language.
+                </p>
               </div>
             </div>
           </CardContent>
@@ -452,6 +505,26 @@ export default function SettingsPage() {
                   </span>
                 </div>
               )}
+            </div>
+
+            {/* Locale-aware output toggle */}
+            <div className="flex items-start gap-3 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--poly-green))]/5">
+              <input
+                type="checkbox"
+                id="dynamicFormOutputInUserLocale"
+                checked={form.watch("dynamicFormOutputInUserLocale")}
+                onChange={(e) => form.setValue("dynamicFormOutputInUserLocale", e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
+              />
+              <div className="flex-1">
+                <Label htmlFor="dynamicFormOutputInUserLocale" className="cursor-pointer flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-[hsl(var(--poly-green))]" />
+                  Output in user&apos;s locale
+                </Label>
+                <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
+                  When enabled, adds an instruction for the AI to generate form field labels and help text in the user&apos;s selected language.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -83,25 +83,6 @@ export default async function Home() {
           }
         }
         
-        // Debug: Log available keys for troubleshooting (only in dev)
-        if (process.env.NODE_ENV === 'development') {
-          const availableKeys = Object.keys(templatesModule).slice(0, 30);
-          const matchingKeys = availableKeys.filter(k => 
-            k.toLowerCase().includes(uilmKey.toLowerCase().split('_')[0])
-          );
-          console.log(`[UILM Debug] Template: ${slug}, Field: ${field}`);
-          console.log(`[UILM Debug] Looking for UILM key: "${uilmKey}"`);
-          console.log(`[UILM Debug] Tried: "${uilmKey}", "${camelKey}", "${lowerKey}"`);
-          console.log(`[UILM Debug] Available keys (first 30):`, availableKeys);
-          if (matchingKeys.length > 0) {
-            console.log(`[UILM Debug] Keys containing "${uilmKey.split('_')[0]}":`, matchingKeys);
-          }
-        }
-      } else {
-        // Debug: templates module not found
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[UILM Debug] templates module not found in messages for template: ${slug}`);
-        }
       }
     }
     

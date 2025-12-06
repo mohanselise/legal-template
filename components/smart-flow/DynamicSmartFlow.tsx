@@ -387,6 +387,8 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     setSubmitting,
     enrichmentContext,
     setEnrichmentContext,
+    visibleScreens,
+    getVisibleFields,
   } = useDynamicForm();
 
   const router = useRouter();
@@ -676,18 +678,18 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     fetchDynamicFields();
   }, [config, currentStep, formData, enrichmentContext, dynamicFieldsCache]);
 
-  // Create step definitions - must be before early return to satisfy React Hooks rules
+  // Create step definitions from visible screens (respects conditional visibility)
   const stepDefinitions = useMemo(
     () => {
-      if (!config?.screens || !Array.isArray(config.screens) || config.screens.length === 0) {
+      if (!visibleScreens || !Array.isArray(visibleScreens) || visibleScreens.length === 0) {
         return [];
       }
-      return config.screens.map((screen, index) => ({
+      return visibleScreens.map((screen, index) => ({
         id: screen.id || `step-${index}`,
         title: screen.title || `Step ${index + 1}`,
       }));
     },
-    [config?.screens]
+    [visibleScreens]
   );
 
   // AI enrichment callback - must be before early return to satisfy React Hooks rules
@@ -822,7 +824,8 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     );
   }
 
-  const currentScreen = config.screens[currentStep];
+  // Use visible screens for current screen (respects conditional visibility)
+  const currentScreen = visibleScreens[currentStep];
   const displayedProgress = Math.round(fakeProgress);
 
   // Reset generation and go back to form
@@ -1185,7 +1188,8 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
   const handleContinue = () => {
     if (canProceed()) {
-      const screen = config.screens[currentStep];
+      // Use visible screen for the current step
+      const screen = visibleScreens[currentStep];
 
       // Trigger AI enrichment without waiting for the response
       runAiEnrichmentInBackground(screen);
@@ -1669,9 +1673,9 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                       formData={formData}
                     />
                   ) : (
-                    /* Standard Screen: Show regular fields */
+                    /* Standard Screen: Show regular fields (filtered by conditions) */
                     <>
-                      {currentScreen?.fields.map((field) => (
+                      {currentScreen && getVisibleFields(currentScreen).map((field) => (
                         <DynamicField
                           key={field.id}
                           field={field as FieldConfig}
@@ -1684,9 +1688,9 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                       ))}
 
                       {/* Apply Standards Banner for Standard Screens */}
-                      {(currentScreen as any)?.enableApplyStandards && (() => {
+                      {(currentScreen as any)?.enableApplyStandards && currentScreen && (() => {
                         const fieldsWithSuggestions = getFieldsWithSuggestions(
-                          currentScreen?.fields || [],
+                          getVisibleFields(currentScreen) || [],
                           enrichmentContext
                         );
                         const hasUnfilledSuggestions = fieldsWithSuggestions.some(

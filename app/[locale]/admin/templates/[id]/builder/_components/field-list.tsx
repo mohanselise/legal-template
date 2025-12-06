@@ -303,6 +303,8 @@ export function FieldList({ screen, allScreens = [], onFieldsUpdated }: FieldLis
         onSaved={handleFieldSaved}
         availableContextKeys={availableContextKeys}
         availableFormFields={availableFormFields}
+        currentScreen={screen}
+        allScreens={allScreens}
       />
 
       {/* Delete Confirmation Dialog */}

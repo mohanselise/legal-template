@@ -66,6 +66,9 @@ model TemplateScreen {
   // Apply Standards feature (auto-fill fields with AI suggestions)
   enableApplyStandards Boolean @default(false) // Show "Apply Standards" button for this screen
 
+  // Conditional visibility - show/hide screen based on previous form responses
+  conditions String? @db.Text // JSON: {operator: "and"|"or", rules: [{field, op, value}]}
+
   fields TemplateField[]
 
   createdAt DateTime @default(now())
@@ -99,6 +102,9 @@ model TemplateField {
   uilmPlaceholderKey String? // UILM key for translated placeholder text
   uilmHelpTextKey    String? // UILM key for translated help text
   uilmOptionsKeys    String[] @default([]) // UILM keys for translated select options (parallel array to options)
+
+  // Conditional visibility - show/hide field based on other form responses
+  conditions String? @db.Text // JSON: {operator: "and"|"or", rules: [{field, op, value}]}
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

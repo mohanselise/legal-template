@@ -25,6 +25,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { TemplateScreen } from "@/lib/db";
+import { ConditionEditor, type AvailableField } from "./condition-editor";
+import type { ConditionGroup } from "@/lib/templates/conditions";
 
 const screenSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -70,6 +72,7 @@ export function ScreenEditor({
   const [error, setError] = useState<string | null>(null);
   const [dynamicConfigExpanded, setDynamicConfigExpanded] = useState(false);
   const [uilmConfigExpanded, setUilmConfigExpanded] = useState(false);
+  const [conditions, setConditions] = useState<ConditionGroup | null>(null);
 
   const {
     register,
@@ -140,6 +143,35 @@ export function ScreenEditor({
     return variables;
   }, [allScreens, screen?.order]);
 
+  // Compute available fields for condition editor (from previous screens)
+  const availableFieldsForConditions: AvailableField[] = useMemo(() => {
+    const fields: AvailableField[] = [];
+    
+    // Get the order of current screen (or last position if new screen)
+    const currentOrder = screen?.order ?? allScreens.length;
+    
+    // Get previous screens
+    const previousScreens = allScreens
+      .filter((s) => s.order < currentOrder)
+      .sort((a, b) => a.order - b.order);
+    
+    previousScreens.forEach((prevScreen) => {
+      // Add fields from each previous screen
+      if ((prevScreen as any).fields) {
+        ((prevScreen as any).fields as any[]).forEach((field) => {
+          fields.push({
+            name: field.name,
+            label: field.label,
+            screenTitle: prevScreen.title,
+            type: field.type,
+          });
+        });
+      }
+    });
+    
+    return fields;
+  }, [allScreens, screen?.order]);
+
   // Reset form when dialog opens/closes or screen changes
   useEffect(() => {
     if (open) {
@@ -158,6 +190,17 @@ export function ScreenEditor({
       setDynamicConfigExpanded((screen as any)?.type === "dynamic");
       // Expand UILM config if any key exists
       setUilmConfigExpanded(!!(screen as any)?.uilmTitleKey || !!(screen as any)?.uilmDescriptionKey);
+      // Load conditions from screen
+      const screenConditions = (screen as any)?.conditions;
+      if (screenConditions) {
+        try {
+          setConditions(typeof screenConditions === "string" ? JSON.parse(screenConditions) : screenConditions);
+        } catch {
+          setConditions(null);
+        }
+      } else {
+        setConditions(null);
+      }
     }
   }, [open, screen, reset]);
 
@@ -186,6 +229,8 @@ export function ScreenEditor({
         uilmDescriptionKey: data.uilmDescriptionKey?.trim() || null,
         // Apply Standards feature
         enableApplyStandards: data.enableApplyStandards ?? false,
+        // Conditional visibility
+        conditions: conditions ? JSON.stringify(conditions) : null,
       };
 
       // Include dynamic screen configuration if type is dynamic
@@ -390,6 +435,15 @@ export function ScreenEditor({
                 </p>
               </div>
             </div>
+
+            {/* Conditional Visibility */}
+            <ConditionEditor
+              value={conditions}
+              onChange={setConditions}
+              availableFields={availableFieldsForConditions}
+              label="Conditional Visibility"
+              description="Show this screen only when specific conditions are met based on previous form responses."
+            />
 
             {/* Dynamic Screen Configuration */}
             {screenType === "dynamic" && (

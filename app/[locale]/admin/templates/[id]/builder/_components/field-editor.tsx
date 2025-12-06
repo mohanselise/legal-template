@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import type { TemplateField, FieldType, TemplateScreen } from "@/lib/db";
+import { ConditionEditor, type AvailableField } from "./condition-editor";
+import type { ConditionGroup } from "@/lib/templates/conditions";
 
 // Interface for available AI context keys from previous screens
 export interface AvailableContextKey {
@@ -75,6 +77,8 @@ interface FieldEditorProps {
   onSaved: () => void;
   availableContextKeys?: AvailableContextKey[];
   availableFormFields?: AvailableFormField[];
+  currentScreen?: TemplateScreen & { fields?: TemplateField[] };
+  allScreens?: (TemplateScreen & { fields?: TemplateField[] })[];
 }
 
 const fieldTypeOptions: { value: FieldType; label: string }[] = [
@@ -94,6 +98,8 @@ export function FieldEditor({
   onSaved,
   availableContextKeys = [],
   availableFormFields = [],
+  currentScreen,
+  allScreens = [],
 }: FieldEditorProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,9 +110,59 @@ export function FieldEditor({
   const [uilmSectionExpanded, setUilmSectionExpanded] = useState(false);
   const [activeInputField, setActiveInputField] = useState<"label" | "placeholder" | "helpText" | null>(null);
   const [uilmOptionsKeys, setUilmOptionsKeys] = useState<string[]>([]);
+  const [conditions, setConditions] = useState<ConditionGroup | null>(null);
 
   // Check if there are any variables available
   const hasVariables = availableFormFields.length > 0 || availableContextKeys.length > 0;
+
+  // Compute available fields for condition editor
+  // Includes fields from previous screens AND fields before this one on the current screen
+  const availableFieldsForConditions: AvailableField[] = useMemo(() => {
+    const fields: AvailableField[] = [];
+    
+    if (!currentScreen) return fields;
+    
+    // Get the order of current screen
+    const currentScreenOrder = currentScreen.order;
+    
+    // Get the order of current field (or last position if new field)
+    const currentFieldOrder = field?.order ?? (currentScreen.fields?.length ?? 0);
+    
+    // Add fields from previous screens
+    const previousScreens = allScreens
+      .filter((s) => s.order < currentScreenOrder)
+      .sort((a, b) => a.order - b.order);
+    
+    previousScreens.forEach((prevScreen) => {
+      if (prevScreen.fields) {
+        prevScreen.fields.forEach((f) => {
+          fields.push({
+            name: f.name,
+            label: f.label,
+            screenTitle: prevScreen.title,
+            type: f.type,
+          });
+        });
+      }
+    });
+    
+    // Add fields from current screen that come before this field
+    if (currentScreen.fields) {
+      currentScreen.fields
+        .filter((f) => f.order < currentFieldOrder && f.id !== field?.id)
+        .sort((a, b) => a.order - b.order)
+        .forEach((f) => {
+          fields.push({
+            name: f.name,
+            label: f.label,
+            screenTitle: currentScreen.title + " (this screen)",
+            type: f.type,
+          });
+        });
+    }
+    
+    return fields;
+  }, [currentScreen, allScreens, field?.order, field?.id]);
 
   // Insert variable into the active text field
   const insertVariable = (variableSyntax: string) => {
@@ -172,6 +228,17 @@ export function FieldEditor({
         setUilmOptionsKeys((field as any).uilmOptionsKeys || []);
         setAiSectionExpanded(aiEnabled);
         setUilmSectionExpanded(hasUilmKeys);
+        // Load conditions from field
+        const fieldConditions = (field as any).conditions;
+        if (fieldConditions) {
+          try {
+            setConditions(typeof fieldConditions === "string" ? JSON.parse(fieldConditions) : fieldConditions);
+          } catch {
+            setConditions(null);
+          }
+        } else {
+          setConditions(null);
+        }
       } else {
         reset({
           name: "",
@@ -192,6 +259,7 @@ export function FieldEditor({
         setUilmOptionsKeys([]);
         setAiSectionExpanded(false);
         setUilmSectionExpanded(false);
+        setConditions(null);
       }
       setError(null);
       setNewOption("");
@@ -228,6 +296,8 @@ export function FieldEditor({
         uilmPlaceholderKey: data.uilmPlaceholderKey?.trim() || null,
         uilmHelpTextKey: data.uilmHelpTextKey?.trim() || null,
         uilmOptionsKeys: fieldType === "select" ? uilmOptionsKeys : [],
+        // Conditional visibility
+        conditions: conditions ? JSON.stringify(conditions) : null,
       };
       
       // Only include aiSuggestionKey if it has a value, otherwise don't include it
@@ -698,6 +768,15 @@ export function FieldEditor({
                 </div>
               )}
             </div>
+
+            {/* Conditional Visibility */}
+            <ConditionEditor
+              value={conditions}
+              onChange={setConditions}
+              availableFields={availableFieldsForConditions}
+              label="Conditional Visibility"
+              description="Show this field only when specific conditions are met based on other form responses."
+            />
 
             {/* Options (for select type) */}
             {fieldType === "select" && (

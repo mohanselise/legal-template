@@ -1,12 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import type { TemplateScreen, TemplateField } from "@/lib/db";
 import {
   ADDITIONAL_SIGNATORIES_FIELD_NAME,
   AdditionalSignatoryInput,
   ensureAdditionalSignatoryArray,
 } from "@/lib/templates/signatory-fields";
+import { evaluateConditions } from "@/lib/templates/conditions";
 
 export interface ScreenWithFields extends TemplateScreen {
   fields: TemplateField[];
@@ -42,6 +43,13 @@ interface DynamicFormContextType {
   nextStep: () => void;
   previousStep: () => void;
   canProceed: () => boolean;
+
+  // Conditional visibility
+  visibleScreens: ScreenWithFields[];
+  visibleScreenIndices: number[];
+  getVisibleFields: (screen: ScreenWithFields) => TemplateField[];
+  isScreenVisible: (screenIndex: number) => boolean;
+  isFieldVisible: (field: TemplateField) => boolean;
 
   // Status
   isLoading: boolean;
@@ -109,7 +117,24 @@ export function DynamicFormProvider({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [enrichmentContext, setEnrichmentContextState] = useState<Record<string, any>>({});
 
-  const totalSteps = config.screens.length;
+  // Compute visible screens based on conditions
+  const { visibleScreens, visibleScreenIndices } = useMemo(() => {
+    const visible: ScreenWithFields[] = [];
+    const indices: number[] = [];
+
+    config.screens.forEach((screen, index) => {
+      // Check if screen has conditions and evaluate them
+      const conditions = (screen as any).conditions;
+      if (evaluateConditions(conditions, formData)) {
+        visible.push(screen);
+        indices.push(index);
+      }
+    });
+
+    return { visibleScreens: visible, visibleScreenIndices: indices };
+  }, [config.screens, formData]);
+
+  const totalSteps = visibleScreens.length;
 
   const updateFormData = useCallback((updates: Record<string, unknown>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
@@ -124,6 +149,28 @@ export function DynamicFormProvider({
       return next;
     });
   }, []);
+
+  // Check if a screen is visible based on its conditions
+  const isScreenVisible = useCallback((screenIndex: number): boolean => {
+    const screen = config.screens[screenIndex];
+    if (!screen) return false;
+    const conditions = (screen as any).conditions;
+    return evaluateConditions(conditions, formData);
+  }, [config.screens, formData]);
+
+  // Check if a field is visible based on its conditions
+  const isFieldVisible = useCallback((field: TemplateField): boolean => {
+    const conditions = (field as any).conditions;
+    return evaluateConditions(conditions, formData);
+  }, [formData]);
+
+  // Get only visible fields for a screen
+  const getVisibleFields = useCallback((screen: ScreenWithFields): TemplateField[] => {
+    return screen.fields.filter((field) => {
+      const conditions = (field as any).conditions;
+      return evaluateConditions(conditions, formData);
+    });
+  }, [formData]);
 
   const validateField = useCallback((name: string): boolean => {
     // Find the field in the current config
@@ -185,13 +232,17 @@ export function DynamicFormProvider({
   }, [config.screens, formData]);
 
   const validateScreen = useCallback((screenIndex: number): boolean => {
-    const screen = config.screens[screenIndex];
+    // Use visible screens for validation - screenIndex is relative to visible screens
+    const screen = visibleScreens[screenIndex];
     if (!screen) return true;
+
+    // Only validate visible fields
+    const fieldsToValidate = getVisibleFields(screen);
 
     let isValid = true;
     const newErrors: Record<string, string> = {};
 
-    for (const field of screen.fields) {
+    for (const field of fieldsToValidate) {
       const value = formData[field.name];
 
       if (field.name === ADDITIONAL_SIGNATORIES_FIELD_NAME) {
@@ -223,7 +274,7 @@ export function DynamicFormProvider({
 
     setErrors((prev) => ({ ...prev, ...newErrors }));
     return isValid;
-  }, [config.screens, formData]);
+  }, [visibleScreens, formData, getVisibleFields]);
 
   const clearErrors = useCallback(() => {
     setErrors({});
@@ -234,6 +285,7 @@ export function DynamicFormProvider({
   }, [validateScreen, currentStep]);
 
   const goToStep = useCallback((step: number) => {
+    // Step is relative to visible screens
     if (step >= 0 && step < totalSteps) {
       setCurrentStep(step);
     }
@@ -250,6 +302,14 @@ export function DynamicFormProvider({
       setCurrentStep((prev) => prev - 1);
     }
   }, [currentStep]);
+
+  // Ensure currentStep is valid when visible screens change
+  // This handles cases where a previously visible screen becomes hidden
+  React.useEffect(() => {
+    if (currentStep >= totalSteps && totalSteps > 0) {
+      setCurrentStep(totalSteps - 1);
+    }
+  }, [totalSteps, currentStep]);
 
   const setSubmitting = useCallback((value: boolean) => {
     setIsSubmitting(value);
@@ -274,6 +334,11 @@ export function DynamicFormProvider({
     nextStep,
     previousStep,
     canProceed,
+    visibleScreens,
+    visibleScreenIndices,
+    getVisibleFields,
+    isScreenVisible,
+    isFieldVisible,
     isLoading,
     isSubmitting,
     setSubmitting,

@@ -98,9 +98,21 @@ interface ScreenData {
   dynamicMaxFields?: number;
 }
 
+interface UpdateScreenData extends ScreenData {
+  screenId: string; // ID of the screen to update
+}
+
+interface RemoveScreenData {
+  screenId: string;
+}
+
+interface ReorderScreensData {
+  screenOrder: string[]; // Array of screen IDs in new order
+}
+
 interface AIAction {
-  type: "createScreen" | "addFields" | "modifyField" | "deleteField";
-  data: ScreenData | FieldData | FieldData[];
+  type: "createScreen" | "updateScreen" | "addFields" | "removeScreen" | "reorderScreens";
+  data: ScreenData | UpdateScreenData | FieldData | FieldData[] | RemoveScreenData | ReorderScreensData;
   applied?: boolean;
 }
 
@@ -189,8 +201,13 @@ export function AIConfigurator({
               title: s.title,
               description: s.description,
               order: s.order,
+              type: s.type || "standard",
+              enableApplyStandards: s.enableApplyStandards || false,
               aiPrompt: s.aiPrompt,
               aiOutputSchema: s.aiOutputSchema,
+              signatoryConfig: s.signatoryConfig,
+              dynamicPrompt: s.dynamicPrompt,
+              dynamicMaxFields: s.dynamicMaxFields,
               fields: s.fields.map((f) => ({
                 name: f.name,
                 label: f.label,
@@ -199,6 +216,8 @@ export function AIConfigurator({
                 placeholder: f.placeholder,
                 helpText: f.helpText,
                 options: f.options,
+                aiSuggestionEnabled: f.aiSuggestionEnabled || false,
+                aiSuggestionKey: f.aiSuggestionKey,
               })),
             })),
           },
@@ -408,6 +427,168 @@ export function AIConfigurator({
 
         toast.success(`Added ${fieldsData.length} field(s) to "${selectedScreen.title}"`);
         onFieldsUpdated();
+      } else if (action.type === "updateScreen") {
+        const updateData = action.data as UpdateScreenData;
+        
+        if (!updateData.screenId) {
+          toast.error("Missing screen ID for update");
+          return;
+        }
+
+        // First, update screen properties
+        const screenUpdatePayload: Record<string, unknown> = {};
+        
+        if (updateData.title) screenUpdatePayload.title = updateData.title;
+        if (updateData.description !== undefined) screenUpdatePayload.description = updateData.description;
+        if (updateData.enableApplyStandards !== undefined) {
+          screenUpdatePayload.enableApplyStandards = updateData.enableApplyStandards;
+        }
+        if (updateData.aiEnrichment) {
+          screenUpdatePayload.aiPrompt = updateData.aiEnrichment.prompt;
+          screenUpdatePayload.aiOutputSchema = JSON.stringify(updateData.aiEnrichment.outputSchema);
+        }
+        if (updateData.type === "signatory" && updateData.signatoryConfig) {
+          screenUpdatePayload.signatoryConfig = JSON.stringify(updateData.signatoryConfig);
+        }
+        if (updateData.type === "dynamic") {
+          if (updateData.dynamicPrompt) screenUpdatePayload.dynamicPrompt = updateData.dynamicPrompt;
+          if (updateData.dynamicMaxFields) screenUpdatePayload.dynamicMaxFields = updateData.dynamicMaxFields;
+        }
+
+        // Update screen properties
+        if (Object.keys(screenUpdatePayload).length > 0) {
+          const updateResponse = await fetch(
+            `/api/admin/templates/${templateId}/screens/${updateData.screenId}`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(screenUpdatePayload),
+            }
+          );
+          
+          if (!updateResponse.ok) {
+            throw new Error("Failed to update screen");
+          }
+        }
+
+        // If fields are provided, update them (delete existing and re-create)
+        if (updateData.fields && updateData.fields.length > 0) {
+          // Get existing fields to delete
+          const existingScreen = screens.find(s => s.id === updateData.screenId);
+          if (existingScreen) {
+            // Delete existing fields
+            for (const field of existingScreen.fields) {
+              await fetch(`/api/admin/fields/${field.id}`, {
+                method: "DELETE",
+              });
+            }
+          }
+          
+          // Create new fields
+          for (const field of updateData.fields) {
+            const fieldPayload: Record<string, unknown> = {
+              name: field.name,
+              label: field.label,
+              type: field.type,
+              required: field.required,
+              placeholder: field.placeholder || "",
+              helpText: field.helpText || "",
+              options: field.options || [],
+              aiSuggestionEnabled: field.aiSuggestionEnabled || false,
+            };
+            
+            if (field.aiSuggestionEnabled && field.aiSuggestionKey) {
+              fieldPayload.aiSuggestionKey = field.aiSuggestionKey;
+            }
+            
+            await fetch(`/api/admin/screens/${updateData.screenId}/fields`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(fieldPayload),
+            });
+          }
+        }
+
+        // Mark action as applied
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (msg.id === messageId && msg.actions) {
+              const updatedActions = [...msg.actions];
+              updatedActions[actionIndex] = { ...action, applied: true };
+              return { ...msg, actions: updatedActions };
+            }
+            return msg;
+          })
+        );
+
+        const screenName = screens.find(s => s.id === updateData.screenId)?.title || "Screen";
+        toast.success(`Updated "${screenName}" with AI improvements`);
+        onScreenCreated(); // Refresh screens
+      } else if (action.type === "removeScreen") {
+        const removeData = action.data as RemoveScreenData;
+        
+        if (!removeData.screenId) {
+          toast.error("Missing screen ID for removal");
+          return;
+        }
+
+        const screenName = screens.find(s => s.id === removeData.screenId)?.title || "Screen";
+        
+        const deleteResponse = await fetch(
+          `/api/admin/templates/${templateId}/screens/${removeData.screenId}`,
+          { method: "DELETE" }
+        );
+        
+        if (!deleteResponse.ok) {
+          throw new Error("Failed to delete screen");
+        }
+
+        // Mark action as applied
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (msg.id === messageId && msg.actions) {
+              const updatedActions = [...msg.actions];
+              updatedActions[actionIndex] = { ...action, applied: true };
+              return { ...msg, actions: updatedActions };
+            }
+            return msg;
+          })
+        );
+
+        toast.success(`Removed screen "${screenName}"`);
+        onScreenCreated(); // Refresh screens
+      } else if (action.type === "reorderScreens") {
+        const reorderData = action.data as ReorderScreensData;
+        
+        if (!reorderData.screenOrder || !Array.isArray(reorderData.screenOrder)) {
+          toast.error("Invalid screen order data");
+          return;
+        }
+
+        // Update order for each screen
+        for (let i = 0; i < reorderData.screenOrder.length; i++) {
+          const screenId = reorderData.screenOrder[i];
+          await fetch(`/api/admin/templates/${templateId}/screens/${screenId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order: i }),
+          });
+        }
+
+        // Mark action as applied
+        setMessages((prev) =>
+          prev.map((msg) => {
+            if (msg.id === messageId && msg.actions) {
+              const updatedActions = [...msg.actions];
+              updatedActions[actionIndex] = { ...action, applied: true };
+              return { ...msg, actions: updatedActions };
+            }
+            return msg;
+          })
+        );
+
+        toast.success("Screens reordered successfully");
+        onScreenCreated(); // Refresh screens
       }
     } catch (error) {
       console.error("Error applying action:", error);
@@ -903,6 +1084,175 @@ function ActionCard({ action, onApply, selectedScreen }: ActionCardProps) {
             <>
               <Plus className="h-3 w-3 mr-1" />
               Add Fields
+            </>
+          )}
+        </Button>
+      </div>
+    );
+  }
+
+  if (action.type === "updateScreen") {
+    const updateData = action.data as UpdateScreenData;
+    const improvements: string[] = [];
+    
+    if (updateData.enableApplyStandards) improvements.push("Apply Standards");
+    if (updateData.aiEnrichment) improvements.push("AI Enrichment");
+    if (updateData.fields?.some(f => f.aiSuggestionEnabled)) {
+      const count = updateData.fields?.filter(f => f.aiSuggestionEnabled).length || 0;
+      improvements.push(`${count} AI-assisted fields`);
+    }
+    
+    return (
+      <div className="bg-gradient-to-br from-[hsl(var(--selise-blue))]/5 to-[hsl(var(--selise-blue))]/10 rounded-xl p-3 border border-[hsl(var(--selise-blue))]/30">
+        <div className="flex items-start gap-2 mb-2">
+          <Wand2 className="h-4 w-4 text-[hsl(var(--selise-blue))] mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold text-[hsl(var(--fg))]">
+                Update: {updateData.title || "Screen"}
+              </p>
+              <Badge variant="outline" className="text-[9px] py-0 px-1.5 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] border-[hsl(var(--selise-blue))]/30">
+                AI Improvements
+              </Badge>
+            </div>
+            {improvements.length > 0 && (
+              <p className="text-[10px] text-[hsl(var(--selise-blue))]">
+                Adding: {improvements.join(", ")}
+              </p>
+            )}
+          </div>
+        </div>
+        
+        {updateData.fields && updateData.fields.length > 0 && (
+          <div className="mb-3">
+            <p className="text-[10px] text-[hsl(var(--globe-grey))] uppercase tracking-wider mb-1">
+              Fields ({updateData.fields.length})
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {updateData.fields.slice(0, 8).map((field, idx) => (
+                <Badge 
+                  key={idx} 
+                  variant="secondary" 
+                  className={`text-[10px] py-0 ${field.aiSuggestionEnabled ? "bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]" : ""}`}
+                >
+                  {field.aiSuggestionEnabled && <Sparkles className="h-2.5 w-2.5 mr-0.5" />}
+                  {field.label}
+                </Badge>
+              ))}
+              {updateData.fields.length > 8 && (
+                <Badge variant="secondary" className="text-[10px] py-0">
+                  +{updateData.fields.length - 8} more
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+        
+        <Button
+          size="sm"
+          className="w-full h-8 text-xs bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/90"
+          onClick={handleApply}
+          disabled={action.applied || isApplying}
+        >
+          {action.applied ? (
+            <>
+              <Check className="h-3 w-3 mr-1" />
+              Updated
+            </>
+          ) : isApplying ? (
+            <>
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              Updating...
+            </>
+          ) : (
+            <>
+              <Wand2 className="h-3 w-3 mr-1" />
+              Apply Improvements
+            </>
+          )}
+        </Button>
+      </div>
+    );
+  }
+
+  if (action.type === "removeScreen") {
+    const removeData = action.data as RemoveScreenData;
+    return (
+      <div className="bg-[hsl(var(--crimson))]/5 rounded-xl p-3 border border-[hsl(var(--crimson))]/30">
+        <div className="flex items-start gap-2 mb-2">
+          <X className="h-4 w-4 text-[hsl(var(--crimson))] mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-[hsl(var(--fg))]">
+              Remove Screen
+            </p>
+            <p className="text-[10px] text-[hsl(var(--crimson))]">
+              ID: {removeData.screenId.substring(0, 8)}...
+            </p>
+          </div>
+        </div>
+        <Button
+          size="sm"
+          variant="destructive"
+          className="w-full h-8 text-xs"
+          onClick={handleApply}
+          disabled={action.applied || isApplying}
+        >
+          {action.applied ? (
+            <>
+              <Check className="h-3 w-3 mr-1" />
+              Removed
+            </>
+          ) : isApplying ? (
+            <>
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              Removing...
+            </>
+          ) : (
+            <>
+              <X className="h-3 w-3 mr-1" />
+              Remove
+            </>
+          )}
+        </Button>
+      </div>
+    );
+  }
+
+  if (action.type === "reorderScreens") {
+    const reorderData = action.data as ReorderScreensData;
+    return (
+      <div className="bg-[hsl(var(--globe-grey))]/5 rounded-xl p-3 border border-[hsl(var(--globe-grey))]/30">
+        <div className="flex items-start gap-2 mb-2">
+          <FileText className="h-4 w-4 text-[hsl(var(--globe-grey))] mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-[hsl(var(--fg))]">
+              Reorder Screens
+            </p>
+            <p className="text-[10px] text-[hsl(var(--globe-grey))]">
+              {reorderData.screenOrder?.length || 0} screens will be reordered
+            </p>
+          </div>
+        </div>
+        <Button
+          size="sm"
+          className="w-full h-8 text-xs"
+          onClick={handleApply}
+          disabled={action.applied || isApplying}
+        >
+          {action.applied ? (
+            <>
+              <Check className="h-3 w-3 mr-1" />
+              Reordered
+            </>
+          ) : isApplying ? (
+            <>
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              Reordering...
+            </>
+          ) : (
+            <>
+              <FileText className="h-3 w-3 mr-1" />
+              Apply Order
             </>
           )}
         </Button>

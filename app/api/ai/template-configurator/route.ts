@@ -241,15 +241,50 @@ ${FORM_SCHEMA_REFERENCE}
 
 ## ACTION TYPES
 
-1. **"createScreen"**: Creates a new screen
+1. **"createScreen"**: Creates a new screen at the end of the template
    - For standard: Include fields array with aiSuggestionEnabled where appropriate
    - For signatory: Include signatoryConfig with party types
    - For dynamic: Include dynamicPrompt and dynamicMaxFields
    - Include aiEnrichment on information-gathering screens
 
-2. **"addFields"**: Adds fields to currently selected screen
+2. **"updateScreen"**: Modifies an existing screen (IMPORTANT for editing existing templates!)
+   - **MUST include "screenId"**: The ID of the screen to update (from template context)
+   - Include ALL properties to update: title, description, fields, enableApplyStandards, aiEnrichment, etc.
+   - For fields: provide the COMPLETE updated fields array (replaces existing fields)
+   - Use when: adding AI features to existing screens, enabling Apply Standards, modifying fields
+
+3. **"addFields"**: Adds fields to currently selected screen
    - Use during refinement phase
-   - Only when user wants to modify existing screen
+   - Only when user wants to add more fields to existing screen
+
+4. **"removeScreen"**: Deletes a screen from the template
+   - **MUST include "screenId"**: The ID of the screen to remove
+   - Use when user wants to remove unnecessary screens
+
+5. **"reorderScreens"**: Changes the order of screens
+   - **MUST include "screenOrder"**: Array of screen IDs in new order
+   - Use when optimizing screen flow (e.g., moving enrichment screens earlier)
+
+## WHEN EDITING EXISTING TEMPLATES
+
+**CRITICAL**: When the template already has screens, you're in EDIT MODE:
+
+1. **Analyze existing screens first** - look at what's already there
+2. **Use updateScreen to improve** - don't recreate screens, update them!
+3. **Preserve screen IDs** - always reference existing screenId
+4. **Be specific about changes** - explain what you're adding/modifying
+
+**Example: Adding Apply Standards to existing screen:**
+{
+  "type": "updateScreen",
+  "data": {
+    "screenId": "existing-screen-uuid",
+    "enableApplyStandards": true,
+    "fields": [
+      // ... complete updated fields array with aiSuggestionEnabled added
+    ]
+  }
+}
 
 ## STRATEGIC FLOW DESIGN FOR FRICTIONLESS UX
 
@@ -303,16 +338,18 @@ From role/position info, generate:
 
 1. **PURE JSON response** - no text before/after, no markdown code blocks
 2. **ALL conversation in "message"** field
-3. **DISCOVERY FIRST** - ask questions before creating, understand the FULL template needs
-4. **PROPOSE ALL SCREENS AT ONCE** - don't create one screen at a time, propose the complete template
-5. **MAXIMIZE APPLY STANDARDS** - enable on screens 3+ where enrichment data is available
-6. **FRICTIONLESS FLOW** - early screens collect data, later screens auto-fill
-7. **GENERALIZED design** - templates serve many users, not specific individuals
-8. **camelCase field names** - unique within screen
-9. **Select fields require "options"** array
-10. **AI enrichment on screens 1-2** - generate context for smart defaults later
-11. **Fields with aiSuggestionKey** - enable aiSuggestionEnabled: true
-12. **Signatory screen last** - always end with signature collection`;
+3. **EDITING EXISTING TEMPLATES** - If screens already exist, use "updateScreen" action type with the screen's screenId. NEVER use "createScreen" for screens that already exist!
+4. **ALWAYS OUTPUT ACTIONS** - When the user asks to "apply", "make changes", "update", or similar, you MUST include actions in your response. Don't just describe changes - include the actual updateScreen/createScreen actions!
+5. **DISCOVERY FIRST** - For new templates, ask questions before creating to understand the FULL template needs
+6. **PROPOSE ALL AT ONCE** - don't create one screen at a time, propose/update the complete template
+7. **MAXIMIZE APPLY STANDARDS** - enable on screens 3+ where enrichment data is available
+8. **FRICTIONLESS FLOW** - early screens collect data, later screens auto-fill
+9. **GENERALIZED design** - templates serve many users, not specific individuals
+10. **camelCase field names** - unique within screen
+11. **Select fields require "options"** array
+12. **AI enrichment on screens 1-2** - generate context for smart defaults later
+13. **Fields with aiSuggestionKey** - enable aiSuggestionEnabled: true
+14. **Signatory screen last** - always end with signature collection`;
 
 // Default business logic prompt
 
@@ -344,8 +381,13 @@ const requestSchema = z.object({
         title: z.string(),
         description: z.string().nullable().optional(),
         order: z.number(),
+        type: z.enum(["standard", "signatory", "dynamic"]).optional().default("standard"),
+        enableApplyStandards: z.boolean().optional().default(false),
         aiPrompt: z.string().nullable().optional(),
         aiOutputSchema: z.string().nullable().optional(),
+        signatoryConfig: z.string().nullable().optional(), // JSON string
+        dynamicPrompt: z.string().nullable().optional(),
+        dynamicMaxFields: z.number().nullable().optional(),
         fields: z.array(
           z.object({
             name: z.string(),
@@ -355,6 +397,8 @@ const requestSchema = z.object({
             placeholder: z.string().nullable().optional(),
             helpText: z.string().nullable().optional(),
             options: z.array(z.string()).optional(),
+            aiSuggestionEnabled: z.boolean().optional(),
+            aiSuggestionKey: z.string().nullable().optional(),
           })
         ),
       })
@@ -410,12 +454,20 @@ ${templateContext.templateDescription ? `Description: ${templateContext.template
 
 ${
   templateContext.screens.length === 0
-    ? "No screens have been created yet."
-    : templateContext.screens
+    ? "No screens have been created yet. Use 'createScreen' actions to build the template."
+    : `**YOU ARE IN EDIT MODE** - Use 'updateScreen' with screenId to modify existing screens!
+
+${templateContext.screens
         .map(
           (screen, idx) => {
+            // Type info
+            const screenType = (screen as { type?: string }).type || 'standard';
+            const hasApplyStandards = (screen as { enableApplyStandards?: boolean }).enableApplyStandards;
+            
             let screenInfo = `
 ### Screen ${idx + 1}: ${screen.title}
+**screenId: "${screen.id}"** ← Use this ID for updateScreen/removeScreen actions
+Type: ${screenType}${hasApplyStandards ? ' | ✓ Apply Standards ENABLED' : ' | ✗ Apply Standards NOT enabled'}
 ${screen.description ? `Description: ${screen.description}` : ""}
 Fields (${screen.fields.length}):
 ${
@@ -423,8 +475,11 @@ ${
     ? "  - No fields yet"
     : screen.fields
         .map(
-          (f) =>
-            `  - ${f.name} (${f.type}${f.required ? ", required" : ""}): "${f.label}"`
+          (f) => {
+            const hasSuggestion = (f as { aiSuggestionEnabled?: boolean }).aiSuggestionEnabled;
+            const suggestionKey = (f as { aiSuggestionKey?: string }).aiSuggestionKey;
+            return `  - ${f.name} (${f.type}${f.required ? ", required" : ""}): "${f.label}"${hasSuggestion ? ` [AI suggestion: ${suggestionKey}]` : ''}`;
+          }
         )
         .join("\n")
 }`;
@@ -443,7 +498,7 @@ ${
             return screenInfo;
           }
         )
-        .join("\n")
+        .join("\n")}`
 }
 
 ## AVAILABLE ENRICHMENT VARIABLES FOR aiSuggestionKey
@@ -665,8 +720,15 @@ ${businessLogicPrompt}`;
     }
 
     // Validate actions structure
-    response.actions = response.actions.filter((action: any) => {
-      if (!action.type || !action.data) return false;
+    const originalActionsCount = response.actions?.length || 0;
+    response.actions = (response.actions || []).filter((action: any) => {
+      if (!action.type || !action.data) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[TEMPLATE_CONFIGURATOR] Filtered out action - missing type or data:", action?.type);
+        }
+        return false;
+      }
+      
       if (action.type === "createScreen") {
         // Must have a title
         if (!action.data.title) return false;
@@ -688,16 +750,44 @@ ${businessLogicPrompt}`;
         // Default: accept if has title
         return true;
       }
+      
+      if (action.type === "updateScreen") {
+        // Must have screenId to know which screen to update
+        if (!action.data.screenId) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("[TEMPLATE_CONFIGURATOR] updateScreen rejected - missing screenId");
+          }
+          return false;
+        }
+        // Accept if has screenId - can update any properties
+        return true;
+      }
+      
       if (action.type === "addFields") {
         return Array.isArray(action.data);
       }
+      
+      if (action.type === "removeScreen") {
+        // Must have screenId to know which screen to remove
+        return !!action.data.screenId;
+      }
+      
+      if (action.type === "reorderScreens") {
+        // Must have screenOrder array
+        return Array.isArray(action.data.screenOrder) && action.data.screenOrder.length > 0;
+      }
+      
       return false;
     });
 
     if (process.env.NODE_ENV === "development") {
+      const actionTypes = response.actions.map((a: any) => a.type);
       console.log("[TEMPLATE_CONFIGURATOR] Response:", {
         message: response.message.substring(0, 100) + "...",
-        actionsCount: response.actions.length,
+        originalActionsCount,
+        validActionsCount: response.actions.length,
+        actionTypes: actionTypes.length > 0 ? actionTypes : "none",
+        filteredOut: originalActionsCount - response.actions.length,
       });
     }
 

@@ -90,6 +90,7 @@ interface ScreenData {
   // For standard screens
   fields?: FieldData[];
   aiEnrichment?: AIEnrichment;
+  enableApplyStandards?: boolean; // One-click auto-fill for AI suggestions
   // For signatory screens
   signatoryConfig?: SignatoryConfig;
   // For dynamic screens
@@ -264,6 +265,11 @@ export function AIConfigurator({
           description: screenData.description || "",
           type: screenType,
         };
+
+        // Add enableApplyStandards if specified
+        if (screenData.enableApplyStandards !== undefined) {
+          screenPayload.enableApplyStandards = screenData.enableApplyStandards;
+        }
 
         // Add type-specific configuration
         if (screenType === "signatory" && screenData.signatoryConfig) {
@@ -803,6 +809,16 @@ function ActionCard({ action, onApply, selectedScreen }: ActionCardProps) {
                 </Badge>
               ))}
             </div>
+          </div>
+        )}
+        
+        {/* Apply Standards indicator */}
+        {screenData.enableApplyStandards && (
+          <div className="mb-3 flex items-center gap-2 p-2 rounded-lg bg-[hsl(var(--lime-green))]/10 border border-[hsl(var(--lime-green))]/20">
+            <Zap className="h-3.5 w-3.5 text-[hsl(var(--poly-green))]" />
+            <span className="text-[10px] font-medium text-[hsl(var(--poly-green))]">
+              One-click &quot;Apply Standards&quot; enabled
+            </span>
           </div>
         )}
         <Button

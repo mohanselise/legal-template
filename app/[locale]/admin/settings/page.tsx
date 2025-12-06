@@ -53,67 +53,72 @@ const settingsSchema = z.object({
 
 const DEFAULT_TEMPLATE_CONFIGURATOR_BUSINESS_LOGIC = `You are helping build REUSABLE legal document templates for a Swiss-based legal platform.
 
+## PRIORITY: FRICTIONLESS USER EXPERIENCE
+
+1. Minimize manual input for end users
+2. Maximize "Apply Standards" one-click auto-fill
+3. Strategic screen ordering: collect data first, auto-fill later
+4. Maintain legal quality - don't skip essential fields
+
 ## CONVERSATION APPROACH
 
 **Discovery First, Then Full Proposal:**
-1. Ask 2-3 questions to understand the complete template needs
-2. Explore: document type, parties, key sections, jurisdiction, special requirements
-3. Then propose ALL screens at once as a complete template
-4. Don't create screens one at a time - propose the full structure
+1. Ask 2-3 questions to understand complete template needs
+2. Explore: document type, parties, key sections, jurisdiction
+3. Then propose ALL screens at once with optimal flow
+4. Explain the frictionless user experience in your proposal
 
-## Template Generalization
+## STRATEGIC SCREEN FLOW PATTERN
 
-Templates serve MANY users, not specific individuals:
-- Generic labels: "Company Name" not "Acme Corp"  
-- Flexible options: ["Full-time", "Part-time", "Contract"] 
-- Design for common cases
-- Only specific when user requests
+**Screen 1-2: Data Collection + AI Enrichment**
+- Collect essential seed data (company, address, role)
+- Run aiEnrichment to infer: jurisdiction, currency, industry, standards
+- User must fill these manually
 
-## Complete Template Structures
+**Screen 3+: One-Click Auto-Fill (enableApplyStandards: true)**
+- Enable "Apply Standards" button
+- Fields use aiSuggestionKey to pull from enrichment
+- User clicks once to fill multiple fields
+- Can review and adjust
 
-**Employment Agreement (6-7 screens):**
-1. Employer Information (+ AI enrichment → jurisdiction, industry)
-2. Employee Information (personal details)
-3. Position & Role (title, department, reporting)
-4. Compensation (salary, currency from enrichment)
-5. Working Conditions (hours, location, probation)
-6. Confidentiality & IP (standard clauses)
-7. Signatories (employer + employee)
+**Last Screen: Signatories**
 
-**NDA (4-5 screens):**
-1. Disclosing Party (+ AI enrichment → jurisdiction)
-2. Receiving Party
-3. Confidential Information (definition, scope)
-4. Terms & Obligations (duration, restrictions)
-5. Signatories (both parties)
+## EXAMPLE FLOWS WITH APPLY STANDARDS
 
-**Service Agreement (5-6 screens):**
-1. Service Provider (+ AI enrichment → jurisdiction, industry)
-2. Client Information
-3. Services Description (scope, deliverables)
-4. Payment Terms (fees, currency from enrichment)
-5. Liability & Termination
-6. Signatories (provider + client)
+**Employment Agreement:**
+1. Employer Info (aiEnrichment → jurisdiction, currency, salaryRange)
+2. Employee Info (user fills while AI runs)
+3. Position Details (enableApplyStandards: true)
+4. Compensation (enableApplyStandards: true) ← one click fills salary, currency, benefits
+5. Working Conditions (enableApplyStandards: true)
+6. Confidentiality (minimal AI needed)
+7. Signatories
 
-## AI Enrichment Strategy
+**NDA:**
+1. Disclosing Party (aiEnrichment → jurisdiction, industry)
+2. Receiving Party (user fills)
+3. Confidential Info (enableApplyStandards: true)
+4. Terms & Obligations (enableApplyStandards: true)
+5. Signatories
 
-Early screens → enrich with context for later screens:
-- jurisdiction, tradingCurrency, industrySector
-- companySize, employmentType, contractDuration
+## ENRICHMENT OUTPUT RECOMMENDATIONS
 
-Later screens → use aiSuggestionKey for auto-fill
+From company info, generate:
+- jurisdiction, tradingCurrency, industrySector, companySize
 
-## Field Best Practices
+From role/position info, generate:
+- marketSalaryRange, standardBenefits, typicalProbation, seniorityLevel
 
-- 3-6 fields per screen
-- Meaningful helpText for legal context
-- Select fields for bounded choices
-- camelCase field names
-- Enable AI suggestions from enrichment
+## APPLY STANDARDS CHECKLIST
+
+For screens with enableApplyStandards: true:
+- ✓ Most fields have aiSuggestionEnabled: true
+- ✓ Each has aiSuggestionKey matching enrichment output
+- ✓ Appears AFTER enrichment screens (screen 3+)
 
 ## Platform Context
 - Swiss law defaults
-- Multi-jurisdiction support
+- Multi-jurisdiction support  
 - UILM translation keys available`;
 
 type SettingsFormData = z.infer<typeof settingsSchema>;

@@ -788,6 +788,79 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   const currentScreen = config.screens[currentStep];
   const displayedProgress = Math.round(fakeProgress);
 
+  // Reset generation and go back to form
+  const handleRetryGeneration = () => {
+    setGenerationError(null);
+    setIsGenerating(false);
+    setSubmitting(false);
+    setFakeProgress(0);
+    setGenerationStepIndex(0);
+  };
+
+  const handleSubmit = async () => {
+    if (!canProceed() || !turnstileToken) return;
+
+    setSubmitting(true);
+    setIsGenerating(true);
+    setGenerationStepIndex(0);
+    setFakeProgress(0);
+    setGenerationError(null);
+
+    try {
+      console.log("🚀 [DynamicSmartFlow] Starting document generation...");
+      console.log("📋 [DynamicSmartFlow] Form data:", formData);
+      console.log("🔑 [DynamicSmartFlow] Template ID:", config.id);
+
+      // Call the generation API
+      const response = await fetch(`/api/templates/${config.id}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          formData,
+          turnstileToken,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate document");
+      }
+
+      const result = await response.json();
+      console.log("✅ [DynamicSmartFlow] Document generated successfully");
+
+      // Store result in sessionStorage for review page using the reusable storage utility
+      const reviewData = {
+        document: result.document,
+        formData: formData,
+        templateId: config.id,
+        templateSlug: config.slug,
+        templateTitle: config.title,
+        storedAt: new Date().toISOString(),
+      };
+
+      saveTemplateReview(config.slug, reviewData);
+
+      // Set progress to 100 before navigating
+      setFakeProgress(100);
+      isNavigatingRef.current = true;
+
+      // Brief delay to show 100% completion
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Redirect to review page
+      router.push(`/${locale}/templates/${config.slug}/review`);
+    } catch (error) {
+      console.error("❌ [DynamicSmartFlow] Generation error:", error);
+      const errorMessage = error instanceof Error
+        ? error.message
+        : "Failed to generate document. Please try again.";
+      setGenerationError(errorMessage);
+      setIsGenerating(false);
+      setSubmitting(false);
+    }
+  };
+
   // Loading Screen - shows during document generation
   if (isGenerating || generationError) {
     const currentStage =
@@ -1082,79 +1155,6 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
       nextStep();
     }
-  };
-
-  const handleSubmit = async () => {
-    if (!canProceed() || !turnstileToken) return;
-
-    setSubmitting(true);
-    setIsGenerating(true);
-    setGenerationStepIndex(0);
-    setFakeProgress(0);
-    setGenerationError(null);
-
-    try {
-      console.log("🚀 [DynamicSmartFlow] Starting document generation...");
-      console.log("📋 [DynamicSmartFlow] Form data:", formData);
-      console.log("🔑 [DynamicSmartFlow] Template ID:", config.id);
-
-      // Call the generation API
-      const response = await fetch(`/api/templates/${config.id}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          formData,
-          turnstileToken,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate document");
-      }
-
-      const result = await response.json();
-      console.log("✅ [DynamicSmartFlow] Document generated successfully");
-
-      // Store result in sessionStorage for review page using the reusable storage utility
-      const reviewData = {
-        document: result.document,
-        formData: formData,
-        templateId: config.id,
-        templateSlug: config.slug,
-        templateTitle: config.title,
-        storedAt: new Date().toISOString(),
-      };
-
-      saveTemplateReview(config.slug, reviewData);
-
-      // Set progress to 100 before navigating
-      setFakeProgress(100);
-      isNavigatingRef.current = true;
-
-      // Brief delay to show 100% completion
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Redirect to review page
-      router.push(`/${locale}/templates/${config.slug}/review`);
-    } catch (error) {
-      console.error("❌ [DynamicSmartFlow] Generation error:", error);
-      const errorMessage = error instanceof Error
-        ? error.message
-        : "Failed to generate document. Please try again.";
-      setGenerationError(errorMessage);
-      setIsGenerating(false);
-      setSubmitting(false);
-    }
-  };
-
-  // Reset generation and go back to form
-  const handleRetryGeneration = () => {
-    setGenerationError(null);
-    setIsGenerating(false);
-    setSubmitting(false);
-    setFakeProgress(0);
-    setGenerationStepIndex(0);
   };
 
   // Welcome Screen

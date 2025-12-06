@@ -7,11 +7,11 @@ Return a JSON object with this structure:
 ```json
 {
   "metadata": {
-    "title": "string",
-    "effectiveDate": "region-specific date format",
-    "documentType": "string",
-    "jurisdiction": "string",
-    "generatedAt": "ISO 8601 timestamp"
+    "title": "string",           // required
+    "effectiveDate": "string",   // required (region-specific date format)
+    "documentType": "string",    // required
+    "jurisdiction": "string",    // optional
+    "generatedAt": "string"      // required (ISO 8601 timestamp)
   },
   "content": [ /* Article blocks */ ],
   "signatories": [ /* Signatory objects */ ]
@@ -24,19 +24,21 @@ Include ALL parties who will sign. Each signatory:
 
 ```json
 {
-  "party": "string",     // Descriptive camelCase identifier (auto-formatted for display)
-  "name": "string",      // Full legal name (REQUIRED)
-  "email": "string",     // Email address (REQUIRED)
-  "title": "string",     // Job title or role
-  "company": "string",   // Company name
-  "phone": "string"      // Phone number
+  "party": "string",    // required; descriptive camelCase identifier (avoid generic "other")
+  "name": "string",     // required; full legal name
+  "email": "string",    // required; email address
+  "title": "string",    // optional; job title or role
+  "role": "string",     // optional; display role for signature block
+  "company": "string",  // optional; company or organization name
+  "phone": "string",    // optional; phone number
+  "address": "string"   // optional; signatory address
 }
 ```
 
 **Rules:**
-- Extract from form data provided
-- Use meaningful `party` values (avoid generic "other")
-- Do NOT use placeholders
+- Extract from provided form data.
+- Use meaningful `party` values (avoid generic "other").
+- Do NOT use placeholders.
 
 ## BLOCK TYPES
 
@@ -100,17 +102,18 @@ article → section → content blocks (paragraph, list, definition, table)
 ## RULES
 
 **DO:**
-- Use EXACT data from user input
-- Include ALL signatories
-- Use jurisdiction-appropriate language and formatting
-- Number articles/sections sequentially
-- Define key terms before using them
+- Use EXACT data from user input.
+- Include ALL signatories.
+- Make the document elaborate: fully articulate clauses and explanations; avoid terse or fragmentary wording unless the user explicitly requests brevity.
+- Use jurisdiction-appropriate language and formatting.
+- Number articles/sections sequentially.
+- Define key terms before using them.
 
 **DO NOT:**
-- Use placeholders ("[NAME]", "TBD", "XXX")
-- Skip the signatories array
-- Use unlisted block types
-- Nest deeper than 3 levels
+- Use placeholders ("[NAME]", "TBD", "XXX").
+- Skip the signatories array.
+- Use unlisted block types.
+- Nest deeper than 3 levels.
 
 ## SCHEMA REFERENCE
 
@@ -155,8 +158,10 @@ article → section → content blocks (paragraph, list, definition, table)
       "name": "string",
       "email": "string",
       "title": "string",
+      "role": "string",
       "company": "string",
-      "phone": "string"
+      "phone": "string",
+      "address": "string"
     }
   ]
 }

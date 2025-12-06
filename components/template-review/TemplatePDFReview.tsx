@@ -17,6 +17,14 @@ import {
 import type { LegalDocument } from "@/app/api/templates/employment-agreement/schema";
 import { Button } from "@/components/ui/button";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import dynamic from "next/dynamic";
 import { SignatureFieldOverlay, type SignatureField } from "@/app/[locale]/templates/employment-agreement/generate/review/_components/SignatureFieldOverlay";
 import { SignatureFieldMiniMap } from "@/app/[locale]/templates/employment-agreement/generate/review/_components/SignatureFieldMiniMap";
@@ -50,8 +58,13 @@ interface TemplatePDFReviewProps {
   onBack?: () => void;
 }
 
-// Color palette for signatories
-const SIGNATORY_COLORS = ["#0066B2", "#2A4D14", "#791E94", "#D80032"]; // SELISE Blue, Poly Green, Mauveine, Crimson
+// Color palette for signatories (aligned with brand tokens)
+const SIGNATORY_COLORS = [
+  "hsl(var(--selise-blue))",
+  "hsl(var(--poly-green))",
+  "hsl(var(--mauveine))",
+  "hsl(var(--destructive))",
+];
 
 // Helper to extract signatories from document or form data
 function extractSignatories(
@@ -183,6 +196,7 @@ export function TemplatePDFReview({
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isPreparingContract, setIsPreparingContract] = useState(false);
+  const [showDownloadPrompt, setShowDownloadPrompt] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -326,6 +340,7 @@ export function TemplatePDFReview({
   };
 
   const handleDownloadPdf = async () => {
+    setShowDownloadPrompt(false);
     try {
       const response = await fetch("/api/documents/generate-pdf", {
         method: "POST",
@@ -504,57 +519,105 @@ export function TemplatePDFReview({
 
   if (isPreparingContract) {
     return (
-      <div className="fixed inset-0 bg-[hsl(var(--bg))] z-50 flex flex-col items-center justify-center px-4">
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-[hsl(var(--gradient-light-to))] px-4">
         <div className="relative w-24 h-24 mx-auto mb-8">
-          <div className="absolute inset-0 border-4 border-[hsl(var(--border))] rounded-full"></div>
-          <div className="absolute inset-0 border-4 border-[hsl(var(--selise-blue))] border-t-transparent rounded-full animate-spin"></div>
+          <div className="absolute inset-0 border-4 border-[hsl(var(--border))] rounded-full" />
+          <div className="absolute inset-0 border-4 border-[hsl(var(--selise-blue))] border-t-transparent rounded-full animate-spin" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] flex items-center justify-center shadow-lg">
               <Send className="w-6 h-6 text-white" />
             </div>
           </div>
         </div>
-        <h2 className="text-4xl font-bold text-[hsl(var(--fg))] mb-3">Preparing Contract</h2>
-        <p className="text-lg text-[hsl(var(--globe-grey))]">Setting up your document for signature...</p>
+        <h2 className="text-3xl font-bold text-[hsl(var(--fg))] mb-2">Preparing Contract</h2>
+        <p className="text-base text-[hsl(var(--globe-grey))]">Setting up your document for signature...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-[hsl(var(--gradient-light-to))] text-[hsl(var(--fg))]">
       {/* Header */}
-      <header ref={headerRef} className="sticky top-0 z-40 bg-[hsl(var(--bg))] border-b border-[hsl(var(--border))] shadow-sm">
+      <header
+        ref={headerRef}
+        className="sticky top-0 z-40 border-b border-[hsl(var(--border))] bg-[hsl(var(--bg))]/85 backdrop-blur-xl"
+      >
         <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-4">
               {onBack && (
-                <Button variant="ghost" size="icon" onClick={onBack}>
+                <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               )}
-              <div className="w-10 h-10 bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] rounded-lg flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-white" strokeWidth={2.5} />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] flex items-center justify-center shadow-lg">
+                <CheckCircle2 className="w-6 h-6 text-white" strokeWidth={2.5} />
               </div>
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 border border-green-200 rounded text-green-700 text-xs font-semibold">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[hsl(var(--success))/0.15] text-[hsl(var(--poly-green))] text-[11px] font-semibold uppercase tracking-wide">
                     <CheckCircle2 className="w-3 h-3" />
-                    Ready
+                    Ready to review
                   </span>
+                  {signatories.length > 0 && (
+                    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[hsl(var(--muted))] text-[hsl(var(--globe-grey))] text-[11px] font-semibold">
+                      {signatories.length} signator{signatories.length === 1 ? "y" : "ies"}
+                    </span>
+                  )}
                 </div>
-                <h1 className="text-lg font-bold text-[hsl(var(--fg))]">{templateTitle}</h1>
+                <h1 className="text-xl font-bold leading-tight">{templateTitle}</h1>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-[hsl(var(--globe-grey))]">
+                  <div className="inline-flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>{document.metadata.title}</span>
+                  </div>
+                  {document.metadata.effectiveDate && (
+                    <div className="inline-flex items-center gap-1">
+                      <span className="font-semibold text-[hsl(var(--fg))]">Effective:</span>
+                      <span>{new Date(document.metadata.effectiveDate).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                  {numPages && (
+                    <div className="inline-flex items-center gap-1">
+                      <span className="font-semibold text-[hsl(var(--fg))]">Pages:</span>
+                      <span>
+                        {numPages} {numPages === 1 ? "page" : "pages"}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
+            </div>
+
+            <div className="hidden md:flex items-center gap-2">
+              {signatureFields.length > 0 && (
+                <Button
+                  onClick={handleSendToSignature}
+                  className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] shadow-md"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Send for Signature
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => setShowDownloadPrompt(true)}
+                className="border-[hsl(var(--border))] text-[hsl(var(--globe-grey))]"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download PDF
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 px-4 sm:px-6 pb-10 pt-4">
         {/* PDF Preview Area */}
-        <div className="flex-1 flex flex-col bg-[hsl(var(--muted))]">
+        <div className="flex-1 flex flex-col rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--bg))] shadow-lg">
           {/* PDF Controls */}
-          <div className="bg-[hsl(var(--bg))] border-b border-[hsl(var(--border))] px-6 py-2.5 flex items-center justify-between">
+          <div className="border-b border-[hsl(var(--border))] px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <FileText className="w-4 h-4 text-[hsl(var(--globe-grey))]" />
               <span className="text-sm font-medium text-[hsl(var(--fg))]">Preview</span>
@@ -567,7 +630,7 @@ export function TemplatePDFReview({
 
             <div className="flex items-center gap-2">
               {/* Zoom Controls */}
-              <div className="flex items-center border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] divide-x divide-[hsl(var(--border))]">
+              <div className="flex items-center border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] divide-x divide-[hsl(var(--border))] shadow-sm">
                 <button
                   onClick={handleZoomOut}
                   disabled={scale <= 0.5}
@@ -576,7 +639,7 @@ export function TemplatePDFReview({
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
-                <span className="text-xs font-medium text-[hsl(var(--fg))] min-w-[3.5rem] text-center px-2">
+                <span className="text-xs font-semibold text-[hsl(var(--fg))] min-w-[3.5rem] text-center px-2">
                   {Math.round(scale * 100)}%
                 </span>
                 <button
@@ -590,17 +653,17 @@ export function TemplatePDFReview({
               </div>
 
               {/* Fit Presets */}
-              <div className="flex items-center border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] divide-x divide-[hsl(var(--border))]">
+              <div className="hidden sm:flex items-center border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] divide-x divide-[hsl(var(--border))] shadow-sm">
                 <button
                   onClick={handleFitWidth}
-                  className="px-2.5 py-1.5 text-xs font-medium text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
                   title="Fit Width"
                 >
                   Fit Width
                 </button>
                 <button
                   onClick={handleFitPage}
-                  className="px-2.5 py-1.5 text-xs font-medium text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
                   title="100%"
                 >
                   100%
@@ -610,8 +673,8 @@ export function TemplatePDFReview({
               {/* Sidebar Toggle */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-1.5 text-[hsl(var(--fg))] border border-[hsl(var(--border))] rounded-md hover:bg-[hsl(var(--muted))] transition-colors"
-                title={sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
+                className="p-2 text-[hsl(var(--fg))] border border-[hsl(var(--border))] rounded-md hover:bg-[hsl(var(--muted))] transition-colors shadow-sm"
+                title={sidebarOpen ? "Hide Details" : "Show Details"}
               >
                 {sidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
               </button>
@@ -619,16 +682,30 @@ export function TemplatePDFReview({
           </div>
 
           {/* PDF Viewer */}
-          <div ref={containerRef} className="flex-1 overflow-auto p-6">
+          <div ref={containerRef} className="flex-1 overflow-auto p-4 sm:p-6 bg-[hsl(var(--muted))]/40 rounded-b-2xl">
             {isLoadingPdf ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <Loader2 className="w-10 h-10 animate-spin text-[hsl(var(--selise-blue))] mx-auto mb-3" />
-                  <p className="text-[hsl(var(--fg))] text-sm font-medium">Loading Preview...</p>
+                  <p className="text-[hsl(var(--fg))] text-sm font-medium">Loading preview…</p>
                 </div>
               </div>
             ) : pdfUrl ? (
-              <div className="max-w-4xl mx-auto">
+              <div className="max-w-4xl mx-auto space-y-6">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-[hsl(var(--globe-grey))]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--bg))] border border-[hsl(var(--border))] px-3 py-1 font-semibold">
+                    Place or adjust signature blocks, then send.
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[hsl(var(--muted))]">
+                    <span className="h-2 w-2 rounded-full bg-[hsl(var(--selise-blue))]" />
+                    Primary signer
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[hsl(var(--muted))]">
+                    <span className="h-2 w-2 rounded-full bg-[hsl(var(--poly-green))]" />
+                    Counterparty
+                  </span>
+                </div>
+
                 <Document
                   file={pdfUrl}
                   onLoadSuccess={onDocumentLoadSuccess}
@@ -639,7 +716,7 @@ export function TemplatePDFReview({
                   }
                   error={
                     <div className="flex items-center justify-center py-20">
-                      <p className="text-red-600 font-semibold">Failed to load PDF</p>
+                      <p className="text-[hsl(var(--destructive))] font-semibold">Failed to load PDF</p>
                     </div>
                   }
                 >
@@ -650,7 +727,7 @@ export function TemplatePDFReview({
                           key={page}
                           data-page-number={page}
                           ref={page === pageNumber ? pageRef : null}
-                          className="bg-white shadow-lg mx-auto relative"
+                          className="bg-white shadow-xl mx-auto relative rounded-lg overflow-hidden"
                           style={{
                             width: 612 * scale,
                             minHeight: 792 * scale,
@@ -686,6 +763,16 @@ export function TemplatePDFReview({
                               onPageClick={handlePageClick}
                             />
                           )}
+                          {page !== 1 && (
+                            <div className="pointer-events-none absolute top-3 right-3 text-[hsl(var(--globe-grey))] text-xs font-medium tracking-tight text-right">
+                              {templateTitle}
+                            </div>
+                          )}
+                          {numPages && (
+                            <div className="pointer-events-none absolute bottom-3 right-3 text-[hsl(var(--globe-grey))] text-xs font-semibold tracking-tight">
+                              Page {page} of {numPages}
+                            </div>
+                          )}
                         </div>
                       ))}
                   </div>
@@ -693,24 +780,24 @@ export function TemplatePDFReview({
               </div>
             ) : (
               <div className="flex items-center justify-center h-full">
-                <p className="text-gray-500 font-medium">No PDF available</p>
+                <p className="text-[hsl(var(--globe-grey))] font-medium">No PDF available</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Mobile sidebar backdrop */}
+        {/* Sidebar backdrop for mobile */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/40 z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         {/* Sidebar */}
         {sidebarOpen && (
-          <aside className="fixed lg:relative right-0 top-0 w-full sm:w-80 border-l border-[hsl(var(--border))] bg-[hsl(var(--bg))] flex flex-col h-screen z-50 lg:z-auto lg:sticky shadow-2xl lg:shadow-none">
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <aside className="relative lg:w-96 w-full lg:max-w-sm border border-[hsl(var(--border))] bg-[hsl(var(--bg))] rounded-2xl shadow-xl lg:shadow-lg lg:sticky lg:top-16 lg:self-start z-50 lg:z-0 flex flex-col">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 max-h-[calc(100vh-6rem)] pb-28 [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[hsl(var(--border))] [&::-webkit-scrollbar-track]:bg-transparent">
               {/* Mobile header */}
               <div className="flex items-center justify-between lg:hidden pb-4 border-b border-[hsl(var(--border))]">
                 <h2 className="font-semibold text-lg text-[hsl(var(--fg))]">Document Details</h2>
@@ -724,12 +811,16 @@ export function TemplatePDFReview({
 
               {/* Signature Field Controls */}
               {signatureFields.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-[hsl(var(--fg))] text-sm mb-3">Signature Fields</h3>
-                  <div className="text-xs text-[hsl(var(--globe-grey))] mb-4">
-                    <strong className="text-[hsl(var(--fg))] font-semibold">{signatureFields.length}</strong>{" "}
-                    field{signatureFields.length !== 1 ? "s" : ""} placed
+                <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/60 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-[hsl(var(--fg))] text-sm">Signature Fields</h3>
+                    <span className="text-xs font-semibold text-[hsl(var(--globe-grey))]">
+                      {signatureFields.length} placed
+                    </span>
                   </div>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Drag, resize, or tap a field to adjust the signing experience.
+                  </p>
                 </div>
               )}
 
@@ -781,50 +872,115 @@ export function TemplatePDFReview({
                     {signatories.map((sig, index) => (
                       <div
                         key={index}
-                        className="p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]"
+                        className="p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/60"
                       >
-                        <p className="font-medium text-[hsl(var(--fg))]">{sig.name}</p>
-                        {sig.role && (
-                          <p className="text-xs text-[hsl(var(--globe-grey))]">{sig.role}</p>
-                        )}
-                        {sig.email && (
-                          <p className="text-xs text-[hsl(var(--globe-grey))]">{sig.email}</p>
-                        )}
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-[hsl(var(--fg))]">{sig.name}</p>
+                            {sig.role && (
+                              <p className="text-xs text-[hsl(var(--globe-grey))]">{sig.role}</p>
+                            )}
+                            {sig.email && (
+                              <p className="text-xs text-[hsl(var(--globe-grey))]">{sig.email}</p>
+                            )}
+                          </div>
+                          <span
+                            className="mt-1 inline-flex h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: sig.color }}
+                            aria-hidden
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="border-t border-[hsl(var(--border))] pt-6 space-y-3">
-                <Button
-                  onClick={handleDownloadPdf}
-                  className="w-full bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))]"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PDF
-                </Button>
-                {signatureFields.length > 0 && (
-                  <Button
-                    onClick={handleSendToSignature}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    Send for Signature
-                  </Button>
-                )}
-              </div>
-
               {/* Legal Disclaimer */}
               <div className="border-t border-[hsl(var(--border))] pt-6">
                 <LegalDisclaimer />
               </div>
             </div>
+
+            {/* Sticky actions */}
+            <div className="fixed inset-x-0 bottom-0 border-t border-[hsl(var(--border))] bg-[hsl(var(--bg))] px-4 sm:px-6 py-4 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.35)] lg:sticky lg:bottom-0 lg:left-auto lg:right-auto lg:px-6 lg:rounded-b-2xl">
+              <div className="space-y-3">
+                {signatureFields.length > 0 && (
+                  <Button
+                    onClick={handleSendToSignature}
+                    className="w-full bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] shadow-md"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Send for Signature
+                  </Button>
+                )}
+                <Button
+                  onClick={() => setShowDownloadPrompt(true)}
+                  variant="outline"
+                  className="w-full text-[hsl(var(--globe-grey))]"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download PDF
+                </Button>
+              </div>
+            </div>
           </aside>
         )}
       </div>
+
+      <Dialog open={showDownloadPrompt} onOpenChange={setShowDownloadPrompt}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send with SELISE Signature (recommended)</DialogTitle>
+            <DialogDescription>
+              Enjoy legally compliant e-signatures with a full audit trail, Swiss-grade privacy, and a
+              safe, trackable workflow. Avoid version sprawl and keep signers aligned.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 text-sm text-[hsl(var(--fg))]">
+            <div className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[hsl(var(--selise-blue))] mt-0.5" />
+              <div>
+                <p className="font-semibold text-[hsl(var(--fg))]">Legal compliance & audit trail</p>
+                <p className="text-[hsl(var(--globe-grey))]">Time-stamped steps and evidence for every signer.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[hsl(var(--selise-blue))] mt-0.5" />
+              <div>
+                <p className="font-semibold text-[hsl(var(--fg))]">Swiss privacy and safety first</p>
+                <p className="text-[hsl(var(--globe-grey))]">Data handled with Swiss-grade security standards.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[hsl(var(--selise-blue))] mt-0.5" />
+              <div>
+                <p className="font-semibold text-[hsl(var(--fg))]">No more version chasing</p>
+                <p className="text-[hsl(var(--globe-grey))]">One source of truth—track, remind, and complete faster.</p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-4">
+            <Button
+              onClick={handleSendToSignature}
+              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] w-full sm:w-auto"
+              disabled={signatureFields.length === 0}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Send with SELISE Signature
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDownloadPdf}
+              className="w-full sm:w-auto text-[hsl(var(--globe-grey))]"
+            >
+              Download PDF anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

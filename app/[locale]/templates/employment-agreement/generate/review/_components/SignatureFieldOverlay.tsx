@@ -37,19 +37,31 @@ interface SignatureFieldOverlayProps {
 }
 
 const PARTY_COLORS = {
-  employer: '#0066B2', // SELISE Blue
-  employee: '#2A4D14', // Poly Green
+  employer: 'hsl(var(--selise-blue))',
+  employee: 'hsl(var(--poly-green))',
 };
 
 const SIGNATORY_COLORS = [
   PARTY_COLORS.employer,
   PARTY_COLORS.employee,
-  '#7c3aed', // Purple for third
-  '#dc2626', // Red for fourth
+  'hsl(var(--mauveine))',
+  'hsl(var(--destructive))',
 ];
 
-const applyAlpha = (hex: string, alpha: number) => {
-  const normalized = hex.replace('#', '');
+const applyAlpha = (color: string, alpha: number) => {
+  const clamped = Math.max(0, Math.min(alpha, 1));
+
+  // Handle HSL strings (including CSS variables)
+  if (color.startsWith('hsl(') || color.startsWith('hsla(')) {
+    const normalized = color
+      .replace(/^hsla?\(/, 'hsla(')
+      .replace(/\)\s*$/, '')
+      .replace(/\/\s*[\d.]+\s*$/, '');
+    return `${normalized} / ${clamped})`;
+  }
+
+  // Fallback for hex colors (legacy)
+  const normalized = color.replace('#', '');
   const value =
     normalized.length === 3
       ? normalized
@@ -62,7 +74,7 @@ const applyAlpha = (hex: string, alpha: number) => {
   const g = (int >> 8) & 255;
   const b = int & 255;
 
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  return `rgba(${r}, ${g}, ${b}, ${clamped})`;
 };
 
 const getMinimumDimensions = (type: SignatureField['type']) => {
@@ -373,7 +385,7 @@ export function SignatureFieldOverlay({
         const signatory = signatories[field.signatoryIndex];
         const isSelected = selectedField === field.id;
         const isHovered = hoveredField === field.id;
-        const accentColor = signatory?.color || SIGNATORY_COLORS[field.signatoryIndex] || '#0066B2';
+        const accentColor = signatory?.color || SIGNATORY_COLORS[field.signatoryIndex] || 'hsl(var(--selise-blue))';
         const nameLine = signatory?.name || 'Signatory';
         const secondaryLine =
           field.type === 'signature'
@@ -427,7 +439,7 @@ export function SignatureFieldOverlay({
                 >
                   {field.type === 'signature' ? 'Signature' : 'Date'}
                 </span>
-                <span className="text-[9px] text-slate-600 mt-0.5">{nameLine}</span>
+                <span className="text-[9px] text-[hsl(var(--globe-grey))] mt-0.5">{nameLine}</span>
               </div>
 
               {isSelected && (
@@ -447,13 +459,14 @@ export function SignatureFieldOverlay({
                     e.stopPropagation();
                     handleDeleteField(field.id);
                   }}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg border-2 border-white z-10"
+                  className="absolute -top-2 -right-2 w-6 h-6 text-white rounded-full flex items-center justify-center transition-colors shadow-lg border-2 border-white z-10"
+                  style={{ backgroundColor: 'hsl(var(--destructive))' }}
                   title="Delete field"
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
                 <div
-                  className="absolute -bottom-1 -right-1 w-4 h-4 bg-white border-2 border-blue-500 rounded cursor-nwse-resize shadow-md z-10"
+                  className="absolute -bottom-1 -right-1 w-4 h-4 bg-white border-2 rounded cursor-nwse-resize shadow-md z-10"
                   style={{ borderColor: accentColor }}
                   onMouseDown={(e) => handleResizeMouseDown(field.id, e)}
                   title="Resize"

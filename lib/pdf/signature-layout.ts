@@ -20,23 +20,23 @@ export const SIG_PAGE_LAYOUT = {
   HEADER_HEIGHT: 60,
   
   // Block Layout - Dynamically positions N signatories
-  BLOCK_START_Y: 160, // Fixed start position for first signature block
-  BLOCK_HEIGHT: 130,  // Fixed height per signatory
-  BLOCK_GAP: 40,      // Fixed gap between blocks
+  BLOCK_START_Y: 140, // Fixed start position for first signature block
+  BLOCK_HEIGHT: 180,  // Fixed height per signatory (increased for more detail lines)
+  BLOCK_GAP: 30,      // Fixed gap between blocks
   
   // Internal Element Offsets (Relative to Block Top)
   LABEL_Y: 0,         // Party label (e.g., "EMPLOYER", "DISCLOSING PARTY")
-  NAME_Y: 12,         // Signatory Name
-  DETAILS_Y: 26,      // Details section (title, company, email, address)
+  NAME_Y: 14,         // Signatory Name
+  DETAILS_Y: 30,      // Details section (title, company, email, address)
   
-  // Visual Lines (The underline)
-  LINE_Y: 80,         
-  FIELD_LABEL_Y: 86,  // "Signature" text below line
+  // Visual Lines (The underline) - pushed down for more space after details
+  LINE_Y: 120,        // Increased from 80 to allow ~90pt for details (4-5 lines)
+  FIELD_LABEL_Y: 126, // "Signature" text below line
   
   // Interactive Field Zones (The "Invisible" Boxes for Overlay)
   // These coordinates are used by both PDF and overlay systems
   SIG_BOX_X_OFFSET: 44,
-  SIG_BOX_Y_OFFSET: 45, 
+  SIG_BOX_Y_OFFSET: 85, // Moved down to match new LINE_Y position
   SIG_BOX_HEIGHT: 45,
   SIG_BOX_WIDTH: 220,
   
@@ -44,7 +44,8 @@ export const SIG_PAGE_LAYOUT = {
   DATE_BOX_WIDTH: 120,
   
   // Maximum signatories per page (for pagination)
-  MAX_SIGNATORIES_PER_PAGE: 4,
+  // Reduced from 4 to 3 due to increased BLOCK_HEIGHT for better spacing
+  MAX_SIGNATORIES_PER_PAGE: 3,
 };
 
 export const CONTENT_WIDTH = SIG_PAGE_LAYOUT.PAGE_WIDTH - (SIG_PAGE_LAYOUT.MARGIN_X * 2);

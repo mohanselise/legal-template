@@ -200,6 +200,11 @@
       "comingSoon": "Demnächst verfügbar",
       "requestTemplate": "Vorlage anfordern"
     },
+    "searchPlaceholder": "Vorlagen nach Name oder Stichwort suchen",
+    "searchNoResults": "Keine Vorlagen entsprechen Ihrer Suche.",
+    "searchResultsLabel": "Zeige {visible} von {total} Vorlagen",
+    "searchClear": "Zurücksetzen",
+    "searchClearAria": "Suche zurücksetzen",
     "browseAvailableTemplates": "Verfügbare Vorlagen durchsuchen",
     "alwaysFree": "Immer kostenlos",
     "createInMinutes": "{template} in Minuten erstellen",

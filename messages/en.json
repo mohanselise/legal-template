@@ -200,6 +200,11 @@
       "comingSoon": "Coming Soon",
       "requestTemplate": "Request a template"
     },
+    "searchPlaceholder": "Search templates by name or keywords",
+    "searchNoResults": "No templates match your search yet.",
+    "searchResultsLabel": "Showing {visible} of {total} templates",
+    "searchClear": "Clear",
+    "searchClearAria": "Clear search",
     "browseAvailableTemplates": "Browse Available Templates",
     "alwaysFree": "Always Free",
     "createInMinutes": "Create {template}s in Minutes",

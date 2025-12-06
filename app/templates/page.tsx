@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { getAvailableTemplates, getUpcomingTemplates } from "@/lib/templates-db";
+import {
+  getUpcomingTemplates,
+  searchAvailableTemplates,
+} from "@/lib/templates-db";
+import { TemplateSearchGrid } from "@/app/templates/_components/template-search-grid";
 
 // Force dynamic rendering to avoid prerender issues
 export const dynamic = 'force-dynamic';
@@ -21,10 +25,34 @@ export const metadata: Metadata = {
     "Browse SELISE's library of free legal templates. Generate employment agreements today and preview upcoming documents we are preparing for release.",
 };
 
-export default async function TemplatesPage() {
-  // Fetch templates from database
-  const availableTemplates = await getAvailableTemplates();
-  const upcomingTemplates = await getUpcomingTemplates();
+const PAGE_SIZE = 12;
+
+export default async function TemplatesPage({
+  searchParams,
+}: {
+  searchParams?: { q?: string; page?: string };
+}) {
+  const query = (searchParams?.q ?? "").trim();
+  const currentPage = Math.max(1, Number(searchParams?.page ?? "1") || 1);
+
+  const [{ templates: availableTemplates, total: totalAvailable }, upcomingTemplates] =
+    await Promise.all([
+      searchAvailableTemplates({ query, page: currentPage, pageSize: PAGE_SIZE }),
+      getUpcomingTemplates(),
+    ]);
+
+  const availableTemplateCards = availableTemplates.map((template) => ({
+    id: template.id,
+    title: template.title,
+    description: template.description,
+    href: template.href,
+    popular: template.popular,
+    iconName:
+      template.iconName ||
+      (template.icon as any)?.displayName ||
+      (template.icon as any)?.name ||
+      "FileText",
+  }));
   
   return (
     <div className="min-h-screen bg-[hsl(var(--bg))] text-foreground">
@@ -81,47 +109,27 @@ export default async function TemplatesPage() {
                 Launch a tailored document in minutes. We collect the details, apply SELISE best practice content, and deliver a downloadable PDF you can share immediately.
               </p>
             </div>
-            <div className="rounded-2xl border border-border bg-[hsl(var(--card))]/80 px-6 py-5 text-sm text-muted-foreground backdrop-blur-sm dark:bg-[hsl(var(--background))]/70">
-              Currently{" "}
-              <span className="font-semibold text-foreground">{availableTemplates.length}</span>{" "}
-              template{availableTemplates.length === 1 ? "" : "s"} live. More arrive every month.
-            </div>
+          <div className="rounded-2xl border border-border bg-[hsl(var(--card))]/80 px-6 py-5 text-sm text-muted-foreground backdrop-blur-sm dark:bg-[hsl(var(--background))]/70">
+            Showing {availableTemplates.length} of{" "}
+            <span className="font-semibold text-foreground">{totalAvailable}</span>{" "}
+            template{totalAvailable === 1 ? "" : "s"}.
+          </div>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {availableTemplates.map((template) => {
-              const Icon = template.icon;
-              return (
-                <Card
-                  key={template.id}
-                  className="group flex h-full flex-col justify-between border-2 border-[hsl(var(--selise-blue))]/20 transition-all hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))]"
-                >
-                  <CardHeader>
-                    <Badge className="w-fit bg-[hsl(var(--selise-blue))]/12 text-[hsl(var(--selise-blue))] font-subheading uppercase tracking-[0.12em]">
-                      {template.popular ? "Most Popular" : "Live"}
-                    </Badge>
-                    <div className="mt-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
-                      <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
-                    </div>
-                    <CardTitle className="mt-6 text-2xl">{template.title}</CardTitle>
-                    <CardDescription className="mt-3 text-base leading-relaxed">
-                      {template.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardFooter className="pt-0">
-                    <Button
-                      asChild
-                      className="group w-full bg-[hsl(var(--selise-blue))] text-[hsl(var(--white))] hover:bg-[hsl(var(--oxford-blue))] shadow-md"
-                    >
-                      <Link href={template.href}>
-                        Generate Now
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              );
-            })}
-          </div>
+          <TemplateSearchGrid
+            templates={availableTemplateCards}
+            ctaLabel="Generate Now"
+            liveBadgeLabel="Live"
+            popularBadgeLabel="Most Popular"
+            searchPlaceholder="Search templates by name or keywords"
+            noResultsText="No templates match your search yet."
+            resultsLabelText={`Showing ${availableTemplates.length} of ${totalAvailable} templates`}
+            mode="server"
+            initialQuery={query}
+            currentPage={currentPage}
+            totalResults={totalAvailable}
+            pageSize={PAGE_SIZE}
+          />
         </div>
       </section>
 

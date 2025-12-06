@@ -194,14 +194,10 @@ export async function POST(
       parsed.metadata.title = parsed.metadata.title || template.title;
       parsed.metadata.generatedAt = new Date().toISOString();
 
-      // Always set signatories from form data to ensure accuracy
-      // The AI might generate signatories but they may not match user input
-      const extractedSignatories = extractSignatoriesFromFormData(formData);
-      if (extractedSignatories.length > 0) {
-        parsed.signatories = extractedSignatories;
-      } else if (!parsed.signatories) {
-        // Fallback: empty array if no signatories found
-        parsed.signatories = [];
+      // Use AI-generated signatories (contains rich data: company, address, title, etc.)
+      // Only fall back to form data extraction if AI didn't provide any
+      if (!parsed.signatories || parsed.signatories.length === 0) {
+        parsed.signatories = extractSignatoriesFromFormData(formData);
       }
 
       document = parsed as LegalDocument;

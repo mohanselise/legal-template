@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Link } from "@/i18n/routing";
 import { getTranslations, getMessages } from 'next-intl/server';
 
-import { getAvailableTemplates, getUpcomingTemplates } from "@/lib/templates-db";
+import { getUpcomingTemplates, searchAvailableTemplates } from "@/lib/templates-db";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
+import { TemplateSearchGrid } from "@/app/templates/_components/template-search-grid";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('templates');
@@ -26,14 +27,24 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function TemplatesPage() {
+const PAGE_SIZE = 12;
+
+export default async function TemplatesPage({
+  searchParams,
+}: {
+  searchParams?: { q?: string; page?: string };
+}) {
   const t = await getTranslations('templates');
   const tTemplates = await getTranslations('templates');
   const messages = await getMessages();
+  const query = (searchParams?.q ?? "").trim();
+  const currentPage = Math.max(1, Number(searchParams?.page ?? "1") || 1);
   
   // Fetch templates from database
-  const availableTemplates = await getAvailableTemplates();
-  const upcomingTemplates = await getUpcomingTemplates();
+  const [{ templates: availableTemplates, total: totalAvailable }, upcomingTemplates] = await Promise.all([
+    searchAvailableTemplates({ query, page: currentPage, pageSize: PAGE_SIZE }),
+    getUpcomingTemplates(),
+  ]);
 
   // Helper to safely get template translation with fallback to database value
   // Priority: 1. UILM key (if configured), 2. Static translation key, 3. Database value
@@ -93,6 +104,19 @@ export default async function TemplatesPage() {
     // 3. Fallback to database value
     return fallback;
   };
+
+  const availableTemplateCards = availableTemplates.map((template) => ({
+    id: template.id,
+    title: getTemplateText(template, 'title'),
+    description: getTemplateText(template, 'description'),
+    href: template.href,
+    popular: template.popular,
+    iconName:
+      template.iconName ||
+      (template.icon as any)?.displayName ||
+      (template.icon as any)?.name ||
+      "FileText",
+  }));
   
   return (
     <div className="min-h-screen bg-[hsl(var(--bg))] text-foreground">
@@ -150,46 +174,29 @@ export default async function TemplatesPage() {
             </div>
             <div className="rounded-2xl border border-border bg-[hsl(var(--card))]/80 px-6 py-5 text-sm text-muted-foreground backdrop-blur-sm dark:bg-[hsl(var(--background))]/70">
               {t('currentlyLive', { 
-                count: availableTemplates.length,
-                plural: availableTemplates.length === 1 ? '' : 's'
+                count: totalAvailable,
+                plural: totalAvailable === 1 ? '' : 's'
               })}
             </div>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {availableTemplates.map((template) => {
-              const Icon = template.icon;
-              return (
-                <Card
-                  key={template.id}
-                  className="group flex h-full flex-col justify-between border-2 border-[hsl(var(--selise-blue))]/20 transition-all hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))]"
-                >
-                  <CardHeader>
-                    <Badge className="w-fit bg-[hsl(var(--selise-blue))]/12 text-[hsl(var(--selise-blue))] font-subheading uppercase tracking-[0.12em]">
-                      {template.popular ? t('mostPopular') : t('live')}
-                    </Badge>
-                    <div className="mt-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
-                      <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
-                    </div>
-                    <CardTitle className="mt-6 text-2xl">{getTemplateText(template, 'title')}</CardTitle>
-                    <CardDescription className="mt-3 text-base leading-relaxed">
-                      {getTemplateText(template, 'description')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardFooter className="pt-0">
-                    <Button
-                      asChild
-                      className="group w-full bg-[hsl(var(--selise-blue))] text-[hsl(var(--white))] hover:bg-[hsl(var(--oxford-blue))] shadow-md"
-                    >
-                      <Link href={template.href}>
-                        {t('templatesSection.generateNow')}
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              );
-            })}
-          </div>
+          <TemplateSearchGrid
+            templates={availableTemplateCards}
+            ctaLabel={t('templatesSection.generateNow')}
+            liveBadgeLabel={t('live')}
+            popularBadgeLabel={t('mostPopular')}
+            searchPlaceholder={t('searchPlaceholder')}
+            noResultsText={t('searchNoResults')}
+            resultsLabelText={t('searchResultsLabel', { visible: availableTemplates.length, total: totalAvailable })}
+            clearLabel={t('searchClear')}
+            clearSearchLabel={t('searchClearAria')}
+            useLocalizedLink
+            mode="server"
+            initialQuery={query}
+            currentPage={currentPage}
+            totalResults={totalAvailable}
+            pageSize={PAGE_SIZE}
+          />
         </div>
       </section>
 

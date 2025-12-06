@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     color: '#64748b',
   },
   partyDetailLine: {
-    marginBottom: 2,
+    marginBottom: 4,
   },
   
   // Visual Lines (centered horizontally)
@@ -114,26 +114,32 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
   };
 
   /**
+   * Check if a value is generic/empty and should be skipped
+   */
+  const isGeneric = (val: string | undefined): boolean =>
+    !val || val.trim().length === 0 || val.trim().toLowerCase() === 'other';
+
+  /**
    * Get the display label for a signatory's party type
    * Uses AI-provided party type directly, with smart fallbacks
-   * Priority: formatted party → title → role → company → "SIGNATORY"
+   * Priority: formatted party → title → role → company → empty (hide label)
    */
   const getPartyLabel = (signatory: SignatoryData): string => {
     const party = signatory.party?.trim();
     
     // 1. Use the party type from AI (skip generic "other")
-    if (party && party.toLowerCase() !== 'other' && party.length > 1) {
-      return formatPartyType(party);
+    if (!isGeneric(party)) {
+      return formatPartyType(party!);
     }
 
-    // 2. Fall back to title if meaningful
-    if (signatory.title && signatory.title.trim().length > 0) {
-      return signatory.title.trim().toUpperCase();
+    // 2. Fall back to title if meaningful (skip "other")
+    if (!isGeneric(signatory.title)) {
+      return signatory.title!.trim().toUpperCase();
     }
 
-    // 3. Fall back to role if meaningful
-    if (signatory.role && signatory.role.trim().length > 0) {
-      return signatory.role.trim().toUpperCase();
+    // 3. Fall back to role if meaningful (skip "other")
+    if (!isGeneric(signatory.role)) {
+      return signatory.role!.trim().toUpperCase();
     }
 
     // 4. Fall back to company name
@@ -141,8 +147,8 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
       return `FOR ${signatory.company.trim().toUpperCase()}`;
     }
 
-    // 5. Default fallback
-    return 'SIGNATORY';
+    // 5. Return empty - hide label if no meaningful info
+    return '';
   };
 
   /**
@@ -203,10 +209,12 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
               height: SIG_PAGE_LAYOUT.BLOCK_HEIGHT,
             }}
           >
-            {/* Party Type Label (e.g., EMPLOYER, DISCLOSING PARTY) */}
-            <Text style={styles.partyLabel}>
-              {getPartyLabel(signatory)}
-            </Text>
+            {/* Party Type Label (e.g., EMPLOYER, DISCLOSING PARTY) - only render if meaningful */}
+            {getPartyLabel(signatory) && (
+              <Text style={styles.partyLabel}>
+                {getPartyLabel(signatory)}
+              </Text>
+            )}
             
             {/* Signatory Name */}
             <Text style={styles.partyName}>{signatory.name}</Text>

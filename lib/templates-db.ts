@@ -49,15 +49,21 @@ const iconMap: Record<string, LucideIcon> = {
 
 export interface TemplateWithIcon extends Omit<Template, "icon"> {
   icon: LucideIcon;
+  /**
+   * Preserve the original icon name string for client-safe rendering.
+   */
+  iconName?: string;
 }
 
 /**
  * Convert a database template to one with a Lucide icon component
  */
 function mapTemplateWithIcon(template: Template): TemplateWithIcon {
+  const iconName = template.icon;
   return {
     ...template,
-    icon: iconMap[template.icon] || FileText,
+    icon: iconMap[iconName] || FileText,
+    iconName,
   };
 }
 
@@ -89,6 +95,46 @@ export async function getAvailableTemplates(): Promise<TemplateWithIcon[]> {
   } catch (error) {
     console.error("[TEMPLATES_DB] Failed to fetch available templates:", error);
     return [];
+  }
+}
+
+/**
+ * Search available templates with pagination.
+ */
+export async function searchAvailableTemplates(options?: {
+  query?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<{ templates: TemplateWithIcon[]; total: number }> {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.max(1, Math.min(50, options?.pageSize ?? 12));
+  const where = {
+    available: true,
+    ...(options?.query
+      ? {
+          OR: [
+            { title: { contains: options.query, mode: "insensitive" } },
+            { description: { contains: options.query, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
+  try {
+    const [total, templates] = await Promise.all([
+      prisma.template.count({ where }),
+      prisma.template.findMany({
+        where,
+        orderBy: [{ popular: "desc" }, { title: "asc" }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+
+    return { templates: templates.map(mapTemplateWithIcon), total };
+  } catch (error) {
+    console.error("[TEMPLATES_DB] Failed to search available templates:", error);
+    return { templates: [], total: 0 };
   }
 }
 

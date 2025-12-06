@@ -32,7 +32,11 @@ export async function POST(request: NextRequest) {
          name: s.name,
          email: s.email || '',
          role: s.title || s.party || 'Signatory',
-         ...(s.phone && { phone: s.phone })
+         // Pass through all signatory fields for PDF rendering
+         ...(s.title && { title: s.title }),
+         ...(s.phone && { phone: s.phone }),
+         ...(s.company && { company: s.company }),
+         ...(s.address && { address: s.address }),
        }));
     }
     
@@ -52,17 +56,21 @@ export async function POST(request: NextRequest) {
             title: entry.title,
             ...(entry.phone && { phone: entry.phone }),
             ...(entry.company && { company: entry.company }),
+            ...(entry.address && { address: entry.address }),
           });
         });
       }
-      // Priority 3: Form builder signatory screen fields (party, name, email, title, phone)
+      // Priority 3: Form builder signatory screen fields (party, name, email, title, phone, company, address)
       else if (formData.name && formData.email) {
         collected.push({
           party: (formData.party as SignatoryData['party']) || 'other',
           name: formData.name as string,
           email: formData.email as string,
           role: (formData.title as string) || (formData.party as string) || 'Signatory',
+          ...(formData.title && { title: formData.title as string }),
           ...(formData.phone && { phone: formData.phone as string }),
+          ...(formData.company && { company: formData.company as string }),
+          ...(formData.address && { address: formData.address as string }),
         });
       } else {
         // Priority 4: Check for numbered signatory pattern (signatory_1_name, signatory_2_name, etc.)
@@ -76,8 +84,17 @@ export async function POST(request: NextRequest) {
               (formData[`signatory_${signatoryIndex}_title`] as string) ||
               (formData[`signatory_${signatoryIndex}_party`] as string) ||
               'Signatory',
+            ...(formData[`signatory_${signatoryIndex}_title`] && {
+              title: formData[`signatory_${signatoryIndex}_title`] as string,
+            }),
             ...(formData[`signatory_${signatoryIndex}_phone`] && {
               phone: formData[`signatory_${signatoryIndex}_phone`] as string,
+            }),
+            ...(formData[`signatory_${signatoryIndex}_company`] && {
+              company: formData[`signatory_${signatoryIndex}_company`] as string,
+            }),
+            ...(formData[`signatory_${signatoryIndex}_address`] && {
+              address: formData[`signatory_${signatoryIndex}_address`] as string,
             }),
           });
           signatoryIndex++;
@@ -93,6 +110,7 @@ export async function POST(request: NextRequest) {
           name: entry.name,
           email: entry.email,
           role: entry.title || entry.party || 'Signatory',
+          ...(entry.title && { title: entry.title }),
           ...(entry.phone && { phone: entry.phone }),
         });
       });

@@ -509,7 +509,7 @@ ${businessLogicPrompt}`;
         messages: conversationMessages,
         response_format: { type: "json_object" },
         temperature: 0.7,
-        max_tokens: 4096,
+        max_tokens: 16384, // Increased for comprehensive multi-screen templates
       },
       {
         sessionId,
@@ -522,40 +522,136 @@ ${businessLogicPrompt}`;
       throw new Error("No content received from AI");
     }
 
+    if (process.env.NODE_ENV === "development") {
+      console.log("[TEMPLATE_CONFIGURATOR] Raw response length:", content.length);
+      console.log("[TEMPLATE_CONFIGURATOR] Response starts with:", content.substring(0, 100));
+      console.log("[TEMPLATE_CONFIGURATOR] Response ends with:", content.substring(content.length - 100));
+    }
+
+    // Helper function to repair truncated JSON
+    const repairTruncatedJson = (jsonStr: string): string | null => {
+      // Count open braces/brackets
+      let braceCount = 0;
+      let bracketCount = 0;
+      let inString = false;
+      let escapeNext = false;
+      
+      for (let i = 0; i < jsonStr.length; i++) {
+        const char = jsonStr[i];
+        
+        if (escapeNext) {
+          escapeNext = false;
+          continue;
+        }
+        
+        if (char === '\\' && inString) {
+          escapeNext = true;
+          continue;
+        }
+        
+        if (char === '"' && !escapeNext) {
+          inString = !inString;
+          continue;
+        }
+        
+        if (!inString) {
+          if (char === '{') braceCount++;
+          if (char === '}') braceCount--;
+          if (char === '[') bracketCount++;
+          if (char === ']') bracketCount--;
+        }
+      }
+      
+      // If we're still in a string, try to close it
+      let repaired = jsonStr;
+      if (inString) {
+        // Find the last valid position and truncate incomplete string
+        const lastQuoteIdx = repaired.lastIndexOf('"');
+        if (lastQuoteIdx > 0) {
+          // Check if this quote starts an incomplete string value
+          const beforeQuote = repaired.substring(0, lastQuoteIdx);
+          const colonIdx = beforeQuote.lastIndexOf(':');
+          if (colonIdx !== -1 && colonIdx > beforeQuote.lastIndexOf('}') && colonIdx > beforeQuote.lastIndexOf(']')) {
+            // We're in the middle of a string value, truncate it
+            repaired = repaired.substring(0, lastQuoteIdx) + '"';
+            inString = false;
+          }
+        }
+        if (inString) {
+          repaired += '"';
+        }
+      }
+      
+      // Close unclosed brackets and braces
+      repaired += ']'.repeat(Math.max(0, bracketCount));
+      repaired += '}'.repeat(Math.max(0, braceCount));
+      
+      return repaired;
+    };
+
     // Parse and validate the response
     let response;
     try {
       // First try direct JSON parsing
       response = JSON.parse(content);
     } catch (parseError) {
-      // If direct parsing fails, try to extract JSON from markdown code blocks
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (jsonMatch && jsonMatch[1]) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("[TEMPLATE_CONFIGURATOR] Direct parse failed, trying repair methods...");
+      }
+      
+      // Try to repair truncated JSON (common when max_tokens is hit)
+      const repaired = repairTruncatedJson(content);
+      if (repaired) {
         try {
-          response = JSON.parse(jsonMatch[1].trim());
+          response = JSON.parse(repaired);
           if (process.env.NODE_ENV === "development") {
-            console.log("[TEMPLATE_CONFIGURATOR] Extracted JSON from markdown code block");
+            console.log("[TEMPLATE_CONFIGURATOR] Parsed JSON after repair");
           }
-        } catch (innerParseError) {
-          console.error("[TEMPLATE_CONFIGURATOR] Failed to parse extracted JSON:", jsonMatch[1]);
-          throw new Error("AI returned invalid JSON");
+        } catch (repairError) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("[TEMPLATE_CONFIGURATOR] Repair failed, trying other methods...");
+          }
         }
-      } else {
-        // Try to find JSON object pattern in the response
-        const objectMatch = content.match(/\{[\s\S]*"message"[\s\S]*\}/);
-        if (objectMatch) {
-          try {
-            response = JSON.parse(objectMatch[0]);
-            if (process.env.NODE_ENV === "development") {
-              console.log("[TEMPLATE_CONFIGURATOR] Extracted JSON object from response");
+      }
+      
+      // If repair didn't work, try to extract JSON from markdown code blocks
+      if (!response) {
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch && jsonMatch[1]) {
+          const repairedBlock = repairTruncatedJson(jsonMatch[1].trim());
+          if (repairedBlock) {
+            try {
+              response = JSON.parse(repairedBlock);
+              if (process.env.NODE_ENV === "development") {
+                console.log("[TEMPLATE_CONFIGURATOR] Extracted and repaired JSON from markdown code block");
+              }
+            } catch (innerParseError) {
+              // Continue to next method
             }
-          } catch (innerParseError) {
-            console.error("[TEMPLATE_CONFIGURATOR] Failed to parse AI response:", content);
-            throw new Error("AI returned invalid JSON");
           }
+        }
+      }
+      
+      // Final fallback: create a response explaining the truncation
+      if (!response) {
+        console.error("[TEMPLATE_CONFIGURATOR] All parse methods failed. Content length:", content.length);
+        console.error("[TEMPLATE_CONFIGURATOR] Last 200 chars:", content.substring(content.length - 200));
+        
+        // Check if this looks like truncated JSON (has opening { but response is long)
+        const isTruncated = content.startsWith('{') && content.length > 5000 && !content.trim().endsWith('}');
+        
+        if (isTruncated) {
+          response = {
+            message: "My response was too long and got cut off. Let me create a simpler version with fewer screens. Would you like me to try again with a more compact template, or should I create the screens one at a time?",
+            suggestions: ["Create compact version", "Create screens one at a time", "Try again"],
+            actions: []
+          };
         } else {
-          console.error("[TEMPLATE_CONFIGURATOR] Failed to parse AI response:", content);
-          throw new Error("AI returned invalid JSON");
+          response = {
+            message: "I had trouble formatting my response. Could you please try again?",
+            suggestions: ["Try again", "Start over", "Create a simple template"],
+            actions: []
+          };
         }
       }
     }

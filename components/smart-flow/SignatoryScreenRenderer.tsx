@@ -32,25 +32,15 @@ import {
 import {
   SignatoryScreenConfig,
   SignatoryEntry,
-  PredefinedSignatory,
   createBlankSignatory,
-  validateSignatory,
   validateAllSignatories,
   parseSignatoryConfig,
-  groupSignatoriesByParty,
   initializeFromPredefined,
   getPredefinedConfig,
   canRemoveSignatory,
-  applyFieldMappings,
+  DEFAULT_PARTY_TYPES,
 } from "@/lib/templates/signatory-config";
-
-// Helper to resolve dynamic tags in a string
-function resolveDynamicTags(template: string, formData: Record<string, unknown>): string {
-  return template.replace(/\{\{([^}]+)\}\}/g, (match, varName) => {
-    const value = formData[varName.trim()];
-    return value !== undefined && value !== null ? String(value) : match;
-  });
-}
+import { interpolateVariables } from "@/lib/utils";
 
 interface SignatoryScreenRendererProps {
   /** Screen configuration JSON from database */
@@ -77,38 +67,31 @@ export function SignatoryScreenRenderer({
 }: SignatoryScreenRendererProps) {
   const config = useMemo(() => {
     const parsed = parseSignatoryConfig(configJson);
-    if (parsed.predefinedSignatories.length > 0) {
-      console.log("[SignatoryScreenRenderer] Using", parsed.predefinedSignatories.length, "predefined signatories");
-    }
+    console.log("[SignatoryScreenRenderer] Mode:", parsed.mode, "with", parsed.predefinedSignatories.length, "predefined signatories");
     return parsed;
   }, [configJson]);
+  
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [initialized, setInitialized] = useState(false);
   
-  // Initialize signatories with pre-defined slots and field mappings
+  // Initialize signatories based on mode
   const signatories = useMemo(() => {
     // If we already have signatories, return them
     if (value.length > 0) {
       return value;
     }
     
-    // Check if there are pre-defined signatories to use
-    if (config.predefinedSignatories.length > 0) {
+    // Deterministic mode: use predefined slots
+    if (config.mode === "deterministic" && config.predefinedSignatories.length > 0) {
       return initializeFromPredefined(config, formData);
     }
     
-    // Otherwise, use default behavior with minimum signatories
-    if (config.minSignatories > 0) {
+    // Dynamic mode: start with minimum signatories
+    if (config.mode === "dynamic" && config.minSignatories > 0) {
       const initial: SignatoryEntry[] = [];
-      // Add one signatory for each required party type
-      if (config.requiredPartyTypes.length > 0) {
-        config.requiredPartyTypes.forEach(partyType => {
-          initial.push(createBlankSignatory(partyType));
-        });
-      }
-      // Fill up to minimum with default party type
+      const defaultPartyType = config.partyTypes[0]?.value || DEFAULT_PARTY_TYPES[0].value;
       while (initial.length < config.minSignatories) {
-        initial.push(createBlankSignatory(config.partyTypes[0]?.value || "other"));
+        initial.push(createBlankSignatory(defaultPartyType));
       }
       return initial;
     }
@@ -134,7 +117,8 @@ export function SignatoryScreenRenderer({
 
   const handleAddSignatory = useCallback(() => {
     if (signatories.length >= config.maxSignatories) return;
-    const newSig = createBlankSignatory(config.partyTypes[0]?.value || "other");
+    const defaultPartyType = config.partyTypes[0]?.value || DEFAULT_PARTY_TYPES[0].value;
+    const newSig = createBlankSignatory(defaultPartyType);
     onChange([...signatories, newSig]);
     setExpandedCards(prev => new Set([...prev, newSig.id]));
   }, [signatories, config, onChange]);
@@ -169,17 +153,13 @@ export function SignatoryScreenRenderer({
     });
   }, []);
 
-  const canAddMore = signatories.length < config.maxSignatories && config.allowMultiple;
+  // In dynamic mode, users can add more signatories
+  const canAddMore = config.mode === "dynamic" && signatories.length < config.maxSignatories;
   
   // Helper to check if a specific signatory can be removed
   const checkCanRemove = useCallback((signatory: SignatoryEntry) => {
     return canRemoveSignatory(signatory, config, signatories.length);
   }, [config, signatories.length]);
-
-  // Group by party if configured
-  const groupedSignatories = config.uiConfig.groupByParty
-    ? groupSignatoriesByParty(signatories, config)
-    : null;
 
   return (
     <div className="space-y-6">
@@ -194,8 +174,10 @@ export function SignatoryScreenRenderer({
               Signatories
             </h3>
             <p className="text-sm text-[hsl(var(--globe-grey))]">
-              {signatories.length} of {config.maxSignatories} 
-              {config.minSignatories > 0 && ` (minimum ${config.minSignatories})`}
+              {config.mode === "deterministic" 
+                ? `${signatories.length} signator${signatories.length !== 1 ? 'ies' : 'y'} required`
+                : `${signatories.length} of ${config.maxSignatories} (minimum ${config.minSignatories})`
+              }
             </p>
           </div>
         </div>
@@ -230,83 +212,39 @@ export function SignatoryScreenRenderer({
       )}
 
       {/* Signatory Cards */}
-      {groupedSignatories ? (
-        // Grouped view
-        <div className="space-y-6">
-          {Object.entries(groupedSignatories).map(([partyType, entries]) => {
-            const partyConfig = config.partyTypes.find(p => p.value === partyType);
-            return (
-              <div key={partyType} className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-sm">
-                    {partyConfig?.label || partyType}
-                  </Badge>
-                  {partyConfig?.description && config.uiConfig.showPartyDescriptions && (
-                    <span className="text-xs text-[hsl(var(--globe-grey))]">
-                      {partyConfig.description}
-                    </span>
-                  )}
-                </div>
-                <div className="space-y-3">
-                  {entries.map((signatory, index) => (
-                    <SignatoryCard
-                      key={signatory.id}
-                      signatory={signatory}
-                      index={index}
-                      config={config}
-                      isExpanded={expandedCards.has(signatory.id)}
-                      onToggleExpand={() => toggleExpand(signatory.id)}
-                      onUpdate={(updates) => handleUpdateSignatory(signatory.id, updates)}
-                      onRemove={() => handleRemoveSignatory(signatory.id)}
-                      canRemove={checkCanRemove(signatory)}
-                      readOnly={readOnly}
-                      validationResult={validation.entryErrors.get(signatory.id)}
-                      compact={config.uiConfig.compactMode}
-                      formData={formData}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        // List view with reordering
-        <Reorder.Group
-          axis="y"
-          values={signatories}
-          onReorder={handleReorder}
-          className="space-y-3"
-        >
-          <AnimatePresence mode="popLayout">
-            {signatories.map((signatory, index) => (
-              <Reorder.Item
-                key={signatory.id}
-                value={signatory}
-                dragListener={config.uiConfig.allowReordering && !readOnly}
-              >
-                <SignatoryCard
-                  signatory={signatory}
-                  index={index}
-                  config={config}
-                  isExpanded={expandedCards.has(signatory.id)}
-                  onToggleExpand={() => toggleExpand(signatory.id)}
-                  onUpdate={(updates) => handleUpdateSignatory(signatory.id, updates)}
-                  onRemove={() => handleRemoveSignatory(signatory.id)}
-                  canRemove={checkCanRemove(signatory)}
-                  readOnly={readOnly}
-                  validationResult={validation.entryErrors.get(signatory.id)}
-                  compact={config.uiConfig.compactMode}
-                  showDragHandle={config.uiConfig.allowReordering}
-                  formData={formData}
-                />
-              </Reorder.Item>
-            ))}
-          </AnimatePresence>
-        </Reorder.Group>
-      )}
+      <Reorder.Group
+        axis="y"
+        values={signatories}
+        onReorder={handleReorder}
+        className="space-y-3"
+      >
+        <AnimatePresence mode="popLayout">
+          {signatories.map((signatory, index) => (
+            <Reorder.Item
+              key={signatory.id}
+              value={signatory}
+              dragListener={config.mode === "dynamic" && !readOnly}
+            >
+              <SignatoryCard
+                signatory={signatory}
+                index={index}
+                config={config}
+                isExpanded={expandedCards.has(signatory.id)}
+                onToggleExpand={() => toggleExpand(signatory.id)}
+                onUpdate={(updates) => handleUpdateSignatory(signatory.id, updates)}
+                onRemove={() => handleRemoveSignatory(signatory.id)}
+                canRemove={checkCanRemove(signatory)}
+                readOnly={readOnly}
+                validationResult={validation.entryErrors.get(signatory.id)}
+                showDragHandle={config.mode === "dynamic"}
+                formData={formData}
+              />
+            </Reorder.Item>
+          ))}
+        </AnimatePresence>
+      </Reorder.Group>
 
-      {/* Add More Button (bottom) */}
+      {/* Add More Button (bottom) - only in dynamic mode */}
       {canAddMore && !readOnly && signatories.length > 0 && (
         <motion.button
           type="button"
@@ -338,7 +276,6 @@ interface SignatoryCardProps {
   canRemove: boolean;
   readOnly: boolean;
   validationResult?: { isValid: boolean; errors: { field: string; message: string }[] };
-  compact?: boolean;
   showDragHandle?: boolean;
   formData?: Record<string, unknown>;
 }
@@ -354,7 +291,6 @@ function SignatoryCard({
   canRemove,
   readOnly,
   validationResult,
-  compact = false,
   showDragHandle = false,
   formData = {},
 }: SignatoryCardProps) {
@@ -365,22 +301,18 @@ function SignatoryCard({
   // Get pre-defined config for this signatory (if it came from a pre-defined slot)
   const predefinedConfig = getPredefinedConfig(signatory, config);
   
-  // Use pre-defined label if available and showPredefinedLabels is enabled
-  // Resolve any dynamic tags like {{companyName}} in the label
-  const displayLabel = predefinedConfig && config.uiConfig.showPredefinedLabels 
-    ? resolveDynamicTags(predefinedConfig.label, formData)
+  // Get display label from predefined config and interpolate variables like {{companyName}}
+  const displayLabel = predefinedConfig?.label 
+    ? interpolateVariables(predefinedConfig.label, formData)
+    : null;
+  const displayDescription = predefinedConfig?.description 
+    ? interpolateVariables(predefinedConfig.description, formData)
     : null;
   
-  // Resolve dynamic tags in description too
-  const displayDescription = predefinedConfig?.description
-    ? resolveDynamicTags(predefinedConfig.description, formData)
-    : null;
-  
+  // Get party label
   const partyLabel = config.partyTypes.find(p => p.value === signatory.partyType)?.label 
+    || DEFAULT_PARTY_TYPES.find(p => p.value === signatory.partyType)?.label
     || signatory.partyType;
-    
-  // Check if party type can be changed
-  const canChangePartyType = predefinedConfig ? predefinedConfig.canChangePartyType : true;
 
   return (
     <motion.div
@@ -481,34 +413,29 @@ function SignatoryCard({
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 pt-2 border-t border-[hsl(var(--border))] space-y-4">
-              <div className={compact ? "grid grid-cols-2 gap-4" : "space-y-4"}>
+              <div className="grid grid-cols-2 gap-4">
                 {/* Party Type */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
                     Party Type *
-                    {!canChangePartyType && (
-                      <span className="text-xs text-[hsl(var(--globe-grey))] font-normal">(Locked)</span>
-                    )}
                   </Label>
                   <Select
                     value={signatory.partyType}
                     onValueChange={(value) => onUpdate({ partyType: value })}
-                    disabled={readOnly || !canChangePartyType}
+                    disabled={readOnly || config.mode === "deterministic"}
                   >
                     <SelectTrigger className={getFieldError("partyType") ? "border-[hsl(var(--crimson))]" : ""}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {config.partyTypes.map((party) => (
+                      {DEFAULT_PARTY_TYPES.map((party) => (
                         <SelectItem key={party.value} value={party.value}>
                           <div className="flex flex-col">
                             <span>{party.label}</span>
-                            {party.description && config.uiConfig.showPartyDescriptions && (
-                              <span className="text-xs text-[hsl(var(--globe-grey))]">
-                                {party.description}
-                              </span>
-                            )}
+                            <span className="text-xs text-[hsl(var(--globe-grey))]">
+                              {party.description}
+                            </span>
                           </div>
                         </SelectItem>
                       ))}
@@ -624,78 +551,6 @@ function SignatoryCard({
                     />
                   </div>
                 )}
-
-                {/* Custom Fields */}
-                {config.customFields.map((customField) => (
-                  <div key={customField.id} className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      {customField.label}
-                      {customField.required && " *"}
-                    </Label>
-                    {customField.type === "select" ? (
-                      <Select
-                        value={signatory.customFields?.[customField.name] || ""}
-                        onValueChange={(value) => 
-                          onUpdate({ 
-                            customFields: { 
-                              ...signatory.customFields, 
-                              [customField.name]: value 
-                            } 
-                          })
-                        }
-                        disabled={readOnly}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={customField.placeholder} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {customField.options?.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : customField.type === "textarea" ? (
-                      <textarea
-                        value={signatory.customFields?.[customField.name] || ""}
-                        onChange={(e) => 
-                          onUpdate({ 
-                            customFields: { 
-                              ...signatory.customFields, 
-                              [customField.name]: e.target.value 
-                            } 
-                          })
-                        }
-                        placeholder={customField.placeholder}
-                        disabled={readOnly}
-                        className="w-full min-h-[80px] px-3 py-2 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--bg))] text-sm resize-y"
-                      />
-                    ) : (
-                      <Input
-                        type={customField.type}
-                        value={signatory.customFields?.[customField.name] || ""}
-                        onChange={(e) => 
-                          onUpdate({ 
-                            customFields: { 
-                              ...signatory.customFields, 
-                              [customField.name]: e.target.value 
-                            } 
-                          })
-                        }
-                        placeholder={customField.placeholder}
-                        disabled={readOnly}
-                        className={getFieldError(customField.name) ? "border-[hsl(var(--crimson))]" : ""}
-                      />
-                    )}
-                    {customField.helpText && (
-                      <p className="text-xs text-[hsl(var(--globe-grey))]">{customField.helpText}</p>
-                    )}
-                    {getFieldError(customField.name) && (
-                      <p className="text-xs text-[hsl(var(--crimson))]">{getFieldError(customField.name)}</p>
-                    )}
-                  </div>
-                ))}
               </div>
             </div>
           </motion.div>
@@ -706,4 +561,3 @@ function SignatoryCard({
 }
 
 export default SignatoryScreenRenderer;
-

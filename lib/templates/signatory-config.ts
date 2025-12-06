@@ -1,8 +1,9 @@
 /**
- * Signatory Screen Configuration Types
+ * Signatory Screen Configuration Types (Simplified)
  * 
- * Defines the structure for signatory screen configuration stored in the database.
- * This enables flexible, admin-configurable signatory collection screens.
+ * Two modes:
+ * - Deterministic: Admin defines fixed signatory slots, end user fills them
+ * - Dynamic: End user adds signatories as needed
  */
 
 // ============================================================================
@@ -35,24 +36,28 @@ export interface PartyTypeConfig {
 }
 
 // ============================================================================
-// Pre-defined Signatory Types
+// Auto-fill Configuration (Simplified)
 // ============================================================================
 
-/** Field mapping for pre-filling signatory data from previous form steps */
-export interface SignatoryFieldMapping {
-  /** Target field on signatory (name, email, title, phone, company, address) */
-  targetField: "name" | "email" | "title" | "phone" | "company" | "address";
-  /** Source field name from form data (e.g., "studentEmail", "companyName") */
-  sourceField: string;
-  /** Optional screen ID to scope the source field lookup */
-  sourceScreenId?: string;
+/** Simple auto-fill mapping - just source field names for each target field */
+export interface AutoFillConfig {
+  name?: string;    // Source field name for name
+  email?: string;   // Source field name for email
+  title?: string;   // Source field name for title
+  phone?: string;   // Source field name for phone
+  company?: string; // Source field name for company
+  address?: string; // Source field name for address
 }
 
-/** Pre-defined signatory slot configured by admin */
+// ============================================================================
+// Pre-defined Signatory Types (Simplified)
+// ============================================================================
+
+/** Pre-defined signatory slot configured by admin (simplified) */
 export interface PredefinedSignatory {
   /** Unique identifier for this slot */
   id: string;
-  /** Party type for this signatory (from partyTypes) */
+  /** Party type for this signatory */
   partyType: string;
   /** Custom label for this signatory slot (e.g., "School Representative", "Student") */
   label: string;
@@ -60,14 +65,17 @@ export interface PredefinedSignatory {
   description?: string;
   /** Whether this signatory is required */
   required: boolean;
-  /** Whether the end user can remove this signatory */
-  canRemove: boolean;
-  /** Whether the end user can change the party type */
-  canChangePartyType: boolean;
-  /** Field mappings for pre-filling data from previous steps */
-  fieldMappings: SignatoryFieldMapping[];
+  /** Simple auto-fill configuration - map target fields to source field names */
+  autoFillFrom: AutoFillConfig;
   /** Order in which this signatory appears */
   order: number;
+}
+
+// Legacy type for backward compatibility during migration
+export interface SignatoryFieldMapping {
+  targetField: "name" | "email" | "title" | "phone" | "company" | "address";
+  sourceField: string;
+  sourceScreenId?: string;
 }
 
 // ============================================================================
@@ -84,8 +92,6 @@ export interface SignatoryEntry {
   phone?: string;
   company?: string;
   address?: string;
-  /** Custom fields defined by admin */
-  customFields?: Record<string, string>;
   /** Reference to pre-defined signatory ID (if created from predefined slot) */
   predefinedId?: string;
   /** Whether this signatory was pre-filled from form data */
@@ -102,46 +108,25 @@ export interface SignatoryValidationResult {
 }
 
 // ============================================================================
-// Screen Configuration
+// Screen Configuration (Simplified)
 // ============================================================================
-
-/** Custom field definition for signatory screen */
-export interface SignatoryCustomField {
-  id: string;
-  name: string;
-  label: string;
-  type: "text" | "email" | "tel" | "select" | "textarea";
-  required: boolean;
-  placeholder?: string;
-  helpText?: string;
-  options?: string[]; // For select type
-  validation?: {
-    pattern?: string;
-    minLength?: number;
-    maxLength?: number;
-  };
-}
 
 /** Main signatory screen configuration stored in database */
 export interface SignatoryScreenConfig {
-  // Party configuration
-  partyTypes: PartyTypeConfig[];
-  allowCustomPartyType: boolean;
+  /** Mode: deterministic (fixed slots) or dynamic (user adds) */
+  mode: "deterministic" | "dynamic";
 
-  // Signatory limits
-  allowMultiple: boolean;
+  /** Party types available for selection */
+  partyTypes: PartyTypeConfig[];
+
+  /** Signatory limits (for dynamic mode) */
   minSignatories: number;
   maxSignatories: number;
 
-  // Required parties (at least one signatory must be of each type)
-  requiredPartyTypes: string[];
-
-  // Pre-defined signatories (admin-configured slots)
-  // When set, the signatory screen will show these pre-defined slots
-  // instead of starting with blank signatories
+  /** Pre-defined signatories (for deterministic mode) */
   predefinedSignatories: PredefinedSignatory[];
 
-  // Standard fields to collect
+  /** Standard fields to collect */
   collectFields: {
     name: boolean;       // Always true, can't disable
     email: boolean;      // Always true, can't disable
@@ -150,17 +135,22 @@ export interface SignatoryScreenConfig {
     company: boolean;
     address: boolean;
   };
+}
 
-  // Custom additional fields
-  customFields: SignatoryCustomField[];
-
-  // UI Configuration
-  uiConfig: {
-    groupByParty: boolean;           // Group signatories by party type in UI
-    showPartyDescriptions: boolean;  // Show party type descriptions
-    compactMode: boolean;            // Use compact card layout
-    allowReordering: boolean;        // Allow drag-to-reorder signatories
-    showPredefinedLabels: boolean;   // Show custom labels for pre-defined signatories
+// Legacy fields for backward compatibility (kept but not used in new config)
+export interface SignatoryCustomField {
+  id: string;
+  name: string;
+  label: string;
+  type: "text" | "email" | "tel" | "select" | "textarea";
+  required: boolean;
+  placeholder?: string;
+  helpText?: string;
+  options?: string[];
+  validation?: {
+    pattern?: string;
+    minLength?: number;
+    maxLength?: number;
   };
 }
 
@@ -170,20 +160,18 @@ export interface SignatoryScreenConfig {
 
 /** Default signatory screen configuration */
 export const DEFAULT_SIGNATORY_CONFIG: SignatoryScreenConfig = {
-  partyTypes: DEFAULT_PARTY_TYPES.slice(0, 4).map(p => ({ 
+  mode: "dynamic",
+  
+  partyTypes: DEFAULT_PARTY_TYPES.map(p => ({ 
     value: p.value, 
     label: p.label, 
     description: p.description 
-  })), // Default: disclosingParty, receivingParty, employer, employee
-  allowCustomPartyType: false,
+  })),
 
-  allowMultiple: true,
   minSignatories: 2,
   maxSignatories: 10,
-
-  requiredPartyTypes: [],
   
-  predefinedSignatories: [], // Empty = use dynamic signatory creation
+  predefinedSignatories: [],
 
   collectFields: {
     name: true,
@@ -193,21 +181,41 @@ export const DEFAULT_SIGNATORY_CONFIG: SignatoryScreenConfig = {
     company: false,
     address: false,
   },
-
-  customFields: [],
-
-  uiConfig: {
-    groupByParty: false,
-    showPartyDescriptions: true,
-    compactMode: false,
-    allowReordering: true,
-    showPredefinedLabels: true,
-  },
 };
 
 // ============================================================================
 // Utility Functions
 // ============================================================================
+
+/**
+ * Migrate old field mappings to new autoFillFrom format
+ */
+function migrateFieldMappings(fieldMappings: SignatoryFieldMapping[] | undefined): AutoFillConfig {
+  if (!fieldMappings || fieldMappings.length === 0) {
+    return {};
+  }
+  
+  const autoFillFrom: AutoFillConfig = {};
+  for (const mapping of fieldMappings) {
+    autoFillFrom[mapping.targetField] = mapping.sourceField;
+  }
+  return autoFillFrom;
+}
+
+/**
+ * Migrate old predefined signatory to new format
+ */
+function migratePredefinedSignatory(old: any): PredefinedSignatory {
+  return {
+    id: old.id,
+    partyType: old.partyType,
+    label: old.label,
+    description: old.description || "",
+    required: old.required ?? true,
+    autoFillFrom: old.autoFillFrom || migrateFieldMappings(old.fieldMappings),
+    order: old.order ?? 0,
+  };
+}
 
 /**
  * Parse signatory config from database JSON string
@@ -219,20 +227,28 @@ export function parseSignatoryConfig(jsonString: string | null | undefined): Sig
 
   try {
     const parsed = JSON.parse(jsonString);
+    
+    // Determine mode from existing data
+    let mode: "deterministic" | "dynamic" = parsed.mode || "dynamic";
+    if (!parsed.mode && parsed.predefinedSignatories && parsed.predefinedSignatories.length > 0) {
+      mode = "deterministic";
+    }
+    
+    // Migrate predefined signatories if needed
+    const predefinedSignatories = (parsed.predefinedSignatories || []).map(migratePredefinedSignatory);
+    
     return {
-      ...DEFAULT_SIGNATORY_CONFIG,
-      ...parsed,
-      predefinedSignatories: parsed.predefinedSignatories || [],
+      mode,
+      partyTypes: parsed.partyTypes || DEFAULT_SIGNATORY_CONFIG.partyTypes,
+      minSignatories: parsed.minSignatories ?? DEFAULT_SIGNATORY_CONFIG.minSignatories,
+      maxSignatories: parsed.maxSignatories ?? DEFAULT_SIGNATORY_CONFIG.maxSignatories,
+      predefinedSignatories,
       collectFields: {
         ...DEFAULT_SIGNATORY_CONFIG.collectFields,
         ...parsed.collectFields,
         // Name and email are always required
         name: true,
         email: true,
-      },
-      uiConfig: {
-        ...DEFAULT_SIGNATORY_CONFIG.uiConfig,
-        ...parsed.uiConfig,
       },
     };
   } catch (e) {
@@ -261,7 +277,6 @@ export function createBlankSignatory(partyType: string = "other"): SignatoryEntr
     phone: "",
     company: "",
     address: "",
-    customFields: {},
   };
 }
 
@@ -279,42 +294,61 @@ export function createPredefinedSignatory(
     label,
     description: "",
     required: true,
-    canRemove: false,
-    canChangePartyType: false,
-    fieldMappings: [],
+    autoFillFrom: {},
     order,
   };
 }
 
 /**
- * Apply field mappings to pre-fill signatory data from form data
+ * Apply auto-fill config to pre-fill signatory data from form data
  */
-export function applyFieldMappings(
+export function applyAutoFill(
   signatory: SignatoryEntry,
   predefined: PredefinedSignatory,
   formData: Record<string, unknown>
 ): SignatoryEntry {
   const updated = { ...signatory };
+  const autoFill = predefined.autoFillFrom;
   
-  for (const mapping of predefined.fieldMappings) {
-    const sourceValue = formData[mapping.sourceField];
-    if (sourceValue && typeof sourceValue === "string") {
-      updated[mapping.targetField] = sourceValue;
-    }
+  if (autoFill.name && formData[autoFill.name]) {
+    updated.name = String(formData[autoFill.name]);
+  }
+  if (autoFill.email && formData[autoFill.email]) {
+    updated.email = String(formData[autoFill.email]);
+  }
+  if (autoFill.title && formData[autoFill.title]) {
+    updated.title = String(formData[autoFill.title]);
+  }
+  if (autoFill.phone && formData[autoFill.phone]) {
+    updated.phone = String(formData[autoFill.phone]);
+  }
+  if (autoFill.company && formData[autoFill.company]) {
+    updated.company = String(formData[autoFill.company]);
+  }
+  if (autoFill.address && formData[autoFill.address]) {
+    updated.address = String(formData[autoFill.address]);
   }
   
   return updated;
 }
 
+// Legacy function for backward compatibility
+export function applyFieldMappings(
+  signatory: SignatoryEntry,
+  predefined: PredefinedSignatory,
+  formData: Record<string, unknown>
+): SignatoryEntry {
+  return applyAutoFill(signatory, predefined, formData);
+}
+
 /**
- * Initialize signatories from pre-defined configuration with field mappings applied
+ * Initialize signatories from pre-defined configuration with auto-fill applied
  */
 export function initializeFromPredefined(
   config: SignatoryScreenConfig,
   formData: Record<string, unknown>
 ): SignatoryEntry[] {
-  if (config.predefinedSignatories.length === 0) {
-    // No pre-defined signatories, use default behavior
+  if (config.mode !== "deterministic" || config.predefinedSignatories.length === 0) {
     return [];
   }
 
@@ -322,20 +356,19 @@ export function initializeFromPredefined(
   const sorted = [...config.predefinedSignatories].sort((a, b) => a.order - b.order);
   
   return sorted.map(predefined => {
-    // Create a signatory with the pre-defined party type
     const signatory = createBlankSignatory(predefined.partyType);
     signatory.predefinedId = predefined.id;
     
-    // Apply field mappings to pre-fill data
-    const withMappings = applyFieldMappings(signatory, predefined, formData);
+    // Apply auto-fill to pre-fill data
+    const withAutoFill = applyAutoFill(signatory, predefined, formData);
     
     // Mark as pre-filled if any data was applied
-    const hasPrefilled = predefined.fieldMappings.some(
-      mapping => formData[mapping.sourceField]
+    const hasPrefilled = Object.values(predefined.autoFillFrom).some(
+      sourceField => sourceField && formData[sourceField]
     );
-    withMappings.isPrefilled = hasPrefilled;
+    withAutoFill.isPrefilled = hasPrefilled;
     
-    return withMappings;
+    return withAutoFill;
   });
 }
 
@@ -351,19 +384,21 @@ export function getPredefinedConfig(
 }
 
 /**
- * Check if a signatory can be removed based on its pre-defined config
+ * Check if a signatory can be removed
  */
 export function canRemoveSignatory(
   signatory: SignatoryEntry,
   config: SignatoryScreenConfig,
   totalCount: number
 ): boolean {
+  // In deterministic mode, required signatories cannot be removed
+  if (config.mode === "deterministic") {
+    const predefined = getPredefinedConfig(signatory, config);
+    if (predefined?.required) return false;
+  }
+  
   // Check minimum count
   if (totalCount <= config.minSignatories) return false;
-  
-  // Check pre-defined config
-  const predefined = getPredefinedConfig(signatory, config);
-  if (predefined && !predefined.canRemove) return false;
   
   return true;
 }
@@ -392,39 +427,15 @@ export function validateSignatory(
   // Required: Party type
   if (!entry.partyType) {
     errors.push({ field: "partyType", message: "Party type is required" });
-  } else {
-    const validPartyTypes = config.partyTypes.map(p => p.value);
-    if (!validPartyTypes.includes(entry.partyType) && !config.allowCustomPartyType) {
-      errors.push({ field: "partyType", message: "Invalid party type" });
-    }
   }
 
-  // Optional fields based on config
-  if (config.collectFields.title && !entry.title?.trim()) {
-    // Title is optional even when collected
-  }
-
+  // Phone validation if provided
   if (config.collectFields.phone && entry.phone) {
-    // Basic phone validation
     const phoneClean = entry.phone.replace(/[\s\-\(\)]/g, "");
     if (phoneClean && !/^\+?[\d]{7,15}$/.test(phoneClean)) {
       errors.push({ field: "phone", message: "Please enter a valid phone number" });
     }
   }
-
-  // Validate custom fields
-  config.customFields.forEach(customField => {
-    const value = entry.customFields?.[customField.name];
-    if (customField.required && !value?.trim()) {
-      errors.push({ field: customField.name, message: `${customField.label} is required` });
-    }
-    if (value && customField.validation?.pattern) {
-      const regex = new RegExp(customField.validation.pattern);
-      if (!regex.test(value)) {
-        errors.push({ field: customField.name, message: `${customField.label} format is invalid` });
-      }
-    }
-  });
 
   return {
     isValid: errors.length === 0,
@@ -454,15 +465,6 @@ export function validateAllSignatories(
     globalErrors.push(`Maximum ${config.maxSignatories} signatories allowed`);
   }
 
-  // Check required party types
-  config.requiredPartyTypes.forEach(requiredType => {
-    const hasType = signatories.some(s => s.partyType === requiredType);
-    if (!hasType) {
-      const partyLabel = config.partyTypes.find(p => p.value === requiredType)?.label || requiredType;
-      globalErrors.push(`At least one ${partyLabel} is required`);
-    }
-  });
-
   // Validate each entry
   signatories.forEach(entry => {
     const result = validateSignatory(entry, config);
@@ -487,31 +489,21 @@ export function formatSignatoriesForPrompt(
 ): string {
   if (signatories.length === 0) return "No signatories defined";
 
-  const grouped = config.uiConfig.groupByParty
-    ? groupSignatoriesByParty(signatories, config)
-    : { all: signatories };
-
   const sections: string[] = [];
 
-  Object.entries(grouped).forEach(([partyType, entries]) => {
-    const partyLabel = config.partyTypes.find(p => p.value === partyType)?.label || partyType;
+  signatories.forEach((entry, index) => {
+    const partyLabel = config.partyTypes.find(p => p.value === entry.partyType)?.label || entry.partyType;
     
-    if (config.uiConfig.groupByParty) {
-      sections.push(`## ${partyLabel}`);
-    }
+    const parts = [
+      `${index + 1}. **${entry.name}**`,
+      `   - Email: ${entry.email}`,
+      entry.title && `   - Title: ${entry.title}`,
+      entry.phone && `   - Phone: ${entry.phone}`,
+      entry.company && `   - Company: ${entry.company}`,
+      `   - Party: ${partyLabel}`,
+    ].filter(Boolean);
 
-    entries.forEach((entry, index) => {
-      const parts = [
-        `${index + 1}. **${entry.name}**`,
-        `   - Email: ${entry.email}`,
-        entry.title && `   - Title: ${entry.title}`,
-        entry.phone && `   - Phone: ${entry.phone}`,
-        entry.company && `   - Company: ${entry.company}`,
-        !config.uiConfig.groupByParty && `   - Party: ${partyLabel}`,
-      ].filter(Boolean);
-
-      sections.push(parts.join("\n"));
-    });
+    sections.push(parts.join("\n"));
   });
 
   return sections.join("\n\n");
@@ -548,4 +540,3 @@ export function groupSignatoriesByParty(
 
   return grouped;
 }
-

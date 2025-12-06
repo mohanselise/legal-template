@@ -135,6 +135,16 @@ export function ScreenAIPrompt({
         }
     };
 
+    const copyVariable = async (variableSyntax: string) => {
+        try {
+            await navigator.clipboard.writeText(variableSyntax);
+            toast.success(`Copied ${variableSyntax} to clipboard`);
+        } catch (error) {
+            console.error("Failed to copy to clipboard:", error);
+            toast.error("Failed to copy to clipboard");
+        }
+    };
+
     const insertVariable = (variableSyntax: string) => {
         if (!aiPromptEnabled) {
             toast.info("Enable the AI prompt to insert variables.");
@@ -169,6 +179,7 @@ export function ScreenAIPrompt({
                 const schema = JSON.parse(schemaStr);
                 if (schema.type === "object" && schema.properties) {
                     // Flatten schema properties to get all fields
+                    // Note: AI context is stored in enrichmentContext with keys directly at top level
                     const flattenProperties = (properties: any, prefix = ""): void => {
                         Object.entries(properties).forEach(([key, value]: [string, any]) => {
                             const fullKey = prefix ? `${prefix}.${key}` : key;
@@ -176,7 +187,8 @@ export function ScreenAIPrompt({
                                 screenTitle: prevScreen.title,
                                 fieldName: fullKey,
                                 fieldType: value.type || "unknown",
-                                variableSyntax: `{{${prevScreen.title}.${fullKey}}}`,
+                                // Use just the key name - data is stored flat, not nested under screen title
+                                variableSyntax: `{{${fullKey}}}`,
                             });
 
                             // Recursively handle nested objects
@@ -212,7 +224,8 @@ export function ScreenAIPrompt({
                         screenTitle: prevScreen.title,
                         fieldName: field.name,
                         fieldType: field.type,
-                        variableSyntax: `{{${prevScreen.title}.${field.name}}}`,
+                        // Use just the field name - formData stores fields flat, not nested under screen title
+                        variableSyntax: `{{${field.name}}}`,
                     });
                 });
             }
@@ -268,24 +281,21 @@ export function ScreenAIPrompt({
                                     No fields available in this screen
                                 </span>
                             ) : (
-                                screen.fields.map((field) => (
-                                    <Badge
-                                        key={field.id}
-                                        variant="secondary"
-                                        className={`${aiPromptEnabled
-                                                ? "cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))]"
-                                                : "cursor-default opacity-60"
-                                            } transition-colors`}
-                                        onClick={
-                                            aiPromptEnabled
-                                                ? () => insertVariable(`{{${field.name}}}`)
-                                                : undefined
-                                        }
-                                    >
-                                        <Copy className="h-3 w-3 mr-1" />
-                                        {field.name}
-                                    </Badge>
-                                ))
+                                screen.fields.map((field) => {
+                                    const variableSyntax = `{{${field.name}}}`;
+                                    return (
+                                        <Badge
+                                            key={field.id}
+                                            variant="secondary"
+                                            className="cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] transition-colors"
+                                            onClick={() => copyVariable(variableSyntax)}
+                                            title={`Click to copy ${variableSyntax}`}
+                                        >
+                                            <Copy className="h-3 w-3 mr-1" />
+                                            {field.name}
+                                        </Badge>
+                                    );
+                                })
                             )}
                         </div>
                     </div>
@@ -314,15 +324,9 @@ export function ScreenAIPrompt({
                                             <Badge
                                                 key={idx}
                                                 variant="secondary"
-                                                className={`${aiPromptEnabled
-                                                        ? "cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))]"
-                                                        : "cursor-default opacity-60"
-                                                    } transition-colors`}
-                                                onClick={
-                                                    aiPromptEnabled
-                                                        ? () => insertVariable(field.variableSyntax)
-                                                        : undefined
-                                                }
+                                                className="cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] transition-colors"
+                                                onClick={() => copyVariable(field.variableSyntax)}
+                                                title={`Click to copy ${field.variableSyntax}`}
                                             >
                                                 <Copy className="h-3 w-3 mr-1" />
                                                 {field.screenTitle}.{field.fieldName}
@@ -362,15 +366,9 @@ export function ScreenAIPrompt({
                                             <Badge
                                                 key={idx}
                                                 variant="outline"
-                                                className={`${aiPromptEnabled
-                                                        ? "cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] hover:border-[hsl(var(--selise-blue))]"
-                                                        : "cursor-default opacity-60"
-                                                    } transition-colors`}
-                                                onClick={
-                                                    aiPromptEnabled
-                                                        ? () => insertVariable(ctx.variableSyntax)
-                                                        : undefined
-                                                }
+                                                className="cursor-pointer hover:bg-[hsl(var(--selise-blue))]/10 hover:text-[hsl(var(--selise-blue))] hover:border-[hsl(var(--selise-blue))] transition-colors"
+                                                onClick={() => copyVariable(ctx.variableSyntax)}
+                                                title={`Click to copy ${ctx.variableSyntax}`}
                                             >
                                                 <Copy className="h-3 w-3 mr-1" />
                                                 {ctx.screenTitle}.{ctx.fieldName}

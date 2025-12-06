@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   Plus,
@@ -8,7 +8,6 @@ import {
   GripVertical,
   ChevronDown,
   ChevronUp,
-  Link2,
   User,
   Mail,
   Phone,
@@ -17,7 +16,6 @@ import {
   MapPin,
   Info,
   Sparkles,
-  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,15 +29,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   DEFAULT_PARTY_TYPES,
   SignatoryScreenConfig,
   PredefinedSignatory,
-  SignatoryFieldMapping,
+  AutoFillConfig,
   createPredefinedSignatory,
 } from "@/lib/templates/signatory-config";
 
@@ -51,29 +44,35 @@ interface AvailableField {
   type: string;
 }
 
-// Helper to check if a string contains dynamic tags
-const hasDynamicTags = (str: string) => /\{\{[^}]+\}\}/.test(str);
+interface AvailableContextKey {
+  screenTitle: string;
+  key: string;
+  type: string;
+  fullPath: string;
+}
 
 interface SignatoryConfigEditorProps {
   config: SignatoryScreenConfig;
   onChange: (config: SignatoryScreenConfig) => void;
   availableFields: AvailableField[];
+  availableContextKeys?: AvailableContextKey[];
   readOnly?: boolean;
 }
 
-const SIGNATORY_FIELDS = [
-  { value: "name", label: "Full Name", icon: User },
-  { value: "email", label: "Email Address", icon: Mail },
-  { value: "title", label: "Title / Role", icon: Briefcase },
-  { value: "phone", label: "Phone Number", icon: Phone },
-  { value: "company", label: "Company / Organization", icon: Building2 },
-  { value: "address", label: "Address", icon: MapPin },
-] as const;
+const AUTO_FILL_FIELDS = [
+  { key: "name" as const, label: "Full Name", icon: User },
+  { key: "email" as const, label: "Email Address", icon: Mail },
+  { key: "title" as const, label: "Title / Role", icon: Briefcase },
+  { key: "phone" as const, label: "Phone Number", icon: Phone },
+  { key: "company" as const, label: "Company", icon: Building2 },
+  { key: "address" as const, label: "Address", icon: MapPin },
+];
 
 export function SignatoryConfigEditor({
   config,
   onChange,
   availableFields,
+  availableContextKeys = [],
   readOnly = false,
 }: SignatoryConfigEditorProps) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
@@ -92,7 +91,7 @@ export function SignatoryConfigEditor({
 
   const handleAddPredefined = () => {
     const order = config.predefinedSignatories.length;
-    const defaultPartyType = config.partyTypes[0]?.value || "other";
+    const defaultPartyType = DEFAULT_PARTY_TYPES[0]?.value || "other";
     const newPredefined = createPredefinedSignatory(
       defaultPartyType,
       `Signatory ${order + 1}`,
@@ -141,84 +140,17 @@ export function SignatoryConfigEditor({
     });
   };
 
-  const handleAddFieldMapping = (
-    predefinedId: string,
-    mapping: SignatoryFieldMapping
-  ) => {
-    const predefined = config.predefinedSignatories.find(
-      (p) => p.id === predefinedId
-    );
-    if (!predefined) return;
-
-    if (predefined.fieldMappings.some((m) => m.targetField === mapping.targetField)) {
-      return;
-    }
-
-    handleUpdatePredefined(predefinedId, {
-      fieldMappings: [...predefined.fieldMappings, mapping],
-    });
-  };
-
-  const handleRemoveFieldMapping = (
-    predefinedId: string,
-    targetField: string
-  ) => {
-    const predefined = config.predefinedSignatories.find(
-      (p) => p.id === predefinedId
-    );
-    if (!predefined) return;
-
-    handleUpdatePredefined(predefinedId, {
-      fieldMappings: predefined.fieldMappings.filter(
-        (m) => m.targetField !== targetField
-      ),
-    });
-  };
-
-  const emailFields = useMemo(
-    () => availableFields.filter((f) => f.type === "email" || f.name.toLowerCase().includes("email")),
-    [availableFields]
-  );
-  const nameFields = useMemo(
-    () => availableFields.filter((f) => f.name.toLowerCase().includes("name") && !f.name.toLowerCase().includes("company")),
-    [availableFields]
-  );
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-semibold text-[hsl(var(--fg))]">
-            Pre-defined Signatories
-          </h3>
-          <p className="text-sm text-[hsl(var(--globe-grey))]">
-            Configure fixed signatory slots with pre-filled data from previous steps
-          </p>
-        </div>
-        {!readOnly && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddPredefined}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Signatory
-          </Button>
-        )}
-      </div>
-
+    <div className="space-y-4">
       {config.predefinedSignatories.length === 0 && (
         <div className="flex items-start gap-3 p-4 rounded-lg border border-[hsl(var(--selise-blue))]/20 bg-[hsl(var(--selise-blue))]/5">
           <Info className="h-5 w-5 text-[hsl(var(--selise-blue))] flex-shrink-0 mt-0.5" />
           <div className="text-sm text-[hsl(var(--fg))]">
-            <p className="font-medium mb-1">No pre-defined signatories</p>
+            <p className="font-medium mb-1">No signatory slots defined</p>
             <p className="text-[hsl(var(--globe-grey))]">
-              Without pre-defined signatories, end users will be able to add any number
-              of signatories dynamically. Add pre-defined signatories to create fixed
-              slots (e.g., &quot;School Representative&quot; and &quot;Student&quot;) with data pre-filled
-              from previous form steps.
+              Add signatory slots to define fixed parties for this document
+              (e.g., &quot;Employer&quot; and &quot;Employee&quot;). Each slot can be pre-filled
+              with data from previous form steps.
             </p>
           </div>
         </div>
@@ -248,15 +180,8 @@ export function SignatoryConfigEditor({
                     handleUpdatePredefined(predefined.id, updates)
                   }
                   onRemove={() => handleRemovePredefined(predefined.id)}
-                  onAddFieldMapping={(mapping) =>
-                    handleAddFieldMapping(predefined.id, mapping)
-                  }
-                  onRemoveFieldMapping={(targetField) =>
-                    handleRemoveFieldMapping(predefined.id, targetField)
-                  }
                   availableFields={availableFields}
-                  emailFields={emailFields}
-                  nameFields={nameFields}
+                  availableContextKeys={availableContextKeys}
                   readOnly={readOnly}
                 />
               </Reorder.Item>
@@ -265,17 +190,16 @@ export function SignatoryConfigEditor({
         </Reorder.Group>
       )}
 
-      {!readOnly && config.predefinedSignatories.length > 0 && (
-        <motion.button
+      {!readOnly && (
+        <Button
           type="button"
+          variant="outline"
           onClick={handleAddPredefined}
-          className="w-full py-4 border-2 border-dashed border-[hsl(var(--border))] rounded-xl text-[hsl(var(--globe-grey))] hover:border-[hsl(var(--selise-blue))] hover:text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/5 transition-colors flex items-center justify-center gap-2"
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
+          className="w-full gap-2"
         >
-          <Plus className="h-5 w-5" />
-          Add Another Signatory Slot
-        </motion.button>
+          <Plus className="h-4 w-4" />
+          Add Signatory Slot
+        </Button>
       )}
     </div>
   );
@@ -289,11 +213,8 @@ interface PredefinedSignatoryCardProps {
   onToggleExpand: () => void;
   onUpdate: (updates: Partial<PredefinedSignatory>) => void;
   onRemove: () => void;
-  onAddFieldMapping: (mapping: SignatoryFieldMapping) => void;
-  onRemoveFieldMapping: (targetField: string) => void;
   availableFields: AvailableField[];
-  emailFields: AvailableField[];
-  nameFields: AvailableField[];
+  availableContextKeys?: AvailableContextKey[];
   readOnly: boolean;
 }
 
@@ -305,36 +226,25 @@ function PredefinedSignatoryCard({
   onToggleExpand,
   onUpdate,
   onRemove,
-  onAddFieldMapping,
-  onRemoveFieldMapping,
   availableFields,
+  availableContextKeys = [],
   readOnly,
 }: PredefinedSignatoryCardProps) {
-  const [showPartySuggestions, setShowPartySuggestions] = useState(false);
-  const [showLabelVariables, setShowLabelVariables] = useState(false);
-  const labelInputRef = useRef<HTMLInputElement>(null);
-  
   const partyLabel =
-    config.partyTypes.find((p) => p.value === predefined.partyType)?.label ||
+    DEFAULT_PARTY_TYPES.find((p) => p.value === predefined.partyType)?.label ||
     predefined.partyType;
 
-  const mappedFields = new Set(predefined.fieldMappings.map((m) => m.targetField));
-  
-  // Filter party type suggestions based on current input
-  const partySuggestions = useMemo(() => {
-    const input = predefined.partyType.toLowerCase();
-    if (!input) return DEFAULT_PARTY_TYPES;
-    return DEFAULT_PARTY_TYPES.filter(
-      (p) => p.label.toLowerCase().includes(input) || p.value.toLowerCase().includes(input)
-    );
-  }, [predefined.partyType]);
+  // Count auto-filled fields
+  const autoFillCount = Object.values(predefined.autoFillFrom || {}).filter(Boolean).length;
 
-  // Insert variable tag into label
-  const insertLabelVariable = (varName: string) => {
-    const currentLabel = predefined.label || "";
-    onUpdate({ label: currentLabel + `{{${varName}}}` });
-    setShowLabelVariables(false);
-    labelInputRef.current?.focus();
+  const handleAutoFillChange = (fieldKey: keyof AutoFillConfig, sourceField: string) => {
+    const newAutoFill = { ...predefined.autoFillFrom };
+    if (sourceField === "__none__") {
+      delete newAutoFill[fieldKey];
+    } else {
+      newAutoFill[fieldKey] = sourceField;
+    }
+    onUpdate({ autoFillFrom: newAutoFill });
   };
 
   return (
@@ -364,7 +274,7 @@ function PredefinedSignatoryCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-medium text-[hsl(var(--fg))] truncate">
-              {predefined.label}
+              {predefined.label || "Untitled"}
             </span>
             <Badge variant="outline" className="text-xs flex-shrink-0">
               {partyLabel}
@@ -378,11 +288,11 @@ function PredefinedSignatoryCard({
               </Badge>
             )}
           </div>
-          {predefined.fieldMappings.length > 0 && (
+          {autoFillCount > 0 && (
             <div className="flex items-center gap-1 mt-1">
               <Sparkles className="h-3 w-3 text-[hsl(var(--lime-green))]" />
               <span className="text-xs text-[hsl(var(--globe-grey))]">
-                {predefined.fieldMappings.length} field{predefined.fieldMappings.length !== 1 ? "s" : ""} pre-filled
+                {autoFillCount} field{autoFillCount !== 1 ? "s" : ""} auto-filled
               </span>
             </div>
           )}
@@ -422,107 +332,37 @@ function PredefinedSignatoryCard({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 pt-2 border-t border-[hsl(var(--border))] space-y-5">
+            <div className="px-4 pb-4 pt-2 border-t border-[hsl(var(--border))] space-y-4">
+              {/* Basic Info */}
               <div className="grid grid-cols-2 gap-4">
-                {/* Label with dynamic tag support */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Label *</Label>
-                    {availableFields.length > 0 && !readOnly && (
-                      <Popover open={showLabelVariables} onOpenChange={setShowLabelVariables}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs gap-1 text-[hsl(var(--selise-blue))]"
-                          >
-                            <Tag className="h-3 w-3" />
-                            Insert Variable
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-64 p-2" align="end">
-                          <p className="text-xs text-[hsl(var(--globe-grey))] mb-2">
-                            Click to insert a dynamic variable
-                          </p>
-                          <div className="space-y-1 max-h-48 overflow-y-auto">
-                            {availableFields.map((field) => (
-                              <button
-                                key={field.name}
-                                type="button"
-                                onClick={() => insertLabelVariable(field.name)}
-                                className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-[hsl(var(--selise-blue))]/10 transition-colors"
-                              >
-                                <span className="font-medium">{field.label}</span>
-                                <span className="text-xs text-[hsl(var(--globe-grey))] ml-1">
-                                  ({field.screenTitle})
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    )}
-                  </div>
+                  <Label className="text-sm font-medium">Label *</Label>
                   <Input
-                    ref={labelInputRef}
                     value={predefined.label}
                     onChange={(e) => onUpdate({ label: e.target.value })}
-                    placeholder="e.g., School Representative or {{companyName}} Rep"
+                    placeholder="e.g., Employer, Employee, Witness"
                     disabled={readOnly}
                   />
                   <p className="text-xs text-[hsl(var(--globe-grey))]">
-                    {hasDynamicTags(predefined.label) ? (
-                      <span className="text-[hsl(var(--selise-blue))]">
-                        Contains dynamic tags - will be resolved from form data
-                      </span>
-                    ) : (
-                      "Use {{variableName}} for dynamic labels from previous steps"
-                    )}
+                    Display name shown to the user
                   </p>
                 </div>
 
-                {/* Party Type with custom input and suggestions */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Party Type *</Label>
-                  <div className="relative">
-                    <Input
-                      value={predefined.partyType}
-                      onChange={(e) => {
-                        onUpdate({ partyType: e.target.value });
-                        setShowPartySuggestions(true);
-                      }}
-                      onFocus={() => setShowPartySuggestions(true)}
-                      onBlur={() => setTimeout(() => setShowPartySuggestions(false), 200)}
-                      placeholder="e.g., Student, Employer, Witness..."
-                      disabled={readOnly}
-                    />
-                    {showPartySuggestions && partySuggestions.length > 0 && !readOnly && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[hsl(var(--border))] rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                        {partySuggestions.map((party) => (
-                          <button
-                            key={party.value}
-                            type="button"
-                            className="w-full text-left px-3 py-2 hover:bg-[hsl(var(--selise-blue))]/10 transition-colors border-b last:border-b-0 border-[hsl(var(--border))]"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              onUpdate({ partyType: party.value });
-                              setShowPartySuggestions(false);
-                            }}
-                          >
-                            <div className="font-medium text-sm">{party.label}</div>
-                            <div className="text-xs text-[hsl(var(--globe-grey))]">{party.description}</div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <Input
+                    value={predefined.partyType}
+                    onChange={(e) => onUpdate({ partyType: e.target.value })}
+                    placeholder="e.g., employer, employee, witness"
+                    disabled={readOnly}
+                  />
                   <p className="text-xs text-[hsl(var(--globe-grey))]">
-                    Type a custom party type or select from suggestions
+                    Type the party type identifier (lowercase, no spaces)
                   </p>
                 </div>
               </div>
 
+              {/* Description */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Description</Label>
                 <Input
@@ -533,236 +373,108 @@ function PredefinedSignatoryCard({
                 />
               </div>
 
-              <div className="flex flex-wrap gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="size-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
-                    checked={predefined.required}
-                    onChange={(e) => onUpdate({ required: e.target.checked })}
-                    disabled={readOnly}
-                  />
-                  <span className="text-sm text-[hsl(var(--fg))]">Required</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="size-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
-                    checked={predefined.canRemove}
-                    onChange={(e) => onUpdate({ canRemove: e.target.checked })}
-                    disabled={readOnly}
-                  />
-                  <span className="text-sm text-[hsl(var(--fg))]">
-                    User can remove
-                  </span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="size-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
-                    checked={predefined.canChangePartyType}
-                    onChange={(e) =>
-                      onUpdate({ canChangePartyType: e.target.checked })
-                    }
-                    disabled={readOnly}
-                  />
-                  <span className="text-sm text-[hsl(var(--fg))]">
-                    User can change party type
-                  </span>
-                </label>
-              </div>
+              {/* Required checkbox */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="size-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
+                  checked={predefined.required}
+                  onChange={(e) => onUpdate({ required: e.target.checked })}
+                  disabled={readOnly}
+                />
+                <span className="text-sm text-[hsl(var(--fg))]">Required signatory</span>
+              </label>
 
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
-                  <Label className="text-sm font-medium">Field Mappings</Label>
-                  <Badge variant="outline" className="text-xs">Optional</Badge>
-                </div>
-                <p className="text-xs text-[hsl(var(--globe-grey))]">
-                  Optionally pre-fill signatory fields with data from previous form steps.
-                  Leave unmapped fields empty for end users to fill in manually.
-                </p>
+              {/* Auto-fill Section */}
+              {availableFields.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+                    <Label className="text-sm font-medium">Auto-fill from Previous Steps</Label>
+                  </div>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Optionally pre-fill fields with data from previous form steps
+                  </p>
 
-                {predefined.fieldMappings.length > 0 && (
-                  <div className="space-y-2">
-                    {predefined.fieldMappings.map((mapping) => {
-                      const fieldDef = SIGNATORY_FIELDS.find(
-                        (f) => f.value === mapping.targetField
-                      );
-                      const sourceField = availableFields.find(
-                        (f) => f.name === mapping.sourceField
-                      );
-                      const Icon = fieldDef?.icon || User;
-
+                  <div className="grid grid-cols-2 gap-3">
+                    {AUTO_FILL_FIELDS.map((field) => {
+                      const Icon = field.icon;
+                      const currentValue = predefined.autoFillFrom?.[field.key] || "";
+                      
                       return (
-                        <div
-                          key={mapping.targetField}
-                          className="flex items-center gap-3 p-3 rounded-lg bg-[hsl(var(--lime-green))]/5 border border-[hsl(var(--lime-green))]/20"
-                        >
-                          <div className="flex items-center gap-2 flex-1">
-                            <Icon className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
-                            <span className="text-sm font-medium text-[hsl(var(--fg))]">
-                              {fieldDef?.label}
-                            </span>
-                            <span className="text-[hsl(var(--globe-grey))]">←</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {sourceField?.label || mapping.sourceField}
-                            </Badge>
-                            {sourceField && (
-                              <span className="text-xs text-[hsl(var(--globe-grey))]">
-                                ({sourceField.screenTitle})
-                              </span>
-                            )}
-                          </div>
-                          {!readOnly && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--crimson))]"
-                              onClick={() =>
-                                onRemoveFieldMapping(mapping.targetField)
-                              }
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
+                        <div key={field.key} className="space-y-1">
+                          <Label className="text-xs text-[hsl(var(--globe-grey))] flex items-center gap-1">
+                            <Icon className="h-3 w-3" />
+                            {field.label}
+                          </Label>
+                          <Select
+                            value={currentValue || "__none__"}
+                            onValueChange={(value) => handleAutoFillChange(field.key, value)}
+                            disabled={readOnly}
+                          >
+                            <SelectTrigger className="h-9 text-sm">
+                              <SelectValue placeholder="Manual entry" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">
+                                <span className="text-[hsl(var(--globe-grey))]">Manual entry</span>
+                              </SelectItem>
+                              {availableFields.length > 0 && (
+                                <>
+                                  {availableFields.map((sourceField) => (
+                                    <SelectItem key={sourceField.name} value={sourceField.name}>
+                                      <div className="flex flex-col">
+                                        <span>{sourceField.label}</span>
+                                        <span className="text-xs text-[hsl(var(--globe-grey))]">
+                                          {sourceField.screenTitle}
+                                        </span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </>
+                              )}
+                              {availableContextKeys.length > 0 && (
+                                <>
+                                  {availableFields.length > 0 && (
+                                    <div className="px-2 py-1.5 text-xs font-medium text-[hsl(var(--globe-grey))] border-t border-[hsl(var(--border))] mt-1">
+                                      AI Enriched Context
+                                    </div>
+                                  )}
+                                  {availableContextKeys.map((contextKey) => (
+                                    <SelectItem key={contextKey.fullPath} value={contextKey.fullPath}>
+                                      <div className="flex flex-col">
+                                        <div className="flex items-center gap-1">
+                                          <Sparkles className="h-3 w-3 text-[hsl(var(--selise-blue))]" />
+                                          <span>{contextKey.key}</span>
+                                        </div>
+                                        <span className="text-xs text-[hsl(var(--globe-grey))]">
+                                          {contextKey.screenTitle} ({contextKey.type})
+                                        </span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                       );
                     })}
                   </div>
-                )}
+                </div>
+              )}
 
-                {!readOnly && availableFields.length > 0 && (
-                  <FieldMappingAdder
-                    mappedFields={mappedFields}
-                    availableFields={availableFields}
-                    onAdd={onAddFieldMapping}
-                  />
-                )}
-
-                {availableFields.length === 0 && (
-                  <div className="p-3 rounded-lg bg-[hsl(var(--globe-grey))]/5 text-sm text-[hsl(var(--globe-grey))]">
-                    No fields available from previous screens for pre-filling.
-                    End users will fill in all signatory information manually.
-                  </div>
-                )}
-
-                {availableFields.length > 0 && predefined.fieldMappings.length === 0 && (
-                  <div className="p-3 rounded-lg bg-[hsl(var(--selise-blue))]/5 border border-[hsl(var(--selise-blue))]/20 text-sm text-[hsl(var(--globe-grey))]">
-                    <span className="text-[hsl(var(--selise-blue))] font-medium">No mappings configured.</span>{" "}
-                    End users will fill in all fields for this signatory manually.
-                    Add mappings above to pre-fill from previous steps.
-                  </div>
-                )}
-              </div>
+              {availableFields.length === 0 && availableContextKeys.length === 0 && (
+                <div className="p-3 rounded-lg bg-[hsl(var(--globe-grey))]/5 text-sm text-[hsl(var(--globe-grey))]">
+                  <Info className="h-4 w-4 inline mr-2" />
+                  No fields or AI enriched context available from previous screens. End users will fill in all information manually.
+                </div>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
-  );
-}
-
-interface FieldMappingAdderProps {
-  mappedFields: Set<string>;
-  availableFields: AvailableField[];
-  onAdd: (mapping: SignatoryFieldMapping) => void;
-}
-
-function FieldMappingAdder({
-  mappedFields,
-  availableFields,
-  onAdd,
-}: FieldMappingAdderProps) {
-  const [targetField, setTargetField] = useState<string>("");
-  const [sourceField, setSourceField] = useState<string>("");
-
-  const unmappedFields = SIGNATORY_FIELDS.filter(
-    (f) => !mappedFields.has(f.value)
-  );
-
-  const handleAdd = () => {
-    if (!targetField || !sourceField) return;
-
-    onAdd({
-      targetField: targetField as SignatoryFieldMapping["targetField"],
-      sourceField,
-    });
-
-    setTargetField("");
-    setSourceField("");
-  };
-
-  if (unmappedFields.length === 0) {
-    return (
-      <div className="p-3 rounded-lg bg-[hsl(var(--lime-green))]/5 text-sm text-[hsl(var(--lime-green))]">
-        All fields are mapped!
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-end gap-3 p-3 rounded-lg border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--bg))]">
-      <div className="flex-1 space-y-1">
-        <Label className="text-xs text-[hsl(var(--globe-grey))]">
-          Signatory Field
-        </Label>
-        <Select value={targetField} onValueChange={setTargetField}>
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder="Select field..." />
-          </SelectTrigger>
-          <SelectContent>
-            {unmappedFields.map((field) => {
-              const Icon = field.icon;
-              return (
-                <SelectItem key={field.value} value={field.value}>
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-3.5 w-3.5" />
-                    {field.label}
-                  </div>
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="text-[hsl(var(--globe-grey))] pb-2">←</div>
-
-      <div className="flex-1 space-y-1">
-        <Label className="text-xs text-[hsl(var(--globe-grey))]">
-          Form Field (Source)
-        </Label>
-        <Select value={sourceField} onValueChange={setSourceField}>
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder="Select source..." />
-          </SelectTrigger>
-          <SelectContent>
-            {availableFields.map((field) => (
-              <SelectItem key={field.name} value={field.name}>
-                <div className="flex flex-col">
-                  <span>{field.label}</span>
-                  <span className="text-xs text-[hsl(var(--globe-grey))]">
-                    {field.screenTitle}
-                  </span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Button
-        type="button"
-        size="sm"
-        onClick={handleAdd}
-        disabled={!targetField || !sourceField}
-        className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))]"
-      >
-        <Plus className="h-4 w-4" />
-      </Button>
-    </div>
   );
 }
 

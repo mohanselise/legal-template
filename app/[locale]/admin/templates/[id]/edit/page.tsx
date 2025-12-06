@@ -480,7 +480,7 @@ export default function EditTemplatePage() {
     iconOptions.find((opt) => opt.value === form.watch("icon"))?.icon ||
     FileText;
   const IconComponent = selectedIcon;
-  const selectedScreen = screens.find(s => s.id === selectedScreenId);
+  const selectedScreen = screens.find(s => s.id === selectedScreenId) ?? null;
 
   if (isLoading) {
     return (

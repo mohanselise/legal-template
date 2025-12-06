@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Sparkles, Wand2, ChevronDown, ChevronUp, Info, Languages } from "lucide-react";
+import { Loader2, Sparkles, Wand2, ChevronDown, ChevronUp, Info, Languages, Zap } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +36,8 @@ const screenSchema = z.object({
   // UILM Translation Keys
   uilmTitleKey: z.string().optional(),
   uilmDescriptionKey: z.string().optional(),
+  // Apply Standards feature
+  enableApplyStandards: z.boolean().optional().default(false),
 });
 
 type ScreenFormData = z.infer<typeof screenSchema>;
@@ -86,6 +88,7 @@ export function ScreenEditor({
       dynamicMaxFields: 5,
       uilmTitleKey: "",
       uilmDescriptionKey: "",
+      enableApplyStandards: false,
     },
   });
 
@@ -148,6 +151,7 @@ export function ScreenEditor({
         dynamicMaxFields: (screen as any)?.dynamicMaxFields ?? 5,
         uilmTitleKey: (screen as any)?.uilmTitleKey || "",
         uilmDescriptionKey: (screen as any)?.uilmDescriptionKey || "",
+        enableApplyStandards: (screen as any)?.enableApplyStandards ?? false,
       });
       setError(null);
       // Expand dynamic config section if it's a dynamic screen
@@ -180,6 +184,8 @@ export function ScreenEditor({
         // UILM Translation Keys
         uilmTitleKey: data.uilmTitleKey?.trim() || null,
         uilmDescriptionKey: data.uilmDescriptionKey?.trim() || null,
+        // Apply Standards feature
+        enableApplyStandards: data.enableApplyStandards ?? false,
       };
 
       // Include dynamic screen configuration if type is dynamic
@@ -353,6 +359,36 @@ export function ScreenEditor({
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Apply Standards Configuration */}
+            <div className="flex items-start gap-3 p-4 border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--muted))]/30 transition-colors">
+              <input
+                type="checkbox"
+                id="enableApplyStandards"
+                {...register("enableApplyStandards")}
+                className="mt-1 h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-amber-500" />
+                  <Label htmlFor="enableApplyStandards" className="font-medium cursor-pointer">
+                    Enable &quot;Apply Standards&quot; Button
+                  </Label>
+                  {watch("enableApplyStandards") && (
+                    <Badge 
+                      variant="secondary" 
+                      className="text-xs bg-amber-100 text-amber-700"
+                    >
+                      Enabled
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
+                  Show a button that auto-fills fields with AI suggestions from enrichment context. 
+                  Fields must have &quot;AI Suggestion&quot; enabled and configured to be auto-filled.
+                </p>
+              </div>
             </div>
 
             {/* Dynamic Screen Configuration */}

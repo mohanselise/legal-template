@@ -334,6 +334,43 @@ function cloneFormData<T extends Record<string, unknown>>(data: T): T {
   }
 }
 
+/**
+ * Get nested value from object using dot notation (for enrichment context lookups)
+ */
+function getNestedValue(obj: Record<string, unknown>, key: string): unknown {
+  return key.split('.').reduce((acc: unknown, part: string) => {
+    if (acc && typeof acc === 'object' && part in (acc as Record<string, unknown>)) {
+      return (acc as Record<string, unknown>)[part];
+    }
+    return undefined;
+  }, obj);
+}
+
+/**
+ * Get fields with available suggestions for a standard screen
+ * Returns fields that have aiSuggestionEnabled and a value available in enrichmentContext
+ */
+function getFieldsWithSuggestions(
+  fields: Array<{ name: string; aiSuggestionEnabled?: boolean; aiSuggestionKey?: string | null }>,
+  enrichmentContext: Record<string, unknown>
+): Array<{ name: string; suggestedValue: unknown }> {
+  const fieldsWithSuggestions: Array<{ name: string; suggestedValue: unknown }> = [];
+  
+  for (const field of fields) {
+    if (field.aiSuggestionEnabled && field.aiSuggestionKey) {
+      const suggestedValue = getNestedValue(enrichmentContext, field.aiSuggestionKey);
+      if (suggestedValue !== undefined && suggestedValue !== null && suggestedValue !== '') {
+        fieldsWithSuggestions.push({
+          name: field.name,
+          suggestedValue,
+        });
+      }
+    }
+  }
+  
+  return fieldsWithSuggestions;
+}
+
 function DynamicSmartFlowContent({ locale }: { locale: string }) {
   const {
     config,
@@ -1645,6 +1682,84 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                           formData={formData}
                         />
                       ))}
+
+                      {/* Apply Standards Banner for Standard Screens */}
+                      {(currentScreen as any)?.enableApplyStandards && (() => {
+                        const fieldsWithSuggestions = getFieldsWithSuggestions(
+                          currentScreen?.fields || [],
+                          enrichmentContext
+                        );
+                        const hasUnfilledSuggestions = fieldsWithSuggestions.some(
+                          (f) => !formData[f.name] || formData[f.name] === ''
+                        );
+                        
+                        if (fieldsWithSuggestions.length > 0 && hasUnfilledSuggestions && !appliedStandard) {
+                          return (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4"
+                            >
+                              <div className="flex items-center justify-between gap-4 flex-wrap">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-200/80">
+                                    <Zap className="h-5 w-5 text-amber-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-[hsl(var(--fg))]">
+                                      Save time with smart defaults
+                                    </p>
+                                    <p className="text-sm text-[hsl(var(--globe-grey))]">
+                                      Auto-fill {fieldsWithSuggestions.length} field{fieldsWithSuggestions.length !== 1 ? 's' : ''} with AI-suggested values
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  onClick={() => {
+                                    setApplyingStandard(true);
+                                    fieldsWithSuggestions.forEach((field) => {
+                                      setFieldValue(field.name, field.suggestedValue);
+                                    });
+                                    setAppliedStandard(true);
+                                    setTimeout(() => {
+                                      setApplyingStandard(false);
+                                    }, 600);
+                                  }}
+                                  disabled={applyingStandard}
+                                  className="flex items-center gap-2 bg-[hsl(var(--selise-blue))] text-white hover:bg-[hsl(var(--oxford-blue))] px-5"
+                                >
+                                  <Zap className="h-4 w-4" />
+                                  Apply Standards
+                                </Button>
+                              </div>
+                            </motion.div>
+                          );
+                        }
+                        return null;
+                      })()}
+
+                      {/* Applied Success State for Standard Screens */}
+                      {(currentScreen as any)?.enableApplyStandards && appliedStandard && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200">
+                              <Check className="h-5 w-5 text-emerald-700" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-emerald-800">
+                                Smart defaults applied!
+                              </p>
+                              <p className="text-sm text-emerald-600">
+                                Fields have been filled with AI-suggested values
+                              </p>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
                     </>
                   )}
                 </div>

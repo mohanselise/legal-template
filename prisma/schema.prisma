@@ -63,6 +63,9 @@ model TemplateScreen {
   uilmTitleKey       String? // UILM key for translated screen title
   uilmDescriptionKey String? // UILM key for translated screen description
 
+  // Apply Standards feature (auto-fill fields with AI suggestions)
+  enableApplyStandards Boolean @default(false) // Show "Apply Standards" button for this screen
+
   fields TemplateField[]
 
   createdAt DateTime @default(now())

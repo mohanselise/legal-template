@@ -20,6 +20,8 @@ const updateScreenSchema = z.object({
   // UILM Translation Keys
   uilmTitleKey: z.string().nullable().optional(),
   uilmDescriptionKey: z.string().nullable().optional(),
+  // Apply Standards feature
+  enableApplyStandards: z.boolean().optional(),
 });
 
 /**

@@ -18,6 +18,8 @@ const createScreenSchema = z.object({
   // UILM Translation Keys
   uilmTitleKey: z.string().nullable().optional(),
   uilmDescriptionKey: z.string().nullable().optional(),
+  // Apply Standards feature
+  enableApplyStandards: z.boolean().optional().default(false),
 });
 
 // Schema for reordering screens
@@ -111,7 +113,7 @@ export async function POST(
       );
     }
 
-    const { title, description, type, order, aiPrompt, aiOutputSchema, dynamicPrompt, dynamicMaxFields } = validation.data;
+    const { title, description, type, order, aiPrompt, aiOutputSchema, dynamicPrompt, dynamicMaxFields, enableApplyStandards } = validation.data;
 
     // If order not provided, add to end
     let finalOrder = order;
@@ -139,6 +141,8 @@ export async function POST(
         // Dynamic screen configuration
         dynamicPrompt: isDynamic ? dynamicPrompt : null,
         dynamicMaxFields: isDynamic ? (dynamicMaxFields ?? 5) : null,
+        // Apply Standards feature
+        enableApplyStandards: enableApplyStandards ?? false,
       },
     });
 

@@ -38,6 +38,9 @@ import {
   ChevronRight,
   Languages,
   ExternalLink,
+  MessageSquare,
+  PanelRightClose,
+  PanelRightOpen,
 } from "lucide-react";
 import {
   DndContext,
@@ -76,6 +79,7 @@ import { ScreenEditor } from "../builder/_components/screen-editor";
 import { FieldList } from "../builder/_components/field-list";
 import { ScreenAIPrompt } from "../builder/_components/screen-ai-prompt";
 import { DeleteDialog } from "../builder/_components/delete-dialog";
+import { AIConfigurator } from "../builder/_components/ai-configurator";
 
 // Icon options
 const iconOptions = [
@@ -251,6 +255,9 @@ export default function EditTemplatePage() {
   const [editingScreen, setEditingScreen] = useState<ScreenWithFields | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingScreen, setDeletingScreen] = useState<ScreenWithFields | null>(null);
+
+  // AI Configurator panel state
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -925,26 +932,56 @@ export default function EditTemplatePage() {
 
         {/* Form Builder Tab */}
         <TabsContent value="form-builder">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Screens Panel */}
-            <div className="space-y-4">
+          {/* Form Builder Header with AI Toggle */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-[hsl(var(--fg))]">
+                Form Builder
+              </h2>
+              <Badge variant="secondary" className="text-xs">
+                {screens.length} screen{screens.length !== 1 ? "s" : ""}
+              </Badge>
+            </div>
+            <Button
+              variant={aiPanelOpen ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAiPanelOpen(!aiPanelOpen)}
+              className="gap-2"
+            >
+              {aiPanelOpen ? (
+                <>
+                  <PanelRightClose className="h-4 w-4" />
+                  Close AI Assistant
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  AI Assistant
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Screens Panel - Fixed width sidebar */}
+            <div className="w-full lg:w-64 xl:w-72 shrink-0 space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-[hsl(var(--fg))]">
+                <h3 className="text-sm font-semibold text-[hsl(var(--fg))] uppercase tracking-wider">
                   Screens
-                </h2>
+                </h3>
                 <Button size="sm" onClick={handleAddScreen}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Screen
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add
                 </Button>
               </div>
 
               <Card className="border-[hsl(var(--border))]">
                 <CardContent className="p-2">
                   {screens.length === 0 ? (
-                    <div className="text-center py-8 text-[hsl(var(--globe-grey))]">
-                      <FileText className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <div className="text-center py-6 text-[hsl(var(--globe-grey))]">
+                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">No screens yet</p>
-                      <p className="text-xs mt-1">Click "Add Screen" to create one</p>
+                      <p className="text-xs mt-1">Click &quot;Add&quot; to create one</p>
                     </div>
                   ) : (
                     <DndContext
@@ -982,34 +1019,57 @@ export default function EditTemplatePage() {
               </Card>
             </div>
 
-            {/* Fields Panel */}
-            <div className="lg:col-span-2 space-y-6">
-              {selectedScreen ? (
-                <>
-                  <FieldList
-                    screen={selectedScreen}
-                    allScreens={screens}
-                    onFieldsUpdated={handleFieldsUpdated}
-                  />
-                  <ScreenAIPrompt
+            {/* Main Content Area - Fields and AI Panel */}
+            <div className={`flex-1 min-w-0 flex flex-col lg:flex-row gap-4`}>
+              {/* Fields Panel - Flexible width */}
+              <div className={`space-y-4 ${aiPanelOpen ? "flex-1 min-w-0" : "flex-1"}`}>
+                {selectedScreen ? (
+                  <>
+                    <FieldList
+                      screen={selectedScreen}
+                      allScreens={screens}
+                      onFieldsUpdated={handleFieldsUpdated}
+                    />
+                    <ScreenAIPrompt
+                      templateId={templateId}
+                      screen={selectedScreen}
+                      allScreens={screens}
+                      onSaved={handleFieldsUpdated}
+                    />
+                  </>
+                ) : (
+                  <Card className="border-[hsl(var(--border))] h-full min-h-[400px]">
+                    <CardContent className="h-full flex items-center justify-center">
+                      <div className="text-center text-[hsl(var(--globe-grey))]">
+                        <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium">Select a screen</p>
+                        <p className="text-sm mt-1">
+                          Choose a screen from the list to manage its fields
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* AI Configurator Panel - Fixed width when open */}
+              {aiPanelOpen && template && (
+                <div className="w-full lg:w-96 xl:w-[420px] shrink-0 lg:h-[calc(100vh-12rem)] lg:sticky lg:top-4">
+                  <AIConfigurator
                     templateId={templateId}
-                    screen={selectedScreen}
-                    allScreens={screens}
-                    onSaved={handleFieldsUpdated}
+                    templateTitle={template.title}
+                    templateDescription={template.description}
+                    screens={screens}
+                    selectedScreen={selectedScreen}
+                    onScreenCreated={async () => {
+                      await fetchScreens();
+                    }}
+                    onFieldsUpdated={async () => {
+                      await fetchScreens();
+                    }}
+                    onClose={() => setAiPanelOpen(false)}
                   />
-                </>
-              ) : (
-                <Card className="border-[hsl(var(--border))] h-full min-h-[400px]">
-                  <CardContent className="h-full flex items-center justify-center">
-                    <div className="text-center text-[hsl(var(--globe-grey))]">
-                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium">Select a screen</p>
-                      <p className="text-sm mt-1">
-                        Choose a screen from the list to manage its fields
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                </div>
               )}
             </div>
           </div>

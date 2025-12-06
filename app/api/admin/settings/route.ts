@@ -15,6 +15,9 @@ const settingsSchema = z.object({
   // Form enrichment AI settings
   formEnrichmentAiModel: z.string().optional(),
   formEnrichmentOutputInUserLocale: z.boolean().optional(),
+  // Template AI Configurator settings
+  templateConfiguratorAiModel: z.string().optional(),
+  templateConfiguratorBusinessLogic: z.string().optional(),
 });
 
 /**
@@ -38,6 +41,8 @@ export async function GET(request: NextRequest) {
       dynamicFormOutputInUserLocale,
       formEnrichmentAiModel,
       formEnrichmentOutputInUserLocale,
+      templateConfiguratorAiModel,
+      templateConfiguratorBusinessLogic,
     ] = await Promise.all([
       prisma.systemSettings.findUnique({ where: { key: "documentGenerationAiModel" } }),
       prisma.systemSettings.findUnique({ where: { key: "commonPromptInstructions" } }),
@@ -47,6 +52,8 @@ export async function GET(request: NextRequest) {
       prisma.systemSettings.findUnique({ where: { key: "dynamicFormOutputInUserLocale" } }),
       prisma.systemSettings.findUnique({ where: { key: "formEnrichmentAiModel" } }),
       prisma.systemSettings.findUnique({ where: { key: "formEnrichmentOutputInUserLocale" } }),
+      prisma.systemSettings.findUnique({ where: { key: "templateConfiguratorAiModel" } }),
+      prisma.systemSettings.findUnique({ where: { key: "templateConfiguratorBusinessLogic" } }),
     ]);
 
     // If not found, return empty (will use default in frontend)
@@ -59,6 +66,8 @@ export async function GET(request: NextRequest) {
       dynamicFormOutputInUserLocale: dynamicFormOutputInUserLocale?.value === "true",
       formEnrichmentAiModel: formEnrichmentAiModel?.value || null,
       formEnrichmentOutputInUserLocale: formEnrichmentOutputInUserLocale?.value === "true",
+      templateConfiguratorAiModel: templateConfiguratorAiModel?.value || null,
+      templateConfiguratorBusinessLogic: templateConfiguratorBusinessLogic?.value || null,
     });
   } catch (error) {
     console.error("[SETTINGS_GET]", error);
@@ -99,6 +108,8 @@ export async function PUT(request: NextRequest) {
       dynamicFormOutputInUserLocale,
       formEnrichmentAiModel,
       formEnrichmentOutputInUserLocale,
+      templateConfiguratorAiModel,
+      templateConfiguratorBusinessLogic,
     } = validation.data;
 
     // Upsert settings in parallel
@@ -250,6 +261,44 @@ export async function PUT(request: NextRequest) {
             key: "formEnrichmentOutputInUserLocale",
             value: String(formEnrichmentOutputInUserLocale),
             description: "Output form enrichment results in the user's selected locale",
+            updatedBy: userId,
+          },
+        })
+      );
+    }
+
+    // Template configurator AI model
+    if (templateConfiguratorAiModel !== undefined) {
+      upsertPromises.push(
+        prisma.systemSettings.upsert({
+          where: { key: "templateConfiguratorAiModel" },
+          update: {
+            value: templateConfiguratorAiModel,
+            updatedBy: userId,
+          },
+          create: {
+            key: "templateConfiguratorAiModel",
+            value: templateConfiguratorAiModel,
+            description: "AI model used for the template configurator chat assistant",
+            updatedBy: userId,
+          },
+        })
+      );
+    }
+
+    // Template configurator business logic
+    if (templateConfiguratorBusinessLogic !== undefined) {
+      upsertPromises.push(
+        prisma.systemSettings.upsert({
+          where: { key: "templateConfiguratorBusinessLogic" },
+          update: {
+            value: templateConfiguratorBusinessLogic,
+            updatedBy: userId,
+          },
+          create: {
+            key: "templateConfiguratorBusinessLogic",
+            value: templateConfiguratorBusinessLogic,
+            description: "Business logic and strategy prompt for the template configurator",
             updatedBy: userId,
           },
         })

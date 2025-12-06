@@ -14,6 +14,7 @@ import {
   RotateCcw,
   Wand2,
   Globe,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import { ModelSelector } from "@/components/admin/model-selector";
 const DEFAULT_DYNAMIC_AI_MODEL = "meta-llama/llama-4-scout:nitro";
 const DEFAULT_DOCUMENT_GENERATION_MODEL = "anthropic/claude-3.5-sonnet";
 const DEFAULT_FORM_ENRICHMENT_MODEL = "meta-llama/llama-4-scout:nitro";
+const DEFAULT_TEMPLATE_CONFIGURATOR_MODEL = "anthropic/claude-sonnet-4";
 
 const settingsSchema = z.object({
   // Document generation settings
@@ -44,7 +46,75 @@ const settingsSchema = z.object({
   // Form enrichment AI settings
   formEnrichmentAiModel: z.string().optional(),
   formEnrichmentOutputInUserLocale: z.boolean().default(false),
+  // Template AI Configurator settings
+  templateConfiguratorAiModel: z.string().optional(),
+  templateConfiguratorBusinessLogic: z.string().optional(),
 });
+
+const DEFAULT_TEMPLATE_CONFIGURATOR_BUSINESS_LOGIC = `You are helping build REUSABLE legal document templates for a Swiss-based legal platform.
+
+## CONVERSATION APPROACH
+
+**Discovery First, Then Full Proposal:**
+1. Ask 2-3 questions to understand the complete template needs
+2. Explore: document type, parties, key sections, jurisdiction, special requirements
+3. Then propose ALL screens at once as a complete template
+4. Don't create screens one at a time - propose the full structure
+
+## Template Generalization
+
+Templates serve MANY users, not specific individuals:
+- Generic labels: "Company Name" not "Acme Corp"  
+- Flexible options: ["Full-time", "Part-time", "Contract"] 
+- Design for common cases
+- Only specific when user requests
+
+## Complete Template Structures
+
+**Employment Agreement (6-7 screens):**
+1. Employer Information (+ AI enrichment → jurisdiction, industry)
+2. Employee Information (personal details)
+3. Position & Role (title, department, reporting)
+4. Compensation (salary, currency from enrichment)
+5. Working Conditions (hours, location, probation)
+6. Confidentiality & IP (standard clauses)
+7. Signatories (employer + employee)
+
+**NDA (4-5 screens):**
+1. Disclosing Party (+ AI enrichment → jurisdiction)
+2. Receiving Party
+3. Confidential Information (definition, scope)
+4. Terms & Obligations (duration, restrictions)
+5. Signatories (both parties)
+
+**Service Agreement (5-6 screens):**
+1. Service Provider (+ AI enrichment → jurisdiction, industry)
+2. Client Information
+3. Services Description (scope, deliverables)
+4. Payment Terms (fees, currency from enrichment)
+5. Liability & Termination
+6. Signatories (provider + client)
+
+## AI Enrichment Strategy
+
+Early screens → enrich with context for later screens:
+- jurisdiction, tradingCurrency, industrySector
+- companySize, employmentType, contractDuration
+
+Later screens → use aiSuggestionKey for auto-fill
+
+## Field Best Practices
+
+- 3-6 fields per screen
+- Meaningful helpText for legal context
+- Select fields for bounded choices
+- camelCase field names
+- Enable AI suggestions from enrichment
+
+## Platform Context
+- Swiss law defaults
+- Multi-jurisdiction support
+- UILM translation keys available`;
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
@@ -166,6 +236,8 @@ export default function SettingsPage() {
       dynamicFormOutputInUserLocale: false,
       formEnrichmentAiModel: DEFAULT_FORM_ENRICHMENT_MODEL,
       formEnrichmentOutputInUserLocale: false,
+      templateConfiguratorAiModel: DEFAULT_TEMPLATE_CONFIGURATOR_MODEL,
+      templateConfiguratorBusinessLogic: "",
     },
   });
 
@@ -187,6 +259,8 @@ export default function SettingsPage() {
           dynamicFormOutputInUserLocale: data.dynamicFormOutputInUserLocale ?? false,
           formEnrichmentAiModel: data.formEnrichmentAiModel || DEFAULT_FORM_ENRICHMENT_MODEL,
           formEnrichmentOutputInUserLocale: data.formEnrichmentOutputInUserLocale ?? false,
+          templateConfiguratorAiModel: data.templateConfiguratorAiModel || DEFAULT_TEMPLATE_CONFIGURATOR_MODEL,
+          templateConfiguratorBusinessLogic: data.templateConfiguratorBusinessLogic || DEFAULT_TEMPLATE_CONFIGURATOR_BUSINESS_LOGIC,
         });
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -201,6 +275,8 @@ export default function SettingsPage() {
           dynamicFormOutputInUserLocale: false,
           formEnrichmentAiModel: DEFAULT_FORM_ENRICHMENT_MODEL,
           formEnrichmentOutputInUserLocale: false,
+          templateConfiguratorAiModel: DEFAULT_TEMPLATE_CONFIGURATOR_MODEL,
+          templateConfiguratorBusinessLogic: DEFAULT_TEMPLATE_CONFIGURATOR_BUSINESS_LOGIC,
         });
       } finally {
         setIsLoading(false);
@@ -245,6 +321,12 @@ export default function SettingsPage() {
     form.setValue("dynamicFormAiModel", DEFAULT_DYNAMIC_AI_MODEL);
     form.setValue("dynamicFormSystemPrompt", DEFAULT_DYNAMIC_FORM_SYSTEM_PROMPT);
     toast.info("Reset dynamic form settings to default");
+  };
+
+  const handleResetTemplateConfigurator = () => {
+    form.setValue("templateConfiguratorAiModel", DEFAULT_TEMPLATE_CONFIGURATOR_MODEL);
+    form.setValue("templateConfiguratorBusinessLogic", DEFAULT_TEMPLATE_CONFIGURATOR_BUSINESS_LOGIC);
+    toast.info("Reset template configurator settings to default");
   };
 
   if (isLoading) {
@@ -524,6 +606,90 @@ export default function SettingsPage() {
                 <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
                   When enabled, adds an instruction for the AI to generate form field labels and help text in the user&apos;s selected language.
                 </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Template AI Configurator Settings */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <MessageSquare className="h-5 w-5 text-[hsl(var(--mauveine))]" />
+                <div>
+                  <CardTitle>Template AI Configurator</CardTitle>
+                  <CardDescription>
+                    Configure the AI assistant that helps build template screens and fields through natural conversation.
+                    This powers the AI chat panel in the Form Builder.
+                  </CardDescription>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResetTemplateConfigurator}
+                className="gap-2"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Reset to Default
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* AI Model Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="templateConfiguratorAiModel">AI Model</Label>
+              <p className="text-xs text-[hsl(var(--globe-grey))]">
+                Select the AI model used for the template configurator chat. Models with strong reasoning and JSON output are recommended.
+              </p>
+              <div className="max-w-md">
+                <ModelSelector
+                  value={form.watch("templateConfiguratorAiModel") || DEFAULT_TEMPLATE_CONFIGURATOR_MODEL}
+                  onChange={(value) => form.setValue("templateConfiguratorAiModel", value)}
+                  useCase="documentGeneration"
+                  placeholder="Select AI model"
+                />
+              </div>
+            </div>
+
+            {/* Business Logic Prompt */}
+            <div className="space-y-2">
+              <Label htmlFor="templateConfiguratorBusinessLogic">
+                Business Logic &amp; Strategy Prompt
+              </Label>
+              <p className="text-xs text-[hsl(var(--globe-grey))]">
+                Define the core strategy and business rules the AI should follow when building templates.
+                This prompt is combined with the current template context and schema information.
+              </p>
+              <textarea
+                id="templateConfiguratorBusinessLogic"
+                placeholder="Enter business logic and strategy instructions for the AI configurator..."
+                className="flex min-h-64 w-full rounded-lg border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm font-mono shadow-sm placeholder:text-[hsl(var(--globe-grey))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50"
+                {...form.register("templateConfiguratorBusinessLogic")}
+              />
+              {form.watch("templateConfiguratorBusinessLogic") && (
+                <div className="flex justify-between items-center text-xs text-[hsl(var(--globe-grey))]">
+                  <span>
+                    {form.watch("templateConfiguratorBusinessLogic")?.length.toLocaleString()} characters
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Info box */}
+            <div className="p-4 rounded-lg border border-[hsl(var(--mauveine))]/20 bg-[hsl(var(--mauveine))]/5">
+              <div className="flex items-start gap-3">
+                <MessageSquare className="h-4 w-4 text-[hsl(var(--mauveine))] mt-0.5 shrink-0" />
+                <div className="text-xs text-[hsl(var(--globe-grey))]">
+                  <p className="font-medium text-[hsl(var(--fg))] mb-1">How the AI Configurator Works</p>
+                  <p>
+                    The AI configurator receives the full template context (title, description, existing screens and fields)
+                    along with your business logic instructions. It can generate new screens with fields or add fields to
+                    existing screens through natural conversation.
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>

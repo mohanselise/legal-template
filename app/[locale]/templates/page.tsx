@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Link } from "@/i18n/routing";
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getMessages } from 'next-intl/server';
 
 import { getAvailableTemplates, getUpcomingTemplates } from "@/lib/templates-db";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +28,71 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function TemplatesPage() {
   const t = await getTranslations('templates');
+  const tTemplates = await getTranslations('templates');
+  const messages = await getMessages();
   
   // Fetch templates from database
   const availableTemplates = await getAvailableTemplates();
   const upcomingTemplates = await getUpcomingTemplates();
+
+  // Helper to safely get template translation with fallback to database value
+  // Priority: 1. UILM key (if configured), 2. Static translation key, 3. Database value
+  const getTemplateText = (
+    template: typeof availableTemplates[0] | typeof upcomingTemplates[0],
+    field: 'title' | 'description'
+  ) => {
+    const slug = template.slug;
+    const fallback = field === 'title' ? template.title : template.description;
+    
+    // 1. Check for UILM key (for dynamically created templates)
+    const uilmKey = field === 'title' 
+      ? (template as any).uilmTitleKey 
+      : (template as any).uilmDescriptionKey;
+    
+    if (uilmKey) {
+      // UILM keys are stored in templates module - try to find them
+      // The UILM loader converts SNAKE_CASE to camelCase, so we need to check both
+      const templatesModule = (messages as any)?.templates;
+      if (templatesModule) {
+        // Try 1: Direct key lookup (original format - UILM loader also stores original)
+        if (templatesModule[uilmKey]) {
+          return templatesModule[uilmKey];
+        }
+        
+        // Try 2: camelCase version (UILM loader converts STUDENT_AGREEMENT_TITLE -> studentAgreementTitle)
+        const camelKey = uilmKey.toLowerCase().replace(/_([a-z0-9])/g, (g: string) => g[1].toUpperCase());
+        if (templatesModule[camelKey]) {
+          return templatesModule[camelKey];
+        }
+        
+        // Try 3: Lowercase with underscores (some variations)
+        const lowerKey = uilmKey.toLowerCase();
+        if (templatesModule[lowerKey]) {
+          return templatesModule[lowerKey];
+        }
+        
+        // Try 4: Check if key exists in nested structure (templatesList)
+        const templatesList = templatesModule.templatesList;
+        if (templatesList) {
+          // Check if there's a nested structure for this slug
+          const slugData = templatesList[slug];
+          if (slugData && slugData[field]) {
+            return slugData[field];
+          }
+        }
+        
+      }
+    }
+    
+    // 2. Check for static translation key (for pre-defined templates)
+    const templatesMessages = (messages as any)?.templates?.templatesList?.[slug];
+    if (templatesMessages?.[field]) {
+      return tTemplates(`templatesList.${slug}.${field}`);
+    }
+    
+    // 3. Fallback to database value
+    return fallback;
+  };
   
   return (
     <div className="min-h-screen bg-[hsl(var(--bg))] text-foreground">
@@ -55,7 +116,7 @@ export default async function TemplatesPage() {
                 className="group bg-[hsl(var(--selise-blue))] text-[hsl(var(--white))] hover:bg-[hsl(var(--oxford-blue))] shadow-lg shadow-[hsl(var(--selise-blue))]/30 h-auto px-8 py-6 text-base"
               >
                 <Link href={availableTemplates[0].href}>
-                  {t('templatesSection.generateNow')} {availableTemplates[0].title}
+                  {t('templatesSection.generateNow')} {getTemplateText(availableTemplates[0], 'title')}
                 </Link>
               </Button>
             ) : null}
@@ -110,9 +171,9 @@ export default async function TemplatesPage() {
                     <div className="mt-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
                       <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
                     </div>
-                    <CardTitle className="mt-6 text-2xl">{t(`templatesList.${template.slug}.title`)}</CardTitle>
+                    <CardTitle className="mt-6 text-2xl">{getTemplateText(template, 'title')}</CardTitle>
                     <CardDescription className="mt-3 text-base leading-relaxed">
-                      {t(`templatesList.${template.slug}.description`)}
+                      {getTemplateText(template, 'description')}
                     </CardDescription>
                   </CardHeader>
                   <CardFooter className="pt-0">
@@ -161,9 +222,9 @@ export default async function TemplatesPage() {
                     <div className="mt-2 flex h-12 w-12 items-center justify-center rounded-xl bg-[hsl(var(--selise-blue))]/12 text-[hsl(var(--selise-blue))] dark:bg-[hsl(var(--sky-blue))]/25 dark:text-[hsl(var(--sky-blue))]">
                       <Icon className="h-6 w-6" />
                     </div>
-                    <CardTitle className="mt-6 text-xl">{t(`templatesList.${template.slug}.title`)}</CardTitle>
+                    <CardTitle className="mt-6 text-xl">{getTemplateText(template, 'title')}</CardTitle>
                     <CardDescription className="mt-3 text-base leading-relaxed">
-                      {t(`templatesList.${template.slug}.description`)}
+                      {getTemplateText(template, 'description')}
                     </CardDescription>
                     <CardFooter className="mt-auto px-0 pt-6">
                       <Button

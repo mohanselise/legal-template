@@ -16,6 +16,7 @@ import {
   Wand2,
   Users,
   Zap,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,18 @@ interface ScreenWithFields extends TemplateScreen {
   fields: TemplateField[];
 }
 
+// Condition types for conditional visibility
+interface ConditionRule {
+  field: string;
+  operator: string;
+  value?: unknown;
+}
+
+interface ConditionGroup {
+  operator: "and" | "or";
+  rules: ConditionRule[];
+}
+
 interface FieldData {
   name: string;
   label: string;
@@ -44,6 +57,7 @@ interface FieldData {
   options?: string[];
   aiSuggestionEnabled?: boolean;
   aiSuggestionKey?: string;
+  conditions?: ConditionGroup; // Conditional visibility
 }
 
 interface AIEnrichment {
@@ -87,6 +101,8 @@ interface ScreenData {
   title: string;
   description?: string;
   type?: "standard" | "signatory" | "dynamic";
+  // Conditional visibility - show/hide screen based on previous form responses
+  conditions?: ConditionGroup;
   // For standard screens
   fields?: FieldData[];
   aiEnrichment?: AIEnrichment;
@@ -124,6 +140,7 @@ interface ChatMessage {
   suggestions?: string[];
   timestamp: Date;
   isError?: boolean;
+  autoNext?: boolean;
 }
 
 interface AIConfiguratorProps {
@@ -155,9 +172,11 @@ export function AIConfigurator({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isAutoApplying, setIsAutoApplying] = useState(false);
   const [contextExpanded, setContextExpanded] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const autoNextRef = useRef<boolean>(false);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -208,6 +227,7 @@ export function AIConfigurator({
               signatoryConfig: s.signatoryConfig,
               dynamicPrompt: s.dynamicPrompt,
               dynamicMaxFields: s.dynamicMaxFields,
+              conditions: s.conditions, // Include screen conditions
               fields: s.fields.map((f) => ({
                 name: f.name,
                 label: f.label,
@@ -218,6 +238,7 @@ export function AIConfigurator({
                 options: f.options,
                 aiSuggestionEnabled: f.aiSuggestionEnabled || false,
                 aiSuggestionKey: f.aiSuggestionKey,
+                conditions: f.conditions, // Include field conditions
               })),
             })),
           },
@@ -238,9 +259,54 @@ export function AIConfigurator({
         actions: data.actions,
         suggestions: data.suggestions,
         timestamp: new Date(),
+        autoNext: data.autoNext,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+
+      // Handle auto-apply and auto-continue
+      if (data.autoNext && data.actions && data.actions.length > 0) {
+        autoNextRef.current = true;
+        setIsAutoApplying(true);
+        
+        // Auto-apply all actions sequentially
+        for (let i = 0; i < data.actions.length; i++) {
+          const action = data.actions[i];
+          try {
+            await applyActionDirect(action);
+            // Mark action as applied in the message
+            setMessages((prev) =>
+              prev.map((msg) => {
+                if (msg.id === assistantMessage.id && msg.actions) {
+                  const updatedActions = [...msg.actions];
+                  updatedActions[i] = { ...action, applied: true };
+                  return { ...msg, actions: updatedActions };
+                }
+                return msg;
+              })
+            );
+          } catch (err) {
+            console.error("Auto-apply failed:", err);
+            toast.error("Failed to auto-apply action");
+            setIsAutoApplying(false);
+            autoNextRef.current = false;
+            return;
+          }
+        }
+        
+        setIsAutoApplying(false);
+        
+        // Trigger screen refresh
+        onScreenCreated();
+        
+        // Small delay to let the UI update, then auto-continue
+        setTimeout(() => {
+          if (autoNextRef.current) {
+            autoNextRef.current = false;
+            sendContinuation();
+          }
+        }, 500);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       const errorMessage: ChatMessage = {
@@ -256,6 +322,239 @@ export function AIConfigurator({
       setIsLoading(false);
     }
   }, [input, isLoading, messages, templateId, templateTitle, templateDescription, screens, selectedScreen]);
+
+  // Helper function to apply action directly (for auto-apply)
+  const applyActionDirect = useCallback(async (action: AIAction) => {
+    if (action.type === "createScreen") {
+      const screenData = action.data as ScreenData;
+      const screenType = screenData.type || "standard";
+      
+      const screenPayload: Record<string, unknown> = {
+        title: screenData.title,
+        description: screenData.description || "",
+        type: screenType,
+      };
+
+      if (screenData.enableApplyStandards !== undefined) {
+        screenPayload.enableApplyStandards = screenData.enableApplyStandards;
+      }
+
+      if (screenData.conditions && screenData.conditions.rules?.length > 0) {
+        screenPayload.conditions = JSON.stringify(screenData.conditions);
+      }
+
+      if (screenType === "signatory" && screenData.signatoryConfig) {
+        screenPayload.signatoryConfig = JSON.stringify(screenData.signatoryConfig);
+      }
+      if (screenType === "dynamic") {
+        if (screenData.dynamicPrompt) {
+          screenPayload.dynamicPrompt = screenData.dynamicPrompt;
+        }
+        if (screenData.dynamicMaxFields) {
+          screenPayload.dynamicMaxFields = screenData.dynamicMaxFields;
+        }
+      }
+
+      const screenResponse = await fetch(`/api/admin/templates/${templateId}/screens`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(screenPayload),
+      });
+
+      if (!screenResponse.ok) {
+        throw new Error("Failed to create screen");
+      }
+
+      const newScreen = await screenResponse.json();
+
+      if (screenType === "standard" && screenData.fields && screenData.fields.length > 0) {
+        for (const field of screenData.fields) {
+          const fieldPayload: Record<string, unknown> = {
+            name: field.name,
+            label: field.label,
+            type: field.type,
+            required: field.required,
+            placeholder: field.placeholder || "",
+            helpText: field.helpText || "",
+            options: field.options || [],
+            aiSuggestionEnabled: field.aiSuggestionEnabled || false,
+          };
+          
+          if (field.aiSuggestionEnabled && field.aiSuggestionKey) {
+            fieldPayload.aiSuggestionKey = field.aiSuggestionKey;
+          }
+          
+          if (field.conditions && field.conditions.rules?.length > 0) {
+            fieldPayload.conditions = JSON.stringify(field.conditions);
+          }
+          
+          await fetch(`/api/admin/screens/${newScreen.id}/fields`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(fieldPayload),
+          });
+        }
+      }
+
+      if (screenData.aiEnrichment) {
+        await fetch(`/api/admin/templates/${templateId}/screens/${newScreen.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            aiPrompt: screenData.aiEnrichment.prompt,
+            aiOutputSchema: JSON.stringify(screenData.aiEnrichment.outputSchema),
+          }),
+        });
+      }
+
+      let successMsg = `Screen "${screenData.title}" created`;
+      if (screenType === "standard") {
+        successMsg += ` with ${screenData.fields?.length || 0} fields`;
+      } else if (screenType === "signatory") {
+        successMsg += " (signatory collection)";
+      } else if (screenType === "dynamic") {
+        successMsg += " (AI-generated fields)";
+      }
+      toast.success(successMsg);
+    }
+    // Add other action types as needed for auto-apply
+  }, [templateId]);
+
+  // Send continuation message to get the next screen
+  const sendContinuation = useCallback(async () => {
+    setIsLoading(true);
+
+    try {
+      // Fetch the latest screens from the API to ensure we have current data
+      const screensResponse = await fetch(`/api/admin/templates/${templateId}/screens`);
+      if (!screensResponse.ok) {
+        throw new Error("Failed to fetch latest screens");
+      }
+      const latestScreens = await screensResponse.json();
+      
+      if (process.env.NODE_ENV === "development") {
+        console.log("[AI_CONFIGURATOR] Fetched latest screens for continuation:", latestScreens.length);
+      }
+      
+      // Get latest messages including the assistant's last message
+      const currentMessages = [...messages];
+      
+      // Add a system continuation message
+      const continuationMessage: ChatMessage = {
+        id: generateId(),
+        role: "user",
+        content: "Continue with the next screen.",
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, continuationMessage]);
+
+      const response = await fetch("/api/ai/template-configurator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [...currentMessages, continuationMessage].map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          templateContext: {
+            templateId,
+            templateTitle,
+            templateDescription,
+            screens: latestScreens.map((s: ScreenWithFields) => ({
+              id: s.id,
+              title: s.title,
+              description: s.description,
+              order: s.order,
+              type: s.type || "standard",
+              enableApplyStandards: s.enableApplyStandards || false,
+              aiPrompt: s.aiPrompt,
+              aiOutputSchema: s.aiOutputSchema,
+              signatoryConfig: s.signatoryConfig,
+              dynamicPrompt: s.dynamicPrompt,
+              dynamicMaxFields: s.dynamicMaxFields,
+              conditions: s.conditions,
+              fields: s.fields.map((f: TemplateField) => ({
+                name: f.name,
+                label: f.label,
+                type: f.type,
+                required: f.required,
+                placeholder: f.placeholder,
+                helpText: f.helpText,
+                options: f.options,
+                aiSuggestionEnabled: f.aiSuggestionEnabled || false,
+                aiSuggestionKey: f.aiSuggestionKey,
+                conditions: f.conditions,
+              })),
+            })),
+          },
+          selectedScreenId: selectedScreen?.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get AI response");
+      }
+
+      const data = await response.json();
+
+      const assistantMessage: ChatMessage = {
+        id: generateId(),
+        role: "assistant",
+        content: data.message,
+        actions: data.actions,
+        suggestions: data.suggestions,
+        timestamp: new Date(),
+        autoNext: data.autoNext,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      // Handle auto-apply and auto-continue for the continuation
+      if (data.autoNext && data.actions && data.actions.length > 0) {
+        autoNextRef.current = true;
+        setIsAutoApplying(true);
+        
+        for (let i = 0; i < data.actions.length; i++) {
+          const action = data.actions[i];
+          try {
+            await applyActionDirect(action);
+            setMessages((prev) =>
+              prev.map((msg) => {
+                if (msg.id === assistantMessage.id && msg.actions) {
+                  const updatedActions = [...msg.actions];
+                  updatedActions[i] = { ...action, applied: true };
+                  return { ...msg, actions: updatedActions };
+                }
+                return msg;
+              })
+            );
+          } catch (err) {
+            console.error("Auto-apply failed:", err);
+            toast.error("Failed to auto-apply action");
+            setIsAutoApplying(false);
+            autoNextRef.current = false;
+            return;
+          }
+        }
+        
+        setIsAutoApplying(false);
+        onScreenCreated();
+        
+        setTimeout(() => {
+          if (autoNextRef.current) {
+            autoNextRef.current = false;
+            sendContinuation();
+          }
+        }, 500);
+      }
+    } catch (error) {
+      console.error("Error in continuation:", error);
+      toast.error("Failed to continue template creation");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [messages, templateId, templateTitle, templateDescription, selectedScreen, applyActionDirect, onScreenCreated]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -288,6 +587,11 @@ export function AIConfigurator({
         // Add enableApplyStandards if specified
         if (screenData.enableApplyStandards !== undefined) {
           screenPayload.enableApplyStandards = screenData.enableApplyStandards;
+        }
+
+        // Add conditions for conditional screen visibility
+        if (screenData.conditions && screenData.conditions.rules?.length > 0) {
+          screenPayload.conditions = JSON.stringify(screenData.conditions);
         }
 
         // Add type-specific configuration
@@ -333,6 +637,11 @@ export function AIConfigurator({
             // Only include aiSuggestionKey if enabled and has a value
             if (field.aiSuggestionEnabled && field.aiSuggestionKey) {
               fieldPayload.aiSuggestionKey = field.aiSuggestionKey;
+            }
+            
+            // Add conditions for conditional field visibility
+            if (field.conditions && field.conditions.rules?.length > 0) {
+              fieldPayload.conditions = JSON.stringify(field.conditions);
             }
             
             await fetch(`/api/admin/screens/${newScreen.id}/fields`, {
@@ -406,6 +715,11 @@ export function AIConfigurator({
             fieldPayload.aiSuggestionKey = field.aiSuggestionKey;
           }
           
+          // Add conditions for conditional field visibility
+          if (field.conditions && field.conditions.rules?.length > 0) {
+            fieldPayload.conditions = JSON.stringify(field.conditions);
+          }
+          
           await fetch(`/api/admin/screens/${selectedScreen.id}/fields`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -442,6 +756,12 @@ export function AIConfigurator({
         if (updateData.description !== undefined) screenUpdatePayload.description = updateData.description;
         if (updateData.enableApplyStandards !== undefined) {
           screenUpdatePayload.enableApplyStandards = updateData.enableApplyStandards;
+        }
+        // Add/update conditions for conditional screen visibility
+        if (updateData.conditions !== undefined) {
+          screenUpdatePayload.conditions = updateData.conditions && updateData.conditions.rules?.length > 0
+            ? JSON.stringify(updateData.conditions)
+            : null; // Clear conditions if empty
         }
         if (updateData.aiEnrichment) {
           screenUpdatePayload.aiPrompt = updateData.aiEnrichment.prompt;
@@ -499,6 +819,11 @@ export function AIConfigurator({
             
             if (field.aiSuggestionEnabled && field.aiSuggestionKey) {
               fieldPayload.aiSuggestionKey = field.aiSuggestionKey;
+            }
+            
+            // Add conditions for conditional field visibility
+            if (field.conditions && field.conditions.rules?.length > 0) {
+              fieldPayload.conditions = JSON.stringify(field.conditions);
             }
             
             await fetch(`/api/admin/screens/${updateData.screenId}/fields`, {
@@ -780,13 +1105,13 @@ export function AIConfigurator({
                 )}
               </div>
             ))}
-            {isLoading && (
+            {(isLoading || isAutoApplying) && (
               <div className="flex justify-start">
                 <div className="bg-[hsl(var(--muted))] rounded-2xl px-4 py-3">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-[hsl(var(--selise-blue))]" />
                     <span className="text-sm text-[hsl(var(--globe-grey))]">
-                      Thinking...
+                      {isAutoApplying ? "Building screen..." : "Thinking..."}
                     </span>
                   </div>
                 </div>
@@ -826,6 +1151,45 @@ export function AIConfigurator({
       </div>
     </Card>
   );
+}
+
+// Helper function to summarize conditions for display
+function summarizeConditions(conditions: ConditionGroup): string {
+  if (!conditions.rules || conditions.rules.length === 0) return "";
+  
+  const ruleDescriptions = conditions.rules.map((r) => {
+    const fieldName = r.field;
+    const op = r.operator;
+    const val = r.value !== undefined ? String(r.value) : "";
+    
+    // Make operator more readable
+    const opLabel: Record<string, string> = {
+      equals: "=",
+      notEquals: "≠",
+      contains: "contains",
+      notContains: "doesn't contain",
+      isEmpty: "is empty",
+      isNotEmpty: "has value",
+      greaterThan: ">",
+      lessThan: "<",
+      greaterThanOrEqual: "≥",
+      lessThanOrEqual: "≤",
+      in: "is one of",
+      notIn: "is not",
+      startsWith: "starts with",
+      endsWith: "ends with",
+    };
+    
+    const readableOp = opLabel[op] || op;
+    
+    if (op === "isEmpty" || op === "isNotEmpty") {
+      return `${fieldName} ${readableOp}`;
+    }
+    return `${fieldName} ${readableOp} ${val}`;
+  });
+  
+  const connector = conditions.operator === "and" ? " AND " : " OR ";
+  return ruleDescriptions.join(connector);
 }
 
 // Action Card Component
@@ -1002,6 +1366,45 @@ function ActionCard({ action, onApply, selectedScreen }: ActionCardProps) {
             </span>
           </div>
         )}
+        
+        {/* Screen Conditions indicator */}
+        {screenData.conditions && screenData.conditions.rules && screenData.conditions.rules.length > 0 && (
+          <div className="mb-3 p-2 rounded-lg bg-[hsl(var(--globe-grey))]/10 border border-[hsl(var(--globe-grey))]/20">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Eye className="h-3 w-3 text-[hsl(var(--globe-grey))]" />
+              <span className="text-[10px] font-semibold text-[hsl(var(--globe-grey))] uppercase tracking-wider">
+                Conditional Screen
+              </span>
+            </div>
+            <p className="text-[10px] text-[hsl(var(--fg))]">
+              Shows when: {summarizeConditions(screenData.conditions)}
+            </p>
+          </div>
+        )}
+        
+        {/* Conditional Fields indicator */}
+        {screenType === "standard" && screenData.fields && screenData.fields.some(f => f.conditions && f.conditions.rules?.length > 0) && (
+          <div className="mb-3 p-2 rounded-lg bg-[hsl(var(--globe-grey))]/5 border border-[hsl(var(--globe-grey))]/15">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Eye className="h-3 w-3 text-[hsl(var(--globe-grey))]" />
+              <span className="text-[10px] font-semibold text-[hsl(var(--globe-grey))] uppercase tracking-wider">
+                Conditional Fields ({screenData.fields.filter(f => f.conditions && f.conditions.rules?.length > 0).length})
+              </span>
+            </div>
+            <div className="space-y-1">
+              {screenData.fields.filter(f => f.conditions && f.conditions.rules?.length > 0).slice(0, 3).map((field, idx) => (
+                <p key={idx} className="text-[9px] text-[hsl(var(--globe-grey))]">
+                  <span className="font-medium">{field.label}</span>: {summarizeConditions(field.conditions!)}
+                </p>
+              ))}
+              {screenData.fields.filter(f => f.conditions && f.conditions.rules?.length > 0).length > 3 && (
+                <p className="text-[9px] text-[hsl(var(--globe-grey))] italic">
+                  +{screenData.fields.filter(f => f.conditions && f.conditions.rules?.length > 0).length - 3} more...
+                </p>
+              )}
+            </div>
+          </div>
+        )}
         <Button
           size="sm"
           className="w-full h-8 text-xs"
@@ -1031,6 +1434,8 @@ function ActionCard({ action, onApply, selectedScreen }: ActionCardProps) {
 
   if (action.type === "addFields") {
     const fieldsData = action.data as FieldData[];
+    const conditionalFields = fieldsData.filter(f => f.conditions && f.conditions.rules?.length > 0);
+    
     return (
       <div className="bg-white/80 rounded-xl p-3 border border-[hsl(var(--border))]">
         <div className="flex items-start gap-2 mb-2">
@@ -1056,14 +1461,39 @@ function ActionCard({ action, onApply, selectedScreen }: ActionCardProps) {
               <Badge 
                 key={idx} 
                 variant="secondary" 
-                className={`text-[10px] py-0 ${field.aiSuggestionEnabled ? "bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]" : ""}`}
+                className={`text-[10px] py-0 ${field.aiSuggestionEnabled ? "bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]" : ""} ${field.conditions && field.conditions.rules?.length > 0 ? "border-[hsl(var(--globe-grey))]/30" : ""}`}
               >
+                {field.conditions && field.conditions.rules?.length > 0 && <Eye className="h-2.5 w-2.5 mr-0.5 text-[hsl(var(--globe-grey))]" />}
                 {field.aiSuggestionEnabled && <Sparkles className="h-2.5 w-2.5 mr-0.5" />}
                 {field.label}
               </Badge>
             ))}
           </div>
         </div>
+        
+        {/* Conditional Fields indicator */}
+        {conditionalFields.length > 0 && (
+          <div className="mb-3 p-2 rounded-lg bg-[hsl(var(--globe-grey))]/5 border border-[hsl(var(--globe-grey))]/15">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Eye className="h-3 w-3 text-[hsl(var(--globe-grey))]" />
+              <span className="text-[10px] font-semibold text-[hsl(var(--globe-grey))] uppercase tracking-wider">
+                Conditional Fields ({conditionalFields.length})
+              </span>
+            </div>
+            <div className="space-y-1">
+              {conditionalFields.slice(0, 3).map((field, idx) => (
+                <p key={idx} className="text-[9px] text-[hsl(var(--globe-grey))]">
+                  <span className="font-medium">{field.label}</span>: {summarizeConditions(field.conditions!)}
+                </p>
+              ))}
+              {conditionalFields.length > 3 && (
+                <p className="text-[9px] text-[hsl(var(--globe-grey))] italic">
+                  +{conditionalFields.length - 3} more...
+                </p>
+              )}
+            </div>
+          </div>
+        )}
         <Button
           size="sm"
           className="w-full h-8 text-xs"
@@ -1101,6 +1531,13 @@ function ActionCard({ action, onApply, selectedScreen }: ActionCardProps) {
       const count = updateData.fields?.filter(f => f.aiSuggestionEnabled).length || 0;
       improvements.push(`${count} AI-assisted fields`);
     }
+    if (updateData.conditions && updateData.conditions.rules?.length > 0) {
+      improvements.push("Conditional visibility");
+    }
+    if (updateData.fields?.some(f => f.conditions && f.conditions.rules?.length > 0)) {
+      const count = updateData.fields?.filter(f => f.conditions && f.conditions.rules?.length > 0).length || 0;
+      improvements.push(`${count} conditional fields`);
+    }
     
     return (
       <div className="bg-gradient-to-br from-[hsl(var(--selise-blue))]/5 to-[hsl(var(--selise-blue))]/10 rounded-xl p-3 border border-[hsl(var(--selise-blue))]/30">
@@ -1122,6 +1559,21 @@ function ActionCard({ action, onApply, selectedScreen }: ActionCardProps) {
             )}
           </div>
         </div>
+        
+        {/* Screen Conditions indicator */}
+        {updateData.conditions && updateData.conditions.rules && updateData.conditions.rules.length > 0 && (
+          <div className="mb-3 p-2 rounded-lg bg-[hsl(var(--globe-grey))]/10 border border-[hsl(var(--globe-grey))]/20">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Eye className="h-3 w-3 text-[hsl(var(--globe-grey))]" />
+              <span className="text-[10px] font-semibold text-[hsl(var(--globe-grey))] uppercase tracking-wider">
+                Conditional Screen
+              </span>
+            </div>
+            <p className="text-[10px] text-[hsl(var(--fg))]">
+              Shows when: {summarizeConditions(updateData.conditions)}
+            </p>
+          </div>
+        )}
         
         {updateData.fields && updateData.fields.length > 0 && (
           <div className="mb-3">

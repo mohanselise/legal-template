@@ -328,6 +328,11 @@ export function ConditionEditor({
                       const fieldLabel = field?.label || rule.field;
                       const opLabel = OPERATORS.find((o) => o.value === rule.operator)?.label || rule.operator;
                       const needsValue = getOperatorNeedsValue(rule.operator);
+                      const hasDisplayValue =
+                        needsValue &&
+                        rule.value !== undefined &&
+                        rule.value !== null &&
+                        rule.value !== "";
 
                       return (
                         <span key={i}>
@@ -339,7 +344,7 @@ export function ConditionEditor({
                           )}
                           <span className="font-medium">{fieldLabel}</span>{" "}
                           <span className="italic">{opLabel.toLowerCase()}</span>
-                          {needsValue && rule.value && (
+                          {hasDisplayValue && (
                             <>
                               {" "}
                               <span className="font-medium">&quot;{String(rule.value)}&quot;</span>

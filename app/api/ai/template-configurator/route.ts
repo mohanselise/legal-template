@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { jsonrepair } from "jsonrepair";
 import { createCompletionWithTracking } from "@/lib/openrouter";
 import { getSessionId } from "@/lib/analytics/session";
 import { prisma } from "@/lib/db";
@@ -151,10 +152,107 @@ For type: "dynamic":
   "dynamicPrompt": "Based on the {{contractType}} and {{jurisdiction}}, generate relevant fields for additional terms.",
   "dynamicMaxFields": 5
 }
+
+### CONDITIONAL VISIBILITY (conditions)
+
+Show/hide screens and fields dynamically based on user responses from earlier in the form.
+This creates a more personalized, streamlined experience by only showing relevant questions.
+
+**Condition Structure (for both screens and fields):**
+{
+  "conditions": {
+    "operator": "and" | "or",
+    "rules": [
+      { "field": "fieldName", "operator": "equals", "value": "someValue" }
+    ]
+  }
+}
+
+**Available Operators:**
+| Operator | Description | Example Value |
+|----------|-------------|---------------|
+| equals | Exact match | "full-time" |
+| notEquals | Not equal to | "contractor" |
+| contains | String/array contains | "tech" |
+| notContains | Does not contain | "temp" |
+| isEmpty | Field is empty/null | (no value needed) |
+| isNotEmpty | Field has a value | (no value needed) |
+| greaterThan | Numeric comparison | 50000 |
+| lessThan | Numeric comparison | 100000 |
+| greaterThanOrEqual | >= comparison | 30 |
+| lessThanOrEqual | <= comparison | 65 |
+| in | Value in array | ["CHF", "EUR", "USD"] |
+| notIn | Value not in array | ["intern", "temp"] |
+| startsWith | String starts with | "Senior" |
+| endsWith | String ends with | "Manager" |
+
+**Example - Conditional Field (show bonus only for full-time employees):**
+{
+  "name": "bonusPercentage",
+  "label": "Annual Bonus Percentage",
+  "type": "number",
+  "required": false,
+  "conditions": {
+    "operator": "and",
+    "rules": [
+      { "field": "employmentType", "operator": "equals", "value": "full-time" }
+    ]
+  }
+}
+
+**Example - Conditional Screen (show IP assignment only if confidentiality enabled):**
+{
+  "title": "Intellectual Property Assignment",
+  "type": "standard",
+  "conditions": {
+    "operator": "and",
+    "rules": [
+      { "field": "includeConfidentiality", "operator": "equals", "value": true }
+    ]
+  },
+  "fields": [...]
+}
+
+**Example - Multiple Conditions with OR (show for senior roles OR high salary):**
+{
+  "name": "equityPackage",
+  "label": "Equity/Stock Options",
+  "type": "text",
+  "conditions": {
+    "operator": "or",
+    "rules": [
+      { "field": "seniorityLevel", "operator": "in", "value": ["director", "vp", "c-level"] },
+      { "field": "annualSalary", "operator": "greaterThan", "value": 150000 }
+    ]
+  }
+}
+
+**Strategic Use Cases:**
+- Show compensation details only for paid roles (not volunteer/internship)
+- Show IP assignment section only when confidentiality is enabled
+- Show probation period fields only for permanent contracts
+- Show jurisdiction-specific clauses based on country/region selection
+- Show equity/stock fields only for senior positions
+- Show relocation benefits only if work location differs from employee location
+- Show non-compete clauses only for certain industries or roles
+
+**Best Practices:**
+1. Reference fields from EARLIER screens only (conditions evaluate against already-collected data)
+2. Use field names in camelCase exactly as defined
+3. For checkboxes, compare against boolean true/false
+4. Keep conditions simple - complex logic can confuse users
+5. Consider combining with AI enrichment for smart defaults on conditional fields
 `;
 
 // Base system prompt - includes role, approach, and output format
-const BASE_SYSTEM_PROMPT = `You are an expert AI assistant helping to build **reusable legal document templates**. Your role is to understand the user's complete requirements through conversation, then propose a full template structure with ALL screens at once.
+const BASE_SYSTEM_PROMPT = `You are an expert AI assistant helping ADMINS build **reusable form templates**. These templates are multi-screen questionnaires that END USERS will fill out to generate legal contracts.
+
+**Key distinction:**
+- YOU are talking to an ADMIN who is building the template
+- END USERS will later fill out the form to generate their contracts
+- The template should be FLEXIBLE enough to serve many different end users
+
+Your role: understand what flexibility/options the template needs, then propose a complete screen structure.
 
 ## CRITICAL: TEMPLATE DESIGN PHILOSOPHY
 
@@ -172,13 +270,14 @@ const BASE_SYSTEM_PROMPT = `You are an expert AI assistant helping to build **re
 
 When user starts a new template or makes a request, have a conversation to understand the COMPLETE picture:
 
-**Questions to explore:**
-1. "What type of legal document is this?" (employment, NDA, service agreement, etc.)
-2. "Who are the parties involved?" (employer/employee, company/contractor, etc.)
-3. "What key information needs to be collected?" (personal details, terms, compensation, etc.)
-4. "Are there any jurisdiction-specific requirements?" (Swiss law, EU, international, etc.)
-5. "Any special clauses or sections needed?" (confidentiality, non-compete, IP assignment, etc.)
-6. "Should we include AI-assisted form filling?" (smart suggestions based on earlier inputs)
+**Questions to explore (about TEMPLATE scope, not a specific contract):**
+1. "What flexibility should end users have?" (e.g., contract variations, duration options, party configurations)
+2. "What party types should the template support?" (company-to-company, company-to-individual, individual-to-individual, etc.)
+3. "Should the template work internationally or focus on specific regions?"
+4. "Any optional sections end users should be able to include/exclude?"
+5. "Any industry-specific variations needed?" (tech, healthcare, finance, general, etc.)
+
+**When the admin specifies a document type (e.g., "employment agreement", "NDA", "service contract"), do NOT ask what type of document they want—they already told you. Instead, ask about template FLEXIBILITY and what OPTIONS end users should have.**
 
 **During discovery:**
 - Ask 2-3 questions at a time, not all at once
@@ -186,30 +285,35 @@ When user starts a new template or makes a request, have a conversation to under
 - Build up your understanding of the complete template
 - Keep actions array EMPTY - just ask questions
 
-### PHASE 2: FULL TEMPLATE PROPOSAL (All screens at once)
+**IMPORTANT: You are NOT generating a contract for the admin. You are building a FORM TEMPLATE that many different end users will fill out to generate their own contracts. Your questions should focus on:**
+- What OPTIONS should end users have? (dropdowns, checkboxes, variations)
+- What FLEXIBILITY does the template need? (multiple party types, jurisdictions, industries)
+- What SECTIONS are optional vs. required for end users?
 
-Once you have enough context (usually after 2-3 exchanges), propose the COMPLETE template structure:
+**Do NOT ask the admin questions as if THEY are the one who needs a contract. They are building a template for OTHERS to use.**
 
-**Your proposal should include:**
-- ALL screens needed for the template (typically 4-8 screens)
-- Logical flow from start to finish
-- AI enrichment on early screens for smart defaults later
-- A signatory screen at the end for document signing
-- Clear explanation of the flow and reasoning
+### PHASE 2: SEQUENTIAL SCREEN CREATION (One screen at a time)
 
-**Example proposal message:**
-"Based on our discussion, here's the complete Employment Agreement template I recommend:
+Once you have enough context (usually after 2-3 exchanges), start building the template ONE SCREEN AT A TIME:
 
-1. **Employer Information** - Company details with AI enrichment to detect jurisdiction
-2. **Employee Information** - Personal and contact details  
-3. **Position & Compensation** - Role, salary, benefits (uses jurisdiction for currency)
-4. **Working Conditions** - Hours, location, probation period
-5. **Confidentiality & IP** - Standard protection clauses
-6. **Signatories** - Employer and employee signatures
+**CRITICAL: Create screens sequentially, not all at once!**
+- Each response should contain EXACTLY ONE createScreen action
+- After the screen is auto-applied, immediately continue with the next screen
+- Include a brief message about what you're creating and what comes next
+- Continue until all screens are created (typically 4-8 screens)
 
-This flow collects all necessary information and uses AI to suggest smart defaults. Ready to create all screens?"
+**Your first creation response should:**
+1. Briefly outline the full template plan (so user knows what's coming)
+2. Include ONE createScreen action for the first screen
+3. Mention "Creating screen 1 of X..." in the message
 
-**When proposing, include ALL createScreen actions at once.**
+**Example creation message:**
+"I'll build your Employment Agreement template with 6 screens. Let me create them one by one so you can see the template take shape.
+
+**Creating screen 1 of 6: Employer Information**
+This screen collects company details and uses AI enrichment to detect jurisdiction for smart defaults later."
+
+**IMPORTANT: After each screen creation, your next response should automatically create the next screen without waiting for user input. The system will auto-apply each screen.**
 
 ### PHASE 3: REFINEMENT (After creation)
 
@@ -226,18 +330,25 @@ ${FORM_SCHEMA_REFERENCE}
 **CRITICAL: Your ENTIRE response must be ONLY valid JSON. Start with { and end with }. No text before or after.**
 
 {
-  "message": "Your conversational response - questions during discovery OR full proposal with all screens",
-  "suggestions": ["Quick reply 1", "Quick reply 2", "Quick reply 3"],
-  "actions": []  // Empty during discovery, ALL screens during proposal
+  "message": "Your conversational response - questions during discovery OR screen creation progress",
+  "suggestions": ["Quick reply 1", "Quick reply 2"],
+  "actions": [],
+  "autoNext": false
 }
+
+**Field explanations:**
+- "autoNext": true signals the system to auto-apply the action and continue to next screen without user input
+- During creation phase, set autoNext: true and include exactly ONE createScreen action
+- During final screen creation, set autoNext: false so user can review the complete template
 
 **During Discovery Phase:**
 - actions: [] (empty - just asking questions)
 - suggestions: Answer options for your questions
 
-**During Proposal Phase:**
-- actions: [createScreen, createScreen, createScreen, ...] (ALL screens at once)
-- suggestions: ["Create all screens", "Let me adjust something", "Add more screens"]
+**During Creation Phase:**
+- actions: [ONE createScreen action only] (screens are created sequentially)
+- suggestions: [] (empty - system auto-continues to next screen)
+- Set "autoNext": true in the response to signal the system to auto-continue
 
 ## ACTION TYPES
 
@@ -290,7 +401,7 @@ ${FORM_SCHEMA_REFERENCE}
 
 **PRIORITY: Minimize user effort while maintaining legal quality**
 
-Design templates to maximize AI-assisted form filling:
+Design templates to maximize AI-assisted form filling and conditional logic:
 
 ### OPTIMAL SCREEN FLOW PATTERN:
 
@@ -341,7 +452,7 @@ From role/position info, generate:
 3. **EDITING EXISTING TEMPLATES** - If screens already exist, use "updateScreen" action type with the screen's screenId. NEVER use "createScreen" for screens that already exist!
 4. **ALWAYS OUTPUT ACTIONS** - When the user asks to "apply", "make changes", "update", or similar, you MUST include actions in your response. Don't just describe changes - include the actual updateScreen/createScreen actions!
 5. **DISCOVERY FIRST** - For new templates, ask questions before creating to understand the FULL template needs
-6. **PROPOSE ALL AT ONCE** - don't create one screen at a time, propose/update the complete template
+6. **ONE SCREEN AT A TIME** - Create screens sequentially, one per response. Include "autoNext": true to signal auto-continuation
 7. **MAXIMIZE APPLY STANDARDS** - enable on screens 3+ where enrichment data is available
 8. **FRICTIONLESS FLOW** - early screens collect data, later screens auto-fill
 9. **GENERALIZED design** - templates serve many users, not specific individuals
@@ -349,19 +460,24 @@ From role/position info, generate:
 11. **Select fields require "options"** array
 12. **AI enrichment on screens 1-2** - generate context for smart defaults later
 13. **Fields with aiSuggestionKey** - enable aiSuggestionEnabled: true
-14. **Signatory screen last** - always end with signature collection`;
+14. **Signatory screen last** - always end with signature collection
+15. **USE CONDITIONS for dynamic forms** - add conditions to screens/fields to show/hide based on earlier responses
+16. **CONDITIONS reference earlier fields** - only reference fields from screens that appear BEFORE the conditional element`;
 
-// Default business logic prompt
+// Default business logic prompt (minimal fallback - full prompt is in admin settings)
+const DEFAULT_BUSINESS_LOGIC_PROMPT = `Build reusable, frictionless legal form templates. Use AI enrichment on early screens, enable Apply Standards on screens 3+, add conditional visibility for party-type branching (individual vs organization), and place signatories last. Keep screens to 3-6 fields with plain-English labels.`;
 
-// Default business logic prompt
-const DEFAULT_BUSINESS_LOGIC_PROMPT = `You are helping build legal document templates. Follow these guidelines:
-- Create logical screen groupings (e.g., Party Information, Terms, Conditions)
-- Each screen should have 3-6 fields for optimal user experience
-- Include helpful descriptions for complex legal fields
-- Suggest appropriate field types based on the data being collected
-- Consider jurisdiction-specific requirements when relevant
-- Use clear, professional language for labels and help text
-- Ensure field names follow camelCase convention`;
+// Condition rule schema for conditional visibility
+const conditionRuleSchema = z.object({
+  field: z.string(),
+  operator: z.string(),
+  value: z.unknown().optional(),
+});
+
+const conditionGroupSchema = z.object({
+  operator: z.enum(["and", "or"]),
+  rules: z.array(conditionRuleSchema),
+});
 
 // Request validation schema
 const requestSchema = z.object({
@@ -388,6 +504,7 @@ const requestSchema = z.object({
         signatoryConfig: z.string().nullable().optional(), // JSON string
         dynamicPrompt: z.string().nullable().optional(),
         dynamicMaxFields: z.number().nullable().optional(),
+        conditions: z.string().nullable().optional(), // JSON string for screen conditions
         fields: z.array(
           z.object({
             name: z.string(),
@@ -399,6 +516,7 @@ const requestSchema = z.object({
             options: z.array(z.string()).optional(),
             aiSuggestionEnabled: z.boolean().optional(),
             aiSuggestionKey: z.string().nullable().optional(),
+            conditions: z.string().nullable().optional(), // JSON string for field conditions
           })
         ),
       })
@@ -463,11 +581,27 @@ ${templateContext.screens
             // Type info
             const screenType = (screen as { type?: string }).type || 'standard';
             const hasApplyStandards = (screen as { enableApplyStandards?: boolean }).enableApplyStandards;
+            const screenConditions = (screen as { conditions?: string }).conditions;
             
             let screenInfo = `
 ### Screen ${idx + 1}: ${screen.title}
 **screenId: "${screen.id}"** ← Use this ID for updateScreen/removeScreen actions
-Type: ${screenType}${hasApplyStandards ? ' | ✓ Apply Standards ENABLED' : ' | ✗ Apply Standards NOT enabled'}
+Type: ${screenType}${hasApplyStandards ? ' | ✓ Apply Standards ENABLED' : ' | ✗ Apply Standards NOT enabled'}`;
+            
+            // Add screen conditions info if present
+            if (screenConditions) {
+              try {
+                const cond = JSON.parse(screenConditions);
+                if (cond.rules && cond.rules.length > 0) {
+                  const condDesc = cond.rules.map((r: any) => `${r.field} ${r.operator} ${r.value ?? ''}`).join(` ${cond.operator.toUpperCase()} `);
+                  screenInfo += `\n**Conditional**: Shows when ${condDesc}`;
+                }
+              } catch (e) {
+                // Ignore parse errors
+              }
+            }
+            
+            screenInfo += `
 ${screen.description ? `Description: ${screen.description}` : ""}
 Fields (${screen.fields.length}):
 ${
@@ -478,7 +612,22 @@ ${
           (f) => {
             const hasSuggestion = (f as { aiSuggestionEnabled?: boolean }).aiSuggestionEnabled;
             const suggestionKey = (f as { aiSuggestionKey?: string }).aiSuggestionKey;
-            return `  - ${f.name} (${f.type}${f.required ? ", required" : ""}): "${f.label}"${hasSuggestion ? ` [AI suggestion: ${suggestionKey}]` : ''}`;
+            const fieldConditions = (f as { conditions?: string }).conditions;
+            let fieldInfo = `  - ${f.name} (${f.type}${f.required ? ", required" : ""}): "${f.label}"${hasSuggestion ? ` [AI suggestion: ${suggestionKey}]` : ''}`;
+            
+            // Add field conditions info if present
+            if (fieldConditions) {
+              try {
+                const cond = JSON.parse(fieldConditions);
+                if (cond.rules && cond.rules.length > 0) {
+                  const condDesc = cond.rules.map((r: any) => `${r.field} ${r.operator} ${r.value ?? ''}`).join(` ${cond.operator} `);
+                  fieldInfo += ` [CONDITIONAL: ${condDesc}]`;
+                }
+              } catch (e) {
+                // Ignore parse errors
+              }
+            }
+            return fieldInfo;
           }
         )
         .join("\n")
@@ -564,7 +713,7 @@ ${businessLogicPrompt}`;
         messages: conversationMessages,
         response_format: { type: "json_object" },
         temperature: 0.7,
-        max_tokens: 16384, // Increased for comprehensive multi-screen templates
+        max_tokens: 32768, // Doubled for comprehensive multi-screen templates
       },
       {
         sessionId,
@@ -583,67 +732,6 @@ ${businessLogicPrompt}`;
       console.log("[TEMPLATE_CONFIGURATOR] Response ends with:", content.substring(content.length - 100));
     }
 
-    // Helper function to repair truncated JSON
-    const repairTruncatedJson = (jsonStr: string): string | null => {
-      // Count open braces/brackets
-      let braceCount = 0;
-      let bracketCount = 0;
-      let inString = false;
-      let escapeNext = false;
-      
-      for (let i = 0; i < jsonStr.length; i++) {
-        const char = jsonStr[i];
-        
-        if (escapeNext) {
-          escapeNext = false;
-          continue;
-        }
-        
-        if (char === '\\' && inString) {
-          escapeNext = true;
-          continue;
-        }
-        
-        if (char === '"' && !escapeNext) {
-          inString = !inString;
-          continue;
-        }
-        
-        if (!inString) {
-          if (char === '{') braceCount++;
-          if (char === '}') braceCount--;
-          if (char === '[') bracketCount++;
-          if (char === ']') bracketCount--;
-        }
-      }
-      
-      // If we're still in a string, try to close it
-      let repaired = jsonStr;
-      if (inString) {
-        // Find the last valid position and truncate incomplete string
-        const lastQuoteIdx = repaired.lastIndexOf('"');
-        if (lastQuoteIdx > 0) {
-          // Check if this quote starts an incomplete string value
-          const beforeQuote = repaired.substring(0, lastQuoteIdx);
-          const colonIdx = beforeQuote.lastIndexOf(':');
-          if (colonIdx !== -1 && colonIdx > beforeQuote.lastIndexOf('}') && colonIdx > beforeQuote.lastIndexOf(']')) {
-            // We're in the middle of a string value, truncate it
-            repaired = repaired.substring(0, lastQuoteIdx) + '"';
-            inString = false;
-          }
-        }
-        if (inString) {
-          repaired += '"';
-        }
-      }
-      
-      // Close unclosed brackets and braces
-      repaired += ']'.repeat(Math.max(0, bracketCount));
-      repaired += '}'.repeat(Math.max(0, braceCount));
-      
-      return repaired;
-    };
-
     // Parse and validate the response
     let response;
     try {
@@ -651,43 +739,89 @@ ${businessLogicPrompt}`;
       response = JSON.parse(content);
     } catch (parseError) {
       if (process.env.NODE_ENV === "development") {
-        console.log("[TEMPLATE_CONFIGURATOR] Direct parse failed, trying repair methods...");
-      }
-      
-      // Try to repair truncated JSON (common when max_tokens is hit)
-      const repaired = repairTruncatedJson(content);
-      if (repaired) {
-        try {
-          response = JSON.parse(repaired);
-          if (process.env.NODE_ENV === "development") {
-            console.log("[TEMPLATE_CONFIGURATOR] Parsed JSON after repair");
-          }
-        } catch (repairError) {
-          if (process.env.NODE_ENV === "development") {
-            console.log("[TEMPLATE_CONFIGURATOR] Repair failed, trying other methods...");
+        console.log("[TEMPLATE_CONFIGURATOR] Direct parse failed:", parseError);
+        // Log the error position if available
+        if (parseError instanceof SyntaxError) {
+          const match = parseError.message.match(/position (\d+)/);
+          if (match) {
+            const pos = parseInt(match[1]);
+            console.log("[TEMPLATE_CONFIGURATOR] Error at position:", pos);
+            console.log("[TEMPLATE_CONFIGURATOR] Context around error (pos-100 to pos+100):");
+            console.log(content.substring(Math.max(0, pos - 100), Math.min(content.length, pos + 100)));
+            console.log("[TEMPLATE_CONFIGURATOR] Character at position:", JSON.stringify(content[pos]));
           }
         }
       }
       
-      // If repair didn't work, try to extract JSON from markdown code blocks
-      if (!response) {
-        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (jsonMatch && jsonMatch[1]) {
-          const repairedBlock = repairTruncatedJson(jsonMatch[1].trim());
-          if (repairedBlock) {
+      // Check if the response contains any JSON object at all
+      const firstBrace = content.indexOf('{');
+      const lastBrace = content.lastIndexOf('}');
+      
+      // If no JSON object found, the AI returned plain text - wrap it in a response
+      if (firstBrace === -1 || lastBrace <= firstBrace) {
+        if (process.env.NODE_ENV === "development") {
+          console.log("[TEMPLATE_CONFIGURATOR] AI returned plain text (no JSON), wrapping as message");
+        }
+        response = {
+          message: content.trim(),
+          suggestions: ["Continue", "Try again", "Start over"],
+          actions: []
+        };
+      } else {
+        // Try to extract JSON object from content (AI sometimes outputs text before/after JSON)
+        let jsonContent = content.substring(firstBrace, lastBrace + 1);
+        if (process.env.NODE_ENV === "development" && firstBrace > 0) {
+          console.log("[TEMPLATE_CONFIGURATOR] Extracted JSON from position", firstBrace, "to", lastBrace);
+          console.log("[TEMPLATE_CONFIGURATOR] Text before JSON:", content.substring(0, Math.min(firstBrace, 100)));
+        }
+        
+        // Try to repair JSON using jsonrepair library
+        try {
+          const repaired = jsonrepair(jsonContent);
+          const parsed = JSON.parse(repaired);
+          
+          // Ensure we got an object with message, not just a string
+          if (typeof parsed === 'object' && parsed !== null && 'message' in parsed) {
+            response = parsed;
+            if (process.env.NODE_ENV === "development") {
+              console.log("[TEMPLATE_CONFIGURATOR] Fixed JSON with jsonrepair");
+            }
+          } else {
+            // jsonrepair returned something unexpected, use original content as message
+            if (process.env.NODE_ENV === "development") {
+              console.log("[TEMPLATE_CONFIGURATOR] jsonrepair returned non-object, using content as message");
+            }
+            response = {
+              message: content.trim(),
+              suggestions: ["Continue", "Try again"],
+              actions: []
+            };
+          }
+        } catch (repairError) {
+          if (process.env.NODE_ENV === "development") {
+            console.log("[TEMPLATE_CONFIGURATOR] jsonrepair failed:", repairError);
+          }
+          
+          // Try to extract JSON from markdown code blocks as fallback
+          const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (jsonMatch && jsonMatch[1]) {
             try {
-              response = JSON.parse(repairedBlock);
-              if (process.env.NODE_ENV === "development") {
-                console.log("[TEMPLATE_CONFIGURATOR] Extracted and repaired JSON from markdown code block");
+              const repairedBlock = jsonrepair(jsonMatch[1].trim());
+              const parsed = JSON.parse(repairedBlock);
+              if (typeof parsed === 'object' && parsed !== null && 'message' in parsed) {
+                response = parsed;
+                if (process.env.NODE_ENV === "development") {
+                  console.log("[TEMPLATE_CONFIGURATOR] Extracted and repaired JSON from markdown code block");
+                }
               }
             } catch (innerParseError) {
-              // Continue to next method
+              // Continue to fallback
             }
           }
         }
       }
       
-      // Final fallback: create a response explaining the truncation
+      // Final fallback: create a response explaining the issue
       if (!response) {
         console.error("[TEMPLATE_CONFIGURATOR] All parse methods failed. Content length:", content.length);
         console.error("[TEMPLATE_CONFIGURATOR] Last 200 chars:", content.substring(content.length - 200));

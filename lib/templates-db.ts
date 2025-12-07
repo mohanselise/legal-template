@@ -6,7 +6,7 @@
  * TemplateMeta format with Lucide icons.
  */
 
-import { prisma, type Template } from "./db";
+import { prisma, type Template, Prisma } from "./db";
 import {
   FileText,
   Users,
@@ -108,13 +108,23 @@ export async function searchAvailableTemplates(options?: {
 }): Promise<{ templates: TemplateWithIcon[]; total: number }> {
   const page = Math.max(1, options?.page ?? 1);
   const pageSize = Math.max(1, Math.min(50, options?.pageSize ?? 12));
-  const where = {
+  const where: Prisma.TemplateWhereInput = {
     available: true,
     ...(options?.query
       ? {
           OR: [
-            { title: { contains: options.query, mode: "insensitive" } },
-            { description: { contains: options.query, mode: "insensitive" } },
+            {
+              title: {
+                contains: options.query,
+                mode: "insensitive" as Prisma.QueryMode,
+              },
+            },
+            {
+              description: {
+                contains: options.query,
+                mode: "insensitive" as Prisma.QueryMode,
+              },
+            },
           ],
         }
       : {}),

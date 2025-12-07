@@ -193,3 +193,36 @@ model ModelPricing {
   
   @@index([model])
 }
+
+// Template Page - Dynamic content pages stored in database
+// These are marketing/landing pages like /en/templates/my-new-template
+// separate from the Template model which stores form configuration
+model TemplatePage {
+  id              String   @id @default(cuid())
+  slug            String   // URL slug (e.g., "nda-agreement")
+  locale          String   @default("en") // Locale code (e.g., "en", "de", "fr")
+  
+  // Page Content
+  title           String   // Page title (also used for <title>)
+  description     String   @db.Text // Meta description
+  htmlBody        String   @db.Text // HTML content of the page body
+  
+  // Open Graph / SEO Metadata
+  ogTitle         String?  // Open Graph title (falls back to title if null)
+  ogDescription   String?  @db.Text // Open Graph description (falls back to description if null)
+  ogImage         String?  // Open Graph image URL
+  keywords        String[] @default([]) // SEO keywords
+  
+  // Publishing
+  published       Boolean  @default(false)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Unique constraint: one page per slug+locale combination
+  @@unique([slug, locale])
+  @@index([slug])
+  @@index([locale])
+  @@index([published])
+}

@@ -6,27 +6,70 @@ import { getTranslations } from 'next-intl/server';
 import { CheckCircle2, ArrowRight, Sparkles, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { getTemplateBySlug, getAllTemplates } from '@/lib/templates-db';
+import { 
+  getTemplateBySlug, 
+  getAllTemplates,
+  getTemplatePageBySlugAndLocale,
+  getAllTemplatePageSlugs,
+  type TemplatePage
+} from '@/lib/templates-db';
 
 /**
- * Generate static params for all template slugs
+ * Generate static params for all template slugs (both Template and TemplatePage)
  */
 export async function generateStaticParams() {
-  const templates = await getAllTemplates();
-  return templates.map((template) => ({
-    slug: template.slug,
-  }));
+  const [templates, templatePages] = await Promise.all([
+    getAllTemplates(),
+    getAllTemplatePageSlugs(),
+  ]);
+  
+  // Combine both sources, with template pages taking precedence
+  const slugsFromTemplates = templates.map((t) => ({ slug: t.slug }));
+  const slugsFromPages = templatePages.map((p) => ({ slug: p.slug }));
+  
+  // Use a Set to deduplicate
+  const uniqueSlugs = new Set<string>();
+  const result: { slug: string }[] = [];
+  
+  for (const item of [...slugsFromPages, ...slugsFromTemplates]) {
+    if (!uniqueSlugs.has(item.slug)) {
+      uniqueSlugs.add(item.slug);
+      result.push(item);
+    }
+  }
+  
+  return result;
 }
 
 /**
  * Generate metadata for each template page
+ * Checks for TemplatePage first (custom landing page), then falls back to Template
  */
 export async function generateMetadata({
   params
 }: {
   params: Promise<{ slug: string; locale: string }>
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, locale } = await params;
+  
+  // Check for custom landing page first
+  const templatePage = await getTemplatePageBySlugAndLocale(slug, locale);
+  
+  if (templatePage) {
+    return {
+      title: templatePage.title,
+      description: templatePage.description,
+      keywords: templatePage.keywords,
+      openGraph: {
+        title: templatePage.ogTitle || templatePage.title,
+        description: templatePage.ogDescription || templatePage.description,
+        type: 'website',
+        ...(templatePage.ogImage && { images: [templatePage.ogImage] }),
+      },
+    };
+  }
+  
+  // Fall back to Template model
   const template = await getTemplateBySlug(slug);
 
   if (!template) {
@@ -50,16 +93,33 @@ export async function generateMetadata({
  * Dynamic Template Landing Page
  * 
  * This page serves as a landing page for any template.
- * It shows template information and links to the generate page.
+ * Priority:
+ * 1. Check for a published TemplatePage (custom HTML landing page)
+ * 2. Fall back to Template model (default landing page)
  */
 export default async function TemplateLandingPage({
   params
 }: {
   params: Promise<{ slug: string; locale: string }>
 }) {
-  const { slug } = await params;
+  const { slug, locale } = await params;
   const t = await getTranslations('templates');
 
+  // Check for custom landing page first
+  const templatePage = await getTemplatePageBySlugAndLocale(slug, locale);
+  
+  if (templatePage) {
+    // Render custom HTML landing page
+    return (
+      <div className="bg-[hsl(var(--bg))] text-foreground">
+        <div 
+          dangerouslySetInnerHTML={{ __html: templatePage.htmlBody }}
+        />
+      </div>
+    );
+  }
+
+  // Fall back to Template model
   const template = await getTemplateBySlug(slug);
 
   if (!template) {

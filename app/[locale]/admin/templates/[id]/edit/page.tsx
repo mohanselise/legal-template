@@ -41,6 +41,10 @@ import {
   MessageSquare,
   PanelRightClose,
   PanelRightOpen,
+  Globe,
+  Eye,
+  EyeOff,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   DndContext,
@@ -74,7 +78,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Template, TemplateScreen, TemplateField } from "@/lib/db";
+import type { Template, TemplateScreen, TemplateField, TemplatePage } from "@/lib/db";
 import { ScreenEditor } from "../builder/_components/screen-editor";
 import { FieldList } from "../builder/_components/field-list";
 import { ScreenAIPrompt } from "../builder/_components/screen-ai-prompt";
@@ -136,6 +140,26 @@ const formSchema = z.object({
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+// Landing page form schema
+const landingPageSchema = z.object({
+  title: z
+    .string()
+    .min(1, "Title is required")
+    .max(200, "Title must be 200 characters or less"),
+  description: z
+    .string()
+    .min(1, "Description is required")
+    .max(2000, "Description must be 2000 characters or less"),
+  htmlBody: z.string().min(1, "HTML body is required"),
+  ogTitle: z.string().max(200).optional().nullable(),
+  ogDescription: z.string().max(500).optional().nullable(),
+  ogImage: z.string().url("Invalid URL format").optional().nullable().or(z.literal("")),
+  keywords: z.array(z.string()).default([]),
+  published: z.boolean().default(false),
+});
+
+type LandingPageFormData = z.infer<typeof landingPageSchema>;
 
 interface TemplateWithScreens extends Template {
   screens?: TemplateScreen[];
@@ -250,6 +274,13 @@ export default function EditTemplatePage() {
   const [aiConfigExpanded, setAiConfigExpanded] = useState(false);
   const [uilmConfigExpanded, setUilmConfigExpanded] = useState(false);
 
+  // Landing page state
+  const [landingPage, setLandingPage] = useState<TemplatePage | null>(null);
+  const [landingPageExists, setLandingPageExists] = useState(false);
+  const [isLandingPageSubmitting, setIsLandingPageSubmitting] = useState(false);
+  const [isGeneratingLanding, setIsGeneratingLanding] = useState(false);
+  const [landingKeywordInput, setLandingKeywordInput] = useState("");
+
   // Form builder dialog states
   const [screenEditorOpen, setScreenEditorOpen] = useState(false);
   const [editingScreen, setEditingScreen] = useState<ScreenWithFields | null>(null);
@@ -274,6 +305,20 @@ export default function EditTemplatePage() {
       systemPrompt: null,
       uilmTitleKey: null,
       uilmDescriptionKey: null,
+    },
+  });
+
+  const landingPageForm = useForm<LandingPageFormData>({
+    resolver: zodResolver(landingPageSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      htmlBody: "",
+      ogTitle: null,
+      ogDescription: null,
+      ogImage: null,
+      keywords: [],
+      published: false,
     },
   });
 
@@ -332,6 +377,57 @@ export default function EditTemplatePage() {
     }
   }, [templateId]);
 
+  const fetchLandingPage = useCallback(async (slug: string) => {
+    try {
+      // Fetch landing page by slug and locale
+      const response = await fetch(`/api/admin/template-pages?search=${encodeURIComponent(slug)}&locale=${locale}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch landing page");
+      }
+      const data = await response.json();
+      
+      // Find the exact match for this slug and locale
+      const page = data.templatePages?.find(
+        (p: TemplatePage) => p.slug === slug && p.locale === locale
+      );
+      
+      if (page) {
+        setLandingPage(page);
+        setLandingPageExists(true);
+        landingPageForm.reset({
+          title: page.title,
+          description: page.description,
+          htmlBody: page.htmlBody,
+          ogTitle: page.ogTitle,
+          ogDescription: page.ogDescription,
+          ogImage: page.ogImage,
+          keywords: Array.isArray(page.keywords) ? page.keywords : [],
+          published: page.published,
+        });
+      } else {
+        setLandingPage(null);
+        setLandingPageExists(false);
+        // Pre-fill with template data
+        if (template) {
+          landingPageForm.reset({
+            title: template.title,
+            description: template.description,
+            htmlBody: "",
+            ogTitle: null,
+            ogDescription: null,
+            ogImage: null,
+            keywords: Array.isArray(template.keywords) ? template.keywords : [],
+            published: false,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching landing page:", error);
+      setLandingPage(null);
+      setLandingPageExists(false);
+    }
+  }, [locale, landingPageForm, template]);
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -340,6 +436,13 @@ export default function EditTemplatePage() {
     };
     loadData();
   }, [fetchTemplate, fetchScreens]);
+
+  // Fetch landing page when template slug is available
+  useEffect(() => {
+    if (template?.slug) {
+      fetchLandingPage(template.slug);
+    }
+  }, [template?.slug, fetchLandingPage]);
 
   const handleSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -380,6 +483,110 @@ export default function EditTemplatePage() {
       "keywords",
       form.getValues("keywords").filter((k) => k !== keyword)
     );
+  };
+
+  // Landing page form handlers
+  const handleLandingPageSubmit = async (data: LandingPageFormData) => {
+    if (!template?.slug) return;
+
+    setIsLandingPageSubmitting(true);
+    try {
+      const payload = {
+        ...data,
+        slug: template.slug,
+        locale,
+        ogImage: data.ogImage || null,
+      };
+
+      let response;
+      if (landingPageExists && landingPage) {
+        // Update existing landing page
+        response = await fetch(`/api/admin/template-pages/${landingPage.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // Create new landing page
+        response = await fetch("/api/admin/template-pages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to save landing page");
+      }
+
+      toast.success(landingPageExists ? "Landing page updated" : "Landing page created");
+      await fetchLandingPage(template.slug);
+    } catch (error) {
+      console.error("Error saving landing page:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save landing page"
+      );
+    } finally {
+      setIsLandingPageSubmitting(false);
+    }
+  };
+
+  const addLandingKeyword = () => {
+    const keyword = landingKeywordInput.trim().toLowerCase();
+    if (keyword && !landingPageForm.getValues("keywords").includes(keyword)) {
+      landingPageForm.setValue("keywords", [...landingPageForm.getValues("keywords"), keyword]);
+      setLandingKeywordInput("");
+    }
+  };
+
+  const removeLandingKeyword = (keyword: string) => {
+    landingPageForm.setValue(
+      "keywords",
+      landingPageForm.getValues("keywords").filter((k) => k !== keyword)
+    );
+  };
+
+  // AI Landing Page generation
+  const handleGenerateLanding = async () => {
+    if (!template) return;
+    setIsGeneratingLanding(true);
+    try {
+      const response = await fetch("/api/admin/template-pages/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          templateId,
+          locale,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate landing page");
+      }
+
+      const { result } = await response.json();
+      landingPageForm.reset({
+        title: result.title || template.title,
+        description: result.description || template.description,
+        htmlBody: result.htmlBody || "",
+        ogTitle: result.ogTitle || result.title || template.title,
+        ogDescription: result.ogDescription || result.description || template.description,
+        ogImage: result.ogImage || "",
+        keywords: Array.isArray(result.keywords) ? result.keywords : [],
+        published: landingPageForm.watch("published") ?? false,
+      });
+
+      toast.success("Generated landing page draft");
+    } catch (error) {
+      console.error("Error generating landing page:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to generate landing page"
+      );
+    } finally {
+      setIsGeneratingLanding(false);
+    }
   };
 
   // Form builder handlers
@@ -572,6 +779,18 @@ export default function EditTemplatePage() {
             {screens.length > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {screens.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="landing-page">
+            <Globe className="h-4 w-4 mr-2" />
+            Landing Page
+            {landingPageExists && (
+              <Badge 
+                variant="secondary" 
+                className={`ml-2 ${landingPage?.published ? "bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))]" : ""}`}
+              >
+                {landingPage?.published ? "Live" : "Draft"}
               </Badge>
             )}
           </TabsTrigger>
@@ -1073,6 +1292,278 @@ export default function EditTemplatePage() {
               )}
             </div>
           </div>
+        </TabsContent>
+
+        {/* Landing Page Tab */}
+        <TabsContent value="landing-page">
+          <form onSubmit={landingPageForm.handleSubmit(handleLandingPageSubmit)}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[hsl(var(--fg))]">Landing Page</h2>
+                <p className="text-sm text-[hsl(var(--globe-grey))]">Generate or edit the public landing page content.</p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isGeneratingLanding || isLoading}
+                  onClick={handleGenerateLanding}
+                  className="gap-2"
+                >
+                  {isGeneratingLanding && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {isGeneratingLanding ? "Generating..." : "Generate Landing Page"}
+                </Button>
+              </div>
+            </div>
+
+            {/* Status Banner */}
+            {!landingPageExists && (
+              <div className="mb-6 p-4 bg-[hsl(var(--selise-blue))]/5 border border-[hsl(var(--selise-blue))]/20 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Globe className="h-5 w-5 text-[hsl(var(--selise-blue))] mt-0.5" />
+                  <div>
+                    <p className="font-medium text-[hsl(var(--fg))]">No landing page yet</p>
+                    <p className="text-sm text-[hsl(var(--globe-grey))] mt-1">
+                      Create a custom landing page for <code className="px-1 py-0.5 bg-[hsl(var(--muted))] rounded text-xs">/{locale}/templates/{template?.slug}</code>. 
+                      This page will be shown to users when they visit the template URL.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Page Metadata Card */}
+            <Card className="mb-6">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Page Metadata</CardTitle>
+                    <CardDescription>
+                      SEO and social sharing information
+                    </CardDescription>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="size-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
+                      checked={landingPageForm.watch("published")}
+                      onChange={(e) => landingPageForm.setValue("published", e.target.checked)}
+                    />
+                    <span className="text-sm font-medium text-[hsl(var(--fg))] flex items-center gap-1">
+                      {landingPageForm.watch("published") ? (
+                        <>
+                          <Eye className="h-4 w-4 text-[hsl(var(--lime-green))]" />
+                          Published
+                        </>
+                      ) : (
+                        <>
+                          <EyeOff className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                          Draft
+                        </>
+                      )}
+                    </span>
+                  </label>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Title and Description */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="landing-title">Page Title *</Label>
+                    <Input
+                      id="landing-title"
+                      placeholder="Employment Agreement Generator"
+                      {...landingPageForm.register("title")}
+                    />
+                    {landingPageForm.formState.errors.title && (
+                      <p className="text-sm text-destructive">
+                        {landingPageForm.formState.errors.title.message}
+                      </p>
+                    )}
+                    <p className="text-xs text-[hsl(var(--globe-grey))]">
+                      Used for the browser tab title and SEO
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="landing-og-title">Open Graph Title</Label>
+                    <Input
+                      id="landing-og-title"
+                      placeholder="Falls back to page title if empty"
+                      {...landingPageForm.register("ogTitle")}
+                    />
+                    <p className="text-xs text-[hsl(var(--globe-grey))]">
+                      Title for social media sharing
+                    </p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="landing-description">Meta Description *</Label>
+                  <textarea
+                    id="landing-description"
+                    placeholder="A comprehensive description of this template page for search engines..."
+                    className="flex min-h-20 w-full rounded-lg border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-[hsl(var(--globe-grey))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50"
+                    {...landingPageForm.register("description")}
+                  />
+                  {landingPageForm.formState.errors.description && (
+                    <p className="text-sm text-destructive">
+                      {landingPageForm.formState.errors.description.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* OG Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="landing-og-description">Open Graph Description</Label>
+                  <textarea
+                    id="landing-og-description"
+                    placeholder="Falls back to meta description if empty..."
+                    className="flex min-h-16 w-full rounded-lg border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-[hsl(var(--globe-grey))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50"
+                    {...landingPageForm.register("ogDescription")}
+                  />
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Description for social media sharing
+                  </p>
+                </div>
+
+                {/* OG Image */}
+                <div className="space-y-2">
+                  <Label htmlFor="landing-og-image">Open Graph Image URL</Label>
+                  <div className="flex gap-2">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
+                      <ImageIcon className="h-5 w-5 text-[hsl(var(--globe-grey))]" />
+                    </div>
+                    <Input
+                      id="landing-og-image"
+                      placeholder="https://example.com/og-image.png"
+                      {...landingPageForm.register("ogImage")}
+                      className="flex-1"
+                    />
+                  </div>
+                  {landingPageForm.formState.errors.ogImage && (
+                    <p className="text-sm text-destructive">
+                      {landingPageForm.formState.errors.ogImage.message}
+                    </p>
+                  )}
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Recommended: 1200x630px for optimal social media display
+                  </p>
+                </div>
+
+                {/* Keywords */}
+                <div className="space-y-2">
+                  <Label>SEO Keywords</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add keyword..."
+                      value={landingKeywordInput}
+                      onChange={(e) => setLandingKeywordInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addLandingKeyword();
+                        }
+                      }}
+                    />
+                    <Button type="button" variant="outline" onClick={addLandingKeyword}>
+                      Add
+                    </Button>
+                  </div>
+                  {(landingPageForm.watch("keywords") || []).length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {(landingPageForm.watch("keywords") || []).map((keyword) => (
+                        <Badge key={keyword} variant="secondary" className="gap-1 pr-1">
+                          {keyword}
+                          <button
+                            type="button"
+                            onClick={() => removeLandingKeyword(keyword)}
+                            className="ml-1 rounded-full hover:bg-destructive/20"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* HTML Body Card */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Page Content (HTML)</CardTitle>
+                <CardDescription>
+                  The HTML content that will be rendered on the landing page. 
+                  Use standard HTML tags and Tailwind CSS classes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="landing-html-body">HTML Body *</Label>
+                    {landingPageForm.watch("htmlBody") && (
+                      <span className="text-xs text-[hsl(var(--globe-grey))]">
+                        {landingPageForm.watch("htmlBody")?.length.toLocaleString()} characters
+                      </span>
+                    )}
+                  </div>
+                  <textarea
+                    id="landing-html-body"
+                    placeholder={`<section class="py-16">
+  <div class="container mx-auto px-4">
+    <h1 class="text-4xl font-bold mb-4">Your Template Title</h1>
+    <p class="text-lg text-muted-foreground">
+      Describe what this template does and why users should use it.
+    </p>
+  </div>
+</section>`}
+                    className="flex min-h-96 w-full rounded-lg border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm font-mono shadow-sm placeholder:text-[hsl(var(--globe-grey))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50"
+                    {...landingPageForm.register("htmlBody")}
+                  />
+                  {landingPageForm.formState.errors.htmlBody && (
+                    <p className="text-sm text-destructive">
+                      {landingPageForm.formState.errors.htmlBody.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="p-3 bg-[hsl(var(--muted))]/30 rounded-lg border border-[hsl(var(--border))]">
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    <strong>Tips:</strong> You can use Tailwind CSS classes for styling. 
+                    The content will be rendered inside the main layout, so you don&apos;t need to include 
+                    header, footer, or html/body tags.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-[hsl(var(--globe-grey))]">
+                {landingPageExists ? (
+                  <span>Last updated: {landingPage?.updatedAt ? new Date(landingPage.updatedAt).toLocaleString() : "Unknown"}</span>
+                ) : (
+                  <span>This will create a new landing page</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {landingPageExists && (
+                  <Button type="button" variant="outline" asChild>
+                    <a href={`/${locale}/templates/${template?.slug}`} target="_blank" rel="noopener noreferrer">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview
+                    </a>
+                  </Button>
+                )}
+                <Button type="submit" disabled={isLandingPageSubmitting}>
+                  {isLandingPageSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {landingPageExists ? "Save Changes" : "Create Landing Page"}
+                </Button>
+              </div>
+            </div>
+          </form>
         </TabsContent>
       </Tabs>
 

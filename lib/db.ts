@@ -56,6 +56,7 @@ export type {
   TemplateScreen,
   TemplateField,
   SystemSettings,
+  TemplatePage,
 } from "./generated/prisma/client";
 
 // Export enums

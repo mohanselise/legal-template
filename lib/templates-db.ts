@@ -6,7 +6,7 @@
  * TemplateMeta format with Lucide icons.
  */
 
-import { prisma, type Template, Prisma } from "./db";
+import { prisma, type Template, type TemplatePage, Prisma } from "./db";
 import {
   FileText,
   Users,
@@ -178,6 +178,55 @@ export async function getTemplateBySlug(
   } catch (error) {
     console.error("[TEMPLATES_DB] Failed to fetch template by slug:", error);
     return null;
+  }
+}
+
+// ============================================================================
+// Template Pages (Dynamic Content Pages)
+// ============================================================================
+
+export type { TemplatePage };
+
+/**
+ * Fetch a single template page by slug and locale
+ * Only returns published pages for public consumption
+ */
+export async function getTemplatePageBySlugAndLocale(
+  slug: string,
+  locale: string
+): Promise<TemplatePage | null> {
+  try {
+    const templatePage = await prisma.templatePage.findUnique({
+      where: {
+        slug_locale: {
+          slug,
+          locale,
+        },
+        published: true,
+      },
+    });
+    return templatePage;
+  } catch (error) {
+    console.error("[TEMPLATES_DB] Failed to fetch template page:", error);
+    return null;
+  }
+}
+
+/**
+ * Fetch all published template page slugs for static generation
+ */
+export async function getAllTemplatePageSlugs(): Promise<
+  Array<{ slug: string; locale: string }>
+> {
+  try {
+    const pages = await prisma.templatePage.findMany({
+      where: { published: true },
+      select: { slug: true, locale: true },
+    });
+    return pages;
+  } catch (error) {
+    console.error("[TEMPLATES_DB] Failed to fetch template page slugs:", error);
+    return [];
   }
 }
 

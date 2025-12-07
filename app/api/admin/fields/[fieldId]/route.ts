@@ -24,6 +24,8 @@ const updateFieldSchema = z.object({
   uilmPlaceholderKey: z.string().nullable().optional(),
   uilmHelpTextKey: z.string().nullable().optional(),
   uilmOptionsKeys: z.array(z.string()).optional(),
+  // Conditional visibility - show/hide field based on other form responses
+  conditions: z.string().nullable().optional(),
 });
 
 /**

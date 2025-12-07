@@ -15,11 +15,15 @@ const createScreenSchema = z.object({
   // Dynamic screen fields
   dynamicPrompt: z.string().nullable().optional(),
   dynamicMaxFields: z.number().int().min(1).max(20).nullable().optional(),
+  // Signatory screen configuration (JSON string)
+  signatoryConfig: z.string().nullable().optional(),
   // UILM Translation Keys
   uilmTitleKey: z.string().nullable().optional(),
   uilmDescriptionKey: z.string().nullable().optional(),
   // Apply Standards feature
   enableApplyStandards: z.boolean().optional().default(false),
+  // Conditional visibility - show/hide screen based on previous form responses
+  conditions: z.string().nullable().optional(),
 });
 
 // Schema for reordering screens
@@ -113,7 +117,7 @@ export async function POST(
       );
     }
 
-    const { title, description, type, order, aiPrompt, aiOutputSchema, dynamicPrompt, dynamicMaxFields, enableApplyStandards } = validation.data;
+    const { title, description, type, order, aiPrompt, aiOutputSchema, dynamicPrompt, dynamicMaxFields, signatoryConfig, enableApplyStandards, conditions } = validation.data;
 
     // If order not provided, add to end
     let finalOrder = order;
@@ -129,6 +133,7 @@ export async function POST(
     // (Neon HTTP adapter does not support transactions)
     const screenType = (type || "standard") as $Enums.ScreenType;
     const isDynamic = screenType === $Enums.ScreenType.dynamic;
+    const isSignatory = screenType === $Enums.ScreenType.signatory;
     const screen = await prisma.templateScreen.create({
       data: {
         templateId,
@@ -141,8 +146,12 @@ export async function POST(
         // Dynamic screen configuration
         dynamicPrompt: isDynamic ? dynamicPrompt : null,
         dynamicMaxFields: isDynamic ? (dynamicMaxFields ?? 5) : null,
+        // Signatory screen configuration
+        signatoryConfig: isSignatory ? signatoryConfig : null,
         // Apply Standards feature
         enableApplyStandards: enableApplyStandards ?? false,
+        // Conditional visibility
+        conditions: conditions ?? null,
       },
     });
 

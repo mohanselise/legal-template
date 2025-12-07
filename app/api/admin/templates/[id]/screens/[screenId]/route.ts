@@ -22,6 +22,8 @@ const updateScreenSchema = z.object({
   uilmDescriptionKey: z.string().nullable().optional(),
   // Apply Standards feature
   enableApplyStandards: z.boolean().optional(),
+  // Conditional visibility - show/hide screen based on previous form responses
+  conditions: z.string().nullable().optional(),
 });
 
 /**

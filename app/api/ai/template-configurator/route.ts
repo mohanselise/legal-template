@@ -744,8 +744,15 @@ From role/position info, generate:
 17. **AI enrichment on early screens** - generate context for smart defaults on later screens
 18. **Fields with aiSuggestionKey** - enable aiSuggestionEnabled: true
 19. **Signatory screen last** - always end with signature collection
-20. **USE CONDITIONS for dynamic forms** - add conditions to screens/fields to show/hide based on earlier responses
+20. **PROACTIVELY USE CONDITIONS** - Add conditional visibility to create smart, dynamic forms:
+   - Employment type branching: Show "probationPeriod" only when employmentType = "permanent"
+   - Seniority branching: Show "equityPackage" only when seniorityLevel in ["director", "vp", "c-level"]
+   - Party type branching: Show "companyRegistration" only when partyType = "organization"
+   - Compensation branching: Show "bonus" only when employmentType = "full-time"
+   - Confidentiality branching: Show "ipAssignment" screen only when includeConfidentiality = true
 21. **CONDITIONS reference earlier fields** - only reference fields from screens that appear BEFORE the conditional element
+22. **CONDITIONS JSON format** - Always stringify conditions as JSON when outputting:
+   {"operator": "and", "rules": [{"field": "employmentType", "operator": "equals", "value": "full-time"}]}
 
 ${generateFieldTypeGuide()}
 

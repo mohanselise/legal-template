@@ -32,13 +32,14 @@ const PAGE_SIZE = 12;
 export default async function TemplatesPage({
   searchParams,
 }: {
-  searchParams?: { q?: string; page?: string };
+  searchParams?: Promise<{ q?: string; page?: string }>;
 }) {
   const t = await getTranslations('templates');
   const tTemplates = await getTranslations('templates');
   const messages = await getMessages();
-  const query = (searchParams?.q ?? "").trim();
-  const currentPage = Math.max(1, Number(searchParams?.page ?? "1") || 1);
+  const resolvedSearchParams = await searchParams;
+  const query = (resolvedSearchParams?.q ?? "").trim();
+  const currentPage = Math.max(1, Number(resolvedSearchParams?.page ?? "1") || 1);
   
   // Fetch templates from database
   const [{ templates: availableTemplates, total: totalAvailable }, upcomingTemplates] = await Promise.all([

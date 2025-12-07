@@ -24,6 +24,8 @@ const createFieldSchema = z.object({
   uilmPlaceholderKey: z.string().nullable().optional(),
   uilmHelpTextKey: z.string().nullable().optional(),
   uilmOptionsKeys: z.array(z.string()).default([]),
+  // Conditional visibility - show/hide field based on other form responses
+  conditions: z.string().nullable().optional(),
 });
 
 // Schema for reordering fields
@@ -106,7 +108,7 @@ export async function POST(
       );
     }
 
-    const { name, label, type, required, placeholder, helpText, options, order, aiSuggestionEnabled, aiSuggestionKey } =
+    const { name, label, type, required, placeholder, helpText, options, order, aiSuggestionEnabled, aiSuggestionKey, conditions } =
       validation.data;
 
     // Check for duplicate field name within the same screen
@@ -148,6 +150,8 @@ export async function POST(
         aiSuggestionEnabled: aiSuggestionEnabled ?? false,
         // Only set aiSuggestionKey if it has a value, otherwise null
         aiSuggestionKey: aiSuggestionKey?.trim() || null,
+        // Conditional visibility
+        conditions: conditions ?? null,
       },
     });
 

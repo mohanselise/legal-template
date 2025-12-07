@@ -52,7 +52,10 @@ const fieldSchema = z.object({
     .min(1, "Field name is required")
     .regex(/^[a-zA-Z][a-zA-Z0-9]*$/, "Must start with letter, alphanumeric only"),
   label: z.string().min(1, "Label is required"),
-  type: z.enum(["text", "email", "date", "number", "checkbox", "select"]),
+  type: z.enum([
+    "text", "email", "date", "number", "checkbox", "select",
+    "textarea", "phone", "address", "party", "currency", "percentage", "url"
+  ]),
   required: z.boolean().default(false),
   placeholder: z.string().optional(),
   helpText: z.string().optional(),
@@ -81,13 +84,23 @@ interface FieldEditorProps {
   allScreens?: (TemplateScreen & { fields?: TemplateField[] })[];
 }
 
-const fieldTypeOptions: { value: FieldType; label: string }[] = [
-  { value: "text", label: "Text" },
-  { value: "email", label: "Email" },
-  { value: "date", label: "Date" },
-  { value: "number", label: "Number" },
-  { value: "checkbox", label: "Checkbox" },
-  { value: "select", label: "Select / Dropdown" },
+const fieldTypeOptions: { value: FieldType; label: string; description?: string; group: string }[] = [
+  // Composite fields (most feature-rich)
+  { value: "party", label: "Party (Name + Address)", description: "Business/person with full address - Google Places ready", group: "Composite" },
+  { value: "address", label: "Address", description: "Full address (street, city, state, postal, country)", group: "Composite" },
+  { value: "phone", label: "Phone", description: "Phone number with country code selector", group: "Composite" },
+  { value: "currency", label: "Currency Amount", description: "Amount with currency selector (CHF, EUR, USD)", group: "Composite" },
+  // Specialized fields
+  { value: "percentage", label: "Percentage", description: "0-100% input with validation", group: "Specialized" },
+  { value: "url", label: "URL / Website", description: "Link with validation and preview", group: "Specialized" },
+  { value: "textarea", label: "Long Text", description: "Multi-line text for descriptions", group: "Specialized" },
+  // Basic fields
+  { value: "text", label: "Text", description: "Single-line text input", group: "Basic" },
+  { value: "email", label: "Email", description: "Email with validation", group: "Basic" },
+  { value: "date", label: "Date", description: "Date picker", group: "Basic" },
+  { value: "number", label: "Number", description: "Numeric input (not for money!)", group: "Basic" },
+  { value: "checkbox", label: "Checkbox", description: "Yes/No toggle", group: "Basic" },
+  { value: "select", label: "Select / Dropdown", description: "Fixed options dropdown", group: "Basic" },
 ];
 
 export function FieldEditor({
@@ -397,16 +410,59 @@ export function FieldEditor({
                 <SelectTrigger>
                   <SelectValue placeholder="Select field type" />
                 </SelectTrigger>
-                <SelectContent>
-                  {fieldTypeOptions.map((option) => (
+                <SelectContent className="max-h-[400px]">
+                  {/* Composite Fields */}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/5">
+                    Composite Fields (Recommended)
+                  </div>
+                  {fieldTypeOptions.filter(o => o.group === "Composite").map((option) => (
                     <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                      <div className="flex flex-col">
+                        <span className="font-medium">{option.label}</span>
+                        {option.description && (
+                          <span className="text-xs text-[hsl(var(--globe-grey))]">{option.description}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                  {/* Specialized Fields */}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-[hsl(var(--poly-green))] bg-[hsl(var(--poly-green))]/5 mt-1">
+                    Specialized Fields
+                  </div>
+                  {fieldTypeOptions.filter(o => o.group === "Specialized").map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{option.label}</span>
+                        {option.description && (
+                          <span className="text-xs text-[hsl(var(--globe-grey))]">{option.description}</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                  {/* Basic Fields */}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-[hsl(var(--globe-grey))] bg-[hsl(var(--muted))]/50 mt-1">
+                    Basic Fields
+                  </div>
+                  {fieldTypeOptions.filter(o => o.group === "Basic").map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{option.label}</span>
+                        {option.description && (
+                          <span className="text-xs text-[hsl(var(--globe-grey))]">{option.description}</span>
+                        )}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {errors.type && (
                 <p className="text-sm text-destructive">{errors.type.message}</p>
+              )}
+              {/* Field type hint */}
+              {fieldType && (
+                <p className="text-xs text-[hsl(var(--globe-grey))]">
+                  {fieldTypeOptions.find(o => o.value === fieldType)?.description}
+                </p>
               )}
             </div>
 

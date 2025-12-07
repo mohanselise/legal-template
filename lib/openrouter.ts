@@ -1,22 +1,6 @@
 import OpenAI from 'openai';
 
-if (!process.env.OPENROUTER_API_KEY) {
-  throw new Error('OPENROUTER_API_KEY environment variable is not set');
-}
-
-/**
- * OpenRouter client configured to use OpenRouter API
- * This is used for jurisdiction detection and market standards analysis
- * using the meta-llama/llama-4-scout: nitro model
- */
-export const openrouter = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: 'https://openrouter.ai/api/v1',
-  defaultHeaders: {
-    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    'X-Title': 'Legal Templates',
-  },
-});
+import { getOpenRouterApiKey } from '@/lib/system-settings';
 
 /**
  * Model identifier for jurisdiction and market standards detection
@@ -30,6 +14,44 @@ export const JURISDICTION_MODEL = 'meta-llama/llama-4-scout:nitro';
 export const CONTRACT_GENERATION_MODEL = 'anthropic/claude-3.5-sonnet';
 
 import { trackApiUsage } from '@/lib/analytics/track-api-usage';
+
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+const CLIENT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+let cachedClient: OpenAI | null = null;
+let cachedKey: string | null = null;
+let cachedAt = 0;
+
+export async function getOpenRouterClient(): Promise<OpenAI> {
+  const apiKey = await getOpenRouterApiKey();
+
+  if (!apiKey) {
+    throw new Error('OpenRouter API key is not configured');
+  }
+
+  const isCacheValid =
+    cachedClient &&
+    cachedKey === apiKey &&
+    Date.now() - cachedAt < CLIENT_CACHE_TTL_MS;
+
+  if (isCacheValid && cachedClient) {
+    return cachedClient;
+  }
+
+  cachedClient = new OpenAI({
+    apiKey,
+    baseURL: OPENROUTER_BASE_URL,
+    defaultHeaders: {
+      'HTTP-Referer':
+        process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      'X-Title': 'Legal Templates',
+    },
+  });
+  cachedKey = apiKey;
+  cachedAt = Date.now();
+
+  return cachedClient;
+}
 
 /**
  * Wrapper for OpenRouter chat completions that tracks usage and costs.
@@ -53,6 +75,7 @@ export async function createCompletionWithTracking(
   let cost: number | undefined;
 
   try {
+    const openrouter = await getOpenRouterClient();
     // Add OpenRouter-specific parameters for usage tracking if possible
     // Note: We cast to any to allow 'include' parameter which isn't in OpenAI types
     const requestParams = {

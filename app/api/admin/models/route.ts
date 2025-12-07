@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { getOpenRouterApiKey } from "@/lib/system-settings";
 
 // Cache models for 1 hour
 let cachedModels: OpenRouterModel[] | null = null;
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch from OpenRouter
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = await getOpenRouterApiKey();
     if (!apiKey) {
       console.error("[MODELS_API] OPENROUTER_API_KEY not set");
       return NextResponse.json(

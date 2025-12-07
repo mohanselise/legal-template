@@ -1,4 +1,4 @@
-import { openrouter, JURISDICTION_MODEL } from './openrouter';
+import { getOpenRouterClient, JURISDICTION_MODEL } from './openrouter';
 
 export interface SuggestionRequest {
   cardId: string;
@@ -21,6 +21,7 @@ export interface SuggestionResponse {
 
 export async function getAISuggestion(request: SuggestionRequest): Promise<SuggestionResponse> {
   try {
+    const openrouter = await getOpenRouterClient();
     const contextStr = Object.entries(request.context)
       .filter(([, value]) => value)
       .map(([key, value]) => `${key}: ${value}`)

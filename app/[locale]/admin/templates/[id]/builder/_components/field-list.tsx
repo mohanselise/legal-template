@@ -13,6 +13,13 @@ import {
   CheckSquare,
   List,
   Sparkles,
+  AlignLeft,
+  Phone,
+  MapPin,
+  Users,
+  Banknote,
+  Percent,
+  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,6 +52,13 @@ const fieldTypeIcons: Record<FieldType, React.ReactNode> = {
   number: <Hash className="h-4 w-4" />,
   checkbox: <CheckSquare className="h-4 w-4" />,
   select: <List className="h-4 w-4" />,
+  textarea: <AlignLeft className="h-4 w-4" />,
+  phone: <Phone className="h-4 w-4" />,
+  address: <MapPin className="h-4 w-4" />,
+  party: <Users className="h-4 w-4" />,
+  currency: <Banknote className="h-4 w-4" />,
+  percentage: <Percent className="h-4 w-4" />,
+  url: <Link2 className="h-4 w-4" />,
 };
 
 const fieldTypeLabels: Record<FieldType, string> = {
@@ -54,6 +68,13 @@ const fieldTypeLabels: Record<FieldType, string> = {
   number: "Number",
   checkbox: "Checkbox",
   select: "Select",
+  textarea: "Textarea",
+  phone: "Phone",
+  address: "Address",
+  party: "Party",
+  currency: "Currency",
+  percentage: "Percentage",
+  url: "URL",
 };
 
 // Interface for available form fields from previous screens

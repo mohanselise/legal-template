@@ -7,7 +7,10 @@ import { prisma, FieldType } from "@/lib/db";
 const createFieldSchema = z.object({
   name: z.string().min(1, "Field name is required"),
   label: z.string().min(1, "Label is required"),
-  type: z.enum(["text", "email", "date", "number", "checkbox", "select"]),
+  type: z.enum([
+    "text", "email", "date", "number", "checkbox", "select",
+    "textarea", "phone", "address", "party", "currency", "percentage", "url"
+  ]),
   required: z.boolean().default(false),
   placeholder: z.string().optional(),
   helpText: z.string().optional(),

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { EMPLOYMENT_AGREEMENT_SYSTEM_PROMPT_JSON } from '@/lib/openai';
-import { openrouter, CONTRACT_GENERATION_MODEL, createCompletionWithTracking } from '@/lib/openrouter';
+import { CONTRACT_GENERATION_MODEL, createCompletionWithTracking } from '@/lib/openrouter';
 import { getSessionId } from '@/lib/analytics/session';
 import { validateTurnstileToken } from 'next-turnstile';
 import type { LegalDocument } from '@/app/api/templates/employment-agreement/schema';

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openrouter, createCompletionWithTracking } from '@/lib/openrouter';
+import { createCompletionWithTracking } from '@/lib/openrouter';
 import { getSessionId } from '@/lib/analytics/session';
 
 type SectionKey = 'basics' | 'compensation' | 'workTerms' | 'legalTerms';

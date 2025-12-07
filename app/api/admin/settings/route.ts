@@ -2,6 +2,11 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import {
+  clearSystemSettingCache,
+  getBlocksProjectKey,
+  getOpenRouterApiKey,
+} from "@/lib/system-settings";
 
 const settingsSchema = z.object({
   // Document generation settings
@@ -18,6 +23,9 @@ const settingsSchema = z.object({
   // Template AI Configurator settings
   templateConfiguratorAiModel: z.string().optional(),
   templateConfiguratorBusinessLogic: z.string().optional(),
+  // Integration keys
+  blocksProjectKey: z.string().optional(),
+  openRouterApiKey: z.string().optional(),
 });
 
 /**
@@ -43,6 +51,8 @@ export async function GET(request: NextRequest) {
       formEnrichmentOutputInUserLocale,
       templateConfiguratorAiModel,
       templateConfiguratorBusinessLogic,
+      blocksProjectKey,
+      openRouterApiKey,
     ] = await Promise.all([
       prisma.systemSettings.findUnique({ where: { key: "documentGenerationAiModel" } }),
       prisma.systemSettings.findUnique({ where: { key: "commonPromptInstructions" } }),
@@ -54,6 +64,8 @@ export async function GET(request: NextRequest) {
       prisma.systemSettings.findUnique({ where: { key: "formEnrichmentOutputInUserLocale" } }),
       prisma.systemSettings.findUnique({ where: { key: "templateConfiguratorAiModel" } }),
       prisma.systemSettings.findUnique({ where: { key: "templateConfiguratorBusinessLogic" } }),
+      getBlocksProjectKey(),
+      getOpenRouterApiKey(),
     ]);
 
     // If not found, return empty (will use default in frontend)
@@ -68,6 +80,8 @@ export async function GET(request: NextRequest) {
       formEnrichmentOutputInUserLocale: formEnrichmentOutputInUserLocale?.value === "true",
       templateConfiguratorAiModel: templateConfiguratorAiModel?.value || null,
       templateConfiguratorBusinessLogic: templateConfiguratorBusinessLogic?.value || null,
+      blocksProjectKey: blocksProjectKey || null,
+      openRouterApiKey: openRouterApiKey || null,
     });
   } catch (error) {
     console.error("[SETTINGS_GET]", error);
@@ -110,6 +124,8 @@ export async function PUT(request: NextRequest) {
       formEnrichmentOutputInUserLocale,
       templateConfiguratorAiModel,
       templateConfiguratorBusinessLogic,
+      blocksProjectKey,
+      openRouterApiKey,
     } = validation.data;
 
     // Upsert settings in parallel
@@ -305,7 +321,57 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    if (blocksProjectKey !== undefined) {
+      upsertPromises.push(
+        prisma.systemSettings.upsert({
+          where: { key: "blocksProjectKey" },
+          update: {
+            value: blocksProjectKey,
+            updatedBy: userId,
+          },
+          create: {
+            key: "blocksProjectKey",
+            value: blocksProjectKey,
+            description: "SELISE Blocks project key used for UILM translations",
+            updatedBy: userId,
+          },
+        })
+      );
+    }
+
+    if (openRouterApiKey !== undefined) {
+      upsertPromises.push(
+        prisma.systemSettings.upsert({
+          where: { key: "openRouterApiKey" },
+          update: {
+            value: openRouterApiKey,
+            updatedBy: userId,
+          },
+          create: {
+            key: "openRouterApiKey",
+            value: openRouterApiKey,
+            description: "API key for OpenRouter used by AI features",
+            updatedBy: userId,
+          },
+        })
+      );
+    }
+
     await Promise.all(upsertPromises);
+    clearSystemSettingCache([
+      "blocksProjectKey",
+      "openRouterApiKey",
+      "documentGenerationAiModel",
+      "commonPromptInstructions",
+      "documentGenerationOutputInUserLocale",
+      "dynamicFormAiModel",
+      "dynamicFormSystemPrompt",
+      "dynamicFormOutputInUserLocale",
+      "formEnrichmentAiModel",
+      "formEnrichmentOutputInUserLocale",
+      "templateConfiguratorAiModel",
+      "templateConfiguratorBusinessLogic",
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

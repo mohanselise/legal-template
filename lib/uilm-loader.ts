@@ -2,9 +2,6 @@
 import enMessages from '../messages/en.json';
 
 const UILM_BASE_URL = process.env.NEXT_PUBLIC_BLOCKS_API_URL || 'https://api.seliseblocks.com';
-// Try both variable naming conventions (Next.js standard and Vite/SELISE standard)
-// NOTE: Accessing process.env dynamically inside the function ensures we pick up values set at runtime (e.g. by test scripts)
-const getProjectKey = () => process.env.NEXT_PUBLIC_X_BLOCKS_KEY || process.env.VITE_X_BLOCKS_KEY || '';
 
 // List of modules that correspond to the top-level keys in our message JSON files
 const MODULES = [
@@ -26,15 +23,38 @@ const MODULES = [
  * @param locale The locale code (e.g., 'en', 'de')
  * @returns Merged translation object matching the structure of messages/*.json
  */
+async function resolveProjectKey(): Promise<string> {
+  // Edge runtime cannot load Prisma; fall back to env variables there.
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    return (
+      process.env.NEXT_PUBLIC_X_BLOCKS_KEY ||
+      process.env.VITE_X_BLOCKS_KEY ||
+      ''
+    );
+  }
+
+  try {
+    const { getBlocksProjectKey } = await import('@/lib/system-settings');
+    return (await getBlocksProjectKey()) || '';
+  } catch (error) {
+    console.warn('[UILM] Failed to load blocks key from system settings, falling back to env.', error);
+    return (
+      process.env.NEXT_PUBLIC_X_BLOCKS_KEY ||
+      process.env.VITE_X_BLOCKS_KEY ||
+      ''
+    );
+  }
+}
+
 export async function fetchUilmTranslations(locale: string) {
   // Map short locale codes to full culture codes expected by UILM
   // Defaulting 'de' to 'de-DE' as per project configuration.
   const culture = locale === 'de' ? 'de-DE' : locale === 'en' ? 'en-US' : locale;
   
-  const projectKey = getProjectKey();
+  const projectKey = await resolveProjectKey();
   
   if (!projectKey) {
-    console.warn('Missing SELISE Blocks Project Key (NEXT_PUBLIC_X_BLOCKS_KEY or VITE_X_BLOCKS_KEY). UILM translations may fail.');
+    console.warn('Missing SELISE Blocks Project Key (admin setting or environment). UILM translations may fail.');
   }
 
   console.log(`Fetching UILM translations for culture: ${culture}`);

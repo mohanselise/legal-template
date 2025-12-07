@@ -121,6 +121,13 @@ enum FieldType {
   number
   checkbox
   select
+  textarea    // Multi-line text input
+  phone       // Phone with country code: { countryCode, number }
+  address     // Composite: { street, city, state, postalCode, country }
+  party       // Name + address composite for Google Places: { name, street, city, state, postalCode, country, placeId? }
+  currency    // Amount + currency: { amount, currency }
+  percentage  // 0-100 with % display
+  url         // URL with validation
 }
 
 // Screen types for form builder

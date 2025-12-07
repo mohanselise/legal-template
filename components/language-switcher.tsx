@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
@@ -11,9 +12,17 @@ import {
 } from '@/components/ui/popover';
 
 export function LanguageSwitcher() {
+  const [isMounted, setIsMounted] = useState(false);
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Avoid SSR/client ID mismatches from Radix-generated IDs during hydration.
+  if (!isMounted) return null;
 
   const switchLocale = (newLocale: string) => {
     // Update cookie

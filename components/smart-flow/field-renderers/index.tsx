@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { FieldType } from "@/lib/db";
 import {
   ADDITIONAL_SIGNATORIES_FIELD_NAME,
   AdditionalSignatoryInput,
@@ -21,29 +20,21 @@ import {
   createBlankAdditionalSignatory,
   ensureAdditionalSignatoryArray,
 } from "@/lib/templates/signatory-fields";
+import type { FieldConfig, FieldRendererProps } from "./types";
 
-export interface FieldConfig {
-  id: string;
-  name: string;
-  label: string;
-  type: FieldType;
-  required: boolean;
-  placeholder?: string | null;
-  helpText?: string | null;
-  options: string[];
-  // AI Smart Suggestions
-  aiSuggestionEnabled?: boolean;
-  aiSuggestionKey?: string | null;
-}
+// Import new composite field renderers
+import { TextareaField } from "./TextareaField";
+import { PhoneField } from "./PhoneField";
+import { AddressField } from "./AddressField";
+import { PartyField } from "./PartyField";
+import { CurrencyField } from "./CurrencyField";
+import { PercentageField } from "./PercentageField";
+import { UrlField } from "./UrlField";
 
-export interface FieldRendererProps {
-  field: FieldConfig;
-  value: unknown;
-  onChange: (name: string, value: unknown) => void;
-  error?: string;
-  enrichmentContext?: Record<string, unknown>;
-  formData?: Record<string, unknown>;
-}
+// Re-export types and utilities
+export type { FieldConfig, FieldRendererProps, AddressValue, PartyValue, PhoneValue, CurrencyValue } from "./types";
+export { COUNTRY_CODES, CURRENCIES, COUNTRIES } from "./types";
+export * from "./utils";
 
 /**
  * Get nested value from object using dot notation
@@ -762,9 +753,35 @@ export function DynamicField(props: FieldRendererProps) {
       return <CheckboxField {...props} />;
     case "select":
       return <SelectField {...props} />;
+    // New composite field types
+    case "textarea":
+      return <TextareaField {...props} />;
+    case "phone":
+      return <PhoneField {...props} />;
+    case "address":
+      return <AddressField {...props} />;
+    case "party":
+      return <PartyField {...props} />;
+    case "currency":
+      return <CurrencyField {...props} />;
+    case "percentage":
+      return <PercentageField {...props} />;
+    case "url":
+      return <UrlField {...props} />;
     default:
       return <TextField {...props} />;
   }
 }
+
+// Export individual field components for direct use
+export {
+  TextareaField,
+  PhoneField,
+  AddressField,
+  PartyField,
+  CurrencyField,
+  PercentageField,
+  UrlField,
+};
 
 export default DynamicField;

@@ -63,7 +63,7 @@ function getLocalePrefixedSignInTarget(pathname: string): string | null {
 const intlMiddleware = createIntlMiddleware(routing);
 
 export default clerkMiddleware(
-  (auth, request: NextRequest) => {
+  async (auth, request: NextRequest) => {
     const pathname = request.nextUrl.pathname;
 
     // Skip static files and special Next.js routes
@@ -83,11 +83,14 @@ export default clerkMiddleware(
       return NextResponse.redirect(target);
     }
 
+    // Build absolute sign-in URL (required by Next.js middleware)
+    const signInUrl = new URL('/sign-in', request.url).toString();
+
     // Handle admin API routes - check auth and return early
     if (pathname.startsWith('/api/admin')) {
       if (isProtectedRoute(request)) {
-        auth.protect({
-          unauthenticatedUrl: '/sign-in',
+        await auth.protect({
+          unauthenticatedUrl: signInUrl,
         });
       }
       return NextResponse.next();
@@ -107,8 +110,8 @@ export default clerkMiddleware(
 
     // Protect admin routes - Clerk will redirect to /sign-in (not /en/sign-in)
     if (isProtectedRoute(request)) {
-      auth.protect({
-        unauthenticatedUrl: '/sign-in',
+      await auth.protect({
+        unauthenticatedUrl: signInUrl,
       });
     }
 

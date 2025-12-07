@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { openrouter, JURISDICTION_MODEL, createCompletionWithTracking } from '@/lib/openrouter';
+import { JURISDICTION_MODEL, createCompletionWithTracking } from '@/lib/openrouter';
 import { getSessionId } from '@/lib/analytics/session';
 import { JobTitleAnalysis } from '@/lib/types/smart-form';
 

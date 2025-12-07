@@ -8,13 +8,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   ArrowLeft,
+  Bot,
+  FileText,
+  LayoutGrid,
+  Plug,
   Settings,
   Loader2,
   Save,
   RotateCcw,
-  Wand2,
   Globe,
   MessageSquare,
+  Workflow,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -28,6 +33,13 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ModelSelector } from "@/components/admin/model-selector";
+import { Input } from "@/components/ui/input";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 const DEFAULT_DYNAMIC_AI_MODEL = "meta-llama/llama-4-scout:nitro";
 const DEFAULT_DOCUMENT_GENERATION_MODEL = "anthropic/claude-3.5-sonnet";
@@ -49,6 +61,9 @@ const settingsSchema = z.object({
   // Template AI Configurator settings
   templateConfiguratorAiModel: z.string().optional(),
   templateConfiguratorBusinessLogic: z.string().optional(),
+  // Integration keys
+  blocksProjectKey: z.string().optional(),
+  openRouterApiKey: z.string().optional(),
 });
 
 const DEFAULT_TEMPLATE_CONFIGURATOR_BUSINESS_LOGIC = `You are building REUSABLE, FRICTIONLESS legal form templates. End users fill these out to generate contracts.
@@ -366,6 +381,8 @@ export default function SettingsPage() {
       formEnrichmentOutputInUserLocale: false,
       templateConfiguratorAiModel: DEFAULT_TEMPLATE_CONFIGURATOR_MODEL,
       templateConfiguratorBusinessLogic: "",
+      blocksProjectKey: "",
+      openRouterApiKey: "",
     },
   });
 
@@ -389,6 +406,8 @@ export default function SettingsPage() {
           formEnrichmentOutputInUserLocale: data.formEnrichmentOutputInUserLocale ?? false,
           templateConfiguratorAiModel: data.templateConfiguratorAiModel || DEFAULT_TEMPLATE_CONFIGURATOR_MODEL,
           templateConfiguratorBusinessLogic: data.templateConfiguratorBusinessLogic || DEFAULT_TEMPLATE_CONFIGURATOR_BUSINESS_LOGIC,
+          blocksProjectKey: data.blocksProjectKey || "",
+          openRouterApiKey: data.openRouterApiKey || "",
         });
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -405,6 +424,8 @@ export default function SettingsPage() {
           formEnrichmentOutputInUserLocale: false,
           templateConfiguratorAiModel: DEFAULT_TEMPLATE_CONFIGURATOR_MODEL,
           templateConfiguratorBusinessLogic: DEFAULT_TEMPLATE_CONFIGURATOR_BUSINESS_LOGIC,
+          blocksProjectKey: "",
+          openRouterApiKey: "",
         });
       } finally {
         setIsLoading(false);
@@ -473,7 +494,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container max-w-4xl py-8 px-4">
+    <div className="container max-w-5xl py-8 px-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
@@ -491,340 +512,401 @@ export default function SettingsPage() {
                 System Settings
               </h1>
               <p className="text-sm text-[hsl(var(--globe-grey))]">
-                Configure system-wide settings and preferences
+                Organized by focus area for faster edits
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      <form onSubmit={form.handleSubmit(handleSubmit)}>
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Common Prompt Instructions</CardTitle>
-                <CardDescription>
-                  These instructions will be automatically appended to all template system prompts.
-                  Define the output format, block structure requirements, and other common guidelines here.
-                </CardDescription>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleResetDocumentGeneration}
-                className="gap-2"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Reset to Default
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* AI Model Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="documentGenerationAiModel">AI Model</Label>
-              <p className="text-xs text-[hsl(var(--globe-grey))]">
-                Select the AI model used for generating legal documents.
-              </p>
-              <div className="max-w-md">
-                <ModelSelector
-                  value={form.watch("documentGenerationAiModel") || DEFAULT_DOCUMENT_GENERATION_MODEL}
-                  onChange={(value) => form.setValue("documentGenerationAiModel", value)}
-                  useCase="documentGeneration"
-                  placeholder="Select AI model"
-                />
-              </div>
-            </div>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <Tabs defaultValue="integration" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 bg-[hsl(var(--bg))]">
+            <TabsTrigger value="integration" className="gap-2">
+              <Plug className="h-4 w-4" />
+              Integrations
+            </TabsTrigger>
+            <TabsTrigger value="document" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Documents
+            </TabsTrigger>
+            <TabsTrigger value="enrichment" className="gap-2">
+              <Bot className="h-4 w-4" />
+              Enrichment
+            </TabsTrigger>
+            <TabsTrigger value="dynamic" className="gap-2">
+              <Workflow className="h-4 w-4" />
+              Dynamic Forms
+            </TabsTrigger>
+            <TabsTrigger value="configurator" className="gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              Template Config
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Common Instructions */}
-            <div className="space-y-2">
-              <Label htmlFor="commonPromptInstructions">
-                Common Instructions
-              </Label>
-              <p className="text-xs text-[hsl(var(--globe-grey))]">
-                These instructions are automatically combined with each template&apos;s role and prompt.
-              </p>
-              <textarea
-                id="commonPromptInstructions"
-                placeholder="Enter common prompt instructions..."
-                className="flex min-h-96 w-full rounded-lg border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm font-mono shadow-sm placeholder:text-[hsl(var(--globe-grey))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50"
-                {...form.register("commonPromptInstructions")}
-              />
-              {form.watch("commonPromptInstructions") && (
-                <div className="flex justify-between items-center text-xs text-[hsl(var(--globe-grey))]">
-                  <span>
-                    {form.watch("commonPromptInstructions")?.length.toLocaleString()} characters
-                  </span>
+          <TabsContent value="integration" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-[hsl(var(--selise-blue))]/10 flex items-center justify-center">
+                    <KeyRound className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
+                  </div>
+                  <div>
+                    <CardTitle>Integration Keys</CardTitle>
+                    <CardDescription>
+                      Manage API keys for SELISE Blocks translations and OpenRouter. Changes apply immediately without redeploying.
+                    </CardDescription>
+                  </div>
                 </div>
-              )}
-            </div>
-
-            {/* Locale-aware output toggle */}
-            <div className="flex items-start gap-3 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--poly-green))]/5">
-              <input
-                type="checkbox"
-                id="documentGenerationOutputInUserLocale"
-                checked={form.watch("documentGenerationOutputInUserLocale")}
-                onChange={(e) => form.setValue("documentGenerationOutputInUserLocale", e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
-              />
-              <div className="flex-1">
-                <Label htmlFor="documentGenerationOutputInUserLocale" className="cursor-pointer flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-[hsl(var(--poly-green))]" />
-                  Output in user&apos;s locale
-                </Label>
-                <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
-                  When enabled, adds an instruction for the AI to generate documents in the user&apos;s selected language (e.g., German for /de visitors).
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Form Enrichment AI Settings */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Wand2 className="h-5 w-5 text-[hsl(var(--lime-green))]" />
-                <div>
-                  <CardTitle>Form Enrichment AI Settings</CardTitle>
-                  <CardDescription>
-                    Configure the AI model used for enriching form context and generating smart suggestions.
-                    This runs when users complete a screen with AI Enrichment enabled.
-                  </CardDescription>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  form.setValue("formEnrichmentAiModel", DEFAULT_FORM_ENRICHMENT_MODEL);
-                  toast.info("Reset form enrichment AI model to default");
-                }}
-                className="gap-2"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Reset to Default
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="formEnrichmentAiModel">AI Model</Label>
-              <p className="text-xs text-[hsl(var(--globe-grey))]">
-                Select the AI model used for AI Enrichment prompts (analyzing form data to generate context for smart suggestions).
-              </p>
-              <div className="max-w-md">
-                <ModelSelector
-                  value={form.watch("formEnrichmentAiModel") || DEFAULT_FORM_ENRICHMENT_MODEL}
-                  onChange={(value) => form.setValue("formEnrichmentAiModel", value)}
-                  useCase="formEnrichment"
-                  placeholder="Select AI model"
-                />
-              </div>
-            </div>
-
-            {/* Locale-aware output toggle */}
-            <div className="flex items-start gap-3 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--poly-green))]/5">
-              <input
-                type="checkbox"
-                id="formEnrichmentOutputInUserLocale"
-                checked={form.watch("formEnrichmentOutputInUserLocale")}
-                onChange={(e) => form.setValue("formEnrichmentOutputInUserLocale", e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
-              />
-              <div className="flex-1">
-                <Label htmlFor="formEnrichmentOutputInUserLocale" className="cursor-pointer flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-[hsl(var(--poly-green))]" />
-                  Output in user&apos;s locale
-                </Label>
-                <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
-                  When enabled, adds an instruction for the AI to return enrichment values in the user&apos;s selected language.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Dynamic Form AI Settings */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Wand2 className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
-                <div>
-                  <CardTitle>Dynamic Form AI Settings</CardTitle>
-                  <CardDescription>
-                    Configure the AI model and system prompt used for generating dynamic form fields.
-                    These settings apply to all Dynamic AI Screens in your templates.
-                  </CardDescription>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleResetDynamicForm}
-                className="gap-2"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Reset to Default
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* AI Model Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="dynamicFormAiModel">AI Model</Label>
-              <p className="text-xs text-[hsl(var(--globe-grey))]">
-                Select the AI model to use for generating dynamic form fields.
-              </p>
-              <div className="max-w-md">
-                <ModelSelector
-                  value={form.watch("dynamicFormAiModel") || DEFAULT_DYNAMIC_AI_MODEL}
-                  onChange={(value) => form.setValue("dynamicFormAiModel", value)}
-                  useCase="dynamicForm"
-                  placeholder="Select AI model"
-                />
-              </div>
-            </div>
-
-            {/* System Prompt */}
-            <div className="space-y-2">
-              <Label htmlFor="dynamicFormSystemPrompt">
-                System Prompt
-              </Label>
-              <p className="text-xs text-[hsl(var(--globe-grey))]">
-                This system prompt controls how the AI generates form fields for Dynamic AI Screens.
-                It defines the rules, output format, and behavior for field generation.
-              </p>
-              <textarea
-                id="dynamicFormSystemPrompt"
-                placeholder="Enter system prompt for dynamic form field generation..."
-                className="flex min-h-80 w-full rounded-lg border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm font-mono shadow-sm placeholder:text-[hsl(var(--globe-grey))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50"
-                {...form.register("dynamicFormSystemPrompt")}
-              />
-              {form.watch("dynamicFormSystemPrompt") && (
-                <div className="flex justify-between items-center text-xs text-[hsl(var(--globe-grey))]">
-                  <span>
-                    {form.watch("dynamicFormSystemPrompt")?.length.toLocaleString()} characters
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Locale-aware output toggle */}
-            <div className="flex items-start gap-3 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--poly-green))]/5">
-              <input
-                type="checkbox"
-                id="dynamicFormOutputInUserLocale"
-                checked={form.watch("dynamicFormOutputInUserLocale")}
-                onChange={(e) => form.setValue("dynamicFormOutputInUserLocale", e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
-              />
-              <div className="flex-1">
-                <Label htmlFor="dynamicFormOutputInUserLocale" className="cursor-pointer flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-[hsl(var(--poly-green))]" />
-                  Output in user&apos;s locale
-                </Label>
-                <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
-                  When enabled, adds an instruction for the AI to generate form field labels and help text in the user&apos;s selected language.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Template AI Configurator Settings */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <MessageSquare className="h-5 w-5 text-[hsl(var(--mauveine))]" />
-                <div>
-                  <CardTitle>Template AI Configurator</CardTitle>
-                  <CardDescription>
-                    Configure the AI assistant that helps build template screens and fields through natural conversation.
-                    This powers the AI chat panel in the Form Builder.
-                  </CardDescription>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleResetTemplateConfigurator}
-                className="gap-2"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Reset to Default
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* AI Model Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="templateConfiguratorAiModel">AI Model</Label>
-              <p className="text-xs text-[hsl(var(--globe-grey))]">
-                Select the AI model used for the template configurator chat. Models with strong reasoning and JSON output are recommended.
-              </p>
-              <div className="max-w-md">
-                <ModelSelector
-                  value={form.watch("templateConfiguratorAiModel") || DEFAULT_TEMPLATE_CONFIGURATOR_MODEL}
-                  onChange={(value) => form.setValue("templateConfiguratorAiModel", value)}
-                  useCase="documentGeneration"
-                  placeholder="Select AI model"
-                />
-              </div>
-            </div>
-
-            {/* Business Logic Prompt */}
-            <div className="space-y-2">
-              <Label htmlFor="templateConfiguratorBusinessLogic">
-                Business Logic &amp; Strategy Prompt
-              </Label>
-              <p className="text-xs text-[hsl(var(--globe-grey))]">
-                Define the core strategy and business rules the AI should follow when building templates.
-                This prompt is combined with the current template context and schema information.
-              </p>
-              <textarea
-                id="templateConfiguratorBusinessLogic"
-                placeholder="Enter business logic and strategy instructions for the AI configurator..."
-                className="flex min-h-64 w-full rounded-lg border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm font-mono shadow-sm placeholder:text-[hsl(var(--globe-grey))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50"
-                {...form.register("templateConfiguratorBusinessLogic")}
-              />
-              {form.watch("templateConfiguratorBusinessLogic") && (
-                <div className="flex justify-between items-center text-xs text-[hsl(var(--globe-grey))]">
-                  <span>
-                    {form.watch("templateConfiguratorBusinessLogic")?.length.toLocaleString()} characters
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Info box */}
-            <div className="p-4 rounded-lg border border-[hsl(var(--mauveine))]/20 bg-[hsl(var(--mauveine))]/5">
-              <div className="flex items-start gap-3">
-                <MessageSquare className="h-4 w-4 text-[hsl(var(--mauveine))] mt-0.5 shrink-0" />
-                <div className="text-xs text-[hsl(var(--globe-grey))]">
-                  <p className="font-medium text-[hsl(var(--fg))] mb-1">How the AI Configurator Works</p>
-                  <p>
-                    The AI configurator receives the full template context (title, description, existing screens and fields)
-                    along with your business logic instructions. It can generate new screens with fields or add fields to
-                    existing screens through natural conversation.
+              </CardHeader>
+              <CardContent className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="blocksProjectKey">SELISE Blocks Project Key</Label>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Used for fetching UILM translations. This replaces the NEXT_PUBLIC_X_BLOCKS_KEY environment variable.
                   </p>
+                  <Input
+                    id="blocksProjectKey"
+                    placeholder="Enter SELISE Blocks project key"
+                    {...form.register("blocksProjectKey")}
+                  />
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="openRouterApiKey">OpenRouter API Key</Label>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Used for all AI model calls through OpenRouter. Stored securely in settings instead of environment variables.
+                  </p>
+                  <Input
+                    id="openRouterApiKey"
+                    type="password"
+                    placeholder="Enter OpenRouter API key"
+                    {...form.register("openRouterApiKey")}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-4">
+          <TabsContent value="document" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
+                    <div>
+                      <CardTitle>Document Generation</CardTitle>
+                      <CardDescription>
+                        Control the AI model and global prompt instructions for every generated document.
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetDocumentGeneration}
+                    className="gap-2"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Reset to Default
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="documentGenerationAiModel">AI Model</Label>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Select the AI model used for generating legal documents.
+                  </p>
+                  <div className="max-w-md">
+                    <ModelSelector
+                      value={form.watch("documentGenerationAiModel") || DEFAULT_DOCUMENT_GENERATION_MODEL}
+                      onChange={(value) => form.setValue("documentGenerationAiModel", value)}
+                      useCase="documentGeneration"
+                      placeholder="Select AI model"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="commonPromptInstructions">
+                    Common Instructions
+                  </Label>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    These instructions are automatically combined with each template&apos;s role and prompt.
+                  </p>
+                  <textarea
+                    id="commonPromptInstructions"
+                    placeholder="Enter common prompt instructions..."
+                    className="flex min-h-96 w-full rounded-lg border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm font-mono shadow-sm placeholder:text-[hsl(var(--globe-grey))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50"
+                    {...form.register("commonPromptInstructions")}
+                  />
+                  {form.watch("commonPromptInstructions") && (
+                    <div className="flex justify-between items-center text-xs text-[hsl(var(--globe-grey))]">
+                      <span>
+                        {form.watch("commonPromptInstructions")?.length.toLocaleString()} characters
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-start gap-3 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--poly-green))]/5">
+                  <input
+                    type="checkbox"
+                    id="documentGenerationOutputInUserLocale"
+                    checked={form.watch("documentGenerationOutputInUserLocale")}
+                    onChange={(e) => form.setValue("documentGenerationOutputInUserLocale", e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="documentGenerationOutputInUserLocale" className="cursor-pointer flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-[hsl(var(--poly-green))]" />
+                      Output in user&apos;s locale
+                    </Label>
+                    <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
+                      When enabled, adds an instruction for the AI to generate documents in the user&apos;s selected language (e.g., German for /de visitors).
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="enrichment" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <Bot className="h-5 w-5 text-[hsl(var(--lime-green))]" />
+                    <div>
+                      <CardTitle>Form Enrichment AI</CardTitle>
+                      <CardDescription>
+                        Configure enrichment to add smart suggestions after a screen is submitted.
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      form.setValue("formEnrichmentAiModel", DEFAULT_FORM_ENRICHMENT_MODEL);
+                      toast.info("Reset form enrichment AI model to default");
+                    }}
+                    className="gap-2"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Reset to Default
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="formEnrichmentAiModel">AI Model</Label>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Select the AI model used for AI Enrichment prompts (analyzing form data to generate context for smart suggestions).
+                  </p>
+                  <div className="max-w-md">
+                    <ModelSelector
+                      value={form.watch("formEnrichmentAiModel") || DEFAULT_FORM_ENRICHMENT_MODEL}
+                      onChange={(value) => form.setValue("formEnrichmentAiModel", value)}
+                      useCase="formEnrichment"
+                      placeholder="Select AI model"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--poly-green))]/5">
+                  <input
+                    type="checkbox"
+                    id="formEnrichmentOutputInUserLocale"
+                    checked={form.watch("formEnrichmentOutputInUserLocale")}
+                    onChange={(e) => form.setValue("formEnrichmentOutputInUserLocale", e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="formEnrichmentOutputInUserLocale" className="cursor-pointer flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-[hsl(var(--poly-green))]" />
+                      Output in user&apos;s locale
+                    </Label>
+                    <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
+                      When enabled, adds an instruction for the AI to return enrichment values in the user&apos;s selected language.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="dynamic" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <Workflow className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
+                    <div>
+                      <CardTitle>Dynamic Form AI</CardTitle>
+                      <CardDescription>
+                        Configure the AI model and system prompt used for generating dynamic form fields.
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetDynamicForm}
+                    className="gap-2"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Reset to Default
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="dynamicFormAiModel">AI Model</Label>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Select the AI model to use for generating dynamic form fields.
+                  </p>
+                  <div className="max-w-md">
+                    <ModelSelector
+                      value={form.watch("dynamicFormAiModel") || DEFAULT_DYNAMIC_AI_MODEL}
+                      onChange={(value) => form.setValue("dynamicFormAiModel", value)}
+                      useCase="dynamicForm"
+                      placeholder="Select AI model"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dynamicFormSystemPrompt">
+                    System Prompt
+                  </Label>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    This system prompt controls how the AI generates form fields for Dynamic AI Screens.
+                    It defines the rules, output format, and behavior for field generation.
+                  </p>
+                  <textarea
+                    id="dynamicFormSystemPrompt"
+                    placeholder="Enter system prompt for dynamic form field generation..."
+                    className="flex min-h-80 w-full rounded-lg border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm font-mono shadow-sm placeholder:text-[hsl(var(--globe-grey))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50"
+                    {...form.register("dynamicFormSystemPrompt")}
+                  />
+                  {form.watch("dynamicFormSystemPrompt") && (
+                    <div className="flex justify-between items-center text-xs text-[hsl(var(--globe-grey))]">
+                      <span>
+                        {form.watch("dynamicFormSystemPrompt")?.length.toLocaleString()} characters
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-start gap-3 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--poly-green))]/5">
+                  <input
+                    type="checkbox"
+                    id="dynamicFormOutputInUserLocale"
+                    checked={form.watch("dynamicFormOutputInUserLocale")}
+                    onChange={(e) => form.setValue("dynamicFormOutputInUserLocale", e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="dynamicFormOutputInUserLocale" className="cursor-pointer flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-[hsl(var(--poly-green))]" />
+                      Output in user&apos;s locale
+                    </Label>
+                    <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
+                      When enabled, adds an instruction for the AI to generate form field labels and help text in the user&apos;s selected language.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="configurator" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <LayoutGrid className="h-5 w-5 text-[hsl(var(--mauveine))]" />
+                    <div>
+                      <CardTitle>Template AI Configurator</CardTitle>
+                      <CardDescription>
+                        Configure the AI assistant that helps build template screens and fields through natural conversation.
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetTemplateConfigurator}
+                    className="gap-2"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Reset to Default
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="templateConfiguratorAiModel">AI Model</Label>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Select the AI model used for the template configurator chat. Models with strong reasoning and JSON output are recommended.
+                  </p>
+                  <div className="max-w-md">
+                    <ModelSelector
+                      value={form.watch("templateConfiguratorAiModel") || DEFAULT_TEMPLATE_CONFIGURATOR_MODEL}
+                      onChange={(value) => form.setValue("templateConfiguratorAiModel", value)}
+                      useCase="documentGeneration"
+                      placeholder="Select AI model"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="templateConfiguratorBusinessLogic">
+                    Business Logic &amp; Strategy Prompt
+                  </Label>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Define the core strategy and business rules the AI should follow when building templates.
+                    This prompt is combined with the current template context and schema information.
+                  </p>
+                  <textarea
+                    id="templateConfiguratorBusinessLogic"
+                    placeholder="Enter business logic and strategy instructions for the AI configurator..."
+                    className="flex min-h-64 w-full rounded-lg border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm font-mono shadow-sm placeholder:text-[hsl(var(--globe-grey))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50"
+                    {...form.register("templateConfiguratorBusinessLogic")}
+                  />
+                  {form.watch("templateConfiguratorBusinessLogic") && (
+                    <div className="flex justify-between items-center text-xs text-[hsl(var(--globe-grey))]">
+                      <span>
+                        {form.watch("templateConfiguratorBusinessLogic")?.length.toLocaleString()} characters
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-4 rounded-lg border border-[hsl(var(--mauveine))]/20 bg-[hsl(var(--mauveine))]/5">
+                  <div className="flex items-start gap-3">
+                    <MessageSquare className="h-4 w-4 text-[hsl(var(--mauveine))] mt-0.5 shrink-0" />
+                    <div className="text-xs text-[hsl(var(--globe-grey))]">
+                      <p className="font-medium text-[hsl(var(--fg))] mb-1">How the AI Configurator Works</p>
+                      <p>
+                        The AI configurator receives the full template context (title, description, existing screens and fields)
+                        along with your business logic instructions. It can generate new screens with fields or add fields to
+                        existing screens through natural conversation.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex items-center justify-end gap-4 pt-2">
           <Button
             type="button"
             variant="outline"

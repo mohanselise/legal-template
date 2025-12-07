@@ -50,7 +50,7 @@ interface ConditionGroup {
 interface FieldData {
   name: string;
   label: string;
-  type: "text" | "email" | "date" | "number" | "checkbox" | "select";
+  type: "text" | "email" | "date" | "number" | "checkbox" | "select" | "textarea" | "phone" | "address" | "party" | "currency" | "percentage" | "url";
   required: boolean;
   placeholder?: string;
   helpText?: string;
@@ -188,13 +188,14 @@ export function AIConfigurator({
     inputRef.current?.focus();
   }, []);
 
-  const sendMessage = useCallback(async () => {
-    if (!input.trim() || isLoading) return;
+  const sendMessage = useCallback(async (overrideMessage?: string) => {
+    const messageText = overrideMessage ?? input;
+    if (!messageText.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: generateId(),
       role: "user",
-      content: input.trim(),
+      content: messageText.trim(),
       timestamp: new Date(),
     };
 
@@ -416,9 +417,97 @@ export function AIConfigurator({
         successMsg += " (AI-generated fields)";
       }
       toast.success(successMsg);
+    } else if (action.type === "updateScreen") {
+      // Handle updateScreen for editing existing templates
+      const updateData = action.data as UpdateScreenData;
+      
+      if (!updateData.screenId) {
+        throw new Error("Missing screen ID for update");
+      }
+
+      // Update screen properties
+      const screenUpdatePayload: Record<string, unknown> = {};
+      
+      if (updateData.title) screenUpdatePayload.title = updateData.title;
+      if (updateData.description !== undefined) screenUpdatePayload.description = updateData.description;
+      if (updateData.enableApplyStandards !== undefined) {
+        screenUpdatePayload.enableApplyStandards = updateData.enableApplyStandards;
+      }
+      if (updateData.conditions !== undefined) {
+        screenUpdatePayload.conditions = updateData.conditions && updateData.conditions.rules?.length > 0
+          ? JSON.stringify(updateData.conditions)
+          : null;
+      }
+      if (updateData.aiEnrichment) {
+        screenUpdatePayload.aiPrompt = updateData.aiEnrichment.prompt;
+        screenUpdatePayload.aiOutputSchema = JSON.stringify(updateData.aiEnrichment.outputSchema);
+      }
+      if (updateData.type === "signatory" && updateData.signatoryConfig) {
+        screenUpdatePayload.signatoryConfig = JSON.stringify(updateData.signatoryConfig);
+      }
+      if (updateData.type === "dynamic") {
+        if (updateData.dynamicPrompt) screenUpdatePayload.dynamicPrompt = updateData.dynamicPrompt;
+        if (updateData.dynamicMaxFields) screenUpdatePayload.dynamicMaxFields = updateData.dynamicMaxFields;
+      }
+
+      if (Object.keys(screenUpdatePayload).length > 0) {
+        const updateResponse = await fetch(
+          `/api/admin/templates/${templateId}/screens/${updateData.screenId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(screenUpdatePayload),
+          }
+        );
+        
+        if (!updateResponse.ok) {
+          throw new Error("Failed to update screen");
+        }
+      }
+
+      // If fields are provided, update them (delete existing and re-create)
+      if (updateData.fields && updateData.fields.length > 0) {
+        const existingScreen = screens.find(s => s.id === updateData.screenId);
+        if (existingScreen) {
+          for (const field of existingScreen.fields) {
+            await fetch(`/api/admin/fields/${field.id}`, {
+              method: "DELETE",
+            });
+          }
+        }
+        
+        for (const field of updateData.fields) {
+          const fieldPayload: Record<string, unknown> = {
+            name: field.name,
+            label: field.label,
+            type: field.type,
+            required: field.required,
+            placeholder: field.placeholder || "",
+            helpText: field.helpText || "",
+            options: field.options || [],
+            aiSuggestionEnabled: field.aiSuggestionEnabled || false,
+          };
+          
+          if (field.aiSuggestionEnabled && field.aiSuggestionKey) {
+            fieldPayload.aiSuggestionKey = field.aiSuggestionKey;
+          }
+          
+          if (field.conditions && field.conditions.rules?.length > 0) {
+            fieldPayload.conditions = JSON.stringify(field.conditions);
+          }
+          
+          await fetch(`/api/admin/screens/${updateData.screenId}/fields`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(fieldPayload),
+          });
+        }
+      }
+
+      const screenName = screens.find(s => s.id === updateData.screenId)?.title || "Screen";
+      toast.success(`Updated "${screenName}"`);
     }
-    // Add other action types as needed for auto-apply
-  }, [templateId]);
+  }, [templateId, screens]);
 
   // Send continuation message to get the next screen
   const sendContinuation = useCallback(async () => {
@@ -564,11 +653,8 @@ export function AIConfigurator({
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    setInput(suggestion);
-    // Auto-send after a brief delay to show the input
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 50);
+    // Auto-send immediately when clicking a suggestion
+    sendMessage(suggestion);
   };
 
   const applyAction = async (messageId: string, actionIndex: number, action: AIAction) => {
@@ -1136,7 +1222,7 @@ export function AIConfigurator({
             disabled={isLoading}
           />
           <Button
-            onClick={sendMessage}
+            onClick={() => sendMessage()}
             disabled={!input.trim() || isLoading}
             size="icon"
             className="h-12 w-12 rounded-xl flex-shrink-0"

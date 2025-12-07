@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { openrouter, createCompletionWithTracking } from "@/lib/openrouter";
+import { createCompletionWithTracking } from "@/lib/openrouter";
 import { getSessionId } from "@/lib/analytics/session";
 import { prisma } from "@/lib/db";
 

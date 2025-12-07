@@ -3,7 +3,8 @@
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Menu, X, FileText } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import Image from 'next/image';
 import { LanguageSwitcher } from './language-switcher';
 
 export default function Header() {
@@ -16,9 +17,15 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-primary font-heading">
-              <FileText className="h-6 w-6" />
-              <span>{t('legalTemplates')}</span>
+            <Link href="/" className="flex items-center gap-2">
+              <Image
+                src="/signature-black.svg"
+                alt="SELISE"
+                width={125}
+                height={49}
+                className="h-8 w-auto"
+                priority
+              />
             </Link>
           </div>
 

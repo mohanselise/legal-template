@@ -14,8 +14,8 @@
     "no": "No"
   },
   "home": {
-    "title": "Professional Legal Documents, Generated Instantly",
-    "subtitle": "Stop paying expensive lawyers for standard documents. Generate customized, plain-English legal templates in minutes— completely free, forever.",
+    "title": "Legal documents you can ship today",
+    "subtitle": "Generate plain-English agreements in minutes. No paywalls, no registrations—just reliable templates built with SELISE legal craft.",
     "startGeneratingFree": "Start Generating Free",
     "seeHowItWorks": "See How It Works",
     "noCreditCardNeeded": "No credit card needed",
@@ -23,52 +23,52 @@
     "instantDownload": "Instant download",
     "trustedByThousands": "Trusted by thousands",
     "freeForever": "100% Free",
-    "announcement": "New: Employment Agreement template now available!",
+    "announcement": "New: Employment Agreement template is live.",
     "tryItNow": "Try it now →",
     "features": {
       "generateInMinutes": {
-        "title": "Generate in Minutes",
-        "description": "Answer a few questions and get your customized legal document instantly—no waiting, no hassle.",
-        "highlight": "2 min avg"
+        "title": "Create in minutes",
+        "description": "Answer guided questions and download a ready-to-send document.",
+        "highlight": "Under 3 min"
       },
       "legallySound": {
-        "title": "Legally Sound",
-        "description": "All templates are drafted following industry best practices and common legal standards.",
-        "highlight": "Professional"
+        "title": "Legally grounded",
+        "description": "Structured with SELISE legal specialists and aligned to common standards.",
+        "highlight": "Audit-ready"
       },
       "plainEnglish": {
-        "title": "Plain English",
-        "description": "No confusing legalese. Our templates are written in clear, understandable language.",
+        "title": "Plain language",
+        "description": "Every clause is written for humans, not legalese.",
         "highlight": "Easy to read"
       },
       "free": {
-        "title": "100% Free",
-        "description": "All templates are completely free to generate, customize, and download. No hidden costs.",
-        "highlight": "Forever free"
+        "title": "Free to use",
+        "description": "Generate, customize, and download without charges or upsells.",
+        "highlight": "No paywall"
       }
     },
     "stats": {
       "legalTemplates": "5+",
-      "legalTemplatesLabel": "Legal Templates",
+      "legalTemplatesLabel": "Templates live",
       "freeForever": "100%",
-      "freeForeverLabel": "Free Forever",
-      "avgGeneration": "2 min",
-      "avgGenerationLabel": "Avg. Generation",
+      "freeForeverLabel": "Free forever",
+      "avgGeneration": "≈2 min",
+      "avgGenerationLabel": "Avg. generation",
       "available": "24/7",
-      "availableLabel": "Available"
+      "availableLabel": "Always available"
     },
     "benefits": {
-      "noSignup": "No sign-up or registration required",
+      "noSignup": "No sign-up or registration",
       "instantPdf": "Instant PDF download",
-      "customizable": "Customizable for your needs",
-      "plainEnglish": "Plain-English, easy to understand",
+      "customizable": "Customizable clauses and terms",
+      "plainEnglish": "Plain-English guidance throughout",
       "noHiddenFees": "No hidden fees or subscriptions",
-      "professionalQuality": "Professional quality templates"
+      "professionalQuality": "Professionally formatted output"
     },
     "templatesSection": {
-      "badge": "Popular Templates",
-      "title": "Choose Your Template",
-      "description": "Select from our growing library of professional legal templates. More templates added every month.",
+      "badge": "Template Library",
+      "title": "Start with a live template",
+      "description": "Pick a ready-to-use agreement. We add new templates based on what teams request most.",
       "generateNow": "Generate Now",
       "comingSoon": "Coming Soon",
       "mostPopular": "Most Popular",
@@ -77,81 +77,81 @@
     },
     "featuresSection": {
       "badge": "Why Choose Us",
-      "title": "Legal Documents Made Simple",
-      "description": "We believe legal documents should be accessible, understandable, and free for everyone.",
-      "everythingYouNeed": "Everything You Need, Nothing You Don't"
+      "title": "Built for clarity and speed",
+      "description": "SELISE keeps legal workflows simple, human, and dependable.",
+      "everythingYouNeed": "Everything you need to ship"
     },
     "howItWorks": {
-      "badge": "Quick & Easy",
-      "title": "Generate in 3 Simple Steps",
-      "description": "From zero to legally-sound document in under 2 minutes.",
+      "badge": "Fast and guided",
+      "title": "Create in three steps",
+      "description": "Go from intent to PDF in minutes.",
       "step1": {
-        "title": "Choose Your Template",
-        "description": "Select the legal document you need from our curated library of professional templates."
+        "title": "Choose a template",
+        "description": "Select the agreement you need from our curated library."
       },
       "step2": {
-        "title": "Fill in the Details",
-        "description": "Answer simple questions in plain English. No legal knowledge required—we guide you through every field."
+        "title": "Answer guided prompts",
+        "description": "Provide the essentials in plain English—we highlight what matters."
       },
       "step3": {
-        "title": "Download & Use",
-        "description": "Get your customized, professionally-formatted document as a PDF. Ready to use immediately."
+        "title": "Download and use",
+        "description": "Export a clean, ready-to-send PDF with your details applied."
       }
     },
     "finalCta": {
-      "title": "Ready to Create Your Legal Document?",
-      "description": "Join thousands of users generating professional legal documents for free. No credit card. No sign-up. Just instant access.",
+      "title": "Generate your next agreement with SELISE",
+      "description": "Stay compliant without slowing down. Free forever, no accounts, no catches.",
       "getStartedFree": "Get Started Free",
       "viewAllTemplates": "View All Templates",
-      "generateFirstDocument": "⚡ Generate your first document in under 2 minutes"
+      "generateFirstDocument": "Generate your first document in under 2 minutes"
     },
     "seliseDio": {
       "badge": "Our DIO Model",
-      "title": "Structured for End-to-End Delivery",
-      "description": "SELISE follows a Design, Implement, Operate rhythm that keeps every template human-centered, technically sound, and continuously optimized.",
+      "title": "Structured for end-to-end delivery",
+      "description": "Design, Implement, Operate keeps each template human-centered, technically sound, and continuously optimized.",
       "design": {
         "title": "Design",
-        "description": "Collaborative discovery turns requirements into human-centered journeys that respect regional regulations from day one.",
-        "badge": "Insight to Blueprint"
+        "description": "Co-create journeys with legal and ops teams so requirements are clear from day one.",
+        "badge": "Insight to blueprint"
       },
       "implement": {
         "title": "Implement",
-        "description": "Agile sprints with automated QA deliver reliable, scalable document experiences that stay aligned with legal standards.",
-        "badge": "Build with Precision"
+        "description": "Ship through focused sprints with automated QA to keep documents reliable at scale.",
+        "badge": "Build with precision"
       },
       "operate": {
         "title": "Operate",
-        "description": "Continuous monitoring, analytics, and feedback loops keep every template accurate, secure, and always ready to ship.",
-        "badge": "Always On"
+        "description": "Monitor, learn, and update so content stays accurate, secure, and ready to ship.",
+        "badge": "Always on"
       }
     },
     "brandValues": {
       "badge": "Our Values",
-      "title": "Guided by What Matters",
+      "title": "Guided by what matters",
       "description": "Every interaction reflects SELISE values—respect, integrity, humility, pragmatism, perseverance, and empowerment.",
       "respectful": {
         "title": "Respectful",
-        "description": "We listen first and co-create solutions that empower distributed teams and their clients."
+        "description": "We listen first and co-create solutions that empower teams and their clients."
       },
       "integrous": {
         "title": "Integrous",
-        "description": "Transparent processes, audit trails, and responsible data handling build long-lasting trust."
+        "description": "Transparent processes and responsible data handling build trust."
       },
       "humble": {
         "title": "Humble",
-        "description": "We stay curious, iterate fast, and learn with every release to keep improving our craft."
+        "description": "We stay curious, iterate fast, and learn with every release."
       },
       "pragmatic": {
         "title": "Pragmatic",
-        "description": "Every feature is anchored in measurable impact, making legal delivery simpler and faster."
+        "description": "Every feature is anchored in measurable impact that simplifies delivery."
       },
       "persevering": {
         "title": "Persevering",
-        "description": "We engineer resilient systems that adapt, scale, and keep critical workflows running."
+        "description": "We engineer resilient systems that adapt, scale, and keep workflows running."
       },
       "empowering": {
         "title": "Empowering",
-        "description": "We transfer knowledge and tools that let teams operate independently with confidence."
+        "description": "We transfer knowledge and tools so teams can operate independently with confidence."
       }
     }
   },

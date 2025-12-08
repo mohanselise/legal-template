@@ -289,14 +289,13 @@ export default async function Home() {
             fill
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-[hsl(var(--oxford-blue))]/90 mix-blend-multiply" />
         </div>
         <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-white/10 text-white hover:bg-white/20 border-none">
+            <Badge className="mb-4 bg-white/20 text-white hover:bg-white/30 border-white/30 backdrop-blur-sm">
               {t('productSuite.badge')}
             </Badge>
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl font-heading">
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl font-heading drop-shadow-lg">
               {t('productSuite.title')}
             </h2>
           </div>
@@ -305,10 +304,10 @@ export default async function Home() {
             {products.map((product, index) => {
               const Icon = product.icon;
               return (
-                <div key={index} className="bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-colors backdrop-blur-sm">
-                  <Icon className="h-10 w-10 text-[hsl(var(--sky-blue))] mb-6" />
-                  <h3 className="text-xl font-semibold text-white mb-3 font-heading">{product.title}</h3>
-                  <p className="text-gray-300">{product.description}</p>
+                <div key={index} className="rounded-2xl p-8 transition-colors">
+                  <Icon className="h-10 w-10 text-[hsl(var(--sky-blue))] mb-6 drop-shadow-md" />
+                  <h3 className="text-xl font-semibold text-white mb-3 font-heading drop-shadow-md">{product.title}</h3>
+                  <p className="text-white drop-shadow-sm">{product.description}</p>
                 </div>
               );
             })}

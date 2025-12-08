@@ -14,145 +14,79 @@
     "no": "No"
   },
   "home": {
-    "title": "Legal documents you can ship today",
-    "subtitle": "Generate plain-English agreements in minutes. No paywalls, no registrations—just reliable templates built with SELISE legal craft.",
-    "startGeneratingFree": "Start Generating Free",
-    "seeHowItWorks": "See How It Works",
+    "title": "Simplifying Legal Documentation",
+    "subtitle": "Design, generate, and manage your legal documents now.",
+    "startGeneratingFree": "Browse Templates",
+    "seeHowItWorks": "How It Works",
     "noCreditCardNeeded": "No credit card needed",
     "noSignUpRequired": "No sign-up required",
     "instantDownload": "Instant download",
-    "trustedByThousands": "Trusted by thousands",
-    "freeForever": "100% Free",
+    "trustedByThousands": "Trusted by Industry Leaders",
+    "freeForever": "Always Free",
     "announcement": "New: Employment Agreement template is live.",
     "tryItNow": "Try it now →",
-    "features": {
-      "generateInMinutes": {
-        "title": "Create in minutes",
-        "description": "Answer guided questions and download a ready-to-send document.",
-        "highlight": "Under 3 min"
+    "trifecta": {
+      "title": "The Trifecta of Your Legal Success",
+      "subtitle": "Compliance, Efficiency, Security",
+      "compliance": {
+        "title": "Compliance",
+        "description": "Trusted by legal experts, we deliver scalable, compliant templates that simplify complexity and help you stay ahead of regulatory demands.",
+        "link": "View More"
       },
-      "legallySound": {
-        "title": "Legally grounded",
-        "description": "Structured with SELISE legal specialists and aligned to common standards.",
-        "highlight": "Audit-ready"
+      "efficiency": {
+        "title": "Efficiency",
+        "description": "Accelerate your document creation process with our intelligent generator. Save time and reduce errors with automated drafting.",
+        "link": "View More"
       },
-      "plainEnglish": {
-        "title": "Plain language",
-        "description": "Every clause is written for humans, not legalese.",
-        "highlight": "Easy to read"
-      },
-      "free": {
-        "title": "Free to use",
-        "description": "Generate, customize, and download without charges or upsells.",
-        "highlight": "No paywall"
+      "security": {
+        "title": "Security",
+        "description": "Your data privacy is our priority. We employ state-of-the-art security measures to ensure your information remains confidential and protected.",
+        "link": "View More"
       }
     },
-    "stats": {
-      "legalTemplates": "5+",
-      "legalTemplatesLabel": "Templates live",
-      "freeForever": "100%",
-      "freeForeverLabel": "Free forever",
-      "avgGeneration": "≈2 min",
-      "avgGenerationLabel": "Avg. generation",
-      "available": "24/7",
-      "availableLabel": "Always available"
+    "popularTemplates": {
+      "title": "Most Popular Templates",
+      "badge": "Trending Now",
+      "description": "Start with our most used agreements, vetted by legal experts."
     },
-    "benefits": {
-      "noSignup": "No sign-up or registration",
-      "instantPdf": "Instant PDF download",
-      "customizable": "Customizable clauses and terms",
-      "plainEnglish": "Plain-English guidance throughout",
-      "noHiddenFees": "No hidden fees or subscriptions",
-      "professionalQuality": "Professionally formatted output"
-    },
-    "templatesSection": {
-      "badge": "Template Library",
-      "title": "Start with a live template",
-      "description": "Pick a ready-to-use agreement. We add new templates based on what teams request most.",
-      "generateNow": "Generate Now",
-      "comingSoon": "Coming Soon",
-      "mostPopular": "Most Popular",
-      "needDifferentTemplate": "Need a different template?",
-      "requestTemplate": "Request a template"
-    },
-    "featuresSection": {
-      "badge": "Why Choose Us",
-      "title": "Built for clarity and speed",
-      "description": "SELISE keeps legal workflows simple, human, and dependable.",
-      "everythingYouNeed": "Everything you need to ship"
-    },
-    "howItWorks": {
-      "badge": "Fast and guided",
-      "title": "Create in three steps",
-      "description": "Go from intent to PDF in minutes.",
-      "step1": {
-        "title": "Choose a template",
-        "description": "Select the agreement you need from our curated library."
+    "services": {
+      "title": "Explore Our Legal Services",
+      "badge": "Services",
+      "employment": {
+        "title": "Employment",
+        "description": "Comprehensive agreements for hiring and managing staff."
       },
-      "step2": {
-        "title": "Answer guided prompts",
-        "description": "Provide the essentials in plain English—we highlight what matters."
+      "corporate": {
+        "title": "Corporate",
+        "description": "Essential documents for company formation and governance."
       },
-      "step3": {
-        "title": "Download and use",
-        "description": "Export a clean, ready-to-send PDF with your details applied."
+      "intellectualProperty": {
+        "title": "Intellectual Property",
+        "description": "Protect your ideas and assets with robust IP agreements."
+      }
+    },
+    "productSuite": {
+      "title": "Explore Our Innovative Product Suite",
+      "badge": "Products",
+      "generator": {
+        "title": "Document Generator",
+        "description": "Modular, flexible templates for diverse legal needs."
+      },
+      "esignature": {
+        "title": "SELISE Signature",
+        "description": "Secure digital signatures for your documents (Coming Soon)."
+      },
+      "management": {
+        "title": "Contract Management",
+        "description": "Organize and track your legal documents effortlessly (Coming Soon)."
       }
     },
     "finalCta": {
-      "title": "Generate your next agreement with SELISE",
-      "description": "Stay compliant without slowing down. Free forever, no accounts, no catches.",
+      "title": "Powered by Today's Technology",
+      "description": "Experience the future of legal documentation with our advanced platform.",
       "getStartedFree": "Get Started Free",
       "viewAllTemplates": "View All Templates",
       "generateFirstDocument": "Generate your first document in under 2 minutes"
-    },
-    "seliseDio": {
-      "badge": "Our DIO Model",
-      "title": "Structured for end-to-end delivery",
-      "description": "Design, Implement, Operate keeps each template human-centered, technically sound, and continuously optimized.",
-      "design": {
-        "title": "Design",
-        "description": "Co-create journeys with legal and ops teams so requirements are clear from day one.",
-        "badge": "Insight to blueprint"
-      },
-      "implement": {
-        "title": "Implement",
-        "description": "Ship through focused sprints with automated QA to keep documents reliable at scale.",
-        "badge": "Build with precision"
-      },
-      "operate": {
-        "title": "Operate",
-        "description": "Monitor, learn, and update so content stays accurate, secure, and ready to ship.",
-        "badge": "Always on"
-      }
-    },
-    "brandValues": {
-      "badge": "Our Values",
-      "title": "Guided by what matters",
-      "description": "Every interaction reflects SELISE values—respect, integrity, humility, pragmatism, perseverance, and empowerment.",
-      "respectful": {
-        "title": "Respectful",
-        "description": "We listen first and co-create solutions that empower teams and their clients."
-      },
-      "integrous": {
-        "title": "Integrous",
-        "description": "Transparent processes and responsible data handling build trust."
-      },
-      "humble": {
-        "title": "Humble",
-        "description": "We stay curious, iterate fast, and learn with every release."
-      },
-      "pragmatic": {
-        "title": "Pragmatic",
-        "description": "Every feature is anchored in measurable impact that simplifies delivery."
-      },
-      "persevering": {
-        "title": "Persevering",
-        "description": "We engineer resilient systems that adapt, scale, and keep workflows running."
-      },
-      "empowering": {
-        "title": "Empowering",
-        "description": "We transfer knowledge and tools so teams can operate independently with confidence."
-      }
     }
   },
   "templates": {
@@ -1003,4 +937,3 @@
     "dateLabel": "Date"
   }
 }
-

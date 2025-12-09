@@ -16,6 +16,8 @@ import {
 import { parseTemplatePageBlocks } from "@/lib/template-page-blocks";
 import { TemplatePageRenderer } from "./_components/template-page-renderer";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Generate static params for all template slugs (both Template and TemplatePage)
  */

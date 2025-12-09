@@ -103,7 +103,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const templatePage = await prisma.templatePage.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        // Ensure htmlBody always defined for legacy column even if omitted
+        ...(data.htmlBody !== undefined ? { htmlBody: data.htmlBody } : {}),
+      },
     });
 
     return NextResponse.json({ templatePage });

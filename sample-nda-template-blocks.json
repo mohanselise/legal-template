@@ -1,0 +1,194 @@
+[
+  {
+    "type": "hero",
+    "eyebrow": "Free Legal Document Generator",
+    "title": "Create a Professional NDA in Minutes",
+    "subtitle": "Protect your confidential information with a legally vetted Non-Disclosure Agreement. Generate a customized NDA tailored to your needs—completely free.",
+    "bullets": [
+      "Legally vetted by experienced attorneys",
+      "Fully customizable to your specific needs",
+      "Ready to use in under 5 minutes",
+      "Complies with international standards",
+      "Available in multiple jurisdictions"
+    ],
+    "primaryCta": {
+      "label": "Generate Your NDA Now",
+      "href": "/templates/nda-agreement/generate",
+      "variant": "primary"
+    },
+    "secondaryCta": {
+      "label": "Learn More",
+      "href": "#features",
+      "variant": "secondary"
+    }
+  },
+  {
+    "type": "stats",
+    "title": "Trusted by Thousands of Businesses",
+    "description": "Join companies worldwide who use our platform to create professional legal documents",
+    "items": [
+      {
+        "label": "NDAs Generated",
+        "value": "50,000+",
+        "subtext": "Since launch"
+      },
+      {
+        "label": "Countries Supported",
+        "value": "150+",
+        "subtext": "Global coverage"
+      },
+      {
+        "label": "Average Time",
+        "value": "3 min",
+        "subtext": "To complete"
+      },
+      {
+        "label": "Legal Compliance",
+        "value": "100%",
+        "subtext": "Vetted by experts"
+      }
+    ]
+  },
+  {
+    "type": "featureGrid",
+    "title": "Why Choose Our NDA Generator?",
+    "description": "Everything you need to create a comprehensive Non-Disclosure Agreement that protects your business interests",
+    "columns": 3,
+    "features": [
+      {
+        "title": "Mutual & Unilateral Options",
+        "description": "Choose between mutual NDAs (both parties share confidential info) or unilateral NDAs (only one party shares). Perfect for any business scenario.",
+        "icon": "CheckCircle2"
+      },
+      {
+        "title": "Jurisdiction-Specific Terms",
+        "description": "Automatically includes jurisdiction-specific clauses based on your location. Ensures legal enforceability in your region.",
+        "icon": "Shield"
+      },
+      {
+        "title": "Customizable Duration",
+        "description": "Set the confidentiality period that works for your needs—from months to years. Define when the agreement expires.",
+        "icon": "Sparkles"
+      },
+      {
+        "title": "IP Protection Clauses",
+        "description": "Includes comprehensive intellectual property protection terms. Safeguards your innovations, trade secrets, and proprietary information.",
+        "icon": "Lock"
+      },
+      {
+        "title": "Remedy & Enforcement",
+        "description": "Clear provisions for breach consequences, including injunctive relief and damages. Ensures your rights are protected.",
+        "icon": "Scale"
+      },
+      {
+        "title": "Multi-Party Support",
+        "description": "Create NDAs for multiple parties. Perfect for complex business relationships involving several stakeholders.",
+        "icon": "Users"
+      }
+    ]
+  },
+  {
+    "type": "steps",
+    "title": "How It Works",
+    "description": "Create your NDA in three simple steps—no legal expertise required",
+    "items": [
+      {
+        "title": "Answer a Few Questions",
+        "description": "Our intelligent form guides you through the process. Provide basic information about your parties, the confidential information, and your preferences.",
+        "icon": "FileText"
+      },
+      {
+        "title": "Review & Customize",
+        "description": "Review the generated NDA and make any necessary adjustments. Our platform ensures all essential clauses are included.",
+        "icon": "FileCheck"
+      },
+      {
+        "title": "Download & Sign",
+        "description": "Download your professional NDA in PDF format. Share with parties for electronic or physical signatures. You're ready to go!",
+        "icon": "FilePlus"
+      }
+    ]
+  },
+  {
+    "type": "richText",
+    "title": "Understanding Non-Disclosure Agreements",
+    "body": [
+      "A Non-Disclosure Agreement (NDA), also known as a confidentiality agreement, is a legally binding contract that establishes a confidential relationship between parties. It ensures that sensitive information shared between parties remains protected and cannot be disclosed to third parties without authorization.",
+      "NDAs are essential for businesses engaging in partnerships, hiring employees, discussing potential deals, or sharing proprietary information. They provide legal recourse if confidential information is improperly disclosed, helping protect trade secrets, business strategies, customer lists, and other sensitive data.",
+      "Our NDA generator creates comprehensive agreements that include standard clauses such as definitions of confidential information, obligations of the receiving party, exclusions from confidentiality, term and termination provisions, return of materials, and remedies for breach. Each agreement is tailored to your specific needs while maintaining legal enforceability."
+    ]
+  },
+  {
+    "type": "faq",
+    "title": "Frequently Asked Questions",
+    "items": [
+      {
+        "question": "What is the difference between a mutual and unilateral NDA?",
+        "answer": "A mutual NDA (also called a bilateral NDA) protects confidential information shared by both parties. This is common in joint ventures, partnerships, or when both parties will be sharing sensitive information. A unilateral NDA protects information shared by only one party, typically used when a company shares information with an employee, contractor, or potential business partner."
+      },
+      {
+        "question": "How long should an NDA last?",
+        "answer": "The duration of an NDA depends on your specific needs. Common terms range from 1-5 years, though some agreements may extend indefinitely for trade secrets. Our generator allows you to specify the exact duration that makes sense for your situation. Consider the nature of the information—highly sensitive trade secrets may warrant longer terms, while project-specific information may only need protection for the project duration."
+      },
+      {
+        "question": "Is an NDA legally enforceable?",
+        "answer": "Yes, NDAs are legally enforceable contracts when properly drafted and executed. However, enforceability depends on several factors including jurisdiction, reasonableness of terms, clarity of definitions, and whether the agreement was signed voluntarily. Our generator creates NDAs that comply with standard legal requirements, but we recommend consulting with an attorney for complex situations or high-stakes agreements."
+      },
+      {
+        "question": "What information should be considered confidential?",
+        "answer": "Confidential information typically includes trade secrets, business plans, financial data, customer lists, proprietary technology, marketing strategies, product designs, and any other sensitive business information. Our NDA generator allows you to specifically define what constitutes confidential information in your agreement, ensuring clarity and enforceability."
+      },
+      {
+        "question": "Can I use this NDA internationally?",
+        "answer": "Our NDA generator supports multiple jurisdictions and can be customized for international use. However, legal requirements vary by country. The generator includes jurisdiction-specific clauses, but for cross-border agreements, we recommend consulting with legal counsel familiar with the relevant jurisdictions to ensure full compliance."
+      },
+      {
+        "question": "What happens if someone breaches the NDA?",
+        "answer": "NDAs typically include remedies for breach, which may include injunctive relief (court orders to stop disclosure), monetary damages, and in some cases, return of confidential materials. The specific remedies depend on the terms of your agreement and applicable law. Our generator includes standard breach provisions, but serious breaches should be addressed with legal counsel."
+      },
+      {
+        "question": "Do I need a lawyer to create an NDA?",
+        "answer": "While our generator creates legally sound NDAs based on standard templates, consulting with an attorney is recommended for complex situations, high-value agreements, or when dealing with sensitive trade secrets. For standard business NDAs, our generator provides a solid foundation that can be reviewed by legal counsel if needed."
+      }
+    ]
+  },
+  {
+    "type": "testimonials",
+    "title": "What Our Users Say",
+    "items": [
+      {
+        "quote": "We needed an NDA quickly for a potential partnership. This generator saved us hours and gave us a professional document that our lawyer approved with minimal changes. Highly recommend!",
+        "name": "Sarah Chen",
+        "role": "Startup Founder",
+        "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah"
+      },
+      {
+        "quote": "As a freelancer, I use NDAs regularly with clients. This tool makes it so easy—I can generate a customized agreement in minutes instead of spending money on legal fees for each project.",
+        "name": "Michael Rodriguez",
+        "role": "Independent Consultant",
+        "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Michael"
+      },
+      {
+        "quote": "The jurisdiction-specific clauses are a game-changer. We work with international clients, and having NDAs that comply with different legal systems is invaluable.",
+        "name": "Emma Thompson",
+        "role": "Business Development Manager",
+        "avatarUrl": "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma"
+      }
+    ]
+  },
+  {
+    "type": "cta",
+    "title": "Ready to Protect Your Confidential Information?",
+    "description": "Generate your professional NDA in minutes. No credit card required, completely free.",
+    "primaryCta": {
+      "label": "Create Your NDA Now",
+      "href": "/templates/nda-agreement/generate",
+      "variant": "primary"
+    },
+    "secondaryCta": {
+      "label": "Browse All Templates",
+      "href": "/templates",
+      "variant": "secondary"
+    }
+  }
+]

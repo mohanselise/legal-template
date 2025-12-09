@@ -185,6 +185,10 @@ export async function getTemplateBySlug(
 // Template Pages (Dynamic Content Pages)
 // ============================================================================
 
+export type TemplatePageWithBlocks = TemplatePage & {
+  blocks?: Prisma.JsonValue | null;
+};
+
 export type { TemplatePage };
 
 /**
@@ -194,7 +198,7 @@ export type { TemplatePage };
 export async function getTemplatePageBySlugAndLocale(
   slug: string,
   locale: string
-): Promise<TemplatePage | null> {
+): Promise<TemplatePageWithBlocks | null> {
   try {
     const templatePage = await prisma.templatePage.findUnique({
       where: {
@@ -205,7 +209,7 @@ export async function getTemplatePageBySlugAndLocale(
         published: true,
       },
     });
-    return templatePage;
+    return templatePage as TemplatePageWithBlocks;
   } catch (error) {
     console.error("[TEMPLATES_DB] Failed to fetch template page:", error);
     return null;

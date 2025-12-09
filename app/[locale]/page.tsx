@@ -179,7 +179,7 @@ export default async function Home() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="flex justify-center">
             <div className="relative w-full max-w-5xl overflow-hidden rounded-3xl shadow-2xl border border-border bg-black text-white">
-              <div className="relative aspect-video">
+              <div className="relative min-h-[400px] md:aspect-video">
                 <video
                   autoPlay
                   loop
@@ -190,18 +190,19 @@ export default async function Home() {
                   <source src="/videos/human-ai.webm" type="video/webm" />
                 </video>
                 <div className="absolute inset-0 bg-black/40" />
-                <div className="relative z-10 flex h-full items-center justify-center px-8 text-center">
-                  <div className="max-w-3xl">
-                    <h2 className="text-4xl font-bold tracking-tight text-white sm:text-5xl font-heading mb-6 text-on-media">
+                <div className="relative z-10 flex h-full min-h-[400px] items-center justify-center px-6 py-12 md:px-8 md:py-0 text-center">
+                  <div className="max-w-3xl w-full">
+                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl font-heading mb-6 text-on-media">
                       {t('humanInTheLoop.title')}
                     </h2>
-                    <p className="text-xl leading-relaxed text-white max-w-2xl mx-auto mb-10 text-on-media">
-                      {t('humanInTheLoop.description')}
+                    <p className="text-lg sm:text-xl leading-relaxed text-white max-w-2xl mx-auto mb-8 md:mb-10 text-on-media">
+                      <span className="hidden md:inline">{t('humanInTheLoop.description')}</span>
+                      <span className="md:hidden">transparency, trust, and user control at the core.</span>
                     </p>
                     <Button
                       asChild
                       size="lg"
-                      className="border border-white/70 bg-white/10 text-white hover:bg-white/20 hover:text-white text-lg px-8 h-12"
+                      className="border border-white/70 bg-white/10 text-white hover:bg-white/20 hover:text-white text-base sm:text-lg px-6 sm:px-8 h-11 sm:h-12"
                     >
                       <Link href="#templates">{t('humanInTheLoop.cta')}</Link>
                     </Button>

@@ -31,24 +31,17 @@ function loadBrandGuide(): string {
 
 const BRAND_GUIDE = loadBrandGuide();
 
-const SYSTEM_PROMPT = `You are an expert marketing copywriter and frontend writer.
-You will produce a long-form, SEO-first landing page for a legal template.
+const SYSTEM_PROMPT = `You are an expert marketing copywriter.
+You will produce SEO-first landing page content as structured JSON blocks (no HTML).
 
 Key requirements:
 - Return ONLY valid JSON.
 - Tone: professional, approachable, plain-English; avoid legalese unless required.
-- Respect SELISE brand guide (colors via CSS variables, no hex; clear voice; accessibility).
-- Layout: boxed (non full-width). Use a centered container with max content width ~680-780px and comfortable padding; do NOT render full-bleed sections.
-- Use Tailwind utility classes only. Do NOT inline hex colors. Use CSS vars: text-[hsl(var(--fg))], bg-[hsl(var(--bg))], etc.
-- Include approved CTAs:
-  * Primary CTA: /{locale}/templates/{slug}/generate (prominent, above the fold and in final CTA)
-  * Secondary CTA: /{locale}/templates/ (see other templates)
-- Structure for long-form SEO: hero, credibility/benefits, detailed sections (what it covers, who it’s for, how it works, FAQs), and strong closing CTA.
+- Follow SELISE brand guide (voice, clarity, accessibility). Avoid exaggerated or absolute claims (e.g., “100% legal compliance”, “guaranteed”). Use measured, trustworthy language.
+- Do NOT return HTML or hex colors. Use the block schema provided in the user message for structure.
+- Include the approved CTAs exactly as provided (primary and secondary).
 - Keep copy skimmable with clear headings, short paragraphs, bullets, and supporting subheadings.
-- Avoid embedding external images; you may reference existing ones (e.g., /graphics/bg-black-texture.webp) if helpful.
-- Ensure headings are semantic (h1/h2/h3), paragraphs with <p>, lists with <ul>/<li>.
-- Keep HTML safe; no scripts, no external assets.
-- OG/meta fields should be concise and SEO-friendly. Do NOT include an ogImage URL; leave it null.
+- OG/meta fields concise and SEO-friendly; ogImage must be null.
 `;
 
 export async function POST(request: NextRequest) {
@@ -88,7 +81,7 @@ export async function POST(request: NextRequest) {
         title: s.title,
         description: s.description,
         type: s.type,
-        enableApplyStandards: (s as any).enableApplyStandards ?? false,
+        enableApplyStandards: s.enableApplyStandards ?? false,
         fields: s.fields.map((f) => ({
           name: f.name,
           label: f.label,
@@ -113,7 +106,7 @@ MANDATORY CTAs:
 - Primary CTA (prominent): /${locale}/templates/${template.slug}/generate
 - Secondary CTA: /${locale}/templates/
 
-Return strict JSON with this shape:
+Return strict JSON with this shape (no additional fields):
 {
   "title": string, // page title
   "description": string, // meta description
@@ -121,7 +114,76 @@ Return strict JSON with this shape:
   "ogDescription": string, // may equal description
   "ogImage": null, // always null (skip OG image URL)
   "keywords": string[],
-  "htmlBody": string // full HTML body using Tailwind classes and CSS vars
+  "blocks": [
+    // Include hero and a closing CTA; add other sections as needed for a complete landing page
+    {
+      "type": "hero",
+      "eyebrow"?: string,
+      "title": string,
+      "subtitle"?: string,
+      "bullets"?: string[],
+      "primaryCta"?: { "label": string, "href": string, "variant"?: "primary"|"secondary"|"ghost" },
+      "secondaryCta"?: { "label": string, "href": string, "variant"?: "primary"|"secondary"|"ghost" },
+      "imageUrl"?: string,
+      "imageAlt"?: string
+      // backgroundImage / textureImage / sideImage are optional and may be omitted (renderer has defaults)
+    },
+    {
+      "type": "featureGrid",
+      "title"?: string,
+      "description"?: string,
+      "columns"?: number,
+      "features": [{ "title": string, "description"?: string, "icon"?: string }]
+    },
+    {
+      "type": "stats",
+      "title"?: string,
+      "description"?: string,
+      "items": [{ "label": string, "value": string, "subtext"?: string }]
+    },
+    {
+      "type": "steps",
+      "title"?: string,
+      "description"?: string,
+      "items": [{ "title": string, "description"?: string, "icon"?: string }]
+    },
+    {
+      "type": "media",
+      "title"?: string,
+      "description"?: string,
+      "imageUrl": string,
+      "imageAlt"?: string
+    },
+    {
+      "type": "richText",
+      "title"?: string,
+      "body": string[]
+    },
+    {
+      "type": "faq",
+      "title"?: string,
+      "items": [{ "question": string, "answer": string }]
+    },
+    {
+      "type": "testimonials",
+      "title"?: string,
+      "items": [{ "quote": string, "name": string, "role"?: string, "avatarUrl"?: string }]
+    },
+    {
+      "type": "cta",
+      "title": string,
+      "description"?: string,
+      "primaryCta": { "label": string, "href": string, "variant"?: "primary"|"secondary"|"ghost" },
+      "secondaryCta"?: { "label": string, "href": string, "variant"?: "primary"|"secondary"|"ghost" }
+    }
+  ]
+}
+
+Link rules:
+- href must be absolute (http/https), or start with "/", or start with "#".
+
+Language rules:
+- Avoid exaggerated/absolute claims (e.g., “100% compliance”, “guaranteed results”). Use measured, trustworthy phrasing.
 }`;
 
     let completion;
@@ -143,9 +205,11 @@ Return strict JSON with this shape:
           endpoint: "/api/admin/template-pages/generate",
         }
       );
-    } catch (apiError: any) {
+    } catch (apiError: unknown) {
+      type ApiError = { status?: number; code?: number };
+      const err = apiError as ApiError;
       // Handle OpenRouter API errors with user-friendly messages
-      if (apiError?.status === 402 || apiError?.code === 402) {
+      if (err?.status === 402 || err?.code === 402) {
         return NextResponse.json(
           { 
             error: "API credit limit exceeded", 
@@ -154,7 +218,7 @@ Return strict JSON with this shape:
           { status: 402 }
         );
       }
-      if (apiError?.status === 403 || apiError?.code === 403) {
+      if (err?.status === 403 || err?.code === 403) {
         return NextResponse.json(
           { 
             error: "API monthly limit exceeded", 

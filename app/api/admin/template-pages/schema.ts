@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { templatePageBlocksSchema } from "@/lib/template-page-blocks";
 
 // Supported locales (should match i18n config)
 export const supportedLocales = ["en", "de", "fr"] as const;
@@ -25,9 +26,11 @@ export const createTemplatePageSchema = z.object({
     .string()
     .min(1, "Description is required")
     .max(2000, "Description must be 2000 characters or less"),
+  blocks: templatePageBlocksSchema,
   htmlBody: z
     .string()
-    .min(1, "HTML body is required"),
+    .optional()
+    .default(""),
   ogTitle: z.string().max(200).optional().nullable(),
   ogDescription: z.string().max(500).optional().nullable(),
   ogImage: z.string().url("Invalid URL format").optional().nullable(),

@@ -1,18 +1,20 @@
 import { notFound } from 'next/navigation';
-import { Link } from '@/i18n/routing';
-import Image from 'next/image';
-import { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
-import { CheckCircle2, ArrowRight, Sparkles, Star } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  getTemplateBySlug, 
+import { Link } from "@/i18n/routing";
+import Image from "next/image";
+import { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { CheckCircle2, ArrowRight, Sparkles, Star } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  getTemplateBySlug,
   getAllTemplates,
   getTemplatePageBySlugAndLocale,
   getAllTemplatePageSlugs,
-  type TemplatePage
-} from '@/lib/templates-db';
+  type TemplatePageWithBlocks,
+} from "@/lib/templates-db";
+import { parseTemplatePageBlocks } from "@/lib/template-page-blocks";
+import { TemplatePageRenderer } from "./_components/template-page-renderer";
 
 /**
  * Generate static params for all template slugs (both Template and TemplatePage)
@@ -107,16 +109,28 @@ export default async function TemplateLandingPage({
 
   // Check for custom landing page first
   const templatePage = await getTemplatePageBySlugAndLocale(slug, locale);
-  
+
+  console.log("[TemplateLanding] slug", slug, "locale", locale, "templatePage?", !!templatePage);
+
   if (templatePage) {
-    // Render custom HTML landing page
-    return (
-      <div className="bg-[hsl(var(--bg))] text-foreground">
-        <div 
-          dangerouslySetInnerHTML={{ __html: templatePage.htmlBody }}
-        />
-      </div>
-    );
+    let blocks = parseTemplatePageBlocks((templatePage as TemplatePageWithBlocks).blocks);
+
+    // Compatibility: allow JSON stored in htmlBody while the admin UI catches up
+    if (!blocks.length && templatePage.htmlBody) {
+      try {
+        const parsed = JSON.parse(templatePage.htmlBody);
+        blocks = parseTemplatePageBlocks(parsed);
+        console.log("[TemplateLanding] parsed from htmlBody. rawArray?", Array.isArray(parsed), "blockCount", blocks.length);
+      } catch (err) {
+        console.warn("[TemplateLanding] failed to parse htmlBody JSON", err);
+      }
+    }
+
+    console.log("[TemplateLanding] blocks count", blocks.length);
+
+    if (blocks.length) {
+      return <TemplatePageRenderer blocks={blocks} />;
+    }
   }
 
   // Fall back to Template model

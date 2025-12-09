@@ -100,7 +100,9 @@ export async function POST(request: NextRequest) {
         locale: data.locale,
         title: data.title,
         description: data.description,
-        htmlBody: data.htmlBody,
+        // Keep htmlBody for backward compatibility but prefer blocks
+        htmlBody: data.htmlBody ?? "",
+        blocks: data.blocks,
         ogTitle: data.ogTitle,
         ogDescription: data.ogDescription,
         ogImage: data.ogImage,

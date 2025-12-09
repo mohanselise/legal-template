@@ -205,7 +205,8 @@ model TemplatePage {
   // Page Content
   title           String   // Page title (also used for <title>)
   description     String   @db.Text // Meta description
-  htmlBody        String   @db.Text // HTML content of the page body
+  htmlBody        String   @db.Text @default("") // Legacy HTML content of the page body
+  blocks          Json?    // Structured content blocks for rendering
   
   // Open Graph / SEO Metadata
   ogTitle         String?  // Open Graph title (falls back to title if null)

@@ -14,79 +14,79 @@
     "no": "No"
   },
   "home": {
-    "title": "Simplifying Legal Documentation",
-    "subtitle": "Design, generate, and manage your legal documents now.",
-    "startGeneratingFree": "Browse Templates",
-    "seeHowItWorks": "How It Works",
-    "noCreditCardNeeded": "No credit card needed",
-    "noSignUpRequired": "No sign-up required",
-    "instantDownload": "Instant download",
-    "trustedByThousands": "Trusted by Industry Leaders",
-    "freeForever": "Always Free",
-    "announcement": "New: Employment Agreement template is live.",
+    "title": "We simplify legal complexity.",
+    "subtitle": "AI-generated, lawyer-curated templates with a human in the loop. Generate, preview, and send for signature—free, no sign-up, and we do not store your data.",
+    "startGeneratingFree": "Start drafting now",
+    "seeHowItWorks": "See the 3-step flow",
+    "noCreditCardNeeded": "No credit card required",
+    "noSignUpRequired": "No sign-up needed",
+    "instantDownload": "Export instantly",
+    "trustedByThousands": "Trusted for compliant workflows",
+    "freeForever": "Free to use",
+    "announcement": "New: Generate, preview, and send in one guided flow.",
     "tryItNow": "Try it now →",
     "trifecta": {
-      "title": "The Trifecta of Your Legal Success",
-      "subtitle": "Compliance, Efficiency, Security",
+      "title": "Built for compliance, speed, and security",
+      "subtitle": "We simplify complexity with guided, human-curated steps.",
       "compliance": {
         "title": "Compliance",
-        "description": "Trusted by legal experts, we deliver scalable, compliant templates that simplify complexity and help you stay ahead of regulatory demands.",
-        "link": "View More"
+        "description": "Proven templates stay aligned to legal standards. Human-in-the-loop review keeps clauses clear and precise.",
+        "link": "See our approach"
       },
       "efficiency": {
         "title": "Efficiency",
-        "description": "Accelerate your document creation process with our intelligent generator. Save time and reduce errors with automated drafting.",
-        "link": "View More"
+        "description": "Generate, preview, and send for signature in minutes with a guided flow that removes guesswork.",
+        "link": "See our approach"
       },
       "security": {
         "title": "Security",
-        "description": "Your data privacy is our priority. We employ state-of-the-art security measures to ensure your information remains confidential and protected.",
-        "link": "View More"
+        "description": "No sign-up and no data stored. Secure delivery keeps your documents under your control.",
+        "link": "See our approach"
       }
     },
     "popularTemplates": {
-      "title": "Most Popular Templates",
-      "badge": "Trending Now",
-      "description": "Start with our most used agreements, vetted by legal experts."
+      "title": "Popular legal templates",
+      "badge": "Ready to use today",
+      "description": "Draft curated agreements quickly. Free, no sign-up, export when ready."
     },
     "services": {
-      "title": "Explore Our Legal Services",
+      "title": "Where we help",
       "badge": "Services",
       "employment": {
         "title": "Employment",
-        "description": "Comprehensive agreements for hiring and managing staff."
+        "description": "Employment contracts and onboarding documents, guided and signature-ready."
       },
       "corporate": {
         "title": "Corporate",
-        "description": "Essential documents for company formation and governance."
+        "description": "Company policies, governance, and operational agreements with clear guardrails."
       },
       "intellectualProperty": {
         "title": "Intellectual Property",
-        "description": "Protect your ideas and assets with robust IP agreements."
+        "description": "Protect inventions and content with precise, curated clauses."
       }
     },
     "productSuite": {
-      "title": "Explore Our Innovative Product Suite",
-      "badge": "Products",
+      "title": "Explore SELISE Signature",
+      "badge": "SELISE Signature",
       "generator": {
-        "title": "Document Generator",
-        "description": "Modular, flexible templates for diverse legal needs."
+        "title": "Legally compliant",
+        "description": "AI-generated, lawyer-curated templates that stay aligned with current standards."
       },
       "esignature": {
-        "title": "SELISE Signature",
-        "description": "Secure digital signatures for your documents (Coming Soon)."
+        "title": "No sign-up needed",
+        "description": "Generate, preview, and send for signature as a guest—no accounts required."
       },
       "management": {
-        "title": "Contract Management",
-        "description": "Organize and track your legal documents effortlessly (Coming Soon)."
+        "title": "Fast and secure",
+        "description": "Move from draft to signature-ready in minutes; your data stays with you."
       }
     },
     "finalCta": {
-      "title": "Powered by Today's Technology",
-      "description": "Experience the future of legal documentation with our advanced platform.",
-      "getStartedFree": "Get Started Free",
+      "title": "Generate, preview, and send—free",
+      "description": "Create a precise, signature-ready document with AI plus human curation. No sign-up, no data stored.",
+      "getStartedFree": "Start drafting",
       "viewAllTemplates": "View All Templates",
-      "generateFirstDocument": "Generate your first document in under 2 minutes"
+      "generateFirstDocument": "Your first document in minutes"
     }
   },
   "templates": {

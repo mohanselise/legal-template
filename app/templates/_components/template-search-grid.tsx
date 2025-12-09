@@ -168,8 +168,8 @@ export function TemplateSearchGrid({
     resultsLabelText ||
     (resultsLabelTemplate
       ? resultsLabelTemplate
-          .replace("{visible}", visibleCount.toString())
-          .replace("{total}", totalCount.toString())
+        .replace("{visible}", visibleCount.toString())
+        .replace("{total}", totalCount.toString())
       : "");
 
   const totalPages =
@@ -231,8 +231,8 @@ export function TemplateSearchGrid({
         <div className="flex items-center justify-between rounded-2xl border border-dashed border-border bg-[hsl(var(--card))]/70 px-6 py-6 text-sm text-muted-foreground backdrop-blur-sm dark:bg-[hsl(var(--background))]/60">
           <span>{noResultsText}</span>
           {query ? (
-                <Button variant="ghost" size="sm" onClick={() => setQuery("")}>
-                  {clearLabel}
+            <Button variant="ghost" size="sm" onClick={() => setQuery("")}>
+              {clearLabel}
             </Button>
           ) : null}
         </div>
@@ -243,7 +243,7 @@ export function TemplateSearchGrid({
             return (
               <Card
                 key={template.id}
-                className="group flex h-full flex-col justify-between border-2 border-[hsl(var(--selise-blue))]/20 transition-all hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))]"
+                className="group flex h-full flex-col justify-between border-2 border-[hsl(var(--selise-blue))]/20 bg-card text-card-foreground transition-all hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))]"
               >
                 <CardHeader>
                   <Badge className="w-fit bg-[hsl(var(--selise-blue))]/12 text-[hsl(var(--selise-blue))] font-subheading uppercase tracking-[0.12em]">

@@ -167,20 +167,20 @@
   --popover: 180 9% 15%;
   --popover-foreground: 0 0% 100%;
 
-  /* Primary colors in dark mode */
-  --primary: 206 95% 57%;             /* Sky Blue (lighter variant for dark mode) */
+  /* Primary colors in dark mode (keep strong contrast for controls) */
+  --primary: 206 100% 35%;            /* SELISE Blue for solid contrast */
   --primary-foreground: 0 0% 100%;
   --secondary: 0 0% 30%;
   --secondary-foreground: 0 0% 100%;
   --muted: 0 0% 20%;
   --muted-foreground: 0 0% 65%;
-  --accent: 206 95% 57%;              /* Sky Blue */
+  --accent: 206 90% 32%;              /* Slightly lighter than primary for hovers */
   --accent-foreground: 0 0% 100%;
   --destructive: 354 85% 65%;         /* Lighter red for dark mode */
   --destructive-foreground: 0 0% 100%;
   --border: 0 0% 20%;
   --input: 0 0% 20%;
-  --ring: 206 95% 57%;                /* Sky Blue */
+  --ring: 206 100% 35%;               /* Match primary for focus states */
   --success: 99 44% 60%;              /* Slightly lighter lime green */
 
   /* Chart colors remain the same */
@@ -193,15 +193,15 @@
   /* Sidebar dark mode */
   --sidebar: 180 9% 15%;
   --sidebar-foreground: 0 0% 100%;
-  --sidebar-primary: 206 95% 57%;     /* Sky Blue */
+  --sidebar-primary: 206 100% 35%;    /* SELISE Blue */
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 0 0% 20%;
   --sidebar-accent-foreground: 0 0% 100%;
   --sidebar-border: 0 0% 20%;
-  --sidebar-ring: 206 95% 57%;        /* Sky Blue */
+  --sidebar-ring: 206 100% 35%;       /* SELISE Blue */
 
   /* Brand utility tokens */
-  --brand-primary: 206 95% 57%;
+  --brand-primary: 206 100% 35%;
   --brand-primary-foreground: 0 0% 100%;
   --brand-muted: 206 45% 75%;
   --brand-surface: 206 65% 18%;

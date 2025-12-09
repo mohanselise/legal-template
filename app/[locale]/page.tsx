@@ -224,24 +224,36 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {templates.filter(t => t.popular).slice(0, 3).map((template) => {
               const Icon = template.icon;
               return (
-                <Card key={template.id} className="group overflow-hidden border-none shadow-md hover:shadow-2xl transition-all duration-300 bg-card">
-                  <div className="h-48 bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--oxford-blue))] p-6 flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform duration-500">
-                    <div className="absolute inset-0 opacity-10 bg-[url('/graphics/bg-black-texture.webp')] bg-cover mix-blend-overlay" />
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-300" />
-                    <Icon className="h-16 w-16 text-white relative z-10 drop-shadow-lg transform group-hover:scale-110 transition-transform duration-300" />
-                  </div>
-                  <CardHeader className="pt-6">
-                    <CardTitle className="font-heading text-xl">{getTemplateText(template, 'title')}</CardTitle>
-                    <CardDescription className="line-clamp-2 mt-2 text-base">{getTemplateText(template, 'description')}</CardDescription>
+                <Card
+                  key={template.id}
+                  className="group h-full border border-[hsl(var(--border))] bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                >
+                  <CardHeader className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] ring-1 ring-[hsl(var(--selise-blue))]/15">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <CardTitle className="font-heading text-xl leading-snug">{getTemplateText(template, 'title')}</CardTitle>
+                      <CardDescription className="text-base leading-relaxed text-muted-foreground line-clamp-3">
+                        {getTemplateText(template, 'description')}
+                      </CardDescription>
+                    </div>
                   </CardHeader>
-                  <CardFooter className="pb-6">
-                    <Button asChild className="w-full bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] font-medium h-11">
+                  <CardFooter className="pt-0">
+                    <Button
+                      asChild
+                      className="w-full justify-between bg-[hsl(var(--selise-blue))] text-white hover:bg-[hsl(var(--oxford-blue))] hover:text-white focus-visible:ring-[hsl(var(--selise-blue))] focus-visible:ring-offset-2"
+                    >
                       <Link href={template.href}>
-                        {t('templatesSection.generateNow')} <ArrowRight className="ml-2 h-4 w-4" />
+                        <span>{tTemplates('templatesSection.generateNow')}</span>
+                        <ArrowRight className="h-4 w-4" />
                       </Link>
                     </Button>
                   </CardFooter>

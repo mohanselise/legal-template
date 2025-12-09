@@ -14,80 +14,90 @@
     "no": "No"
   },
   "home": {
-    "title": "We simplify legal complexity.",
-    "subtitle": "AI-generated, lawyer-curated templates with a human in the loop. Generate, preview, and send for signature—free, no sign-up, and we do not store your data.",
-    "startGeneratingFree": "Start drafting now",
-    "seeHowItWorks": "See the 3-step flow",
-    "noCreditCardNeeded": "No credit card required",
-    "noSignUpRequired": "No sign-up needed",
-    "instantDownload": "Export instantly",
-    "trustedByThousands": "Trusted for compliant workflows",
-    "freeForever": "Free to use",
-    "announcement": "New: Generate, preview, and send in one guided flow.",
-    "tryItNow": "Try it now →",
-    "trifecta": {
-      "title": "Built for compliance, speed, and security",
-      "subtitle": "We simplify complexity with guided, human-curated steps.",
-      "compliance": {
-        "title": "Compliance",
-        "description": "Proven templates stay aligned to legal standards. Human-in-the-loop review keeps clauses clear and precise.",
-        "link": "See our approach"
-      },
-      "efficiency": {
-        "title": "Efficiency",
-        "description": "Generate, preview, and send for signature in minutes with a guided flow that removes guesswork.",
-        "link": "See our approach"
-      },
-      "security": {
-        "title": "Security",
-        "description": "No sign-up and no data stored. Secure delivery keeps your documents under your control.",
-        "link": "See our approach"
+    "title": "Professional Legal Documents. Simplified.",
+    "subtitle": "Create compliant contracts and agreements in minutes. Our intelligent platform guides you step-by-step, using templates verified by real lawyers. No sign-up required—just results.",
+    "cta": {
+      "primary": "Start Drafting",
+      "secondary": "View All Templates"
+    },
+    "trustBadges": {
+      "poweredBy": "Powered by SELISE",
+      "verified": "Lawyer Verified Templates",
+      "instant": "Instant Download & Sign"
+    },
+    "whyUseUs": {
+      "title": "Accuracy You Can Trust, Speed You Need.",
+      "subtitle": "We combine smart technology with legal expertise to deliver documents that work.",
+      "points": {
+        "verified": {
+          "title": "Verified by Experts (Human-in-the-Loop)",
+          "description": "Technology needs oversight. That is why every template in our library is reviewed by legal professionals. We ensure the foundation of your document is sound before you even type a word."
+        },
+        "precision": {
+          "title": "Precision, Not Guesswork",
+          "description": "Avoid the errors of standard AI. Our system doesn't just make things up; it follows a strict, secure structure. We ensure your answers fit perfectly into legally valid clauses, eliminating mistakes and ensuring compliance."
+        },
+        "simplicity": {
+          "title": "Guided Simplicity",
+          "description": "You don’t need to be a lawyer to write a contract. Our smart guidance system asks you simple questions and automatically builds the document for you. It’s transparent, easy, and fast."
+        }
       }
+    },
+    "humanInTheLoop": {
+      "title": "Human in the loop",
+      "description": "We believe AI should enhance intuition, not replace it. That's why we design AI-powered products with transparency, trust, and user control at the core.",
+      "cta": "Draft your contract"
     },
     "popularTemplates": {
-      "title": "Popular legal templates",
-      "badge": "Ready to use today",
-      "description": "Draft curated agreements quickly. Free, no sign-up, export when ready."
+      "title": "Most Popular Templates",
+      "badge": "Trending Now",
+      "description": "Start with our most used agreements, vetted by legal experts."
     },
-    "services": {
-      "title": "Where we help",
-      "badge": "Services",
-      "employment": {
-        "title": "Employment",
-        "description": "Employment contracts and onboarding documents, guided and signature-ready."
+    "integratedWorkflow": {
+      "title": "Draft it. Sign it. Done.",
+      "description": "A contract is only useful when it’s signed. We have integrated SELISE Signature directly into the process so you can close the deal immediately.",
+      "features": {
+        "binding": {
+          "title": "Legally Binding",
+          "description": "Secure electronic signatures that comply with industry standards."
+        },
+        "noBarriers": {
+          "title": "No Barriers",
+          "description": "No account creation or sign-up needed for you or your signers."
+        },
+        "fastSecure": {
+          "title": "Fast & Secure",
+          "description": "Send your document for signature instantly with bank-grade security."
+        }
       },
-      "corporate": {
-        "title": "Corporate",
-        "description": "Company policies, governance, and operational agreements with clear guardrails."
-      },
-      "intellectualProperty": {
-        "title": "Intellectual Property",
-        "description": "Protect inventions and content with precise, curated clauses."
-      }
+      "cta": "Create & Sign Now"
     },
-    "productSuite": {
-      "title": "Explore SELISE Signature",
-      "badge": "SELISE Signature",
-      "generator": {
-        "title": "Legally compliant",
-        "description": "AI-generated, lawyer-curated templates that stay aligned with current standards."
+    "howItWorks": {
+      "badge": "Simple Process",
+      "title": "Three Steps to a Secure Agreement",
+      "description": "From selection to signature in minutes.",
+      "step1": {
+        "title": "Select Your Template",
+        "description": "Browse our library of lawyer-verified documents. From employment contracts to non-disclosure agreements, find exactly what your business needs."
       },
-      "esignature": {
-        "title": "No sign-up needed",
-        "description": "Generate, preview, and send for signature as a guest—no accounts required."
+      "step2": {
+        "title": "Answer Simple Questions",
+        "description": "You don’t need to know legal terminology. Our smart guide asks you plain-English questions and automatically adapts the document clauses to fit your specific situation."
       },
-      "management": {
-        "title": "Fast and secure",
-        "description": "Move from draft to signature-ready in minutes; your data stays with you."
+      "step3": {
+        "title": "Review and Execute",
+        "description": "Preview your finished document instantly. You can download it as a PDF or send it directly for a secure, legally binding signature via SELISE Signature—no account needed."
       }
     },
     "finalCta": {
-      "title": "Generate, preview, and send—free",
-      "description": "Create a precise, signature-ready document with AI plus human curation. No sign-up, no data stored.",
-      "getStartedFree": "Start drafting",
+      "title": "Explore SELISE Signature",
+      "description": "Legally compliant, effortless to use, and built with security at the core.",
+      "getStartedFree": "Start with a Template",
       "viewAllTemplates": "View All Templates",
-      "generateFirstDocument": "Your first document in minutes"
-    }
+      "generateFirstDocument": "No credit card required • Instant download"
+    },
+    "announcement": "New: AI-Powered Contract Review",
+    "tryItNow": "Try it now"
   },
   "templates": {
     "title": "Explore Our Legal Templates",

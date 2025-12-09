@@ -209,6 +209,10 @@
   --brand-border: 206 50% 32%;
 }
 
+.text-on-media {
+  color: hsl(var(--white)) !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

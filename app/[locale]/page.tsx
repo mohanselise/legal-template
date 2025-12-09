@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   FileText,
   CheckCircle2,
@@ -13,7 +12,6 @@ import {
 import { Link } from "@/i18n/routing";
 import { getTranslations, getMessages } from 'next-intl/server';
 import Image from "next/image";
-import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { getAllTemplates } from "@/lib/templates-db";
 
 const CheckIcon = ({ className }: { className?: string }) => (
@@ -218,9 +216,6 @@ export default async function Home() {
       <section id="templates" className="py-24 bg-muted/30">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/20 border-none px-4 py-1.5 text-sm font-medium">
-              {t('popularTemplates.badge')}
-            </Badge>
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-heading">
               {t('popularTemplates.title')}
             </h2>
@@ -312,9 +307,6 @@ export default async function Home() {
       <section id="how-it-works" className="py-24 bg-white dark:bg-background">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="text-center mb-20">
-            <Badge className="mb-4 bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))] dark:bg-[hsl(var(--lime-green))]/20 dark:text-[hsl(var(--lime-green))] border-none px-4 py-1.5 text-sm font-medium">
-              {t('howItWorks.badge')}
-            </Badge>
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-heading">
               {t('howItWorks.title')}
             </h2>
@@ -413,12 +405,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Legal Disclaimer */}
-      <section className="py-12 bg-white dark:bg-background border-t border-border">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <LegalDisclaimer />
-        </div>
-      </section>
     </div>
   );
 }

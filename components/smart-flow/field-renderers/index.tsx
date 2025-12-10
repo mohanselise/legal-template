@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, Check, AlertTriangle, Sparkles, X, ChevronDown } from "lucide-react";
+import { ArrowRight, Check, AlertTriangle, Sparkles, X, ChevronDown, Trash2, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

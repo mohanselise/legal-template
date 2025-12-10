@@ -38,10 +38,10 @@ function AISuggestionBadge({
   currentValue: unknown;
 }) {
   if (!suggestionKey) return null;
-  
+
   if (!enrichmentContext || Object.keys(enrichmentContext).length === 0) {
     return (
-      <span 
+      <span
         className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full 
           bg-[hsl(var(--globe-grey))]/10 text-[hsl(var(--globe-grey))]"
         title="AI suggestion will appear after completing the previous step"
@@ -53,26 +53,26 @@ function AISuggestionBadge({
   }
 
   const suggestedValue = getNestedValue(enrichmentContext, suggestionKey);
-  
+
   if (suggestedValue === undefined || suggestedValue === null) {
     return null;
   }
-  
+
   const currentParty = parseCompositeValue<PartyValue>(currentValue, DEFAULT_PARTY);
   const suggestedParty = parseCompositeValue<PartyValue>(suggestedValue, DEFAULT_PARTY);
-  
+
   // Check if all fields match
-  const fieldsMatch = 
+  const fieldsMatch =
     currentParty.name === suggestedParty.name &&
     currentParty.street === suggestedParty.street &&
     currentParty.city === suggestedParty.city &&
     currentParty.state === suggestedParty.state &&
     currentParty.postalCode === suggestedParty.postalCode &&
     currentParty.country === suggestedParty.country;
-  
+
   if (fieldsMatch) {
     return (
-      <span 
+      <span
         className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full 
           bg-emerald-50 text-emerald-600 border border-emerald-200"
       >
@@ -95,13 +95,13 @@ function AISuggestionBadge({
  */
 export function PartyField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
   const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
-  
+
   const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
   const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
-  
+
   // Parse composite value
   const partyValue = parseCompositeValue<PartyValue>(value, DEFAULT_PARTY);
-  
+
   const updateField = (fieldName: keyof PartyValue, fieldValue: string) => {
     onChange(field.name, { ...partyValue, [fieldName]: fieldValue });
   };
@@ -116,16 +116,16 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
   };
 
   // Check if there's a suggestion available
-  const hasSuggestion = showSuggestion && enrichmentContext && 
+  const hasSuggestion = showSuggestion && enrichmentContext &&
     Object.keys(enrichmentContext).length > 0 &&
     getNestedValue(enrichmentContext, field.aiSuggestionKey!) !== undefined;
-  
-  const suggestedParty = hasSuggestion 
+
+  const suggestedParty = hasSuggestion
     ? parseCompositeValue<PartyValue>(getNestedValue(enrichmentContext!, field.aiSuggestionKey!), DEFAULT_PARTY)
     : null;
-  
+
   // Check if already applied
-  const isApplied = suggestedParty && 
+  const isApplied = suggestedParty &&
     partyValue.name === suggestedParty.name &&
     partyValue.street === suggestedParty.street &&
     partyValue.city === suggestedParty.city &&
@@ -174,17 +174,17 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
           )}
         </div>
       </div>
-      
+
       <div className="space-y-3 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/20">
         {/* Name Field - Primary identifier */}
         <div className="space-y-1.5">
           <Label htmlFor={`${field.name}-name`} className="text-xs font-medium text-[hsl(var(--fg))]">
-            {isBusinessLikely ? "Business / Company Name" : "Full Name"}
+            {isBusinessLikely ? "Business / Company Name" : "Full Name (Person or Business)"}
             {field.required && <span className="text-destructive ml-1">*</span>}
           </Label>
           <Input
             id={`${field.name}-name`}
-            placeholder={suggestedParty?.name || (isBusinessLikely ? "Enter company name" : "Enter full name")}
+            placeholder={suggestedParty?.name || (isBusinessLikely ? "Enter company name" : "Enter full name of person or business")}
             value={partyValue.name || ""}
             onChange={(e) => updateField("name", e.target.value)}
             className={cn(
@@ -194,18 +194,18 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
           />
           {/* Future: Google Places autocomplete will be integrated here */}
           <p className="text-[10px] text-[hsl(var(--globe-grey))]">
-            {isBusinessLikely 
-              ? "Legal name as registered" 
+            {isBusinessLikely
+              ? "Legal name as registered"
               : "Full legal name as it appears on official documents"}
           </p>
         </div>
-        
+
         {/* Address Section */}
         <div className="pt-2 border-t border-[hsl(var(--border))]/50">
           <p className="text-xs font-medium text-[hsl(var(--globe-grey))] mb-3">
             {isBusinessLikely ? "Registered Address" : "Address"}
           </p>
-          
+
           {/* Street Address */}
           <div className="space-y-1.5 mb-3">
             <Label htmlFor={`${field.name}-street`} className="text-xs text-[hsl(var(--globe-grey))]">
@@ -219,7 +219,7 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
               className={cn(error ? "border-destructive" : "")}
             />
           </div>
-          
+
           {/* City and State */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div className="space-y-1.5">
@@ -247,7 +247,7 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
               />
             </div>
           </div>
-          
+
           {/* Postal Code and Country */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -285,7 +285,7 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
           </div>
         </div>
       </div>
-      
+
       {resolvedHelpText && (
         <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}

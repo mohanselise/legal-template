@@ -88,7 +88,7 @@ function DynamicFieldWithApply({
   standardValue,
 }: DynamicFieldWithApplyProps) {
   const [justApplied, setJustApplied] = useState(false);
-  
+
   const handleApply = () => {
     if (standardValue) {
       onChange(field.name, standardValue);
@@ -124,9 +124,10 @@ function DynamicFieldWithApply({
             value={String(value || '')}
             onChange={(e) => onChange(field.name, e.target.value)}
             className={`
-              w-full rounded-xl border-2 px-4 py-3 text-base transition-colors
-              placeholder:text-[hsl(var(--globe-grey))]/60
-              focus:border-[hsl(var(--selise-blue))] focus:outline-none focus:ring-0
+              w-full rounded-xl border-2 px-4 py-3 text-base transition-all duration-200
+              placeholder:text-[hsl(var(--globe-grey))]/60 shadow-sm
+              focus:border-[hsl(var(--brand-primary))] focus:outline-none focus:ring-4 focus:ring-[hsl(var(--brand-primary))/10]
+              hover:border-[hsl(var(--brand-primary))/50]
               ${error ? 'border-destructive' : 'border-[hsl(var(--border))]'}
               ${showApplyButton ? 'pr-24' : ''}
             `}
@@ -136,9 +137,9 @@ function DynamicFieldWithApply({
               type="button"
               onClick={handleApply}
               className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg
-                bg-transparent text-[hsl(var(--selise-blue))] 
-                hover:bg-[hsl(var(--selise-blue))]/10 transition-colors cursor-pointer
-                border border-[hsl(var(--selise-blue))]/30 hover:border-[hsl(var(--selise-blue))]/50"
+                bg-transparent text-[hsl(var(--brand-primary))] 
+                hover:bg-[hsl(var(--brand-primary))]/10 transition-colors cursor-pointer
+                border border-[hsl(var(--brand-primary))]/30 hover:border-[hsl(var(--brand-primary))]/50"
             >
               <Sparkles className="h-3.5 w-3.5" />
               <span>Apply</span>
@@ -165,7 +166,7 @@ function DynamicFieldWithApply({
             {field.label}
             {field.required && <span className="text-destructive ml-1">*</span>}
             {standardValue && !isStandardApplied && (
-              <span className="ml-2 text-xs text-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/10 px-2 py-0.5 rounded-full border border-[hsl(var(--selise-blue))]/20">
+              <span className="ml-2 text-xs text-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))]/10 px-2 py-0.5 rounded-full border border-[hsl(var(--brand-primary))]/20">
                 Standard: {standardValue}
               </span>
             )}
@@ -175,9 +176,9 @@ function DynamicFieldWithApply({
               type="button"
               onClick={handleApply}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md
-                bg-transparent text-[hsl(var(--selise-blue))] 
-                hover:bg-[hsl(var(--selise-blue))]/10 transition-colors cursor-pointer
-                border border-[hsl(var(--selise-blue))]/30"
+                bg-transparent text-[hsl(var(--brand-primary))] 
+                hover:bg-[hsl(var(--brand-primary))]/10 transition-colors cursor-pointer
+                border border-[hsl(var(--brand-primary))]/30"
             >
               <Sparkles className="h-3 w-3" />
               Apply
@@ -289,7 +290,7 @@ function extractPromptVariables(prompt: string): string[] {
   const regex = /\{\{([^}]+)\}\}/g;
   const variables: string[] = [];
   let match;
-  
+
   while ((match = regex.exec(prompt)) !== null) {
     const varName = match[1].trim();
     // For nested paths like "company.name", take the root variable
@@ -298,7 +299,7 @@ function extractPromptVariables(prompt: string): string[] {
       variables.push(rootVar);
     }
   }
-  
+
   return variables;
 }
 
@@ -312,9 +313,9 @@ function arePromptVariablesAvailable(
 ): boolean {
   const requiredVars = extractPromptVariables(prompt);
   if (requiredVars.length === 0) return true; // No variables needed, can fetch immediately
-  
+
   const allContext = { ...formData, ...enrichmentContext };
-  
+
   return requiredVars.every((varName) => {
     const value = allContext[varName];
     // Check if value exists and is not empty
@@ -355,7 +356,7 @@ function getFieldsWithSuggestions(
   enrichmentContext: Record<string, unknown>
 ): Array<{ name: string; suggestedValue: unknown }> {
   const fieldsWithSuggestions: Array<{ name: string; suggestedValue: unknown }> = [];
-  
+
   for (const field of fields) {
     if (field.aiSuggestionEnabled && field.aiSuggestionKey) {
       const suggestedValue = getNestedValue(enrichmentContext, field.aiSuggestionKey);
@@ -367,7 +368,7 @@ function getFieldsWithSuggestions(
       }
     }
   }
-  
+
   return fieldsWithSuggestions;
 }
 
@@ -527,7 +528,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
       if (arePromptVariablesAvailable(dynamicPrompt, formData, enrichmentContext)) {
         // Mark as prefetching to prevent duplicate requests
         prefetchingRef.current.add(screen.id);
-        
+
         // Add step index to loading indicator set
         setPrefetchingStepIndices((prev) => new Set([...prev, stepIndex]));
 
@@ -561,7 +562,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
             // Mark as fetched (so regular fetch doesn't re-run)
             dynamicFieldsFetchedRef.current.add(screen.id);
             prefetchingRef.current.delete(screen.id);
-            
+
             // Remove step index from loading indicator set
             setPrefetchingStepIndices((prev) => {
               const next = new Set(prev);
@@ -620,7 +621,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
       console.log("⏳ Waiting for pre-fetch to complete for:", screen.title);
       return;
     }
-    
+
     dynamicFieldsFetchedRef.current.add(screen.id);
 
     // Fetch dynamic fields (fallback when not pre-fetched)
@@ -655,7 +656,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
           ...prev,
           [screen.id]: result.fields,
         }));
-        
+
         // Store jurisdiction name if provided
         if (result.jurisdictionName) {
           setJurisdictionCache((prev) => ({
@@ -793,7 +794,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
         }
         return;
       }
-      
+
       // Form flow: Enter to continue
       if (!showWelcome && !isGenerating && e.key === 'Enter') {
         // Don't trigger if user is typing in an input
@@ -801,7 +802,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
         if (activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA') {
           return;
         }
-        
+
         if (currentStep < totalSteps - 1) {
           e.preventDefault();
           // Let handleContinue do the validation
@@ -811,7 +812,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
         }
       }
     };
-    
+
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [showWelcome, turnstileStatus, turnstileToken, isGenerating, currentStep, totalSteps, config, runAiEnrichmentInBackground, nextStep]);
@@ -990,194 +991,192 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                 </p>
               </motion.div>
 
-          {/* Progress Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="rounded-3xl border border-[hsl(var(--brand-border))] bg-background p-8 shadow-xl backdrop-blur-sm"
-          >
-            {/* Progress header */}
-            <div className="mb-4 flex items-center justify-between text-sm font-medium">
-              <span className="text-[hsl(var(--fg))]">{t('generation.percentComplete', { percent: displayedProgress })}</span>
-              <span className="text-[hsl(var(--brand-muted))]">{t('generation.stepXOfY', { current: generationStepIndex + 1, total: GENERATION_STEPS.length })}</span>
-            </div>
-
-            {/* Progress bar */}
-            <div className="relative h-4 overflow-hidden rounded-full border border-[hsl(var(--brand-primary)/0.25)] bg-[hsl(var(--brand-primary)/0.08)] shadow-inner">
-              {/* Animated background shimmer */}
+              {/* Progress Section */}
               <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-[hsl(var(--brand-primary)/0.15)] to-transparent"
-                animate={{
-                  x: ['-100%', '200%'],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: 'linear',
-                }}
-              />
-              {/* Progress fill */}
-              <motion.div
-                className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-[hsl(var(--brand-primary))] via-[hsl(var(--brand-primary)/0.9)] to-[hsl(var(--brand-primary))] shadow-lg"
-                style={{ width: `${fakeProgress}%` }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-              />
-              {/* Glowing edge */}
-              <motion.div
-                className="absolute left-0 top-0 h-full w-2 rounded-full bg-white/60 blur-sm"
-                style={{ left: `${fakeProgress}%`, marginLeft: '-4px' }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-              />
-              {/* Moving dot indicator */}
-              <motion.div
-                className="absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full border-2 border-white bg-[hsl(var(--brand-primary))] shadow-[0_0_0_3px_rgba(255,255,255,0.5),0_4px_12px_hsla(206,100%,35%,0.5)]"
-                style={{ left: `${fakeProgress}%`, marginLeft: '-10px' }}
-                animate={{
-                  scale: [1, 1.15, 1],
-                  boxShadow: [
-                    '0 0 0 3px rgba(255,255,255,0.5), 0 4px 12px hsla(206,100%,35%,0.5)',
-                    '0 0 0 4px rgba(255,255,255,0.6), 0 6px 16px hsla(206,100%,35%,0.6)',
-                    '0 0 0 3px rgba(255,255,255,0.5), 0 4px 12px hsla(206,100%,35%,0.5)',
-                  ],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-              />
-            </div>
-
-            {/* Current stage info */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={generationStepIndex}
-                initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="rounded-2xl border border-[hsl(var(--brand-border))] bg-gradient-to-br from-background to-[hsl(var(--brand-primary)/0.02)] p-8 shadow-lg backdrop-blur-sm mt-6"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="rounded-3xl border border-[hsl(var(--brand-border))] bg-background p-8 shadow-xl backdrop-blur-sm"
               >
-                <div className="flex items-start gap-5">
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border-2 border-[hsl(var(--brand-primary)/0.2)] bg-gradient-to-br from-[hsl(var(--brand-primary)/0.1)] to-[hsl(var(--brand-primary)/0.05)] shadow-sm">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-                    >
-                      <Sparkles className="h-7 w-7 text-[hsl(var(--brand-primary))]" />
-                    </motion.div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="mb-2 text-xl font-semibold text-[hsl(var(--fg))] font-heading tracking-tight">
-                      {currentStage.title}
-                    </h3>
-                    <p className="leading-relaxed text-[hsl(var(--brand-muted))] text-base">
-                      {currentStage.description}
-                    </p>
-                  </div>
+                {/* Progress header */}
+                <div className="mb-4 flex items-center justify-between text-sm font-medium">
+                  <span className="text-[hsl(var(--fg))]">{t('generation.percentComplete', { percent: displayedProgress })}</span>
+                  <span className="text-[hsl(var(--brand-muted))]">{t('generation.stepXOfY', { current: generationStepIndex + 1, total: GENERATION_STEPS.length })}</span>
+                </div>
+
+                {/* Progress bar */}
+                <div className="relative h-4 overflow-hidden rounded-full border border-[hsl(var(--brand-primary)/0.25)] bg-[hsl(var(--brand-primary)/0.08)] shadow-inner">
+                  {/* Animated background shimmer */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-[hsl(var(--brand-primary)/0.15)] to-transparent"
+                    animate={{
+                      x: ['-100%', '200%'],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'linear',
+                    }}
+                  />
+                  {/* Progress fill */}
+                  <motion.div
+                    className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-[hsl(var(--brand-primary))] via-[hsl(var(--brand-primary)/0.9)] to-[hsl(var(--brand-primary))] shadow-lg"
+                    style={{ width: `${fakeProgress}%` }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                  />
+                  {/* Glowing edge */}
+                  <motion.div
+                    className="absolute left-0 top-0 h-full w-2 rounded-full bg-white/60 blur-sm"
+                    style={{ left: `${fakeProgress}%`, marginLeft: '-4px' }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                  />
+                  {/* Moving dot indicator */}
+                  <motion.div
+                    className="absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full border-2 border-white bg-[hsl(var(--brand-primary))] shadow-[0_0_0_3px_rgba(255,255,255,0.5),0_4px_12px_hsla(206,100%,35%,0.5)]"
+                    style={{ left: `${fakeProgress}%`, marginLeft: '-10px' }}
+                    animate={{
+                      scale: [1, 1.15, 1],
+                      boxShadow: [
+                        '0 0 0 3px rgba(255,255,255,0.5), 0 4px 12px hsla(206,100%,35%,0.5)',
+                        '0 0 0 4px rgba(255,255,255,0.6), 0 6px 16px hsla(206,100%,35%,0.6)',
+                        '0 0 0 3px rgba(255,255,255,0.5), 0 4px 12px hsla(206,100%,35%,0.5)',
+                      ],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                </div>
+
+                {/* Current stage info */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={generationStepIndex}
+                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                    className="rounded-2xl border border-[hsl(var(--brand-border))] bg-gradient-to-br from-background to-[hsl(var(--brand-primary)/0.02)] p-8 shadow-lg backdrop-blur-sm mt-6"
+                  >
+                    <div className="flex items-start gap-5">
+                      <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border-2 border-[hsl(var(--brand-primary)/0.2)] bg-gradient-to-br from-[hsl(var(--brand-primary)/0.1)] to-[hsl(var(--brand-primary)/0.05)] shadow-sm">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                        >
+                          <Sparkles className="h-7 w-7 text-[hsl(var(--brand-primary))]" />
+                        </motion.div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="mb-2 text-xl font-semibold text-[hsl(var(--fg))] font-heading tracking-tight">
+                          {currentStage.title}
+                        </h3>
+                        <p className="leading-relaxed text-[hsl(var(--brand-muted))] text-base">
+                          {currentStage.description}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Stage checklist */}
+                <div className="mt-7 space-y-3">
+                  {GENERATION_STEPS.map((stage, index) => {
+                    const isCompleted = index < generationStepIndex;
+                    const isCurrent = index === generationStepIndex;
+
+                    return (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className={`flex items-center gap-3 text-sm transition-all duration-300 ${isCompleted
+                          ? 'text-[hsl(var(--brand-primary))]'
+                          : isCurrent
+                            ? 'text-[hsl(var(--fg))] font-medium'
+                            : 'text-[hsl(var(--muted-foreground))]'
+                          }`}
+                      >
+                        {isCompleted ? (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                            className="flex h-5 w-5 items-center justify-center rounded-full bg-[hsl(var(--brand-primary))] text-white"
+                          >
+                            <Check className="h-3 w-3" />
+                          </motion.div>
+                        ) : isCurrent ? (
+                          <motion.div
+                            animate={{ scale: [1, 1.3, 1], opacity: [1, 0.8, 1] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                            className="h-5 w-5 rounded-full border-2 border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary)/0.1)]"
+                          />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-border)/0.3)]" />
+                        )}
+                        <span className={isCurrent ? 'font-medium' : ''}>{stage.title}</span>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </motion.div>
-            </AnimatePresence>
 
-            {/* Stage checklist */}
-            <div className="mt-7 space-y-3">
-              {GENERATION_STEPS.map((stage, index) => {
-                const isCompleted = index < generationStepIndex;
-                const isCurrent = index === generationStepIndex;
+              {/* Bottom hint */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="mt-8 text-center text-sm text-[hsl(var(--brand-muted))]"
+              >
+                {t('generation.typicallyTakes')}
+              </motion.p>
 
-                return (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className={`flex items-center gap-3 text-sm transition-all duration-300 ${
-                      isCompleted
-                        ? 'text-[hsl(var(--brand-primary))]'
-                        : isCurrent
-                        ? 'text-[hsl(var(--fg))] font-medium'
-                        : 'text-[hsl(var(--muted-foreground))]'
-                    }`}
-                  >
-                    {isCompleted ? (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                        className="flex h-5 w-5 items-center justify-center rounded-full bg-[hsl(var(--brand-primary))] text-white"
+              {/* Tips carousel */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1 }}
+                className="mt-6 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[hsl(var(--brand-primary))]/10 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-[hsl(var(--brand-primary))]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-[hsl(var(--brand-primary))] uppercase tracking-wide mb-1">
+                      Did you know?
+                    </p>
+                    <AnimatePresence mode="wait">
+                      <motion.p
+                        key={currentTipIndex}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-sm text-[hsl(var(--brand-muted))] leading-relaxed"
                       >
-                        <Check className="h-3 w-3" />
-                      </motion.div>
-                    ) : isCurrent ? (
-                      <motion.div
-                        animate={{ scale: [1, 1.3, 1], opacity: [1, 0.8, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                        className="h-5 w-5 rounded-full border-2 border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary)/0.1)]"
-                      />
-                    ) : (
-                      <div className="h-5 w-5 rounded-full border-2 border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-border)/0.3)]" />
-                    )}
-                    <span className={isCurrent ? 'font-medium' : ''}>{stage.title}</span>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          {/* Bottom hint */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-8 text-center text-sm text-[hsl(var(--brand-muted))]"
-          >
-            {t('generation.typicallyTakes')}
-          </motion.p>
-
-          {/* Tips carousel */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="mt-6 rounded-xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-4"
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[hsl(var(--brand-primary))]/10 flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-4 h-4 text-[hsl(var(--brand-primary))]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-[hsl(var(--brand-primary))] uppercase tracking-wide mb-1">
-                  Did you know?
-                </p>
-                <AnimatePresence mode="wait">
-                  <motion.p
-                    key={currentTipIndex}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-sm text-[hsl(var(--brand-muted))] leading-relaxed"
-                  >
-                    {GENERATION_TIPS[currentTipIndex]}
-                  </motion.p>
-                </AnimatePresence>
-              </div>
-            </div>
-            {/* Tip indicator dots */}
-            <div className="flex items-center justify-center gap-1.5 mt-3">
-              {GENERATION_TIPS.map((_, index) => (
-                <div
-                  key={index}
-                  className={`h-1.5 rounded-full transition-all ${
-                    index === currentTipIndex
-                      ? 'w-4 bg-[hsl(var(--brand-primary))]'
-                      : 'w-1.5 bg-[hsl(var(--brand-border))]'
-                  }`}
-                />
-              ))}
-            </div>
-          </motion.div>
+                        {GENERATION_TIPS[currentTipIndex]}
+                      </motion.p>
+                    </AnimatePresence>
+                  </div>
+                </div>
+                {/* Tip indicator dots */}
+                <div className="flex items-center justify-center gap-1.5 mt-3">
+                  {GENERATION_TIPS.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`h-1.5 rounded-full transition-all ${index === currentTipIndex
+                        ? 'w-4 bg-[hsl(var(--brand-primary))]'
+                        : 'w-1.5 bg-[hsl(var(--brand-border))]'
+                        }`}
+                    />
+                  ))}
+                </div>
+              </motion.div>
             </>
           )}
         </div>
@@ -1372,9 +1371,9 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                 />
               </div>
               <div className="md:hidden">
-                <StepperCompact 
+                <StepperCompact
                   key={`stepper-compact-${stepDefinitions.length}-${currentStep}`}
-                  steps={stepDefinitions} 
+                  steps={stepDefinitions}
                   currentStep={currentStep}
                   loadingSteps={prefetchingStepIndices}
                 />
@@ -1382,7 +1381,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
             </>
           ) : (
             <div className="h-20 flex items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-[hsl(var(--selise-blue))]" />
+              <Loader2 className="h-5 w-5 animate-spin text-[hsl(var(--brand-primary))]" />
             </div>
           )}
 
@@ -1395,8 +1394,8 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-xs sm:text-sm shadow-sm ${aiEnrichmentState.status === "running"
-                    ? "border-[hsl(var(--brand-primary))]/30 bg-[hsl(var(--brand-primary))]/5 text-[hsl(var(--brand-primary))]"
-                    : "border-amber-200 bg-amber-50 text-amber-800"
+                  ? "border-[hsl(var(--brand-primary))]/30 bg-[hsl(var(--brand-primary))]/5 text-[hsl(var(--brand-primary))]"
+                  : "border-amber-200 bg-amber-50 text-amber-800"
                   }`}
                 aria-live="polite"
               >
@@ -1444,8 +1443,10 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Card Container */}
-              <div className="bg-card rounded-3xl shadow-lg border border-[hsl(var(--border))] p-8 md:p-12">
+              {/* Card Container - Premium Glassmorphism */}
+              <div className="bg-gradient-to-br from-background/95 to-[hsl(var(--brand-primary))/5] backdrop-blur-xl rounded-3xl shadow-xl shadow-[hsl(var(--brand-primary))/5] border border-[hsl(var(--border))] p-8 md:p-12 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[hsl(var(--brand-primary))/5] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
                 {/* Screen Header with Icon */}
                 <div className="mb-8 space-y-3">
                   {currentScreen?.title && (() => {
@@ -1468,305 +1469,344 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                   </div>
                 </div>
 
-                {/* Fields */}
-                <div className="space-y-6">
+                {/* Fields with Staggered Animation */}
+                <motion.div
+                  className="space-y-8 relative z-10"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    show: {
+                      opacity: 1,
+                      transition: {
+                        staggerChildren: 0.1
+                      }
+                    }
+                  }}
+                  initial="hidden"
+                  animate="show"
+                >
                   {/* Dynamic Screen: Show loading or generated fields */}
-                  {(currentScreen as any)?.type === "dynamic" ? (
-                    <>
-                      {dynamicFieldsLoading && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="flex flex-col items-center justify-center py-16 space-y-6"
-                        >
-                          <div className="relative">
-                            <motion.div 
-                              className="h-20 w-20 rounded-full border-4 border-[hsl(var(--brand-primary))]/20"
-                              animate={{ scale: [1, 1.05, 1] }}
-                              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                            />
-                            <motion.div
-                              className="absolute inset-0 h-20 w-20 rounded-full border-4 border-transparent border-t-[hsl(var(--brand-primary))]"
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            />
-                            <motion.div
-                              className="absolute inset-0 m-auto flex items-center justify-center"
-                              animate={{ scale: [1, 1.1, 1] }}
-                              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                            >
-                              <Wand2 className="h-8 w-8 text-[hsl(var(--brand-primary))]" />
-                            </motion.div>
-                          </div>
-                          <div className="text-center space-y-2">
-                            <p className="text-lg font-semibold text-[hsl(var(--fg))]">
-                              Creating personalized questions...
-                            </p>
-                            <p className="text-sm text-[hsl(var(--brand-muted))] max-w-sm">
-                              Our AI is analyzing your inputs to generate the most relevant questions for your document
-                            </p>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {dynamicFieldsError && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="flex flex-col items-center justify-center py-12 space-y-6"
-                        >
-                          <div className="h-20 w-20 rounded-2xl bg-red-50 flex items-center justify-center">
-                            <AlertTriangle className="h-10 w-10 text-red-500" />
-                          </div>
-                          <div className="text-center space-y-2">
-                            <p className="text-lg font-semibold text-red-600">
-                              Couldn&apos;t generate questions
-                            </p>
-                            <p className="text-sm text-[hsl(var(--brand-muted))] max-w-sm">
-                              {dynamicFieldsError}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                // Allow retry by removing from cache and ref
-                                dynamicFieldsFetchedRef.current.delete(currentScreen.id);
-                                setDynamicFieldsError(null);
-                                setDynamicFieldsCache((prev) => {
-                                  const newCache = { ...prev };
-                                  delete newCache[currentScreen.id];
-                                  return newCache;
-                                });
-                              }}
-                              className="flex items-center gap-2"
-                            >
-                              <ArrowLeft className="w-4 h-4" />
-                              Try Again
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={nextStep}
-                              className="text-[hsl(var(--globe-grey))]"
-                            >
-                              Skip this step
-                            </Button>
-                          </div>
-                        </motion.div>
-                      )}
-
-                      {!dynamicFieldsLoading && !dynamicFieldsError && dynamicFieldsCache[currentScreen.id] && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="space-y-6"
-                        >
-                          {/* AI Generated Badge with Optional indicator */}
-                          <div className="flex items-center justify-between flex-wrap gap-2">
-                            <div className="flex items-center gap-2 text-xs text-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/5 px-3 py-2 rounded-lg border border-[hsl(var(--selise-blue))]/20">
-                              <Wand2 className="h-3.5 w-3.5" />
-                              <span>Additional questions based on your context</span>
+                  <AnimatePresence mode="popLayout">
+                    {(currentScreen as any)?.type === "dynamic" ? (
+                      <>
+                        {dynamicFieldsLoading && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex flex-col items-center justify-center py-16 space-y-6"
+                          >
+                            <div className="relative">
+                              <motion.div
+                                className="h-20 w-20 rounded-full border-4 border-[hsl(var(--brand-primary))]/20"
+                                animate={{ scale: [1, 1.05, 1] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                              />
+                              <motion.div
+                                className="absolute inset-0 h-20 w-20 rounded-full border-4 border-transparent border-t-[hsl(var(--brand-primary))]"
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                              />
+                              <motion.div
+                                className="absolute inset-0 m-auto flex items-center justify-center"
+                                animate={{ scale: [1, 1.1, 1] }}
+                                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                              >
+                                <Wand2 className="h-8 w-8 text-[hsl(var(--brand-primary))]" />
+                              </motion.div>
                             </div>
+                            <div className="text-center space-y-2">
+                              <p className="text-lg font-semibold text-[hsl(var(--fg))]">
+                                Creating personalized questions...
+                              </p>
+                              <p className="text-sm text-[hsl(var(--brand-muted))] max-w-sm">
+                                Our AI is analyzing your inputs to generate the most relevant questions for your document
+                              </p>
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {dynamicFieldsError && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex flex-col items-center justify-center py-12 space-y-6"
+                          >
+                            <div className="h-20 w-20 rounded-2xl bg-red-50 flex items-center justify-center">
+                              <AlertTriangle className="h-10 w-10 text-red-500" />
+                            </div>
+                            <div className="text-center space-y-2">
+                              <p className="text-lg font-semibold text-red-600">
+                                Couldn&apos;t generate questions
+                              </p>
+                              <p className="text-sm text-[hsl(var(--brand-muted))] max-w-sm">
+                                {dynamicFieldsError}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  // Allow retry by removing from cache and ref
+                                  dynamicFieldsFetchedRef.current.delete(currentScreen.id);
+                                  setDynamicFieldsError(null);
+                                  setDynamicFieldsCache((prev) => {
+                                    const newCache = { ...prev };
+                                    delete newCache[currentScreen.id];
+                                    return newCache;
+                                  });
+                                }}
+                                className="flex items-center gap-2"
+                              >
+                                <ArrowLeft className="w-4 h-4" />
+                                Try Again
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                onClick={nextStep}
+                                className="text-[hsl(var(--globe-grey))]"
+                              >
+                                Skip this step
+                              </Button>
+                            </div>
+                          </motion.div>
+                        )}
+
+                        {!dynamicFieldsLoading && !dynamicFieldsError && dynamicFieldsCache[currentScreen.id] && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="space-y-6"
+                          >
+                            {/* AI Generated Badge with Optional indicator */}
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <div className="flex items-center gap-2 text-xs text-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))]/5 px-3 py-2 rounded-lg border border-[hsl(var(--brand-primary))]/20">
+                                <Wand2 className="h-3.5 w-3.5" />
+                                <span>Additional questions based on your context</span>
+                              </div>
+                            </div>
+
+                            {dynamicFieldsCache[currentScreen.id].map((field) => (
+                              <motion.div
+                                key={field.id}
+                                variants={{
+                                  hidden: { opacity: 0, y: 20 },
+                                  show: { opacity: 1, y: 0 }
+                                }}
+                                initial="hidden"
+                                animate="show"
+                                exit={{ opacity: 0, y: -20 }}
+                                layout
+                              >
+                                <DynamicFieldWithApply
+                                  field={{
+                                    ...field,
+                                    type: field.type as any,
+                                  } as FieldConfig}
+                                  value={formData[field.name]}
+                                  onChange={setFieldValue}
+                                  error={errors[field.name]}
+                                  enrichmentContext={enrichmentContext}
+                                  formData={formData}
+                                  standardValue={field.standardValue}
+                                />
+                              </motion.div>
+                            ))}
+
+                            {/* Apply Standards Banner - matches SmartFlow v2 design */}
+                            {dynamicFieldsCache[currentScreen.id].some(f => f.standardValue) && !appliedStandard && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4"
+                              >
+                                <div className="flex items-center justify-between gap-4 flex-wrap">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-200/80">
+                                      <Zap className="h-5 w-5 text-amber-700" />
+                                    </div>
+                                    <div>
+                                      <p className="font-semibold text-[hsl(var(--fg))]">
+                                        Save time with {jurisdictionCache[currentScreen.id] || 'local'} defaults
+                                      </p>
+                                      <p className="text-sm text-[hsl(var(--globe-grey))]">
+                                        Auto-fill work hours, notice periods, and legal terms based on local standards
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    onClick={() => {
+                                      setApplyingStandard(true);
+                                      const fields = dynamicFieldsCache[currentScreen.id];
+                                      fields.forEach((field) => {
+                                        if (field.standardValue) {
+                                          setFieldValue(field.name, field.standardValue);
+                                        }
+                                      });
+                                      // Show success feedback
+                                      setAppliedStandard(true);
+                                      setTimeout(() => {
+                                        setApplyingStandard(false);
+                                      }, 600);
+                                    }}
+                                    disabled={applyingStandard}
+                                    className="flex items-center gap-2 bg-[hsl(var(--brand-primary))] text-white hover:bg-[hsl(var(--brand-primary))/90] px-5"
+                                  >
+                                    <Zap className="h-4 w-4" />
+                                    Apply Standards
+                                  </Button>
+                                </div>
+                              </motion.div>
+                            )}
+
+                            {/* Applied Success State */}
+                            {appliedStandard && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200">
+                                    <Check className="h-5 w-5 text-emerald-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-emerald-800">
+                                      {jurisdictionCache[currentScreen.id] || 'Standard'} defaults applied!
+                                    </p>
+                                    <p className="text-sm text-emerald-600">
+                                      Fields have been filled with recommended values
+                                    </p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </motion.div>
+                        )}
+
+                        {/* Show nothing while waiting but no error */}
+                        {!dynamicFieldsLoading && !dynamicFieldsError && !dynamicFieldsCache[currentScreen.id] && (
+                          <div className="py-8 text-center text-[hsl(var(--brand-muted))]">
+                            <p>Preparing dynamic questions...</p>
                           </div>
-                          
-                          {dynamicFieldsCache[currentScreen.id].map((field) => (
-                            <DynamicFieldWithApply
+                        )}
+                      </>
+                    ) : (currentScreen as any)?.type === "signatory" ? (
+                      /* Signatory Screen: Show dedicated signatory collection UI */
+                      <SignatoryScreenRenderer
+                        configJson={(currentScreen as any).signatoryConfig}
+                        value={(formData.signatories as SignatoryEntry[]) || []}
+                        onChange={(signatories) => setFieldValue("signatories", signatories)}
+                        errors={errors}
+                        formData={formData}
+                      />
+                    ) : (
+                      /* Standard Screen: Show regular fields (filtered by conditions) */
+                      <>
+                        <AnimatePresence mode="popLayout">
+                          {currentScreen && getVisibleFields(currentScreen).map((field) => (
+                            <motion.div
                               key={field.id}
-                              field={{
-                                ...field,
-                                type: field.type as any,
-                              } as FieldConfig}
-                              value={formData[field.name]}
-                              onChange={setFieldValue}
-                              error={errors[field.name]}
-                              enrichmentContext={enrichmentContext}
-                              formData={formData}
-                              standardValue={field.standardValue}
-                            />
+                              variants={{
+                                hidden: { opacity: 0, y: 20 },
+                                show: { opacity: 1, y: 0 }
+                              }}
+                              initial="hidden"
+                              animate="show"
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              layout
+                            >
+                              <DynamicField
+                                field={field as FieldConfig}
+                                value={formData[field.name]}
+                                onChange={setFieldValue}
+                                error={errors[field.name]}
+                                enrichmentContext={enrichmentContext}
+                                formData={formData}
+                              />
+                            </motion.div>
                           ))}
+                        </AnimatePresence>
 
-                          {/* Apply Standards Banner - matches SmartFlow v2 design */}
-                          {dynamicFieldsCache[currentScreen.id].some(f => f.standardValue) && !appliedStandard && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4"
-                            >
-                              <div className="flex items-center justify-between gap-4 flex-wrap">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-200/80">
-                                    <Zap className="h-5 w-5 text-amber-700" />
-                                  </div>
-                                  <div>
-                                    <p className="font-semibold text-[hsl(var(--fg))]">
-                                      Save time with {jurisdictionCache[currentScreen.id] || 'local'} defaults
-                                    </p>
-                                    <p className="text-sm text-[hsl(var(--globe-grey))]">
-                                      Auto-fill work hours, notice periods, and legal terms based on local standards
-                                    </p>
-                                  </div>
-                                </div>
-                                <Button
-                                  onClick={() => {
-                                    setApplyingStandard(true);
-                                    const fields = dynamicFieldsCache[currentScreen.id];
-                                    fields.forEach((field) => {
-                                      if (field.standardValue) {
-                                        setFieldValue(field.name, field.standardValue);
-                                      }
-                                    });
-                                    // Show success feedback
-                                    setAppliedStandard(true);
-                                    setTimeout(() => {
-                                      setApplyingStandard(false);
-                                    }, 600);
-                                  }}
-                                  disabled={applyingStandard}
-                                  className="flex items-center gap-2 bg-[hsl(var(--selise-blue))] text-white hover:bg-[hsl(var(--oxford-blue))] px-5"
-                                >
-                                  <Zap className="h-4 w-4" />
-                                  Apply Standards
-                                </Button>
-                              </div>
-                            </motion.div>
-                          )}
-
-                          {/* Applied Success State */}
-                          {appliedStandard && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200">
-                                  <Check className="h-5 w-5 text-emerald-700" />
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-emerald-800">
-                                    {jurisdictionCache[currentScreen.id] || 'Standard'} defaults applied!
-                                  </p>
-                                  <p className="text-sm text-emerald-600">
-                                    Fields have been filled with recommended values
-                                  </p>
-                                </div>
-                              </div>
-                            </motion.div>
-                          )}
-                        </motion.div>
-                      )}
-
-                      {/* Show nothing while waiting but no error */}
-                      {!dynamicFieldsLoading && !dynamicFieldsError && !dynamicFieldsCache[currentScreen.id] && (
-                        <div className="py-8 text-center text-[hsl(var(--brand-muted))]">
-                          <p>Preparing dynamic questions...</p>
-                        </div>
-                      )}
-                    </>
-                  ) : (currentScreen as any)?.type === "signatory" ? (
-                    /* Signatory Screen: Show dedicated signatory collection UI */
-                    <SignatoryScreenRenderer
-                      configJson={(currentScreen as any).signatoryConfig}
-                      value={(formData.signatories as SignatoryEntry[]) || []}
-                      onChange={(signatories) => setFieldValue("signatories", signatories)}
-                      errors={errors}
-                      formData={formData}
-                    />
-                  ) : (
-                    /* Standard Screen: Show regular fields (filtered by conditions) */
-                    <>
-                      {currentScreen && getVisibleFields(currentScreen).map((field) => (
-                        <DynamicField
-                          key={field.id}
-                          field={field as FieldConfig}
-                          value={formData[field.name]}
-                          onChange={setFieldValue}
-                          error={errors[field.name]}
-                          enrichmentContext={enrichmentContext}
-                          formData={formData}
-                        />
-                      ))}
-
-                      {/* Apply Standards Banner for Standard Screens */}
-                      {(currentScreen as any)?.enableApplyStandards && currentScreen && (() => {
-                        const fieldsWithSuggestions = getFieldsWithSuggestions(
-                          getVisibleFields(currentScreen) || [],
-                          enrichmentContext
-                        );
-                        const hasUnfilledSuggestions = fieldsWithSuggestions.some(
-                          (f) => !formData[f.name] || formData[f.name] === ''
-                        );
-                        
-                        if (fieldsWithSuggestions.length > 0 && hasUnfilledSuggestions && !appliedStandard) {
-                          return (
-                            <motion.div
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4"
-                            >
-                              <div className="flex items-center justify-between gap-4 flex-wrap">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-200/80">
-                                    <Zap className="h-5 w-5 text-amber-700" />
-                                  </div>
-                                  <div>
-                                    <p className="font-semibold text-[hsl(var(--fg))]">
-                                      Save time with smart defaults
-                                    </p>
-                                    <p className="text-sm text-[hsl(var(--globe-grey))]">
-                                      Auto-fill {fieldsWithSuggestions.length} field{fieldsWithSuggestions.length !== 1 ? 's' : ''} with AI-suggested values
-                                    </p>
-                                  </div>
-                                </div>
-                                <Button
-                                  onClick={() => {
-                                    setApplyingStandard(true);
-                                    fieldsWithSuggestions.forEach((field) => {
-                                      setFieldValue(field.name, field.suggestedValue);
-                                    });
-                                    setAppliedStandard(true);
-                                    setTimeout(() => {
-                                      setApplyingStandard(false);
-                                    }, 600);
-                                  }}
-                                  disabled={applyingStandard}
-                                  className="flex items-center gap-2 bg-[hsl(var(--selise-blue))] text-white hover:bg-[hsl(var(--oxford-blue))] px-5"
-                                >
-                                  <Zap className="h-4 w-4" />
-                                  Apply Standards
-                                </Button>
-                              </div>
-                            </motion.div>
+                        {/* Apply Standards Banner for Standard Screens */}
+                        {(currentScreen as any)?.enableApplyStandards && currentScreen && (() => {
+                          const fieldsWithSuggestions = getFieldsWithSuggestions(
+                            getVisibleFields(currentScreen) || [],
+                            enrichmentContext
                           );
-                        }
-                        return null;
-                      })()}
+                          const hasUnfilledSuggestions = fieldsWithSuggestions.some(
+                            (f) => !formData[f.name] || formData[f.name] === ''
+                          );
 
-                      {/* Applied Success State for Standard Screens */}
-                      {(currentScreen as any)?.enableApplyStandards && appliedStandard && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200">
-                              <Check className="h-5 w-5 text-emerald-700" />
+                          if (fieldsWithSuggestions.length > 0 && hasUnfilledSuggestions && !appliedStandard) {
+                            return (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4"
+                              >
+                                <div className="flex items-center justify-between gap-4 flex-wrap">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-200/80">
+                                      <Zap className="h-5 w-5 text-amber-700" />
+                                    </div>
+                                    <div>
+                                      <p className="font-semibold text-[hsl(var(--fg))]">
+                                        Save time with smart defaults
+                                      </p>
+                                      <p className="text-sm text-[hsl(var(--globe-grey))]">
+                                        Auto-fill {fieldsWithSuggestions.length} field{fieldsWithSuggestions.length !== 1 ? 's' : ''} with AI-suggested values
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    onClick={() => {
+                                      setApplyingStandard(true);
+                                      fieldsWithSuggestions.forEach((field) => {
+                                        setFieldValue(field.name, field.suggestedValue);
+                                      });
+                                      setAppliedStandard(true);
+                                      setTimeout(() => {
+                                        setApplyingStandard(false);
+                                      }, 600);
+                                    }}
+                                    disabled={applyingStandard}
+                                    className="flex items-center gap-2 bg-[hsl(var(--brand-primary))] text-white hover:bg-[hsl(var(--brand-primary))/90] px-5"
+                                  >
+                                    <Zap className="h-4 w-4" />
+                                    Apply Standards
+                                  </Button>
+                                </div>
+                              </motion.div>
+                            );
+                          }
+                          return null;
+                        })()}
+
+                        {/* Applied Success State for Standard Screens */}
+                        {(currentScreen as any)?.enableApplyStandards && appliedStandard && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200">
+                                <Check className="h-5 w-5 text-emerald-700" />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-emerald-800">
+                                  Smart defaults applied!
+                                </p>
+                                <p className="text-sm text-emerald-600">
+                                  Fields have been filled with AI-suggested values
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold text-emerald-800">
-                                Smart defaults applied!
-                              </p>
-                              <p className="text-sm text-emerald-600">
-                                Fields have been filled with AI-suggested values
-                              </p>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </>
-                  )}
-                </div>
+                          </motion.div>
+                        )}
+                      </>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
 
                 {/* Navigation Buttons */}
                 <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t">
@@ -1787,27 +1827,27 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                   {/* Right side buttons */}
                   <div className="flex items-center gap-3">
                     {/* Dynamic screen: Skip button only (Apply Standards is now in banner) */}
-                    {(currentScreen as any)?.type === "dynamic" && 
-                     dynamicFieldsCache[currentScreen?.id || ""] &&
-                     currentStep < totalSteps - 1 && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          // Skip without filling any fields
-                          nextStep();
-                        }}
-                        className="flex items-center gap-2 text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--fg))]"
-                      >
-                        <SkipForward className="w-4 h-4" />
-                        Skip this step
-                      </Button>
-                    )}
+                    {(currentScreen as any)?.type === "dynamic" &&
+                      dynamicFieldsCache[currentScreen?.id || ""] &&
+                      currentStep < totalSteps - 1 && (
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            // Skip without filling any fields
+                            nextStep();
+                          }}
+                          className="flex items-center gap-2 text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--fg))]"
+                        >
+                          <SkipForward className="w-4 h-4" />
+                          Skip this step
+                        </Button>
+                      )}
 
                     {currentStep < totalSteps - 1 ? (
                       <Button
                         onClick={handleContinue}
                         disabled={dynamicFieldsLoading || ((currentScreen as any)?.type === "dynamic" && !dynamicFieldsCache[currentScreen?.id || ""])}
-                        className="flex items-center gap-3 px-8 py-4 group"
+                        className="flex items-center gap-3 px-8 py-4 group transition-all duration-300 hover:shadow-lg hover:shadow-[hsl(var(--brand-primary))/20]"
                         size="lg"
                       >
                         {dynamicFieldsLoading ? (
@@ -1823,24 +1863,29 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                         )}
                       </Button>
                     ) : (
-                      <Button
-                        onClick={handleSubmit}
-                        disabled={isSubmitting || !turnstileToken || turnstileStatus !== "success"}
-                        className="flex items-center gap-3 px-8 py-4 bg-[hsl(var(--selise-blue))] text-[hsl(var(--white))] hover:bg-[hsl(var(--oxford-blue))] group"
-                        size="lg"
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-5 h-5 transition-transform group-hover:scale-110" />
-                            Generate Document
-                          </>
-                        )}
-                      </Button>
+                        <Button
+                          onClick={handleSubmit}
+                          disabled={isSubmitting || !turnstileToken || turnstileStatus !== "success"}
+                          className="flex items-center gap-3 px-8 py-4 bg-[hsl(var(--brand-primary))] text-[hsl(var(--brand-primary-foreground))] hover:bg-[hsl(var(--brand-primary))/90] shadow-lg shadow-[hsl(var(--brand-primary))/20] group transition-all duration-300"
+                          size="lg"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-5 h-5 transition-transform group-hover:scale-110" />
+                              Generate Document
+                            </>
+                          )}
+                        </Button>
+                      </motion.div>
                     )}
                   </div>
                 </div>
@@ -1854,12 +1899,12 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
               )}
             </motion.div>
           </AnimatePresence>
-        </div>
-      </div>
+        </div >
+      </div >
 
       {/* Bottom padding */}
-      <div className="pb-6" />
-    </div>
+      < div className="pb-6" />
+    </div >
   );
 }
 

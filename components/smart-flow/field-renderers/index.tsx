@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Sparkles, Check } from "lucide-react";
+import { ArrowRight, Check, AlertTriangle, Sparkles, X, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -60,11 +61,11 @@ function resolveTemplateVariables(
   enrichmentContext?: Record<string, unknown>
 ): string {
   if (!template) return "";
-  
+
   // Match all {{variableName}} patterns
   return template.replace(/\{\{([^}]+)\}\}/g, (match, variableName) => {
     const trimmedName = variableName.trim();
-    
+
     // Try to get value from formData first
     if (formData) {
       const formValue = getNestedValue(formData, trimmedName);
@@ -72,7 +73,7 @@ function resolveTemplateVariables(
         return String(formValue);
       }
     }
-    
+
     // Try to get value from enrichmentContext
     if (enrichmentContext) {
       const contextValue = getNestedValue(enrichmentContext, trimmedName);
@@ -80,7 +81,7 @@ function resolveTemplateVariables(
         return String(contextValue);
       }
     }
-    
+
     // Fallback: return a placeholder indicating the variable name
     return `[${trimmedName}]`;
   });
@@ -93,6 +94,7 @@ function AISuggestionBadge({
   suggestionKey,
   enrichmentContext,
   currentValue,
+  onApply,
 }: {
   suggestionKey: string;
   enrichmentContext?: Record<string, unknown>;
@@ -100,11 +102,11 @@ function AISuggestionBadge({
   onApply: (value: unknown) => void;
 }) {
   if (!suggestionKey) return null;
-  
+
   // If enrichment context is empty, show waiting indicator
   if (!enrichmentContext || Object.keys(enrichmentContext).length === 0) {
     return (
-      <span 
+      <span
         className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full 
           bg-[hsl(var(--globe-grey))]/10 text-[hsl(var(--globe-grey))]"
         title={`AI suggestion will appear after completing the previous step`}
@@ -116,16 +118,16 @@ function AISuggestionBadge({
   }
 
   const suggestedValue = getNestedValue(enrichmentContext, suggestionKey);
-  
+
   // Don't show if no suggestion or if current value matches
   if (suggestedValue === undefined || suggestedValue === null) {
     return null;
   }
-  
+
   if (String(suggestedValue) === String(currentValue)) {
     // Show "applied" state when value matches suggestion
     return (
-      <span 
+      <span
         className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full 
           bg-emerald-50 text-emerald-600 border border-emerald-200"
       >
@@ -135,7 +137,25 @@ function AISuggestionBadge({
     );
   }
 
-  return null;
+  // Show "Apply" button if not applied
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onApply(suggestedValue);
+      }}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md
+        bg-transparent text-[hsl(var(--selise-blue))] 
+        hover:bg-[hsl(var(--selise-blue))]/10 transition-colors cursor-pointer
+        border border-[hsl(var(--selise-blue))]/30 hover:border-[hsl(var(--selise-blue))]/50"
+      title="Apply AI suggestion"
+    >
+      <Sparkles className="h-3.5 w-3.5" />
+      <span>Apply</span>
+    </button>
+  );
 }
 
 /**
@@ -156,12 +176,12 @@ function AIApplyButton({
   if (!enrichmentContext || Object.keys(enrichmentContext).length === 0) return null;
 
   const suggestedValue = getNestedValue(enrichmentContext, suggestionKey);
-  
+
   // Don't show if no suggestion or if current value already matches
   if (suggestedValue === undefined || suggestedValue === null) return null;
   if (String(suggestedValue) === String(currentValue)) return null;
 
-  const displayValue = typeof suggestedValue === 'object' 
+  const displayValue = typeof suggestedValue === 'object'
     ? JSON.stringify(suggestedValue)
     : String(suggestedValue);
 
@@ -194,12 +214,12 @@ function getSuggestionPlaceholder(
   fallbackPlaceholder?: string | null
 ): string {
   if (!suggestionKey || !enrichmentContext) return fallbackPlaceholder || "";
-  
+
   const suggestedValue = getNestedValue(enrichmentContext, suggestionKey);
   if (suggestedValue !== undefined && suggestedValue !== null) {
     return String(suggestedValue);
   }
-  
+
   return fallbackPlaceholder || "";
 }
 
@@ -208,13 +228,13 @@ function getSuggestionPlaceholder(
  */
 export function TextField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
   const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
-  
+
   // Resolve template variables in label, placeholder, and helpText
   const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
   const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
-  
+
   // Use AI suggestion as placeholder if available, otherwise use the field's placeholder
-  const suggestionPlaceholder = showSuggestion 
+  const suggestionPlaceholder = showSuggestion
     ? getSuggestionPlaceholder(field.aiSuggestionKey, enrichmentContext, field.placeholder)
     : resolveTemplateVariables(field.placeholder, formData, enrichmentContext);
 
@@ -270,13 +290,13 @@ export function TextField({ field, value, onChange, error, enrichmentContext, fo
  */
 export function EmailField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
   const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
-  
+
   // Resolve template variables
   const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
   const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
-  
+
   // Use AI suggestion as placeholder if available
-  const suggestionPlaceholder = showSuggestion 
+  const suggestionPlaceholder = showSuggestion
     ? getSuggestionPlaceholder(field.aiSuggestionKey, enrichmentContext, field.placeholder || "email@example.com")
     : resolveTemplateVariables(field.placeholder, formData, enrichmentContext) || "email@example.com";
 
@@ -332,7 +352,7 @@ export function EmailField({ field, value, onChange, error, enrichmentContext, f
  */
 export function DateField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
   const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
-  
+
   // Resolve template variables
   const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
   const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
@@ -388,13 +408,13 @@ export function DateField({ field, value, onChange, error, enrichmentContext, fo
  */
 export function NumberField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
   const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
-  
+
   // Resolve template variables
   const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
   const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
-  
+
   // Use AI suggestion as placeholder if available
-  const suggestionPlaceholder = showSuggestion 
+  const suggestionPlaceholder = showSuggestion
     ? getSuggestionPlaceholder(field.aiSuggestionKey, enrichmentContext, field.placeholder)
     : resolveTemplateVariables(field.placeholder, formData, enrichmentContext);
 
@@ -486,7 +506,7 @@ export function CheckboxField({ field, value, onChange, error, formData, enrichm
  */
 export function SelectField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
   const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
-  
+
   // Resolve template variables
   const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
   const resolvedPlaceholder = resolveTemplateVariables(field.placeholder, formData, enrichmentContext);
@@ -535,7 +555,7 @@ export function SelectField({ field, value, onChange, error, enrichmentContext, 
           />
         )}
       </div>
-      
+
       {/* Card-based option selection */}
       <div className={`grid ${getGridCols()} gap-3`}>
         {field.options.map((option) => {
@@ -544,26 +564,43 @@ export function SelectField({ field, value, onChange, error, enrichmentContext, 
           const optionDescription = getOptionDescription(option);
 
           return (
-            <button
+            <motion.button
               key={option}
               type="button"
               onClick={() => onChange(field.name, option)}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
               className={cn(
-                'relative p-4 rounded-xl border-2 transition-all text-center',
-                'hover:border-[hsl(var(--brand-primary))] hover:shadow-md',
+                'relative p-5 rounded-2xl border-2 transition-all text-left group overflow-hidden',
                 isSelected
-                  ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.05] shadow-md'
-                  : 'border-[hsl(var(--border))] bg-background',
+                  ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.03] shadow-lg shadow-[hsl(var(--brand-primary))/10]'
+                  : 'border-[hsl(var(--border))] bg-background hover:border-[hsl(var(--brand-primary))/50] hover:shadow-md',
                 error && 'border-destructive'
               )}
             >
-              <div className="font-semibold text-base mb-1">{optionLabel}</div>
-              {optionDescription && (
-                <div className="text-sm text-muted-foreground">
-                  {optionDescription}
+              <div className={cn(
+                "absolute top-0 right-0 p-3 opacity-0 transition-opacity duration-300",
+                isSelected && "opacity-100"
+              )}>
+                <div className="bg-[hsl(var(--brand-primary))] rounded-full p-1">
+                  <Check className="w-3 h-3 text-white" />
                 </div>
-              )}
-            </button>
+              </div>
+
+              <div className="relative z-10">
+                <div className={cn(
+                  "font-semibold text-lg mb-1.5 transition-colors",
+                  isSelected ? "text-[hsl(var(--brand-primary))]" : "text-[hsl(var(--fg))]"
+                )}>
+                  {optionLabel}
+                </div>
+                {optionDescription && (
+                  <div className="text-sm text-[hsl(var(--brand-muted))] leading-relaxed group-hover:text-[hsl(var(--fg))] transition-colors">
+                    {optionDescription}
+                  </div>
+                )}
+              </div>
+            </motion.button>
           );
         })}
       </div>

@@ -78,7 +78,7 @@ export function ThemeProvider({
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   );
 
-  const [colors, setColors] = useState(() => {
+  const colors = useMemo(() => {
     const themeColors = getThemeColors();
     const currentTheme = theme === 'dark' ? themeColors.dark : themeColors.light;
     const defaultPrimary = import.meta.env.VITE_PRIMARY_COLOR || '#15969B';
@@ -119,7 +119,7 @@ export function ThemeProvider({
       primary: primaryColor,
       secondary: secondaryColor,
     };
-  });
+  }, [theme]);
 
   useEffect(() => {
     const { light, dark } = getThemeColors();
@@ -146,11 +146,6 @@ export function ThemeProvider({
     if (colorSet.secondary) {
       setColorVariables('secondary', colorSet.secondary);
     }
-
-    setColors({
-      primary: import.meta.env.VITE_PRIMARY_COLOR || '#15969B',
-      secondary: import.meta.env.VITE_SECONDARY_COLOR || '#5194B8',
-    });
   }, [theme]);
 
   useEffect(() => {

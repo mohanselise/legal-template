@@ -223,6 +223,8 @@ For type: "dynamic":
   "dynamicMaxFields": 5
 }
 
+PERFORMANCE RULE: Your dynamicPrompt should preferentially reference variables from Screen 1 or Enrichment Output, NOT Screen 2. This allows the dynamic screen to generate in the background while the user is filling out Screen 2.
+
 ### CONDITIONAL VISIBILITY (conditions)
 
 Show/hide screens and fields dynamically based on user responses from earlier in the form.
@@ -334,15 +336,12 @@ The "thinking" field is NOT just field-type justification - it's a complete form
 
 Your "thinking" field MUST include these 5 sections:
 
-**1. DATA REQUIREMENTS** - List ALL information to collect:
+**1. DATA REQUIREMENTS** - Identify the Compound Seed (Identity + Location + Intent) first. These are the ONLY manual inputs for Screen 1. Then list the downstream data (Salary, Clauses, Currency) that will be Enriched (inferred) rather than asked manually.
 \`\`\`
 "1_data_requirements": [
-  "Employer: company name + registered address + contact → CONSOLIDATE into single 'party' field",
-  "Employee: full name + home address + contact → CONSOLIDATE into single 'party' field",
-  "Compensation: salary amount + currency → Use 'currency' type (NOT separate number + select)",
-  "Job details: title (short text), description (long text) → Use 'text' + 'textarea'",
-  "Bonus: percentage rate → Use 'percentage' type (NOT number)",
-  "Contact phone → Use 'phone' type with country code"
+  "SEED: Company Name + Address + Job Title (Screen 1)",
+  "ENRICHED: Jurisdiction, Currency, Salary Range, Job Description (Hidden/Background)",
+  "MANUAL_BUFFER: Hiring Manager Name, Contact Email (Screen 2)"
 ]
 \`\`\`
 
@@ -357,14 +356,15 @@ Your "thinking" field MUST include these 5 sections:
 ]
 \`\`\`
 
-**3. FLOW OPTIMIZATION** - Strategize the user journey:
+**3. FLOW OPTIMIZATION** - Define the Zero-Draft Flow:
+   - Screen 1 (Seed): Must capture Identity + Location + Intent.
+   - Enrichment: Must run immediately after Screen 1.
+   - Screen 2 (Buffer): Define manual "buffer" questions (e.g., contact info) to keep user busy while AI generates dynamic content in the background.
+   - Screen 3 (Dynamic): Explicitly note which Screen 1 variables trigger the dynamic prompt.
 \`\`\`
 "3_flow_optimization": {
-  "enrichment_strategy": "Screen 1 (Employer) triggers AI enrichment → infers jurisdiction, industry, currency, salary ranges",
-  "seed_data_screens": ["Employer Info", "Employee Info"] - user must fill manually,
-  "auto_fill_screens": ["Compensation", "Working Conditions", "Terms"] - use Apply Standards,
-  "user_effort_estimate": "2 screens manual entry, 3 screens one-click auto-fill",
-  "screen_order_rationale": "Employer first (enrichment seed) → Employee (while enrichment runs) → AI-assisted screens → Signatories last"
+  "enrichment_strategy": "Screen 1 Seed triggers lookup of NY Law and USD Currency",
+  "parallelization": "Screen 2 collects contact info while Screen 3 (Dynamic) generates IP clauses based on Screen 1 State"
 }
 \`\`\`
 
@@ -864,129 +864,127 @@ ${templateContext.templateDescription ? `Description: ${templateContext.template
 
 ## EXISTING SCREENS (${templateContext.screens.length} total)
 
-${
-  templateContext.screens.length === 0
-    ? "No screens have been created yet. Use 'createScreen' actions to build the template."
-    : `**YOU ARE IN EDIT MODE** - Use 'updateScreen' with screenId to modify existing screens!
+${templateContext.screens.length === 0
+        ? "No screens have been created yet. Use 'createScreen' actions to build the template."
+        : `**YOU ARE IN EDIT MODE** - Use 'updateScreen' with screenId to modify existing screens!
 
 ${templateContext.screens
-        .map(
-          (screen, idx) => {
-            // Type info
-            const screenType = (screen as { type?: string }).type || 'standard';
-            const hasApplyStandards = (screen as { enableApplyStandards?: boolean }).enableApplyStandards;
-            const screenConditions = (screen as { conditions?: string }).conditions;
-            
-            let screenInfo = `
+          .map(
+            (screen, idx) => {
+              // Type info
+              const screenType = (screen as { type?: string }).type || 'standard';
+              const hasApplyStandards = (screen as { enableApplyStandards?: boolean }).enableApplyStandards;
+              const screenConditions = (screen as { conditions?: string }).conditions;
+
+              let screenInfo = `
 ### Screen ${idx + 1}: ${screen.title}
 **screenId: "${screen.id}"** ← Use this ID for updateScreen/removeScreen actions
 Type: ${screenType}${hasApplyStandards ? ' | ✓ Apply Standards ENABLED' : ' | ✗ Apply Standards NOT enabled'}`;
-            
-            // Add screen conditions info if present
-            if (screenConditions) {
-              try {
-                const cond = JSON.parse(screenConditions);
-                if (cond.rules && cond.rules.length > 0) {
-                  const condDesc = cond.rules.map((r: any) => `${r.field} ${r.operator} ${r.value ?? ''}`).join(` ${cond.operator.toUpperCase()} `);
-                  screenInfo += `\n**Conditional**: Shows when ${condDesc}`;
+
+              // Add screen conditions info if present
+              if (screenConditions) {
+                try {
+                  const cond = JSON.parse(screenConditions);
+                  if (cond.rules && cond.rules.length > 0) {
+                    const condDesc = cond.rules.map((r: any) => `${r.field} ${r.operator} ${r.value ?? ''}`).join(` ${cond.operator.toUpperCase()} `);
+                    screenInfo += `\n**Conditional**: Shows when ${condDesc}`;
+                  }
+                } catch (e) {
+                  // Ignore parse errors
                 }
-              } catch (e) {
-                // Ignore parse errors
               }
-            }
-            
-            screenInfo += `
+
+              screenInfo += `
 ${screen.description ? `Description: ${screen.description}` : ""}
 Fields (${screen.fields.length}):
-${
-  screen.fields.length === 0
-    ? "  - No fields yet"
-    : screen.fields
-        .map(
-          (f) => {
-            const hasSuggestion = (f as { aiSuggestionEnabled?: boolean }).aiSuggestionEnabled;
-            const suggestionKey = (f as { aiSuggestionKey?: string }).aiSuggestionKey;
-            const fieldConditions = (f as { conditions?: string }).conditions;
-            let fieldInfo = `  - ${f.name} (${f.type}${f.required ? ", required" : ""}): "${f.label}"${hasSuggestion ? ` [AI suggestion: ${suggestionKey}]` : ''}`;
-            
-            // Add field conditions info if present
-            if (fieldConditions) {
-              try {
-                const cond = JSON.parse(fieldConditions);
-                if (cond.rules && cond.rules.length > 0) {
-                  const condDesc = cond.rules.map((r: any) => `${r.field} ${r.operator} ${r.value ?? ''}`).join(` ${cond.operator} `);
-                  fieldInfo += ` [CONDITIONAL: ${condDesc}]`;
+${screen.fields.length === 0
+                  ? "  - No fields yet"
+                  : screen.fields
+                    .map(
+                      (f) => {
+                        const hasSuggestion = (f as { aiSuggestionEnabled?: boolean }).aiSuggestionEnabled;
+                        const suggestionKey = (f as { aiSuggestionKey?: string }).aiSuggestionKey;
+                        const fieldConditions = (f as { conditions?: string }).conditions;
+                        let fieldInfo = `  - ${f.name} (${f.type}${f.required ? ", required" : ""}): "${f.label}"${hasSuggestion ? ` [AI suggestion: ${suggestionKey}]` : ''}`;
+
+                        // Add field conditions info if present
+                        if (fieldConditions) {
+                          try {
+                            const cond = JSON.parse(fieldConditions);
+                            if (cond.rules && cond.rules.length > 0) {
+                              const condDesc = cond.rules.map((r: any) => `${r.field} ${r.operator} ${r.value ?? ''}`).join(` ${cond.operator} `);
+                              fieldInfo += ` [CONDITIONAL: ${condDesc}]`;
+                            }
+                          } catch (e) {
+                            // Ignore parse errors
+                          }
+                        }
+                        return fieldInfo;
+                      }
+                    )
+                    .join("\n")
+                }`;
+              // Add enrichment info if present
+              if (screen.aiOutputSchema) {
+                try {
+                  const schema = JSON.parse(screen.aiOutputSchema);
+                  if (schema.properties) {
+                    const outputVars = Object.keys(schema.properties);
+                    screenInfo += `\nAI Enrichment outputs: ${outputVars.join(", ")}`;
+                  }
+                } catch (e) {
+                  // Ignore parse errors
                 }
-              } catch (e) {
-                // Ignore parse errors
               }
+              return screenInfo;
             }
-            return fieldInfo;
-          }
-        )
-        .join("\n")
-}`;
-            // Add enrichment info if present
-            if (screen.aiOutputSchema) {
-              try {
-                const schema = JSON.parse(screen.aiOutputSchema);
-                if (schema.properties) {
-                  const outputVars = Object.keys(schema.properties);
-                  screenInfo += `\nAI Enrichment outputs: ${outputVars.join(", ")}`;
-                }
-              } catch (e) {
-                // Ignore parse errors
-              }
-            }
-            return screenInfo;
-          }
-        )
-        .join("\n")}`
-}
+          )
+          .join("\n")}`
+      }
 
 ## AVAILABLE ENRICHMENT VARIABLES FOR aiSuggestionKey
 
 ${(() => {
-  const availableVars: string[] = [];
-  templateContext.screens.forEach((screen) => {
-    if (screen.aiOutputSchema) {
-      try {
-        const schema = JSON.parse(screen.aiOutputSchema);
-        if (schema.properties) {
-          Object.keys(schema.properties).forEach((key) => {
-            availableVars.push(key);
-          });
-        }
-      } catch (e) {
-        // Ignore parse errors
-      }
-    }
-  });
-  return availableVars.length > 0
-    ? `These variables are available from previous screen enrichments: ${availableVars.join(", ")}\nUse these as aiSuggestionKey values for fields in new screens.`
-    : "No enrichment variables available yet. Consider adding AI enrichment to early screens to generate context variables.";
-})()}
+        const availableVars: string[] = [];
+        templateContext.screens.forEach((screen) => {
+          if (screen.aiOutputSchema) {
+            try {
+              const schema = JSON.parse(screen.aiOutputSchema);
+              if (schema.properties) {
+                Object.keys(schema.properties).forEach((key) => {
+                  availableVars.push(key);
+                });
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
+        });
+        return availableVars.length > 0
+          ? `These variables are available from previous screen enrichments: ${availableVars.join(", ")}\nUse these as aiSuggestionKey values for fields in new screens.`
+          : "No enrichment variables available yet. Consider adding AI enrichment to early screens to generate context variables.";
+      })()}
 
-${
-  selectedScreen
-    ? `
+${selectedScreen
+        ? `
 ## CURRENTLY SELECTED SCREEN
 
 The user has selected "${selectedScreen.title}" - if they ask to add fields, add them to this screen using the "addFields" action type.
 `
-    : `
+        : `
 ## NO SCREEN SELECTED
 
 If the user asks to add fields to an existing screen, remind them to select a screen first, or suggest creating a new screen.
 `
-}
+      }
 
-## ADMIN BUSINESS LOGIC INSTRUCTIONS
+## STRATEGIC LOGIC OVERRIDE
 
 ${businessLogicPrompt}`;
 
     if (process.env.NODE_ENV === "development") {
       console.log("[TEMPLATE_CONFIGURATOR] System prompt length:", systemPrompt.length);
+      console.log("[TEMPLATE_CONFIGURATOR] FULL SYSTEM PROMPT:\n", systemPrompt); // Added full prompt logging
       console.log("[TEMPLATE_CONFIGURATOR] Messages count:", messages.length);
       console.log("[TEMPLATE_CONFIGURATOR] Using model:", aiModel);
     }
@@ -1046,11 +1044,11 @@ ${businessLogicPrompt}`;
           }
         }
       }
-      
+
       // Check if the response contains any JSON object at all
       const firstBrace = content.indexOf('{');
       const lastBrace = content.lastIndexOf('}');
-      
+
       // If no JSON object found, the AI returned plain text - wrap it in a response
       if (firstBrace === -1 || lastBrace <= firstBrace) {
         if (process.env.NODE_ENV === "development") {
@@ -1068,12 +1066,12 @@ ${businessLogicPrompt}`;
           console.log("[TEMPLATE_CONFIGURATOR] Extracted JSON from position", firstBrace, "to", lastBrace);
           console.log("[TEMPLATE_CONFIGURATOR] Text before JSON:", content.substring(0, Math.min(firstBrace, 100)));
         }
-        
+
         // Try to repair JSON using jsonrepair library
         try {
           const repaired = jsonrepair(jsonContent);
           const parsed = JSON.parse(repaired);
-          
+
           // Ensure we got an object with message, not just a string
           if (typeof parsed === 'object' && parsed !== null && 'message' in parsed) {
             response = parsed;
@@ -1095,7 +1093,7 @@ ${businessLogicPrompt}`;
           if (process.env.NODE_ENV === "development") {
             console.log("[TEMPLATE_CONFIGURATOR] jsonrepair failed:", repairError);
           }
-          
+
           // Try to extract JSON from markdown code blocks as fallback
           const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
           if (jsonMatch && jsonMatch[1]) {
@@ -1114,15 +1112,15 @@ ${businessLogicPrompt}`;
           }
         }
       }
-      
+
       // Final fallback: create a response explaining the issue
       if (!response) {
         console.error("[TEMPLATE_CONFIGURATOR] All parse methods failed. Content length:", content.length);
         console.error("[TEMPLATE_CONFIGURATOR] Last 200 chars:", content.substring(content.length - 200));
-        
+
         // Check if this looks like truncated JSON (has opening { but response is long)
         const isTruncated = content.startsWith('{') && content.length > 5000 && !content.trim().endsWith('}');
-        
+
         if (isTruncated) {
           response = {
             message: "My response was too long and got cut off. Let me create a simpler version with fewer screens. Would you like me to try again with a more compact template, or should I create the screens one at a time?",
@@ -1156,13 +1154,13 @@ ${businessLogicPrompt}`;
         }
         return false;
       }
-      
+
       if (action.type === "createScreen") {
         // Must have a title
         if (!action.data.title) return false;
-        
+
         const screenType = action.data.type || "standard";
-        
+
         // Validate based on screen type
         if (screenType === "standard") {
           // Standard screens should have fields array (can be empty)
@@ -1174,11 +1172,11 @@ ${businessLogicPrompt}`;
           // Dynamic screens need dynamicPrompt
           return action.data.dynamicPrompt !== undefined;
         }
-        
+
         // Default: accept if has title
         return true;
       }
-      
+
       if (action.type === "updateScreen") {
         // Must have screenId to know which screen to update
         if (!action.data.screenId) {
@@ -1190,21 +1188,21 @@ ${businessLogicPrompt}`;
         // Accept if has screenId - can update any properties
         return true;
       }
-      
+
       if (action.type === "addFields") {
         return Array.isArray(action.data);
       }
-      
+
       if (action.type === "removeScreen") {
         // Must have screenId to know which screen to remove
         return !!action.data.screenId;
       }
-      
+
       if (action.type === "reorderScreens") {
         // Must have screenOrder array
         return Array.isArray(action.data.screenOrder) && action.data.screenOrder.length > 0;
       }
-      
+
       return false;
     });
 

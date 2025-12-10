@@ -31,19 +31,17 @@ interface AuthState {
 
 export const useAuthState = () => {
   const { isAuthenticated } = useAuthStore();
-  const [isAuth, setIsAuth] = useState<AuthState>({
-    isMounted: false,
-    isAuthenticated: false,
-  });
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsAuth({
-      isMounted: true,
-      isAuthenticated: isAuthenticated,
-    });
-  }, [isAuthenticated]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsMounted(true);
+  }, []);
 
-  return isAuth;
+  return {
+    isMounted,
+    isAuthenticated,
+  };
 };
 
 /**

@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       })),
     };
 
-const userPrompt = `Generate a long-form, SEO-focused landing page for the template described below.
+    const userPrompt = `Generate a long-form, SEO-focused landing page for the template described below.
 
 BRAND GUIDE (abbreviated):
 ${BRAND_GUIDE}
@@ -104,7 +104,7 @@ ${JSON.stringify(context, null, 2)}
 
 MANDATORY CTAs:
 - Primary CTA (prominent): /${locale}/templates/${template.slug}/generate
-- Secondary CTA: /${locale}/templates/
+- Secondary CTA (All Templates): /${locale}/templates
 
 Return strict JSON with this shape (no additional fields):
 {
@@ -211,18 +211,18 @@ Language rules:
       // Handle OpenRouter API errors with user-friendly messages
       if (err?.status === 402 || err?.code === 402) {
         return NextResponse.json(
-          { 
-            error: "API credit limit exceeded", 
-            message: "The AI service has insufficient credits. Please reduce max_tokens or add credits to your OpenRouter account." 
+          {
+            error: "API credit limit exceeded",
+            message: "The AI service has insufficient credits. Please reduce max_tokens or add credits to your OpenRouter account."
           },
           { status: 402 }
         );
       }
       if (err?.status === 403 || err?.code === 403) {
         return NextResponse.json(
-          { 
-            error: "API monthly limit exceeded", 
-            message: "The monthly API limit has been reached. Please manage your limits at https://openrouter.ai/settings/keys or try again later." 
+          {
+            error: "API monthly limit exceeded",
+            message: "The monthly API limit has been reached. Please manage your limits at https://openrouter.ai/settings/keys or try again later."
           },
           { status: 403 }
         );

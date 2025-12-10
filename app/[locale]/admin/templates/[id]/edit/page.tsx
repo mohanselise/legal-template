@@ -385,12 +385,12 @@ export default function EditTemplatePage() {
         throw new Error("Failed to fetch landing page");
       }
       const data = await response.json();
-      
+
       // Find the exact match for this slug and locale
       const page = data.templatePages?.find(
         (p: TemplatePage) => p.slug === slug && p.locale === locale
       );
-      
+
       if (page) {
         setLandingPage(page);
         setLandingPageExists(true);
@@ -786,8 +786,8 @@ export default function EditTemplatePage() {
             <Globe className="h-4 w-4 mr-2" />
             Landing Page
             {landingPageExists && (
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 className={`ml-2 ${landingPage?.published ? "bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))]" : ""}`}
               >
                 {landingPage?.published ? "Live" : "Draft"}
@@ -830,7 +830,7 @@ export default function EditTemplatePage() {
                       {...form.register("slug")}
                     />
                     <p className="text-xs text-[hsl(var(--globe-grey))]">
-                      URL will be: /templates/{form.watch("slug") || "slug"}/generate
+                      URL will be: /{locale}/templates/{form.watch("slug") || "slug"}/generate
                     </p>
                     {form.formState.errors.slug && (
                       <p className="text-sm text-destructive">
@@ -1324,7 +1324,7 @@ export default function EditTemplatePage() {
                   <div>
                     <p className="font-medium text-[hsl(var(--fg))]">No landing page yet</p>
                     <p className="text-sm text-[hsl(var(--globe-grey))] mt-1">
-                      Create a custom landing page for <code className="px-1 py-0.5 bg-[hsl(var(--muted))] rounded text-xs">/{locale}/templates/{template?.slug}</code>. 
+                      Create a custom landing page for <code className="px-1 py-0.5 bg-[hsl(var(--muted))] rounded text-xs">/{locale}/templates/{template?.slug}</code>.
                       This page will be shown to users when they visit the template URL.
                     </p>
                   </div>
@@ -1495,7 +1495,7 @@ export default function EditTemplatePage() {
               <CardHeader>
                 <CardTitle>Page Content (HTML)</CardTitle>
                 <CardDescription>
-                  The HTML content that will be rendered on the landing page. 
+                  The HTML content that will be rendered on the landing page.
                   Use standard HTML tags and Tailwind CSS classes.
                 </CardDescription>
               </CardHeader>
@@ -1531,8 +1531,8 @@ export default function EditTemplatePage() {
 
                 <div className="p-3 bg-[hsl(var(--muted))]/30 rounded-lg border border-[hsl(var(--border))]">
                   <p className="text-xs text-[hsl(var(--globe-grey))]">
-                    <strong>Tips:</strong> You can use Tailwind CSS classes for styling. 
-                    The content will be rendered inside the main layout, so you don&apos;t need to include 
+                    <strong>Tips:</strong> You can use Tailwind CSS classes for styling.
+                    The content will be rendered inside the main layout, so you don&apos;t need to include
                     header, footer, or html/body tags.
                   </p>
                 </div>

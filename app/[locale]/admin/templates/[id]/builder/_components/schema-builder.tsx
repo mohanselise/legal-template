@@ -23,12 +23,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
 
 interface SchemaField {
     id: string;
     name: string;
     type: "string" | "number" | "boolean" | "array" | "object";
     description?: string;
+    enum?: string[]; // For strings
     properties?: SchemaField[]; // For objects
     items?: SchemaField; // For arrays
 }
@@ -46,7 +48,7 @@ const parseSchemaToState = (schemaStr: string): SchemaField[] => {
     try {
         // Handle empty or invalid schema strings
         if (!schemaStr || !schemaStr.trim()) return [];
-        
+
         const schema = JSON.parse(schemaStr);
         if (schema.type !== "object" || !schema.properties) return [];
 
@@ -58,6 +60,10 @@ const parseSchemaToState = (schemaStr: string): SchemaField[] => {
                     type: value.type || "string",
                     description: value.description,
                 };
+
+                if (value.enum && Array.isArray(value.enum)) {
+                    field.enum = value.enum;
+                }
 
                 if (value.type === "object" && value.properties) {
                     field.properties = parseProperties(value.properties);
@@ -114,7 +120,14 @@ const convertStateToSchema = (fields: SchemaField[]): string => {
                     }
                 } else {
                     prop.items = { type: field.items.type };
+                    if (field.items.enum) {
+                        prop.items.enum = field.items.enum;
+                    }
                 }
+            }
+
+            if (field.type === "string" && field.enum && field.enum.length > 0) {
+                prop.enum = field.enum;
             }
 
             properties[field.name] = prop;
@@ -475,6 +488,69 @@ function FieldRow({
                             </Button>
                         </div>
                     </div>
+
+                    {/* Enum Options for String Type */}
+                    {field.type === "string" && (
+                        <div className="col-span-12 pt-2 border-t border-dashed border-[hsl(var(--border))]">
+                            <Label className="text-xs text-[hsl(var(--globe-grey))] mb-1 block">
+                                Enum Options (Allowed Values)
+                            </Label>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                                {field.enum?.map((option, idx) => (
+                                    <Badge key={idx} variant="secondary" className="gap-1 pr-1 bg-[hsl(var(--brand-primary))/0.1] text-[hsl(var(--brand-primary))] hover:bg-[hsl(var(--brand-primary))/0.2]">
+                                        {option}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newEnum = field.enum?.filter((_, i) => i !== idx);
+                                                onUpdate(field.id, { enum: newEnum?.length ? newEnum : undefined });
+                                            }}
+                                            className="h-3.5 w-3.5 rounded-full hover:bg-[hsl(var(--brand-primary))/0.2] flex items-center justify-center transition-colors"
+                                        >
+                                            <X className="h-2.5 w-2.5" />
+                                        </button>
+                                    </Badge>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Add allowed value (e.g. USD, EUR)..."
+                                    className="h-7 text-xs flex-1"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            const val = (e.currentTarget as HTMLInputElement).value.trim();
+                                            if (val) {
+                                                const currentEnum = field.enum || [];
+                                                if (!currentEnum.includes(val)) {
+                                                    onUpdate(field.id, { enum: [...currentEnum, val] });
+                                                }
+                                                (e.currentTarget as HTMLInputElement).value = '';
+                                            }
+                                        }
+                                    }}
+                                />
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 text-xs"
+                                    onClick={(e) => {
+                                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                        const val = input.value.trim();
+                                        if (val) {
+                                            const currentEnum = field.enum || [];
+                                            if (!currentEnum.includes(val)) {
+                                                onUpdate(field.id, { enum: [...currentEnum, val] });
+                                            }
+                                            input.value = '';
+                                        }
+                                    }}
+                                >
+                                    Add
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

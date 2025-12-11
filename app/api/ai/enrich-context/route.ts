@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         const getNestedValue = (obj: Record<string, any>, path: string): any => {
             return path.split('.').reduce((acc, part) => acc?.[part], obj);
         };
-        
+
         interpolatedPrompt = interpolatedPrompt.replace(/{{([^}]+)}}/g, (match, path) => {
             const value = getNestedValue(formData, path.trim());
             return value !== undefined && value !== null ? String(value) : match;
@@ -47,6 +47,12 @@ export async function POST(request: NextRequest) {
 
         const systemPrompt = `You are an AI assistant helping to fill out a legal document form.
 Your task is to analyze the provided form data and the user's prompt to generate useful context or suggestions for subsequent form steps.
+
+CRITICAL FORMATTING RULES:
+1. DATES: ALWAYS return dates in "YYYY-MM-DD" format (ISO 8601). Example: "2024-12-31".
+2. SELECTIONS: For fields with predefined options (enums), your output values MUST EXACTLY MATCH one of the allowed options (case-sensitive).
+3. BOOLEANS: Return true/false for boolean fields, not strings like "yes"/"no".
+
 Return your response in a valid JSON format. Do not include any markdown formatting or explanations outside the JSON.`;
 
         // Build user message with schema if provided

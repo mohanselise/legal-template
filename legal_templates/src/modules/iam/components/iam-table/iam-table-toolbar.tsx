@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+ 
 /* eslint-disable react-hooks/exhaustive-deps */
 
 import { Table } from '@tanstack/react-table';

@@ -155,7 +155,7 @@ vi.mock('./invoices-overview-table', () => ({
 }));
 
 // Import the mocked component after mocking
-// eslint-disable-next-line @typescript-eslint/no-use-before-define
+ 
 import { InvoicesOverviewTable } from './invoices-overview-table';
 
 // Mock the required components

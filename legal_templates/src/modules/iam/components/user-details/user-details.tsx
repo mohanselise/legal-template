@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+ 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {

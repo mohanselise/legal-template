@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+ 
 import { BaseHeaderToolbar } from '../../header-toolbar/base-header-toolbar/base-header-toolbar';
 import {
   FilterConfig,

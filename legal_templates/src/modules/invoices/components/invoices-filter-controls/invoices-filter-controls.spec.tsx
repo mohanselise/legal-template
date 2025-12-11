@@ -13,7 +13,7 @@ vi.mock('components/core/data-table/data-table-date-filter', () => ({
 
 // Mock the DataTableFacetedFilter component
 vi.mock('components/core/data-table/data-table-faceted-filter', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   DataTableFacetedFilter: ({
     title,
     options,

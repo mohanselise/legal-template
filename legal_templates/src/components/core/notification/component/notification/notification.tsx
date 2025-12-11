@@ -178,7 +178,7 @@ export const Notification = () => {
             accessTokenFactory: () => accessToken,
           },
           (channel: string, message: unknown) => {
-            // eslint-disable-next-line no-console
+             
             console.log('Received notification:', { channel, message });
           }
         );

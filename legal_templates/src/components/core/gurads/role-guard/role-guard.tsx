@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-hooks/rules-of-hooks */
+ 
 import React, { useEffect } from 'react';
 import { RoleGuardProps } from '@/models/permission';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -103,7 +103,7 @@ export const RoleGuard: React.FC<
   }, [shouldRedirectTo404]);
 
   const renderInactiveUserDialog = () => (
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+     
     <Dialog open={true} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

@@ -37,7 +37,7 @@ export const SigninPage = () => {
           setTokens({ accessToken: res.access_token ?? '', refreshToken: res.refresh_token ?? '' });
           navigate('/', { replace: true });
         } catch (error) {
-          // eslint-disable-next-line no-console
+           
           console.error('SSO code exchange failed:', error);
         } finally {
           isExchangingRef.current = false;

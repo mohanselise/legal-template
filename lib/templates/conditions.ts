@@ -68,10 +68,15 @@ function evaluateRule(rule: ConditionRule, formData: Record<string, unknown>): b
 
   switch (rule.operator) {
     case "equals":
-      // Handle boolean string comparisons
+      // Handle boolean/string comparisons in both directions
       if (typeof compareValue === "boolean") {
         if (fieldValue === "true" || fieldValue === true) return compareValue === true;
         if (fieldValue === "false" || fieldValue === false) return compareValue === false;
+      }
+      if (compareValue === "true" || compareValue === "false") {
+        const boolCompare = compareValue === "true";
+        if (fieldValue === true || fieldValue === "true") return boolCompare === true;
+        if (fieldValue === false || fieldValue === "false") return boolCompare === false;
       }
       return fieldValue === compareValue;
 
@@ -79,6 +84,11 @@ function evaluateRule(rule: ConditionRule, formData: Record<string, unknown>): b
       if (typeof compareValue === "boolean") {
         if (fieldValue === "true" || fieldValue === true) return compareValue !== true;
         if (fieldValue === "false" || fieldValue === false) return compareValue !== false;
+      }
+      if (compareValue === "true" || compareValue === "false") {
+        const boolCompare = compareValue === "true";
+        if (fieldValue === true || fieldValue === "true") return boolCompare !== true;
+        if (fieldValue === false || fieldValue === "false") return boolCompare !== false;
       }
       return fieldValue !== compareValue;
 

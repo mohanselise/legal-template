@@ -17,7 +17,7 @@ interface ToastOptions {
 
 const useToast = () => ({
   toast: (options: ToastOptions) => {
-    // eslint-disable-next-line no-console
+     
     console.info(`[${options.variant}] ${options.title}: ${options.description}`);
   },
 });
@@ -117,7 +117,7 @@ export function useTaskDetails(taskId?: string): UseTaskDetailsReturn {
     } else {
       setCurrentTask(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [taskId, tasksData, currentTask?.Assignee]);
 
   const { mutate: updateTask } = useUpdateTaskItem();

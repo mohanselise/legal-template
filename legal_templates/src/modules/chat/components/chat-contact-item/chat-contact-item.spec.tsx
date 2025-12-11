@@ -23,7 +23,7 @@ vi.mock('lucide-react', () => ({
 
 // Mock the dropdown menu to make it easier to test
 vi.mock('components/ui/dropdown-menu', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   const React = require('react');
   return {
     DropdownMenu: ({

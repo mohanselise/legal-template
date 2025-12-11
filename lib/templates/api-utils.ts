@@ -71,7 +71,7 @@ export async function validateTurnstile(
 
   // Check for secret key
   const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY;
-  
+
   if (!TURNSTILE_SECRET_KEY) {
     console.error('⚠️ [API] TURNSTILE_SECRET_KEY is not set');
     return {
@@ -92,10 +92,10 @@ export async function validateTurnstile(
     if (!validationResponse.success) {
       const errorCodes = (validationResponse as any)['error-codes'] || [];
       console.error('[API] Turnstile validation failed:', errorCodes);
-      
+
       let errorMessage = 'Human verification failed. Please verify again.';
       let isTokenExpiration = false;
-      
+
       if (errorCodes.includes('timeout-or-duplicate')) {
         errorMessage = 'Your verification has expired. Please verify again.';
         isTokenExpiration = true;
@@ -140,7 +140,7 @@ export async function parseGenerationRequest<TFormData>(
 ): Promise<{ data: GenerationRequestBody<TFormData> } | { error: ApiError }> {
   try {
     const body = await request.json();
-    
+
     if (!body.formData || typeof body.formData !== 'object') {
       return {
         error: {
@@ -235,12 +235,11 @@ export function extractEnrichment(
 ): EnrichmentState {
   return {
     jurisdictionLoading: false,
-    jurisdictionData: enrichment?.jurisdiction as any,
+    jurisdictionData: enrichment?.jurisdiction as unknown,
     companyLoading: false,
-    companyData: enrichment?.company as any,
+    companyData: enrichment?.company as unknown,
     jobTitleLoading: false,
-    jobTitleData: enrichment?.jobTitle as any,
-    marketStandards: enrichment?.marketStandards as any,
+    jobTitleData: enrichment?.jobTitle as unknown,
+    marketStandards: enrichment?.marketStandards as unknown,
   };
 }
-

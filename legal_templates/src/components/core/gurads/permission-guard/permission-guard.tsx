@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+ 
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-hooks/rules-of-hooks */
+ 
 import React, { useEffect } from 'react';
 import { UserX } from 'lucide-react';
 import { usePermissions } from '@/hooks/use-permissions';

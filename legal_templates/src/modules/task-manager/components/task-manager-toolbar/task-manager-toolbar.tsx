@@ -75,7 +75,7 @@ export default function TaskManagerToolbar({
   const [openSheet, setOpenSheet] = useState(false);
 
   // fallback handlers when not provided
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
+   
   const noop = () => {};
   const applyFiltersHandler = onApplyFilters ?? noop;
   const resetFiltersHandler = onResetFilters ?? noop;

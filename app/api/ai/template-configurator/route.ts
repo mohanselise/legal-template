@@ -1061,7 +1061,7 @@ ${businessLogicPrompt}`;
         };
       } else {
         // Try to extract JSON object from content (AI sometimes outputs text before/after JSON)
-        let jsonContent = content.substring(firstBrace, lastBrace + 1);
+        const jsonContent = content.substring(firstBrace, lastBrace + 1);
         if (process.env.NODE_ENV === "development" && firstBrace > 0) {
           console.log("[TEMPLATE_CONFIGURATOR] Extracted JSON from position", firstBrace, "to", lastBrace);
           console.log("[TEMPLATE_CONFIGURATOR] Text before JSON:", content.substring(0, Math.min(firstBrace, 100)));

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 import { ColumnDef } from '@tanstack/react-table';
 import { Info } from 'lucide-react';
 import { DataTableColumnHeader } from '@/components/core';

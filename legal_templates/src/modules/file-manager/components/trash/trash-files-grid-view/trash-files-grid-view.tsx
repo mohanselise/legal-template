@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+ 
 import { useTranslation } from 'react-i18next';
 import { Trash2 } from 'lucide-react';
 import { DateRange } from '../../../types/file-manager.type';

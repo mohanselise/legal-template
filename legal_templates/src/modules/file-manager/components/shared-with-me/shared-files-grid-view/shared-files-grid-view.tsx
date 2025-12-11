@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+ 
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IFileDataWithSharing, SharedUser } from '@/modules/file-manager/utils/file-manager';

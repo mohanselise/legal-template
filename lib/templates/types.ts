@@ -9,12 +9,6 @@ import type { ComponentType } from 'react';
 import type { z, ZodType } from 'zod';
 import type { LucideIcon } from 'lucide-react';
 import type { LegalDocument, SignatoryData } from '@/app/api/templates/employment-agreement/schema';
-import type {
-  JurisdictionIntelligence,
-  CompanyIntelligence,
-  JobTitleAnalysis,
-  MarketStandards,
-} from '@/lib/types/smart-form';
 
 // ==========================================
 // TEMPLATE METADATA
@@ -84,21 +78,21 @@ export interface StepConfig<TFormData = Record<string, unknown>> {
 export interface EnrichmentState {
   // Jurisdiction detection (applicable to most contracts)
   jurisdictionLoading: boolean;
-  jurisdictionData?: JurisdictionIntelligence;
+  jurisdictionData?: unknown;
   jurisdictionError?: string;
 
   // Company analysis (B2B contracts)
   companyLoading: boolean;
-  companyData?: CompanyIntelligence;
+  companyData?: unknown;
   companyError?: string;
 
   // Job title analysis (employment-specific)
   jobTitleLoading: boolean;
-  jobTitleData?: JobTitleAnalysis;
+  jobTitleData?: unknown;
   jobTitleError?: string;
 
   // Market standards (template-specific variants)
-  marketStandards?: MarketStandards;
+  marketStandards?: unknown;
 }
 
 /**
@@ -189,28 +183,28 @@ export interface GenerationStage {
 export interface TemplateConfig<TFormData = Record<string, unknown>> {
   /** Unique template identifier (e.g., 'employment-agreement', 'nda') */
   id: string;
-  
+
   /** Display metadata */
   meta: TemplateMeta;
-  
+
   /** Zod schema for form validation */
   schema: ZodType<TFormData>;
-  
+
   /** Default values for the form */
   defaultValues: Partial<TFormData>;
-  
+
   /** Step definitions for the wizard */
   steps: StepConfig<TFormData>[];
-  
+
   /** AI enrichment configuration */
   enrichment?: EnrichmentConfig;
-  
+
   /** Document generation configuration */
   generation: GenerationConfig<TFormData>;
-  
+
   /** Storage key for localStorage persistence */
   storageKey: string;
-  
+
   /** Transform form data to signatories for PDF */
   getSignatories?: (formData: Partial<TFormData>) => SignatoryData[];
 }
@@ -222,7 +216,7 @@ export interface TemplateConfig<TFormData = Record<string, unknown>> {
 /**
  * Common party types used across different contract types
  */
-export type PartyRole = 
+export type PartyRole =
   | 'employer'
   | 'employee'
   | 'company'

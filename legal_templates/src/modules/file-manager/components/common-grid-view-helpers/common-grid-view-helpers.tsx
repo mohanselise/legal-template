@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+ 
 
 import { useState, useEffect, useCallback } from 'react';
 import { Row } from '@tanstack/react-table';

@@ -95,7 +95,7 @@ export function Step4Compensation() {
     };
 
     if (!Number.isNaN(currentAmount) && currentAmount > 0) {
-      let annualEquivalent = convertSalaryToAnnual(currentAmount, currentFrequency);
+      const annualEquivalent = convertSalaryToAnnual(currentAmount, currentFrequency);
       const converted = convertAnnualSalary(annualEquivalent, newFrequency);
       updates.salaryAmount = formatSalaryForStorage(converted, newFrequency);
     }

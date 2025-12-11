@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-hooks/rules-of-hooks */
+ 
 import { useEffect } from 'react';
 import { UserX } from 'lucide-react';
 import { CombinedGuardProps } from '@/models/permission';
@@ -115,7 +115,7 @@ export const CombinedGuard: React.FC<
   }, [isLoading, isUserInactive, hasAccess, fallback, showFallback, isDialogMode]);
 
   const renderInactiveUserDialog = () => (
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+     
     <Dialog open={true} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

@@ -6,7 +6,7 @@ async function main() {
         operator: 'and',
         rules: [{ field: 'includeNonSolicit', operator: 'equals', value: true }]
     });
-    await prisma.field.update({
+    await prisma.templateField.update({
         where: { id: fieldId },
         data: { conditions: newCondition }
     });

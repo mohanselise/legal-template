@@ -11,6 +11,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateTurnstileToken } from 'next-turnstile';
 import type { EnrichmentState } from './types';
+import type {
+  JurisdictionIntelligence,
+  CompanyIntelligence,
+  JobTitleAnalysis,
+  MarketStandards
+} from '@/lib/types/smart-form';
 
 // ==========================================
 // TYPES
@@ -235,11 +241,11 @@ export function extractEnrichment(
 ): EnrichmentState {
   return {
     jurisdictionLoading: false,
-    jurisdictionData: enrichment?.jurisdiction as unknown,
+    jurisdictionData: enrichment?.jurisdiction as JurisdictionIntelligence,
     companyLoading: false,
-    companyData: enrichment?.company as unknown,
+    companyData: enrichment?.company as CompanyIntelligence,
     jobTitleLoading: false,
-    jobTitleData: enrichment?.jobTitle as unknown,
-    marketStandards: enrichment?.marketStandards as unknown,
+    jobTitleData: enrichment?.jobTitle as JobTitleAnalysis,
+    marketStandards: enrichment?.marketStandards as MarketStandards,
   };
 }

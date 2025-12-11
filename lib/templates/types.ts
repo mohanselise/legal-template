@@ -9,6 +9,12 @@ import type { ComponentType } from 'react';
 import type { z, ZodType } from 'zod';
 import type { LucideIcon } from 'lucide-react';
 import type { LegalDocument, SignatoryData } from '@/app/api/templates/employment-agreement/schema';
+import type {
+  JurisdictionIntelligence,
+  CompanyIntelligence,
+  JobTitleAnalysis,
+  MarketStandards
+} from '@/lib/types/smart-form';
 
 // ==========================================
 // TEMPLATE METADATA
@@ -78,21 +84,21 @@ export interface StepConfig<TFormData = Record<string, unknown>> {
 export interface EnrichmentState {
   // Jurisdiction detection (applicable to most contracts)
   jurisdictionLoading: boolean;
-  jurisdictionData?: unknown;
+  jurisdictionData?: JurisdictionIntelligence;
   jurisdictionError?: string;
 
   // Company analysis (B2B contracts)
   companyLoading: boolean;
-  companyData?: unknown;
+  companyData?: CompanyIntelligence;
   companyError?: string;
 
   // Job title analysis (employment-specific)
   jobTitleLoading: boolean;
-  jobTitleData?: unknown;
+  jobTitleData?: JobTitleAnalysis;
   jobTitleError?: string;
 
   // Market standards (template-specific variants)
-  marketStandards?: unknown;
+  marketStandards?: MarketStandards;
 }
 
 /**

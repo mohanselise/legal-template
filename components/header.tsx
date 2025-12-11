@@ -19,10 +19,10 @@ export default function Header() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2">
               <Image
-                src="/signature-black.svg"
-                alt="SELISE"
-                width={125}
-                height={49}
+                src="/Selise Legal Templates.svg"
+                alt="SELISE Legal Templates"
+                width={424}
+                height={241}
                 className="h-8 w-auto"
                 priority
               />

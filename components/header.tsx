@@ -23,7 +23,7 @@ export default function Header() {
                 alt="SELISE Legal Templates"
                 width={424}
                 height={241}
-                className="h-8 w-auto"
+                className="h-10 w-auto md:h-12"
                 priority
               />
             </Link>

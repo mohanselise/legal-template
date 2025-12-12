@@ -270,7 +270,14 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
                 value={partyValue.country && partyValue.country.trim() ? partyValue.country : undefined}
                 onValueChange={(val) => updateField("country", val)}
               >
-                <SelectTrigger id={`${field.name}-country`} className={cn(error ? "border-destructive" : "")}>
+                <SelectTrigger 
+                  id={`${field.name}-country`} 
+                  className={cn(
+                    "w-full rounded-lg border-2 px-4 py-2.5 text-base shadow-sm",
+                    "h-[44px] data-[size=default]:h-[44px]",
+                    error ? "border-destructive" : ""
+                  )}
+                >
                   <SelectValue placeholder="Select country" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">

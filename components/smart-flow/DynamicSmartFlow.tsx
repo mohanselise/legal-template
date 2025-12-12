@@ -22,6 +22,7 @@ import {
   ClipboardCheck,
   HelpCircle,
 } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -1236,8 +1237,15 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
           animate={{ opacity: 1, y: 0 }}
           className="relative mx-auto w-full max-w-4xl rounded-3xl border border-[hsl(var(--brand-border))] bg-background p-10 text-center shadow-xl backdrop-blur-sm"
         >
-          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-3xl border border-[hsl(var(--brand-border))] bg-muted shadow-sm">
-            <Sparkles className="h-10 w-10 text-[hsl(var(--brand-primary))]" />
+          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center">
+            <Image
+              src="/Selise Legal Templates.svg"
+              alt="SELISE Legal Templates"
+              width={424}
+              height={241}
+              className="h-16 w-auto"
+              priority
+            />
           </div>
           <h1 className="mb-6 text-5xl font-semibold text-[hsl(var(--fg))] md:text-6xl font-heading">
             {config.title}
@@ -1303,12 +1311,6 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                     storeTurnstileToken(token);
                   }}
                 />
-                {turnstileStatus === 'success' && turnstileToken && (
-                  <div className="flex items-center justify-center gap-2 text-sm text-emerald-600">
-                    <Check className="h-4 w-4" />
-                    <span>{t('welcome.verificationComplete')}</span>
-                  </div>
-                )}
                 {turnstileStatus === 'error' && (
                   <div className="flex items-center justify-center gap-2 text-sm text-red-600">
                     <AlertTriangle className="h-4 w-4" />

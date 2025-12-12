@@ -25,6 +25,11 @@ export function LanguageSwitcher() {
   if (!isMounted) return null;
 
   const switchLocale = (newLocale: string) => {
+    // Force English only for now
+    if (newLocale !== 'en') {
+      return;
+    }
+
     // Update cookie
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
     
@@ -37,9 +42,8 @@ export function LanguageSwitcher() {
     router.replace(pathname, { locale: newLocale });
   };
 
-  const currentLocaleName = locale === 'de' ? 'Deutsch' : 'English';
-  const otherLocale = locale === 'de' ? 'en' : 'de';
-  const otherLocaleName = otherLocale === 'de' ? 'Deutsch' : 'English';
+  // Force English locale - always show English
+  const currentLocaleName = 'English';
 
   return (
     <Popover>
@@ -51,7 +55,7 @@ export function LanguageSwitcher() {
         >
           <Globe className="h-4 w-4" />
           <span className="hidden sm:inline">{currentLocaleName}</span>
-          <span className="sm:hidden">{locale.toUpperCase()}</span>
+          <span className="sm:hidden">EN</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-40 p-1" align="end">
@@ -59,22 +63,17 @@ export function LanguageSwitcher() {
           <button
             onClick={() => switchLocale('en')}
             className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-              locale === 'en'
-                ? 'bg-primary/10 text-primary font-medium'
-                : 'hover:bg-accent text-foreground'
+              'bg-primary/10 text-primary font-medium'
             }`}
           >
             English
           </button>
           <button
-            onClick={() => switchLocale('de')}
-            className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-              locale === 'de'
-                ? 'bg-primary/10 text-primary font-medium'
-                : 'hover:bg-accent text-foreground'
-            }`}
+            disabled
+            className="w-full text-left px-3 py-2 text-sm rounded-md transition-colors opacity-50 cursor-not-allowed text-muted-foreground"
           >
             Deutsch
+            <span className="ml-2 text-xs text-amber-600">(Coming Soon)</span>
           </button>
         </div>
       </PopoverContent>

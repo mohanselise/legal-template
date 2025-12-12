@@ -13,39 +13,9 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 function detectLocale(request: NextRequest): string {
-  // 1. Check cookie preference first (highest priority)
-  const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value;
-  if (cookieLocale && routing.locales.some((locale) => locale === cookieLocale)) {
-    return cookieLocale;
-  }
-
-  // 2. Check Accept-Language header for German-speaking regions
-  const acceptLanguage = request.headers.get('accept-language');
-  if (acceptLanguage) {
-    // Parse Accept-Language header (e.g., "de-DE,de;q=0.9,en;q=0.8")
-    const languages = acceptLanguage
-      .split(',')
-      .map(lang => {
-        const [code, q = 'q=1'] = lang.trim().split(';');
-        const quality = parseFloat(q.replace('q=', ''));
-        return { code: code.trim().toLowerCase(), quality };
-      })
-      .sort((a, b) => b.quality - a.quality);
-
-    // Check if any German variant is preferred
-    for (const lang of languages) {
-      if (GERMAN_LANGUAGE_CODES.some(germanCode => lang.code.startsWith(germanCode))) {
-        return 'de';
-      }
-      // If English is explicitly preferred, use it
-      if (lang.code.startsWith('en') && lang.quality >= 0.5) {
-        return 'en';
-      }
-    }
-  }
-
-  // 3. Default to English
-  return routing.defaultLocale;
+  // Force English locale for all visitors (German coming soon)
+  // Always return 'en' regardless of preferences
+  return 'en';
 }
 
 function getLocalePrefixedSignInTarget(pathname: string): string | null {
@@ -101,9 +71,15 @@ export default clerkMiddleware(
       (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
     );
 
-    // Redirect root or non-localized paths
+    // Redirect German URLs to English (German coming soon)
+    if (pathname.startsWith('/de/') || pathname === '/de') {
+      const newPath = pathname.replace(/^\/de/, '/en');
+      return NextResponse.redirect(new URL(newPath + request.nextUrl.search, request.url));
+    }
+
+    // Redirect root or non-localized paths to English
     if (!pathnameHasLocale && !pathname.startsWith('/sign-in')) {
-      const locale = detectLocale(request);
+      const locale = detectLocale(request); // Always returns 'en'
       const newPath = pathname === '/' ? `/${locale}` : `/${locale}${pathname}`;
       return NextResponse.redirect(new URL(newPath + request.nextUrl.search, request.url));
     }

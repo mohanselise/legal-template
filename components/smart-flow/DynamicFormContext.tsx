@@ -149,6 +149,11 @@ export function DynamicFormProvider({
       return next;
     });
   }, []);
+  
+  // Expose a function to clear validation error display state
+  const clearValidationErrorDisplay = useCallback(() => {
+    // This will be used by the component to clear the showValidationErrors state
+  }, []);
 
   // Check if a screen is visible based on its conditions
   const isScreenVisible = useCallback((screenIndex: number): boolean => {

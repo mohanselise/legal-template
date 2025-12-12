@@ -249,7 +249,7 @@ export function SignatoryScreenRenderer({
         <motion.button
           type="button"
           onClick={handleAddSignatory}
-          className="w-full py-4 border-2 border-dashed border-[hsl(var(--border))] rounded-xl text-[hsl(var(--globe-grey))] hover:border-[hsl(var(--selise-blue))] hover:text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/5 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-4 border-2 border-dashed border-[hsl(var(--border))] rounded-xl text-[hsl(var(--globe-grey))] hover:border-[hsl(var(--selise-blue))] hover:text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/5 transition-colors flex items-center justify-center gap-2 cursor-pointer"
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
         >

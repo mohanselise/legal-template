@@ -21,7 +21,7 @@ const DEFAULT_PARTY: PartyValue = {
   city: "",
   state: "",
   postalCode: "",
-  country: "CH",
+  country: "",
   placeId: undefined,
 };
 
@@ -267,7 +267,7 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
                 Country
               </Label>
               <Select
-                value={partyValue.country || "CH"}
+                value={partyValue.country && partyValue.country.trim() ? partyValue.country : undefined}
                 onValueChange={(val) => updateField("country", val)}
               >
                 <SelectTrigger id={`${field.name}-country`} className={cn(error ? "border-destructive" : "")}>

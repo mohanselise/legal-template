@@ -33,6 +33,23 @@ function Stepper({
     return Math.min(Math.max(currentStep, 0), steps.length - 1);
   }, [currentStep, steps.length]);
 
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const stepRefs = React.useRef<(HTMLLIElement | null)[]>([]);
+
+  // Scroll active step into view when currentStep changes
+  React.useEffect(() => {
+    if (stepRefs.current[safeCurrent] && scrollContainerRef.current) {
+      const stepElement = stepRefs.current[safeCurrent];
+      if (stepElement) {
+        stepElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center',
+        });
+      }
+    }
+  }, [safeCurrent]);
+
   const handleStepClick = (index: number) => {
     if (allowNavigation && onStepClick && index <= safeCurrent) {
       onStepClick(index);
@@ -63,6 +80,9 @@ function Stepper({
         return (
           <li
             key={step.id}
+            ref={(el) => {
+              stepRefs.current[index] = el;
+            }}
             className={cn(
               'relative flex flex-col items-center text-center',
               // Fixed height to ensure all steps align properly, even with wrapping titles
@@ -155,7 +175,10 @@ function Stepper({
   return (
     <nav aria-label="Progress" className={cn('w-full', className)}>
       {isScrollable ? (
-        <div className="relative overflow-x-auto px-2 pb-2 pt-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div 
+          ref={scrollContainerRef}
+          className="relative overflow-x-auto px-2 pb-2 pt-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
           {stepsList}
         </div>
       ) : (

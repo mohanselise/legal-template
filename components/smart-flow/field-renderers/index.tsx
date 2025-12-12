@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, Check, AlertTriangle, Sparkles, X, ChevronDown, Trash2, Plus } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Check, AlertTriangle, Sparkles, Trash2, Plus } from "lucide-react";
+import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -571,11 +571,11 @@ export function SelectField({ field, value, onChange, error, enrichmentContext, 
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
               className={cn(
-                'relative p-5 rounded-2xl border-2 transition-all text-left group overflow-hidden',
+                'relative p-5 rounded-2xl border-2 transition-all text-left group overflow-hidden cursor-pointer',
                 isSelected
                   ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.03] shadow-lg shadow-[hsl(var(--brand-primary))/10]'
                   : 'border-[hsl(var(--border))] bg-background hover:border-[hsl(var(--brand-primary))/50] hover:shadow-md',
-                error && 'border-destructive'
+                error && 'border-amber-400 bg-amber-50/50 shadow-md shadow-amber-200/30'
               )}
             >
               <div className={cn(
@@ -608,7 +608,12 @@ export function SelectField({ field, value, onChange, error, enrichmentContext, 
       {resolvedHelpText && (
         <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <div className="flex items-center gap-2 mt-2 text-sm text-amber-700">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+          <span className="font-medium">{error}</span>
+        </div>
+      )}
     </div>
   );
 }

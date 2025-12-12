@@ -128,7 +128,7 @@ function DynamicFieldWithApply({
               placeholder:text-[hsl(var(--globe-grey))]/60 shadow-sm
               focus:border-[hsl(var(--brand-primary))] focus:outline-none focus:ring-4 focus:ring-[hsl(var(--brand-primary))/10]
               hover:border-[hsl(var(--brand-primary))/50]
-              ${error ? 'border-destructive' : 'border-[hsl(var(--border))]'}
+              ${error ? 'border-amber-400 bg-amber-50/30' : 'border-[hsl(var(--border))]'}
               ${showApplyButton ? 'pr-24' : ''}
             `}
           />
@@ -152,7 +152,12 @@ function DynamicFieldWithApply({
             </span>
           )}
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <div className="flex items-center gap-2 mt-2 text-sm text-amber-700">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+            <span className="font-medium">{error}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -376,7 +381,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   const {
     config,
     formData,
-    setFieldValue,
+    setFieldValue: originalSetFieldValue,
     errors,
     currentStep,
     totalSteps,
@@ -391,6 +396,13 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     visibleScreens,
     getVisibleFields,
   } = useDynamicForm();
+  
+  // Wrap setFieldValue to clear validation error display when user starts filling fields
+  const setFieldValue = useCallback((name: string, value: unknown) => {
+    originalSetFieldValue(name, value);
+    // Clear validation error display when user starts filling fields
+    setShowValidationErrors(false);
+  }, [originalSetFieldValue]);
 
   const router = useRouter();
   const t = useTranslations('employmentAgreement.smartFlow');
@@ -402,6 +414,9 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   const [aiEnrichmentState, setAiEnrichmentState] = useState<AiEnrichmentIndicatorState>({
     status: "idle",
   });
+
+  // Validation error state - tracks when user tries to proceed without filling required fields
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   // Loading screen state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -1193,7 +1208,20 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
       // Trigger AI enrichment without waiting for the response
       runAiEnrichmentInBackground(screen);
 
+      // Clear validation errors when proceeding successfully
+      setShowValidationErrors(false);
       nextStep();
+    } else {
+      // Show validation errors when user tries to proceed without filling required fields
+      setShowValidationErrors(true);
+      
+      // Scroll to first error field
+      setTimeout(() => {
+        const firstErrorField = document.querySelector('[data-field-error="true"]');
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
     }
   };
 
@@ -1315,7 +1343,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
               }
             }}
             disabled={turnstileStatus !== 'success' || !turnstileToken}
-            className="inline-flex items-center gap-3 rounded-xl bg-[hsl(var(--brand-primary))] px-10 py-4 text-lg font-semibold text-[hsl(var(--brand-primary-foreground))] shadow-lg transition-all hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed group"
+            className="inline-flex items-center gap-3 rounded-xl bg-[hsl(var(--brand-primary))] px-10 py-4 text-lg font-semibold text-[hsl(var(--brand-primary-foreground))] shadow-lg transition-all hover:shadow-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
             whileHover={{ scale: turnstileStatus === 'success' ? 1.02 : 1 }}
             whileTap={{ scale: turnstileStatus === 'success' ? 0.98 : 1 }}
           >
@@ -1469,6 +1497,40 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                   </div>
                 </div>
 
+                {/* Validation Error Banner */}
+                {showValidationErrors && Object.keys(errors).length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="mb-6 rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4 md:p-5 shadow-md shadow-amber-200/20"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-400">
+                        <AlertTriangle className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <h3 className="font-semibold text-lg text-amber-800">
+                          Please fill in the required fields
+                        </h3>
+                        <p className="text-sm text-amber-700">
+                          The following fields are required to continue:
+                        </p>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-amber-800">
+                          {Object.entries(errors).map(([fieldName, errorMessage]) => {
+                            const field = getVisibleFields(currentScreen).find(f => f.name === fieldName);
+                            return (
+                              <li key={fieldName} className="text-amber-800">
+                                <strong>{field?.label || fieldName}</strong>: {errorMessage}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Fields with Staggered Animation */}
                 <motion.div
                   className="space-y-8 relative z-10"
@@ -1595,6 +1657,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                                 animate="show"
                                 exit={{ opacity: 0, y: -20 }}
                                 layout
+                                data-field-error={errors[field.name] ? "true" : undefined}
                               >
                                 <DynamicFieldWithApply
                                   field={{
@@ -1713,6 +1776,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                               animate="show"
                               exit={{ opacity: 0, scale: 0.95 }}
                               layout
+                              data-field-error={errors[field.name] ? "true" : undefined}
                             >
                               <DynamicField
                                 field={field as FieldConfig}

@@ -230,7 +230,7 @@ export default async function Home() {
               return (
                 <Card
                   key={template.id}
-                  className="group h-full border border-[hsl(var(--border))] bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                  className="group flex h-full flex-col border border-[hsl(var(--border))] bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
                 >
                   <CardHeader className="space-y-4">
                     <div className="flex items-center gap-3">
@@ -246,7 +246,7 @@ export default async function Home() {
                       </CardDescription>
                     </div>
                   </CardHeader>
-                  <CardFooter className="pt-0">
+                  <CardFooter className="mt-auto pt-0">
                     <Button
                       asChild
                       className="w-full justify-between bg-[hsl(var(--selise-blue))] text-white hover:bg-[hsl(var(--oxford-blue))] hover:text-white focus-visible:ring-[hsl(var(--selise-blue))] focus-visible:ring-offset-2"

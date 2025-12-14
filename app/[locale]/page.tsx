@@ -374,7 +374,7 @@ export default async function Home() {
 
       {/* Final CTA Section */}
       <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 min-h-[500px]">
           <Image
             src="/graphics/mountain-bg-overlayed.jpg"
             alt="SELISE Signature background"

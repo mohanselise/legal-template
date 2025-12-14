@@ -195,7 +195,7 @@ export default async function TemplatesPage({
             })}
           </div>
 
-          <div className="mt-10">
+          <div className="mt-6">
             <TemplateSearchGrid
               templates={availableTemplateCards}
               ctaLabel={t('templatesSection.generateNow')}

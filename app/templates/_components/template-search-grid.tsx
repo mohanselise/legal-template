@@ -198,7 +198,7 @@ export function TemplateSearchGrid({
   const disableNext = currentPageSafe >= totalPages;
 
   return (
-    <div className="mt-12 space-y-6">
+    <div className="mt-6 space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex w-full items-center gap-3 lg:max-w-md">
           <div className="relative w-full">

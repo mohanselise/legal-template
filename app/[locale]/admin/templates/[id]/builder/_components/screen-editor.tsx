@@ -585,7 +585,7 @@ export function ScreenEditor({
             <Button
               type="submit"
               disabled={saving}
-              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))]"
+              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))]"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {screen ? "Save Changes" : "Create Screen"}

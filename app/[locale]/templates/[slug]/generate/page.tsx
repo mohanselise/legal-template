@@ -107,7 +107,7 @@ export default async function TemplateGeneratePage({ params }: Props) {
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Button
                 asChild
-                className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))]"
+                className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))]"
               >
                 <Link href={`/${locale}/templates`}>Browse Available Templates</Link>
               </Button>
@@ -169,7 +169,7 @@ export default async function TemplateGeneratePage({ params }: Props) {
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Button
               asChild
-              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))]"
+              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))]"
             >
               <Link href={`/${locale}/admin/templates/${template.id}/builder`}>
                 <Settings className="h-4 w-4 mr-2" />

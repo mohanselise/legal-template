@@ -146,7 +146,7 @@ export default function SignatureSuccessPage() {
             </span>
           </div>
           <Button asChild variant="ghost" className="text-muted-foreground hover:text-[hsl(var(--selise-blue))]">
-            <Link href={`/${locale}/templates/${slug}`}>
+            <Link href={`/${locale}/templates/${slug}/generate`}>
               Create Another
             </Link>
           </Button>

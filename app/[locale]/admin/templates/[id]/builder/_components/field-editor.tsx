@@ -906,7 +906,7 @@ export function FieldEditor({
             <Button
               type="submit"
               disabled={saving || (fieldType === "select" && options.length === 0)}
-              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))]"
+              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))]"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {field ? "Save Changes" : "Create Field"}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -40,6 +41,9 @@ interface PayloadSummary {
 }
 
 export default function SignatureSuccessPage() {
+  const params = useParams();
+  const locale = params.locale as string;
+  
   // 1. Retrieve Data from Session Storage
   const payload = useMemo<PayloadSummary | null>(() => {
     if (typeof window === 'undefined') return null;
@@ -98,7 +102,7 @@ export default function SignatureSuccessPage() {
             </span>
           </div>
           <Button asChild variant="ghost" className="text-muted-foreground hover:text-[hsl(var(--selise-blue))]">
-            <Link href="/templates/employment-agreement/generate">
+            <Link href={`/${locale}/templates/employment-agreement/generate`}>
               Create Another
             </Link>
           </Button>

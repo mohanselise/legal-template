@@ -180,6 +180,21 @@ function extractSignatories(
   return signatories;
 }
 
+// Helper function to check if effectiveDate is a valid date
+function isValidEffectiveDate(effectiveDate: string | undefined): boolean {
+  if (!effectiveDate) return false;
+  
+  // Check if it's a text value like "Upon Signature"
+  const textValues = ['upon signature', 'upon signing', 'upon execution', 'date of signature', 'date of signing'];
+  if (textValues.includes(effectiveDate.toLowerCase().trim())) {
+    return false;
+  }
+  
+  // Check if it's a valid date
+  const date = new Date(effectiveDate);
+  return !isNaN(date.getTime()) && date.toString() !== 'Invalid Date';
+}
+
 export function TemplatePDFReview({
   document,
   formData,
@@ -571,10 +586,10 @@ export function TemplatePDFReview({
                     <FileText className="w-3.5 h-3.5" />
                     <span>{document.metadata.title}</span>
                   </div>
-                  {document.metadata.effectiveDate && (
+                  {isValidEffectiveDate(document.metadata.effectiveDate) && (
                     <div className="inline-flex items-center gap-1">
                       <span className="font-semibold text-[hsl(var(--fg))]">Effective:</span>
-                      <span>{new Date(document.metadata.effectiveDate).toLocaleDateString()}</span>
+                      <span>{new Date(document.metadata.effectiveDate!).toLocaleDateString()}</span>
                     </div>
                   )}
                   {numPages && (
@@ -593,7 +608,7 @@ export function TemplatePDFReview({
               {signatureFields.length > 0 && (
                 <Button
                   onClick={handleSendToSignature}
-                  className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] shadow-md"
+                  className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))] shadow-md"
                 >
                   <Send className="w-4 h-4 mr-2" />
                   Send for Signature
@@ -847,12 +862,14 @@ export function TemplatePDFReview({
                       {document.metadata.title}
                     </dd>
                   </div>
-                  <div className="pb-3 border-b border-[hsl(var(--border))]">
-                    <dt className="text-[hsl(var(--globe-grey))] text-xs mb-1">Effective Date</dt>
-                    <dd className="font-medium text-[hsl(var(--fg))] text-sm">
-                      {new Date(document.metadata.effectiveDate).toLocaleDateString()}
-                    </dd>
-                  </div>
+                  {isValidEffectiveDate(document.metadata.effectiveDate) && (
+                    <div className="pb-3 border-b border-[hsl(var(--border))]">
+                      <dt className="text-[hsl(var(--globe-grey))] text-xs mb-1">Effective Date</dt>
+                      <dd className="font-medium text-[hsl(var(--fg))] text-sm">
+                        {new Date(document.metadata.effectiveDate!).toLocaleDateString()}
+                      </dd>
+                    </div>
+                  )}
                   {document.metadata.jurisdiction && (
                     <div className="pb-3 border-b border-[hsl(var(--border))]">
                       <dt className="text-[hsl(var(--globe-grey))] text-xs mb-1">Jurisdiction</dt>
@@ -908,7 +925,7 @@ export function TemplatePDFReview({
                 {signatureFields.length > 0 && (
                   <Button
                     onClick={handleSendToSignature}
-                    className="w-full bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] shadow-md"
+                    className="w-full bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))] shadow-md"
                   >
                     <Send className="w-4 h-4 mr-2" />
                     Send for Signature
@@ -965,7 +982,7 @@ export function TemplatePDFReview({
           <DialogFooter className="pt-4">
             <Button
               onClick={handleSendToSignature}
-              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] w-full sm:w-auto"
+              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))] w-full sm:w-auto"
               disabled={signatureFields.length === 0}
             >
               <Send className="w-4 h-4 mr-2" />

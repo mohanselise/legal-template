@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 
@@ -10,6 +11,11 @@ const pricingSchema = z.object({
 
 export async function GET(request: NextRequest) {
     try {
+        // Check authentication
+        const { userId } = await auth();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
         const pricing = await prisma.modelPricing.findMany({
             orderBy: {
                 model: 'asc',
@@ -28,6 +34,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        // Check authentication
+        const { userId } = await auth();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json();
         const validation = pricingSchema.safeParse(body);
 

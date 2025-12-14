@@ -1,70 +1,21 @@
-"use client";
+import { currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import { AdminLayoutClient } from "./_components/admin-layout-client";
 
-import { usePathname } from "next/navigation";
-import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, FileText, Users } from "lucide-react";
-
-const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/templates", label: "Templates", icon: FileText },
-  { href: "/admin/users", label: "Users", icon: Users },
-];
-
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
-  const pathname = usePathname();
+  const { locale } = await params;
+  const user = await currentUser();
 
-  // Extract locale from pathname (e.g., /en/admin -> en)
-  const locale = pathname.split("/")[1];
+  if (!user) {
+    // Redirect to sign-in without locale prefix (sign-in is excluded from i18n)
+    redirect("/sign-in");
+  }
 
-  const isActive = (href: string) => {
-    const fullPath = `/${locale}${href}`;
-    if (href === "/admin") {
-      return pathname === fullPath;
-    }
-    return pathname.startsWith(fullPath);
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-[hsl(var(--gradient-light-to))]">
-      <div className="border-b border-[hsl(var(--border))] bg-[hsl(var(--bg))]">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-6">
-            <Link
-              href={`/${locale}/admin`}
-              className="text-lg font-semibold text-[hsl(var(--selise-blue))] font-heading"
-            >
-              Admin Portal
-            </Link>
-            <nav className="hidden md:flex gap-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={`/${locale}${item.href}`}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      active
-                        ? "text-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/10"
-                        : "text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--muted))]"
-                    }`}
-                  >
-                    <Icon className="size-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </div>
-      {children}
-    </div>
-  );
+  return <AdminLayoutClient locale={locale}>{children}</AdminLayoutClient>;
 }

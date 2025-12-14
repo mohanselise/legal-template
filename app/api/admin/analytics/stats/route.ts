@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { startOfDay, subDays, startOfMonth } from 'date-fns';
 
 export async function GET(request: NextRequest) {
     try {
-        // Check authentication (assuming middleware handles this or we check session here)
-        // For now, we'll assume the route is protected by middleware/Clerk
+        // Check authentication
+        const { userId } = await auth();
+        if (!userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
         const now = new Date();
         const last24h = subDays(now, 1);

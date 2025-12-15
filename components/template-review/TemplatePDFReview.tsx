@@ -31,6 +31,9 @@ import { SignatureFieldMiniMap } from "@/app/[locale]/templates/employment-agree
 import { generateSignatureFieldMetadata } from "@/lib/pdf/signature-field-metadata";
 import { ensureAdditionalSignatoryArray } from "@/lib/templates/signatory-fields";
 import type { SignatoryEntry } from "@/lib/templates/signatory-config";
+import { InlineTextEditor } from "./InlineTextEditor";
+import { findBlockByText, updateBlockText, type TextBlockMapping } from "@/lib/pdf/text-block-mapper";
+import { Edit2 } from "lucide-react";
 
 // Dynamically import react-pdf components to avoid SSR issues
 const Document = dynamic(
@@ -223,7 +226,15 @@ export function TemplatePDFReview({
   const [selectedSignatoryIndex, setSelectedSignatoryIndex] = useState(0);
   const [selectedFieldType, setSelectedFieldType] = useState<"signature" | "date">("signature");
 
-  const signatories = extractSignatories(document, formData);
+  // Text editing state
+  const [editableDocument, setEditableDocument] = useState<LegalDocument>(document);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<TextBlockMapping | null>(null);
+  const [editingPosition, setEditingPosition] = useState<{ x: number; y: number; page: number } | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  const signatories = extractSignatories(editableDocument, formData);
 
   // Configure PDF.js worker on client side only
   useEffect(() => {
@@ -234,10 +245,58 @@ export function TemplatePDFReview({
     }
   }, []);
 
-  // Generate PDF preview on mount
+  // Add CSS for text layer hover effect
   useEffect(() => {
-    generatePdfPreview();
+    if (typeof window === 'undefined' || typeof document === 'undefined' || !document.createElement) {
+      return;
+    }
+    
+    try {
+      const style = document.createElement('style');
+      style.textContent = `
+        .react-pdf__Page__textContent span {
+          cursor: pointer !important;
+          transition: background-color 0.2s ease;
+        }
+        .react-pdf__Page__textContent span:hover {
+          background-color: hsl(var(--selise-blue) / 0.1) !important;
+          border-radius: 2px;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        if (typeof document !== 'undefined' && document.head && document.head.contains(style)) {
+          document.head.removeChild(style);
+        }
+      };
+    } catch (error) {
+      console.warn('Failed to add text layer hover styles:', error);
+    }
   }, []);
+
+  // Update editable document when prop changes
+  useEffect(() => {
+    setEditableDocument(document);
+    setHasUnsavedChanges(false);
+  }, [document]);
+
+  // Generate PDF preview on mount
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      generatePdfPreview();
+    }
+  }, []);
+
+  // Regenerate PDF when document is edited (but not on initial mount)
+  useEffect(() => {
+    if (!isInitialMount.current && hasUnsavedChanges) {
+      generatePdfPreview(editableDocument);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editableDocument]);
 
   // Cleanup PDF URL on unmount
   useEffect(() => {
@@ -267,14 +326,19 @@ export function TemplatePDFReview({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [numPages, apiSignatureFields]);
 
-  const generatePdfPreview = async () => {
+  const generatePdfPreview = async (documentToUse: LegalDocument = editableDocument) => {
     setIsLoadingPdf(true);
     try {
+      // Revoke old URL if it exists
+      if (pdfUrl) {
+        window.URL.revokeObjectURL(pdfUrl);
+      }
+
       const response = await fetch("/api/documents/generate-pdf?metadata=true", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          document,
+          document: documentToUse,
           formData,
         }),
       });
@@ -528,8 +592,121 @@ export function TemplatePDFReview({
   };
 
   const handlePageClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!selectedField) return;
-    setSelectedField(null);
+    // Don't interfere with signature field selection
+    if (selectedField) {
+      setSelectedField(null);
+      return;
+    }
+
+    // Don't handle clicks if already editing
+    if (isEditing) return;
+
+    // Check if click is on text layer
+    const target = event.target as HTMLElement;
+    const textLayer = target.closest('.react-pdf__Page__textContent');
+    
+    if (!textLayer) return;
+
+    // Get the clicked text - try multiple strategies
+    const selection = window.getSelection();
+    let clickedText = '';
+    
+    if (selection && selection.toString().trim()) {
+      // User selected text - use selection
+      clickedText = selection.toString().trim();
+    } else {
+      // User clicked on a text element - try to get surrounding text
+      const textElement = target.closest('span');
+      if (textElement) {
+        // Get text from the span and nearby siblings for better matching
+        const parent = textElement.parentElement;
+        if (parent) {
+          // Try to get a larger context (current span + siblings)
+          const siblings = Array.from(parent.children);
+          const currentIndex = siblings.indexOf(textElement);
+          const contextStart = Math.max(0, currentIndex - 1);
+          const contextEnd = Math.min(siblings.length, currentIndex + 2);
+          const contextSpans = siblings.slice(contextStart, contextEnd);
+          clickedText = contextSpans
+            .map(span => span.textContent?.trim() || '')
+            .join(' ')
+            .trim();
+        }
+        
+        // Fallback to just the clicked element's text
+        if (!clickedText) {
+          clickedText = textElement.textContent?.trim() || '';
+        }
+      }
+    }
+
+    // Need at least 3 characters to match
+    if (!clickedText || clickedText.length < 3) return;
+
+    // Find the matching block (prioritizes paragraphs and leaf nodes)
+    const blockMapping = findBlockByText(clickedText, editableDocument);
+    
+    if (!blockMapping) {
+      console.log('Could not find matching block for text:', clickedText.substring(0, 50));
+      return;
+    }
+
+    // Log what we found for debugging
+    console.log('Found block to edit:', {
+      type: blockMapping.type,
+      isLeaf: blockMapping.isLeaf,
+      isTitle: blockMapping.isTitle,
+      textPreview: blockMapping.text.substring(0, 50),
+    });
+
+    // Get click position relative to the page
+    const pageElement = target.closest('[data-page-number]') as HTMLElement;
+    if (!pageElement) return;
+
+    const pageRect = pageElement.getBoundingClientRect();
+    const clickX = event.clientX - pageRect.left;
+    const clickY = event.clientY - pageRect.top;
+    const pageNumber = parseInt(pageElement.getAttribute('data-page-number') || '1');
+
+    // Set editing state
+    setEditingBlock(blockMapping);
+    setEditingPosition({ x: clickX, y: clickY, page: pageNumber });
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async (newText: string) => {
+    if (!editingBlock) return;
+
+    setIsSavingEdit(true);
+    try {
+      // Update the document - pass isTitle flag for article/section titles
+      const updated = updateBlockText(
+        editableDocument, 
+        editingBlock.blockPath, 
+        newText,
+        editingBlock.isTitle
+      );
+      setEditableDocument(updated);
+      setHasUnsavedChanges(true);
+      
+      // Close editor
+      setIsEditing(false);
+      setEditingBlock(null);
+      setEditingPosition(null);
+      
+      // PDF will regenerate automatically via useEffect
+    } catch (error) {
+      console.error('Error saving edit:', error);
+      alert('Failed to save edit. Please try again.');
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditingBlock(null);
+    setEditingPosition(null);
   };
 
   if (isPreparingContract) {
@@ -570,10 +747,17 @@ export function TemplatePDFReview({
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[hsl(var(--success))/0.15] text-[hsl(var(--poly-green))] text-[11px] font-semibold uppercase tracking-wide">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Ready to review
-                  </span>
+                  {hasUnsavedChanges ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[hsl(var(--warning))/0.15] text-[hsl(var(--warning))] text-[11px] font-semibold uppercase tracking-wide">
+                      <Edit2 className="w-3 h-3" />
+                      Edited
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[hsl(var(--success))/0.15] text-[hsl(var(--poly-green))] text-[11px] font-semibold uppercase tracking-wide">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Ready to review
+                    </span>
+                  )}
                   {signatories.length > 0 && (
                     <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[hsl(var(--muted))] text-[hsl(var(--globe-grey))] text-[11px] font-semibold">
                       {signatories.length} signator{signatories.length === 1 ? "y" : "ies"}
@@ -709,16 +893,26 @@ export function TemplatePDFReview({
               <div className="max-w-4xl mx-auto space-y-6">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-[hsl(var(--globe-grey))]">
                   <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--bg))] border border-[hsl(var(--border))] px-3 py-1 font-semibold">
-                    Place or adjust signature blocks, then send.
+                    <Edit2 className="w-3 h-3" />
+                    Click any text to edit
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[hsl(var(--muted))]">
-                    <span className="h-2 w-2 rounded-full bg-[hsl(var(--selise-blue))]" />
-                    Primary signer
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[hsl(var(--muted))]">
-                    <span className="h-2 w-2 rounded-full bg-[hsl(var(--poly-green))]" />
-                    Counterparty
-                  </span>
+                  {hasUnsavedChanges && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--warning))/0.15] text-[hsl(var(--warning))] px-3 py-1 font-semibold">
+                      Unsaved changes
+                    </span>
+                  )}
+                  {signatureFields.length > 0 && (
+                    <>
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[hsl(var(--muted))]">
+                        <span className="h-2 w-2 rounded-full bg-[hsl(var(--selise-blue))]" />
+                        Primary signer
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[hsl(var(--muted))]">
+                        <span className="h-2 w-2 rounded-full bg-[hsl(var(--poly-green))]" />
+                        Counterparty
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 <Document
@@ -747,6 +941,7 @@ export function TemplatePDFReview({
                             width: 612 * scale,
                             minHeight: 792 * scale,
                           }}
+                          onClick={handlePageClick}
                         >
                           <Page
                             pageNumber={page}
@@ -787,6 +982,27 @@ export function TemplatePDFReview({
                             <div className="pointer-events-none absolute bottom-3 right-3 text-[hsl(var(--globe-grey))] text-xs font-semibold tracking-tight">
                               Page {page} of {numPages}
                             </div>
+                          )}
+                          
+                          {/* Inline Text Editor Overlay */}
+                          {isEditing && editingPosition && editingPosition.page === page && editingBlock && (
+                            <>
+                              {/* Backdrop to focus attention */}
+                              <div 
+                                className="absolute inset-0 bg-black/20 z-[999]"
+                                onClick={handleCancelEdit}
+                              />
+                              <InlineTextEditor
+                                initialText={editingBlock.text}
+                                position={{ x: editingPosition.x, y: editingPosition.y }}
+                                scale={scale}
+                                onSave={handleSaveEdit}
+                                onCancel={handleCancelEdit}
+                                isSaving={isSavingEdit}
+                                blockType={editingBlock.type}
+                                isTitle={editingBlock.isTitle}
+                              />
+                            </>
                           )}
                         </div>
                       ))}

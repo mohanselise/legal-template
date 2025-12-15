@@ -1,18 +1,20 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
 import type { SignatoryData } from '@/app/api/templates/employment-agreement/schema';
-import { SIG_PAGE_LAYOUT, getSignatureBlockPosition, CONTENT_WIDTH } from '../signature-layout';
+import { SIG_PAGE_LAYOUT } from '../signature-layout';
 
+/**
+ * Inline-flow signature page styles
+ * Uses relative positioning so it integrates with document flow
+ * and doesn't create blank pages
+ */
 const styles = StyleSheet.create({
-  page: {
-    position: 'relative', // Allows absolute positioning of children
+  container: {
+    width: '100%',
   },
   header: {
-    position: 'absolute',
-    top: SIG_PAGE_LAYOUT.HEADER_Y,
-    left: SIG_PAGE_LAYOUT.MARGIN_X,
-    width: CONTENT_WIDTH,
     textAlign: 'center',
+    marginBottom: 24,
   },
   title: {
     fontSize: 14,
@@ -28,62 +30,53 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   
-  // Elements within a block (aligned with signature fields)
+  // Signature block container (relative positioning for flow)
+  signatureBlock: {
+    marginBottom: 40,
+    paddingTop: 20,
+  },
+  
+  // Elements within a block
   partyLabel: {
-    position: 'absolute',
-    top: SIG_PAGE_LAYOUT.LABEL_Y,
-    left: SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET,
     fontSize: 9,
     fontFamily: 'Helvetica-Bold',
     color: '#1e40af',
     textTransform: 'uppercase',
+    marginBottom: 4,
   },
   partyName: {
-    position: 'absolute',
-    top: SIG_PAGE_LAYOUT.NAME_Y,
-    left: SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET,
     fontSize: 12,
     fontFamily: 'Helvetica-Bold',
+    marginBottom: 4,
   },
   partyDetails: {
-    position: 'absolute',
-    top: SIG_PAGE_LAYOUT.DETAILS_Y,
-    left: SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET,
     fontSize: 9,
     fontFamily: 'Helvetica',
     color: '#64748b',
+    marginBottom: 20,
   },
   partyDetailLine: {
     marginBottom: 4,
   },
   
-  // Visual Lines (centered horizontally)
-  sigLine: {
-    position: 'absolute',
-    top: SIG_PAGE_LAYOUT.LINE_Y,
-    left: SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET,
+  // Signature and date row
+  signatureRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    gap: 40,
+  },
+  signatureField: {
     width: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH,
-    borderBottom: '1pt solid #000',
   },
-  dateLine: {
-    position: 'absolute',
-    top: SIG_PAGE_LAYOUT.LINE_Y,
-    left: SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET,
+  dateField: {
     width: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH,
+  },
+  fieldLine: {
     borderBottom: '1pt solid #000',
+    height: 40,
+    marginBottom: 4,
   },
-  fieldLabelSig: {
-    position: 'absolute',
-    top: SIG_PAGE_LAYOUT.FIELD_LABEL_Y,
-    left: SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET,
-    fontSize: 8,
-    fontFamily: 'Helvetica',
-    color: '#64748b',
-  },
-  fieldLabelDate: {
-    position: 'absolute',
-    top: SIG_PAGE_LAYOUT.FIELD_LABEL_Y,
-    left: SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET,
+  fieldLabel: {
     fontSize: 8,
     fontFamily: 'Helvetica',
     color: '#64748b',
@@ -184,7 +177,7 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
   };
 
   return (
-    <View style={styles.page}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Signatures</Text>
@@ -193,26 +186,21 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
         </Text>
       </View>
 
-      {/* Absolute Positioned Signature Blocks */}
+      {/* Signature Blocks - using relative positioning for proper flow */}
       {signatories.map((signatory, index) => {
-        const blockTop = getSignatureBlockPosition(index);
         const detailLines = getDetailLines(signatory);
+        const partyLabel = getPartyLabel(signatory);
         
         return (
           <View 
             key={index} 
-            style={{
-              position: 'absolute',
-              top: blockTop,
-              left: SIG_PAGE_LAYOUT.MARGIN_X,
-              width: CONTENT_WIDTH,
-              height: SIG_PAGE_LAYOUT.BLOCK_HEIGHT,
-            }}
+            style={styles.signatureBlock}
+            wrap={false}
           >
             {/* Party Type Label (e.g., EMPLOYER, DISCLOSING PARTY) - only render if meaningful */}
-            {getPartyLabel(signatory) && (
+            {partyLabel && (
               <Text style={styles.partyLabel}>
-                {getPartyLabel(signatory)}
+                {partyLabel}
               </Text>
             )}
             
@@ -230,13 +218,20 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
               </View>
             )}
 
-            {/* Visual Signature Line */}
-            <View style={styles.sigLine} />
-            <Text style={styles.fieldLabelSig}>Signature</Text>
+            {/* Signature and Date Fields Row */}
+            <View style={styles.signatureRow}>
+              {/* Signature Field */}
+              <View style={styles.signatureField}>
+                <View style={styles.fieldLine} />
+                <Text style={styles.fieldLabel}>Signature</Text>
+              </View>
 
-            {/* Visual Date Line */}
-            <View style={styles.dateLine} />
-            <Text style={styles.fieldLabelDate}>Date</Text>
+              {/* Date Field */}
+              <View style={styles.dateField}>
+                <View style={styles.fieldLine} />
+                <Text style={styles.fieldLabel}>Date</Text>
+              </View>
+            </View>
           </View>
         );
       })}

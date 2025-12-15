@@ -139,10 +139,13 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
     );
   }
 
+  // Check if we should include signatures in the document flow
+  const hasSignatories = includeSignaturePage && document.signatories && document.signatories.length > 0;
+
   return (
     <Document>
-      {/* Content Pages */}
-      <Page size={pageSize} style={styles.page}>
+      {/* Single Document with content and signatures flowing together */}
+      <Page size={pageSize} style={styles.page} wrap>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{document.metadata.title}</Text>
@@ -162,7 +165,14 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
           <BlockRenderer key={block.id || index} block={block} level={0} />
         ))}
 
-        {/* Footer on content pages */}
+        {/* Signature Section - flows naturally after content, breaks to new page if needed */}
+        {hasSignatories && (
+          <View break style={{ marginTop: 40 }}>
+            <SignaturePage signatories={document.signatories!} />
+          </View>
+        )}
+
+        {/* Footer on all pages */}
         <View style={styles.footer} fixed>
           <View style={styles.footerContent}>
             <Text>{document.metadata.title}</Text>
@@ -172,22 +182,6 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
           </View>
         </View>
       </Page>
-
-      {/* Signature Page */}
-      {includeSignaturePage && document.signatories && document.signatories.length > 0 && (
-        <Page size={pageSize} style={{ ...styles.page, padding: 0 }}>
-          <SignaturePage signatories={document.signatories} />
-          
-          <View style={styles.footer} fixed>
-            <View style={styles.footerContent}>
-              <Text>{document.metadata.title}</Text>
-              <Text render={({ pageNumber, totalPages }) => (
-                `Page ${pageNumber} of ${totalPages}`
-              )} />
-            </View>
-          </View>
-        </Page>
-      )}
     </Document>
   );
 };

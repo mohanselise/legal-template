@@ -217,7 +217,7 @@ export function TemplatePDFReview({
   const [showDownloadPrompt, setShowDownloadPrompt] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
-  const pageRef = useRef<HTMLDivElement>(null);
+  const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
   // Signature field overlay state
   const [signatureFields, setSignatureFields] = useState<SignatureField[]>([]);
@@ -230,7 +230,6 @@ export function TemplatePDFReview({
   const [editableDocument, setEditableDocument] = useState<LegalDocument>(document);
   const [isEditing, setIsEditing] = useState(false);
   const [editingBlock, setEditingBlock] = useState<TextBlockMapping | null>(null);
-  const [editingPosition, setEditingPosition] = useState<{ x: number; y: number; page: number } | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -659,18 +658,8 @@ export function TemplatePDFReview({
       textPreview: blockMapping.text.substring(0, 50),
     });
 
-    // Get click position relative to the page
-    const pageElement = target.closest('[data-page-number]') as HTMLElement;
-    if (!pageElement) return;
-
-    const pageRect = pageElement.getBoundingClientRect();
-    const clickX = event.clientX - pageRect.left;
-    const clickY = event.clientY - pageRect.top;
-    const pageNumber = parseInt(pageElement.getAttribute('data-page-number') || '1');
-
-    // Set editing state
+    // Set editing state and open dialog
     setEditingBlock(blockMapping);
-    setEditingPosition({ x: clickX, y: clickY, page: pageNumber });
     setIsEditing(true);
   };
 
@@ -692,7 +681,6 @@ export function TemplatePDFReview({
       // Close editor
       setIsEditing(false);
       setEditingBlock(null);
-      setEditingPosition(null);
       
       // PDF will regenerate automatically via useEffect
     } catch (error) {
@@ -706,7 +694,6 @@ export function TemplatePDFReview({
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditingBlock(null);
-    setEditingPosition(null);
   };
 
   if (isPreparingContract) {
@@ -935,11 +922,17 @@ export function TemplatePDFReview({
                         <div
                           key={page}
                           data-page-number={page}
-                          ref={page === pageNumber ? pageRef : null}
-                          className="bg-white shadow-xl mx-auto relative rounded-lg overflow-hidden"
+                          ref={(el) => {
+                            if (el) {
+                              pageRefs.current.set(page, el);
+                            } else {
+                              pageRefs.current.delete(page);
+                            }
+                          }}
+                          className="bg-white shadow-xl mx-auto relative rounded-lg"
                           style={{
                             width: 612 * scale,
-                            minHeight: 792 * scale,
+                            height: 792 * scale,
                           }}
                           onClick={handlePageClick}
                         >
@@ -964,7 +957,8 @@ export function TemplatePDFReview({
                               signatories={signatories}
                               currentPage={page}
                               scale={scale}
-                              pageRef={page === pageNumber ? pageRef : null}
+                              pageRef={null}
+                              pageElement={pageRefs.current.get(page) || null}
                               onFieldsChange={handleSignatureFieldsChange}
                               selectedField={selectedField}
                               onSelectField={setSelectedField}
@@ -984,25 +978,17 @@ export function TemplatePDFReview({
                             </div>
                           )}
                           
-                          {/* Inline Text Editor Overlay */}
-                          {isEditing && editingPosition && editingPosition.page === page && editingBlock && (
-                            <>
-                              {/* Backdrop to focus attention */}
-                              <div 
-                                className="absolute inset-0 bg-black/20 z-[999]"
-                                onClick={handleCancelEdit}
-                              />
-                              <InlineTextEditor
-                                initialText={editingBlock.text}
-                                position={{ x: editingPosition.x, y: editingPosition.y }}
-                                scale={scale}
-                                onSave={handleSaveEdit}
-                                onCancel={handleCancelEdit}
-                                isSaving={isSavingEdit}
-                                blockType={editingBlock.type}
-                                isTitle={editingBlock.isTitle}
-                              />
-                            </>
+                          {/* Text Editor Dialog - rendered once, not per page */}
+                          {page === 1 && (
+                            <InlineTextEditor
+                              initialText={editingBlock?.text || ""}
+                              open={isEditing}
+                              onSave={handleSaveEdit}
+                              onCancel={handleCancelEdit}
+                              isSaving={isSavingEdit}
+                              blockType={editingBlock?.type}
+                              isTitle={editingBlock?.isTitle}
+                            />
                           )}
                         </div>
                       ))}

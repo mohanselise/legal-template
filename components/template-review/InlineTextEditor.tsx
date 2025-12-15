@@ -1,16 +1,21 @@
 "use client";
 
-import { useState, useEffect, useRef, KeyboardEvent } from "react";
+import { useState, useEffect, useRef, useCallback, KeyboardEvent } from "react";
 import { X, Check, Loader2, Type, FileText, List, Heading } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface InlineTextEditorProps {
   /** Initial text value */
   initialText: string;
-  /** Position where the editor should appear (relative to PDF page) */
-  position: { x: number; y: number };
-  /** Scale factor of the PDF (for positioning) */
-  scale: number;
+  /** Whether the dialog is open */
+  open: boolean;
   /** Callback when user saves the edit */
   onSave: (newText: string) => Promise<void>;
   /** Callback when user cancels the edit */
@@ -49,8 +54,7 @@ function getBlockLabel(blockType?: string, isTitle?: boolean): { label: string; 
 
 export function InlineTextEditor({
   initialText,
-  position,
-  scale,
+  open,
   onSave,
   onCancel,
   isSaving = false,
@@ -59,34 +63,60 @@ export function InlineTextEditor({
 }: InlineTextEditorProps) {
   const [text, setText] = useState(initialText);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   
   const { label: blockLabel, Icon: BlockIcon } = getBlockLabel(blockType, isTitle);
 
-  // Auto-focus and select text on mount
+  // Auto-resize function - calculates height based on content
+  const resizeTextarea = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // Temporarily set height to 0 to get accurate scrollHeight
+    textarea.style.height = "0px";
+    const scrollHeight = textarea.scrollHeight;
+    
+    // Calculate bounds
+    const minHeight = isTitle ? 80 : 150;
+    const maxHeight = Math.min(window.innerHeight * 0.6, 600); // 60% of viewport or 600px max
+    
+    // Set final height
+    const finalHeight = Math.max(minHeight, Math.min(scrollHeight, maxHeight));
+    textarea.style.height = `${finalHeight}px`;
+  }, [isTitle]);
+
+  // Reset text when dialog opens/closes or initialText changes
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.select();
-      
-      // Auto-resize textarea to fit content
-      const resizeTextarea = () => {
-        if (textareaRef.current) {
-          textareaRef.current.style.height = "auto";
-          const scrollHeight = textareaRef.current.scrollHeight;
-          const maxHeight = 300; // Max height in pixels
-          textareaRef.current.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
-        }
-      };
-      
-      resizeTextarea();
-      textareaRef.current.addEventListener("input", resizeTextarea);
-      
-      return () => {
-        textareaRef.current?.removeEventListener("input", resizeTextarea);
-      };
+    if (open) {
+      setText(initialText);
     }
-  }, []);
+  }, [open, initialText]);
+
+  // Auto-focus and resize when dialog opens
+  useEffect(() => {
+    if (!open) return;
+    
+    // Use multiple timeouts to ensure resize happens after render
+    const timers = [
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          textareaRef.current.select();
+          resizeTextarea();
+        }
+      }, 50),
+      // Second resize to catch any layout shifts
+      setTimeout(() => resizeTextarea(), 150),
+    ];
+    
+    return () => timers.forEach(clearTimeout);
+  }, [open, initialText, resizeTextarea]);
+
+  // Resize when text changes
+  useEffect(() => {
+    if (open) {
+      resizeTextarea();
+    }
+  }, [text, open, resizeTextarea]);
 
   // Handle keyboard shortcuts
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -113,123 +143,68 @@ export function InlineTextEditor({
     }
   };
 
-  // Position the editor relative to the click position
-  const editorStyle: React.CSSProperties = {
-    position: "absolute",
-    left: `${position.x * scale}px`,
-    top: `${position.y * scale}px`,
-    transform: "translate(-50%, -10px)", // Center horizontally, offset slightly up
-    zIndex: 1000,
-    minWidth: "300px",
-    maxWidth: "600px",
-  };
-
-  // Adjust position if editor would go off-screen
-  useEffect(() => {
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      
-      let adjustedLeft = position.x * scale;
-      let adjustedTop = position.y * scale;
-      
-      // Adjust horizontal position
-      if (rect.right > viewportWidth - 20) {
-        adjustedLeft = viewportWidth - rect.width - 20;
-      }
-      if (rect.left < 20) {
-        adjustedLeft = rect.width / 2 + 20;
-      }
-      
-      // Adjust vertical position
-      if (rect.bottom > viewportHeight - 20) {
-        adjustedTop = viewportHeight - rect.height - 20;
-      }
-      if (rect.top < 20) {
-        adjustedTop = rect.height / 2 + 20;
-      }
-      
-      if (adjustedLeft !== position.x * scale || adjustedTop !== position.y * scale) {
-        containerRef.current.style.left = `${adjustedLeft}px`;
-        containerRef.current.style.top = `${adjustedTop}px`;
-        containerRef.current.style.transform = "translate(-50%, -10px)";
-      }
-    }
-  }, [position, scale]);
-
   return (
-    <div
-      ref={containerRef}
-      className="bg-white rounded-lg shadow-2xl border-2 border-[hsl(var(--selise-blue))] p-4"
-      style={editorStyle}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Header with block type */}
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[hsl(var(--border))]">
-        <div className="w-6 h-6 rounded bg-[hsl(var(--selise-blue))]/10 flex items-center justify-center">
-          <BlockIcon className="w-3.5 h-3.5 text-[hsl(var(--selise-blue))]" />
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
+      <DialogContent className="max-w-[1200px] w-[95vw] max-h-[85vh] p-6">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded bg-[hsl(var(--selise-blue))]/10 flex items-center justify-center">
+              <BlockIcon className="w-4 h-4 text-[hsl(var(--selise-blue))]" />
+            </div>
+            <span>Edit {blockLabel}</span>
+          </DialogTitle>
+          <DialogDescription>
+            Make your changes below. Press <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Esc</kbd> to cancel or <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Ctrl+Enter</kbd> to save.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="overflow-auto flex flex-col">
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isSaving}
+            className="w-full resize-none border border-[hsl(var(--border))] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--selise-blue))] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-[height] duration-100"
+            placeholder={`Edit ${blockLabel.toLowerCase()}...`}
+            style={{
+              fontFamily: "inherit",
+              lineHeight: 1.7,
+              fontSize: 15,
+              fontWeight: isTitle ? 600 : 400,
+              overflowY: "auto",
+            }}
+          />
         </div>
-        <span className="text-sm font-medium text-[hsl(var(--fg))]">
-          Edit {blockLabel}
-        </span>
-      </div>
-      
-      <div className="flex items-start gap-3">
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={isSaving}
-          className="flex-1 resize-none border border-[hsl(var(--border))] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--selise-blue))] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-          placeholder={`Edit ${blockLabel.toLowerCase()}...`}
-          rows={isTitle ? 1 : 3}
-          style={{
-            minHeight: isTitle ? "40px" : "60px",
-            maxHeight: "300px",
-            fontFamily: "inherit",
-            lineHeight: "1.5",
-            fontWeight: isTitle ? 600 : 400,
-          }}
-        />
-      </div>
-      
-      <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-[hsl(var(--border))]">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onCancel}
-          disabled={isSaving}
-          className="h-8"
-        >
-          <X className="w-3.5 h-3.5 mr-1.5" />
-          Cancel
-        </Button>
-        <Button
-          size="sm"
-          onClick={handleSave}
-          disabled={isSaving || text.trim() === initialText.trim()}
-          className="h-8 bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-white"
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Check className="w-3.5 h-3.5 mr-1.5" />
-              Save
-            </>
-          )}
-        </Button>
-      </div>
-      
-      <div className="mt-2 text-xs text-[hsl(var(--globe-grey))]">
-        <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Esc</kbd> to cancel •{" "}
-        <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Ctrl+Enter</kbd> to save
-      </div>
-    </div>
+        
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-[hsl(var(--border))]">
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSaving}
+          >
+            <X className="w-4 h-4 mr-2" />
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || text.trim() === initialText.trim()}
+            className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-white"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4 mr-2" />
+                Save Changes
+              </>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

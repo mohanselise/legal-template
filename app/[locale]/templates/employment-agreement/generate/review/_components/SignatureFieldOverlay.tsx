@@ -28,6 +28,8 @@ interface SignatureFieldOverlayProps {
   currentPage: number;
   scale: number;
   pageRef: React.RefObject<HTMLDivElement | null> | null;
+  /** Direct element reference (alternative to pageRef) */
+  pageElement?: HTMLDivElement | null;
   onFieldsChange: (fields: SignatureField[]) => void;
   selectedField: string | null;
   onSelectField: (fieldId: string | null) => void;
@@ -40,6 +42,12 @@ const PARTY_COLORS = {
   employer: 'hsl(var(--selise-blue))',
   employee: 'hsl(var(--poly-green))',
 };
+
+// PDF page layout constants - must match LegalDocumentPDF.tsx
+// The signature section in the PDF starts after a page break with marginTop: 40
+// But the calculated field positions don't fully account for the flow layout
+// This offset adjusts the overlay Y positions to match actual PDF rendering
+const SIGNATURE_Y_ADJUSTMENT = 40; // Offset to align with flow-based layout
 
 const SIGNATORY_COLORS = [
   PARTY_COLORS.employer,
@@ -94,6 +102,7 @@ export function SignatureFieldOverlay({
   currentPage,
   scale,
   pageRef,
+  pageElement,
   onFieldsChange,
   selectedField,
   onSelectField,
@@ -101,6 +110,10 @@ export function SignatureFieldOverlay({
   selectedFieldType,
   onPageClick,
 }: SignatureFieldOverlayProps) {
+  // Get the actual page element - prefer pageElement prop, fallback to pageRef
+  const getPageElement = (): HTMLDivElement | null => {
+    return pageElement || pageRef?.current || null;
+  };
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [isResizing, setIsResizing] = useState(false);
@@ -139,12 +152,13 @@ export function SignatureFieldOverlay({
     onSelectField(fieldId);
     setIsDragging(true);
     const field = fields.find((f) => f.id === fieldId);
-    if (field && pageRef && pageRef.current) {
-      const rect = pageRef.current.getBoundingClientRect();
+    const element = getPageElement();
+    if (field && element) {
+      const rect = element.getBoundingClientRect();
       // Calculate offset from mouse position to field top-left corner
-      // Field position in screen pixels: field.x * scale, field.y * scale
+      // Field position in screen pixels includes Y adjustment
       const fieldScreenX = field.x * scale;
-      const fieldScreenY = field.y * scale;
+      const fieldScreenY = (field.y + SIGNATURE_Y_ADJUSTMENT) * scale;
       setDragStart({
         x: event.clientX - rect.left - fieldScreenX,
         y: event.clientY - rect.top - fieldScreenY,
@@ -174,7 +188,8 @@ export function SignatureFieldOverlay({
   };
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!pageRef || !pageRef.current) return;
+    const element = getPageElement();
+    if (!element) return;
 
     if (isResizing && resizeState) {
       // Convert pixel delta to PDF points (divide by scale)
@@ -204,7 +219,7 @@ export function SignatureFieldOverlay({
 
     if (!isDragging || !selectedField || !dragStart) return;
 
-    const rect = pageRef.current.getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
     
     // Get mouse position relative to page container
     const mouseX = event.clientX - rect.left;
@@ -212,14 +227,15 @@ export function SignatureFieldOverlay({
     
     // Convert screen pixels to PDF points (divide by scale)
     const x = (mouseX - dragStart.x) / scale;
-    const y = (mouseY - dragStart.y) / scale;
+    // Subtract Y adjustment to convert back to field coordinate system
+    const y = (mouseY - dragStart.y) / scale - SIGNATURE_Y_ADJUSTMENT;
 
     // Ensure fields stay within page bounds (612pt × 792pt)
     const field = fields.find((f) => f.id === selectedField);
     if (!field) return;
     
     const maxX = 612 - field.width;
-    const maxY = 792 - field.height;
+    const maxY = 792 - field.height - SIGNATURE_Y_ADJUSTMENT;
 
     onFieldsChange(
       fields.map((f) =>
@@ -246,7 +262,8 @@ export function SignatureFieldOverlay({
     if (!isDragging && !isResizing) return;
 
     const handleGlobalMouseMove = (event: MouseEvent) => {
-      if (!pageRef || !pageRef.current) return;
+      const element = pageElement || pageRef?.current;
+      if (!element) return;
 
       const currentResizeState = resizeStateRef.current;
       const currentIsResizing = isResizingRef.current;
@@ -255,7 +272,7 @@ export function SignatureFieldOverlay({
       const currentDragStart = dragStartRef.current;
 
       if (currentIsResizing && currentResizeState) {
-        const rect = pageRef.current.getBoundingClientRect();
+        const rect = element.getBoundingClientRect();
         const deltaXPixels = event.clientX - currentResizeState.startX;
         const deltaYPixels = event.clientY - currentResizeState.startY;
         const deltaX = deltaXPixels / scale;
@@ -281,17 +298,18 @@ export function SignatureFieldOverlay({
       }
 
       if (currentIsDragging && currentSelectedField && currentDragStart) {
-        const rect = pageRef.current.getBoundingClientRect();
+        const rect = element.getBoundingClientRect();
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
         const x = (mouseX - currentDragStart.x) / scale;
-        const y = (mouseY - currentDragStart.y) / scale;
+        // Subtract Y adjustment to convert back to field coordinate system
+        const y = (mouseY - currentDragStart.y) / scale - SIGNATURE_Y_ADJUSTMENT;
 
         const field = fieldsRef.current.find((f) => f.id === currentSelectedField);
         if (!field) return;
         
         const maxX = 612 - field.width;
-        const maxY = 792 - field.height;
+        const maxY = 792 - field.height - SIGNATURE_Y_ADJUSTMENT;
 
         onFieldsChangeRef.current(
           fieldsRef.current.map((f) =>
@@ -318,7 +336,7 @@ export function SignatureFieldOverlay({
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [isDragging, isResizing, scale]);
+  }, [isDragging, isResizing, scale, pageElement, pageRef]);
 
   const handleDeleteField = (fieldId: string) => {
     onFieldsChange(fields.filter((f) => f.id !== fieldId));
@@ -337,10 +355,11 @@ export function SignatureFieldOverlay({
 
   // Debug: Log field positions and container info for current page
   useEffect(() => {
-    if (pageFields.length > 0 && pageRef && pageRef.current) {
-      const containerRect = pageRef.current.getBoundingClientRect();
-      const pageElement = pageRef.current.querySelector('.react-pdf__Page');
-      const pageRect = pageElement?.getBoundingClientRect();
+    const element = pageElement || pageRef?.current;
+    if (pageFields.length > 0 && element) {
+      const containerRect = element.getBoundingClientRect();
+      const pdfPage = element.querySelector('.react-pdf__Page');
+      const pageRect = pdfPage?.getBoundingClientRect();
       
       console.log(`[SignatureFieldOverlay] Page ${currentPage} positioning info:`, {
         scale,
@@ -356,17 +375,19 @@ export function SignatureFieldOverlay({
           left: pageRect.left - containerRect.left,
           top: pageRect.top - containerRect.top,
         } : 'not found',
+        yAdjustment: SIGNATURE_Y_ADJUSTMENT,
         fields: pageFields.map(f => ({
           id: f.id,
           type: f.type,
           pdfPosition: `(${f.x.toFixed(1)}, ${f.y.toFixed(1)})`,
+          adjustedY: (f.y + SIGNATURE_Y_ADJUSTMENT).toFixed(1),
           pdfSize: `${f.width.toFixed(1)}×${f.height.toFixed(1)}`,
-          screenPosition: `(${(f.x * scale).toFixed(1)}px, ${(f.y * scale).toFixed(1)}px)`,
+          screenPosition: `(${(f.x * scale).toFixed(1)}px, ${((f.y + SIGNATURE_Y_ADJUSTMENT) * scale).toFixed(1)}px)`,
           screenSize: `${(f.width * scale).toFixed(1)}×${(f.height * scale).toFixed(1)}px`,
         })),
       });
     }
-  }, [pageFields, currentPage, scale, pageRef]);
+  }, [pageFields, currentPage, scale, pageRef, pageElement]);
 
   if (pageFields.length === 0) {
     return null;
@@ -392,6 +413,9 @@ export function SignatureFieldOverlay({
             ? signatory?.role || 'Authorized Signature'
             : 'Signature Date';
 
+        // Apply Y adjustment to align with flow-based PDF layout
+        const adjustedY = field.y + SIGNATURE_Y_ADJUSTMENT;
+
         return (
           <div
             key={field.id}
@@ -400,7 +424,7 @@ export function SignatureFieldOverlay({
             }`}
             style={{
               left: `${field.x * scale}px`,
-              top: `${field.y * scale}px`,
+              top: `${adjustedY * scale}px`,
               width: `${field.width * scale}px`,
               height: `${field.height * scale}px`,
               overflow: 'visible',

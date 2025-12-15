@@ -424,6 +424,9 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   const [generationStepIndex, setGenerationStepIndex] = useState(0);
   const [fakeProgress, setFakeProgress] = useState(0);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isTokenExpired, setIsTokenExpired] = useState(false);
+  const [retryTurnstileToken, setRetryTurnstileToken] = useState<string | null>(null);
+  const [retryTurnstileStatus, setRetryTurnstileStatus] = useState<'success' | 'error' | 'expired' | 'required'>('required');
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const isNavigatingRef = useRef(false);
   const aiEnrichmentPendingCount = useRef(0);
@@ -848,11 +851,86 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   // Reset generation and go back to form
   const handleRetryGeneration = () => {
     setGenerationError(null);
+    setIsTokenExpired(false);
     setIsGenerating(false);
     setSubmitting(false);
     setFakeProgress(0);
     setGenerationStepIndex(0);
+    setRetryTurnstileToken(null);
+    setRetryTurnstileStatus('required');
   };
+
+  // Retry generation after re-verification
+  const retryGeneration = useCallback(async (newToken: string) => {
+    setRetryTurnstileToken(newToken);
+    setRetryTurnstileStatus('success');
+    setIsTokenExpired(false);
+    
+    // Store the new token
+    storeTurnstileToken(newToken);
+    
+    // Small delay to ensure token is stored
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Retry the generation
+    setSubmitting(true);
+    setIsGenerating(true);
+    setGenerationStepIndex(0);
+    setFakeProgress(0);
+    setGenerationError(null);
+    
+    try {
+      console.log("🔄 [DynamicSmartFlow] Retrying generation with new token...");
+      
+      const response = await fetch(`/api/templates/${config.id}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          formData,
+          turnstileToken: newToken,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate document");
+      }
+
+      const result = await response.json();
+      console.log("✅ [DynamicSmartFlow] Document generated successfully after re-verification");
+
+      // Store result in sessionStorage for review page
+      const reviewData = {
+        document: result.document,
+        formData: formData,
+        templateId: config.id,
+        templateSlug: config.slug,
+        templateTitle: config.title,
+        storedAt: new Date().toISOString(),
+      };
+
+      saveTemplateReview(config.slug, reviewData);
+
+      // Set progress to 100 before navigating
+      setFakeProgress(100);
+      isNavigatingRef.current = true;
+
+      // Brief delay to show 100% completion
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Redirect to review page
+      router.push(`/${locale}/templates/${config.slug}/review`);
+    } catch (error) {
+      console.error("❌ [DynamicSmartFlow] Retry generation error:", error);
+      const errorMessage = error instanceof Error
+        ? error.message
+        : "Failed to generate document. Please try again.";
+      setGenerationError(errorMessage);
+      setIsGenerating(false);
+      setSubmitting(false);
+      setIsTokenExpired(false);
+    }
+  }, [formData, config, locale, router]);
 
   const handleSubmit = async () => {
     if (!canProceed() || !turnstileToken) return;
@@ -862,6 +940,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     setGenerationStepIndex(0);
     setFakeProgress(0);
     setGenerationError(null);
+    setIsTokenExpired(false);
 
     try {
       console.log("🚀 [DynamicSmartFlow] Starting document generation...");
@@ -880,7 +959,27 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to generate document");
+        const errorMessage = error.error || "Failed to generate document";
+        const errorCodes = error['error-codes'] || error.error_codes || [];
+        
+        // Check if this is a token expiration error
+        const isTokenExpirationError = 
+          response.status === 403 &&
+          (errorMessage.includes("Invalid or expired verification token") ||
+           errorMessage.includes("expired") ||
+           errorCodes.includes('timeout-or-duplicate') ||
+           errorCodes.includes('invalid-input-response'));
+        
+        if (isTokenExpirationError) {
+          // Token expired - show re-verification widget instead of error
+          setIsTokenExpired(true);
+          setGenerationError(null);
+          setIsGenerating(false);
+          setSubmitting(false);
+          return; // Exit early, don't throw error
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -912,14 +1011,18 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
       const errorMessage = error instanceof Error
         ? error.message
         : "Failed to generate document. Please try again.";
-      setGenerationError(errorMessage);
-      setIsGenerating(false);
-      setSubmitting(false);
+      
+      // Only set error if it's not a token expiration (which is handled above)
+      if (!isTokenExpired) {
+        setGenerationError(errorMessage);
+        setIsGenerating(false);
+        setSubmitting(false);
+      }
     }
   };
 
   // Loading Screen - shows during document generation
-  if (isGenerating || generationError) {
+  if (isGenerating || generationError || isTokenExpired) {
     const currentStage =
       GENERATION_STEPS[Math.min(generationStepIndex, GENERATION_STEPS.length - 1)];
 
@@ -930,8 +1033,94 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom,_hsla(var(--brand-primary)_/_0.08),_transparent_60%)]" />
 
         <div className="relative z-10 w-full max-w-2xl">
-          {/* Error Display */}
-          {generationError ? (
+          {/* Token Expiration - Show Turnstile Widget */}
+          {isTokenExpired ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-3xl border border-amber-200 bg-background p-8 shadow-xl text-center"
+            >
+              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-50">
+                <AlertTriangle className="h-10 w-10 text-amber-600" />
+              </div>
+              <h2 className="text-2xl font-semibold text-[hsl(var(--fg))] mb-3 font-heading">
+                Verification Expired
+              </h2>
+              <p className="text-[hsl(var(--brand-muted))] mb-6 leading-relaxed">
+                Your verification has expired. Please verify again to continue generating your document.
+              </p>
+              
+              {/* Inline Turnstile Widget */}
+              <div className="flex flex-col items-center gap-4 mb-6">
+                {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+                  <>
+                    <Turnstile
+                      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                      retry="auto"
+                      refreshExpired="auto"
+                      sandbox={false}
+                      onError={() => {
+                        setRetryTurnstileStatus("error");
+                        setRetryTurnstileToken(null);
+                      }}
+                      onExpire={() => {
+                        setRetryTurnstileStatus("expired");
+                        setRetryTurnstileToken(null);
+                      }}
+                      onLoad={() => {
+                        setRetryTurnstileStatus("required");
+                      }}
+                      onVerify={(token) => {
+                        setRetryTurnstileStatus("success");
+                        setRetryTurnstileToken(token);
+                        // Automatically retry generation with new token
+                        retryGeneration(token);
+                      }}
+                    />
+                    {retryTurnstileStatus === 'success' && retryTurnstileToken && (
+                      <div className="flex items-center justify-center gap-2 text-sm text-emerald-600">
+                        <Check className="h-4 w-4" />
+                        <span>Verification complete. Retrying generation...</span>
+                      </div>
+                    )}
+                    {retryTurnstileStatus === 'error' && (
+                      <div className="flex items-center justify-center gap-2 text-sm text-red-600">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>Verification failed. Please try again.</span>
+                      </div>
+                    )}
+                    {retryTurnstileStatus === 'expired' && (
+                      <div className="flex items-center justify-center gap-2 text-sm text-amber-600">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>Verification expired. Please verify again.</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-center">
+                    <AlertTriangle className="mx-auto h-5 w-5 text-amber-600 mb-2" />
+                    <p className="text-sm text-amber-800 font-medium mb-1">
+                      Turnstile configuration missing
+                    </p>
+                    <p className="text-xs text-amber-700">
+                      Please set <code className="bg-amber-100 px-1 rounded">NEXT_PUBLIC_TURNSTILE_SITE_KEY</code> in your environment variables.
+                    </p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center justify-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleRetryGeneration}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  {t('generation.goBack')}
+                </Button>
+              </div>
+            </motion.div>
+          ) : generationError ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

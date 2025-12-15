@@ -2,7 +2,7 @@ import React from 'react';
 import { NextRequest, NextResponse } from 'next/server';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { EmploymentAgreementPDF } from '@/lib/pdf/EmploymentAgreementPDF';
-import { generateSignatureFieldMetadata, createMetadataPayload } from '@/lib/pdf/signature-field-metadata';
+import { generateDynamicSignatureFieldMetadata, createMetadataPayload } from '@/lib/pdf/signature-field-metadata';
 import type { LegalDocument, SignatoryData } from '@/app/api/templates/employment-agreement/schema';
 import { ensureAdditionalSignatoryArray } from '@/lib/templates/signatory-fields';
 import type { SignatoryEntry } from '@/lib/templates/signatory-config';
@@ -165,8 +165,9 @@ export async function POST(request: NextRequest) {
     const contentBlockCount = (document as LegalDocument).content?.length || 0;
     const estimatedPages = Math.ceil(contentBlockCount / 2) + 2; // Rough estimate: 2 blocks per page + cover/sig
     
-    // 4. Generate signature field metadata using the SAME signatories list
-    const signatureFields = generateSignatureFieldMetadata(
+    // 4. Generate signature field metadata dynamically using the SAME signatories list
+    // This calculates positions based on actual signatory content (detail lines, etc.)
+    const signatureFields = generateDynamicSignatureFieldMetadata(
       signatories,
       estimatedPages
     );

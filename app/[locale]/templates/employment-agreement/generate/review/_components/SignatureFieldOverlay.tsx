@@ -43,12 +43,6 @@ const PARTY_COLORS = {
   employee: 'hsl(var(--poly-green))',
 };
 
-// PDF page layout constants - must match LegalDocumentPDF.tsx
-// The signature section in the PDF starts after a page break with marginTop: 40
-// But the calculated field positions don't fully account for the flow layout
-// This offset adjusts the overlay Y positions to match actual PDF rendering
-const SIGNATURE_Y_ADJUSTMENT = 40; // Offset to align with flow-based layout
-
 const SIGNATORY_COLORS = [
   PARTY_COLORS.employer,
   PARTY_COLORS.employee,
@@ -156,9 +150,8 @@ export function SignatureFieldOverlay({
     if (field && element) {
       const rect = element.getBoundingClientRect();
       // Calculate offset from mouse position to field top-left corner
-      // Field position in screen pixels includes Y adjustment
       const fieldScreenX = field.x * scale;
-      const fieldScreenY = (field.y + SIGNATURE_Y_ADJUSTMENT) * scale;
+      const fieldScreenY = field.y * scale;
       setDragStart({
         x: event.clientX - rect.left - fieldScreenX,
         y: event.clientY - rect.top - fieldScreenY,
@@ -227,15 +220,14 @@ export function SignatureFieldOverlay({
     
     // Convert screen pixels to PDF points (divide by scale)
     const x = (mouseX - dragStart.x) / scale;
-    // Subtract Y adjustment to convert back to field coordinate system
-    const y = (mouseY - dragStart.y) / scale - SIGNATURE_Y_ADJUSTMENT;
+    const y = (mouseY - dragStart.y) / scale;
 
     // Ensure fields stay within page bounds (612pt × 792pt)
     const field = fields.find((f) => f.id === selectedField);
     if (!field) return;
     
     const maxX = 612 - field.width;
-    const maxY = 792 - field.height - SIGNATURE_Y_ADJUSTMENT;
+    const maxY = 792 - field.height;
 
     onFieldsChange(
       fields.map((f) =>
@@ -302,14 +294,13 @@ export function SignatureFieldOverlay({
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
         const x = (mouseX - currentDragStart.x) / scale;
-        // Subtract Y adjustment to convert back to field coordinate system
-        const y = (mouseY - currentDragStart.y) / scale - SIGNATURE_Y_ADJUSTMENT;
+        const y = (mouseY - currentDragStart.y) / scale;
 
         const field = fieldsRef.current.find((f) => f.id === currentSelectedField);
         if (!field) return;
         
         const maxX = 612 - field.width;
-        const maxY = 792 - field.height - SIGNATURE_Y_ADJUSTMENT;
+        const maxY = 792 - field.height;
 
         onFieldsChangeRef.current(
           fieldsRef.current.map((f) =>
@@ -375,14 +366,12 @@ export function SignatureFieldOverlay({
           left: pageRect.left - containerRect.left,
           top: pageRect.top - containerRect.top,
         } : 'not found',
-        yAdjustment: SIGNATURE_Y_ADJUSTMENT,
         fields: pageFields.map(f => ({
           id: f.id,
           type: f.type,
           pdfPosition: `(${f.x.toFixed(1)}, ${f.y.toFixed(1)})`,
-          adjustedY: (f.y + SIGNATURE_Y_ADJUSTMENT).toFixed(1),
           pdfSize: `${f.width.toFixed(1)}×${f.height.toFixed(1)}`,
-          screenPosition: `(${(f.x * scale).toFixed(1)}px, ${((f.y + SIGNATURE_Y_ADJUSTMENT) * scale).toFixed(1)}px)`,
+          screenPosition: `(${(f.x * scale).toFixed(1)}px, ${(f.y * scale).toFixed(1)}px)`,
           screenSize: `${(f.width * scale).toFixed(1)}×${(f.height * scale).toFixed(1)}px`,
         })),
       });
@@ -413,9 +402,6 @@ export function SignatureFieldOverlay({
             ? signatory?.role || 'Authorized Signature'
             : 'Signature Date';
 
-        // Apply Y adjustment to align with flow-based PDF layout
-        const adjustedY = field.y + SIGNATURE_Y_ADJUSTMENT;
-
         return (
           <div
             key={field.id}
@@ -424,7 +410,7 @@ export function SignatureFieldOverlay({
             }`}
             style={{
               left: `${field.x * scale}px`,
-              top: `${adjustedY * scale}px`,
+              top: `${field.y * scale}px`,
               width: `${field.width * scale}px`,
               height: `${field.height * scale}px`,
               overflow: 'visible',

@@ -164,15 +164,16 @@ const DYNAMIC_LAYOUT = {
   SECTION_MARGIN_TOP: 40,      // marginTop on signature section wrapper
   
   // Header section (from SignaturePage styles)
-  HEADER_TITLE: 24,            // fontSize 14 + marginBottom 10 (approximate line height)
-  HEADER_SUBTITLE: 10,         // fontSize 10 (approximate line height)
+  // Line heights are typically ~1.2x font size in PDF rendering
+  HEADER_TITLE: 27,            // fontSize 14 * 1.2 line height + marginBottom 10
+  HEADER_SUBTITLE: 12,         // fontSize 10 * 1.2 line height
   HEADER_MARGIN_BOTTOM: 24,
   
   // Per-block layout (from SignaturePage styles)
   BLOCK_PADDING_TOP: 20,
-  PARTY_LABEL: 13,             // fontSize 9 + marginBottom 4 (approximate line height)
-  PARTY_NAME: 16,              // fontSize 12 + marginBottom 4 (approximate line height)
-  DETAIL_LINE: 13,             // fontSize 9 + marginBottom 4 (approximate line height)
+  PARTY_LABEL: 15,             // fontSize 9 * 1.2 line height + marginBottom 4
+  PARTY_NAME: 18,              // fontSize 12 * 1.2 line height + marginBottom 4
+  DETAIL_LINE: 15,             // fontSize 9 * 1.2 line height + marginBottom 4
   DETAILS_MARGIN_BOTTOM: 20,
   BLOCK_MARGIN_BOTTOM: 40,
   
@@ -181,31 +182,94 @@ const DYNAMIC_LAYOUT = {
   SIG_FIELD_WIDTH: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH,  // 220
   DATE_FIELD_WIDTH: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH, // 120
   FIELD_GAP: 40,               // gap in signatureRow
+  
+  // Additional offset to fine-tune alignment with actual PDF rendering
+  // This accounts for any remaining discrepancies in line height calculations
+  Y_OFFSET: 15,                 // Push overlays down to match actual signature line position
 };
 
 /**
  * Count the number of detail lines for a signatory
- * Matches the logic in SignaturePage.getDetailLines()
+ * Matches the logic in SignaturePage.getDetailLines() EXACTLY
  */
 function countDetailLines(signatory: SignatoryInfo): number {
   let lines = 0;
   
-  // Line 1: Title and/or Company
-  if (signatory.title || signatory.company) {
+  // Line 1: Title and/or Company (combined into one line with bullet separator)
+  const hasTitle = signatory.title && signatory.title.trim().length > 0;
+  const hasCompany = signatory.company && signatory.company.trim().length > 0;
+  if (hasTitle || hasCompany) {
     lines++;
   }
   
   // Line 2: Address
-  if (signatory.address) {
+  if (signatory.address && signatory.address.trim().length > 0) {
     lines++;
   }
   
   // Line 3: Email
-  if (signatory.email) {
+  if (signatory.email && signatory.email.trim().length > 0) {
+    lines++;
+  }
+  
+  // Debug logging to trace the issue
+  console.log(`[countDetailLines] Signatory "${signatory.name}":`, {
+    hasTitle,
+    hasCompany,
+    title: signatory.title,
+    company: signatory.company,
+    address: signatory.address ? `"${signatory.address.substring(0, 30)}..."` : undefined,
+    email: signatory.email,
+    detailLines: lines,
+  });
+  
+  return lines;
+}
+
+/**
+ * Try to get detail line count from SignatoryData which may have different field structure
+ */
+function countDetailLinesFromAny(signatory: any): number {
+  let lines = 0;
+  
+  // Check various possible field names for title/company
+  const title = signatory.title || signatory.role;
+  const company = signatory.company || signatory.organization;
+  if ((title && String(title).trim().length > 0) || (company && String(company).trim().length > 0)) {
+    lines++;
+  }
+  
+  // Check for address - might be string or object
+  let address = signatory.address || signatory.location;
+  if (address) {
+    // Handle address as object
+    if (typeof address === 'object') {
+      address = Object.values(address).filter(Boolean).join(', ');
+    }
+    if (String(address).trim().length > 0) {
+      lines++;
+    }
+  }
+  
+  // Check for email
+  const email = signatory.email;
+  if (email && String(email).trim().length > 0) {
     lines++;
   }
   
   return lines;
+}
+
+/**
+ * Get the address string from a signatory, handling different formats
+ */
+function getAddressString(signatory: any): string {
+  const address = signatory.address || signatory.location;
+  if (!address) return '';
+  if (typeof address === 'object') {
+    return Object.values(address).filter(Boolean).join(', ');
+  }
+  return String(address).trim();
 }
 
 /**
@@ -247,14 +311,27 @@ export function generateDynamicSignatureFieldMetadata(
     currentY += DYNAMIC_LAYOUT.PARTY_NAME;
     
     // Detail lines (variable based on signatory data)
-    const detailLines = countDetailLines(signatory);
+    // Use both counting methods and take the maximum to be safe
+    const countedLines = Math.max(
+      countDetailLines(signatory),
+      countDetailLinesFromAny(signatory)
+    );
+    
+    // Ensure minimum detail lines if email exists (email is always shown in PDF)
+    // This prevents overlays from being positioned too high
+    const minLines = (signatory.email && String(signatory.email).trim().length > 0) ? 2 : 0;
+    const detailLines = Math.max(countedLines, minLines);
+    
+    console.log(`[generateDynamicSignatureFieldMetadata] Signatory ${index} "${signatory.name}": counted=${countedLines}, min=${minLines}, final=${detailLines} detail lines, currentY before: ${currentY}`);
+    
     if (detailLines > 0) {
       currentY += detailLines * DYNAMIC_LAYOUT.DETAIL_LINE;
       currentY += DYNAMIC_LAYOUT.DETAILS_MARGIN_BOTTOM;
     }
     
     // Now currentY is at the signature row
-    const sigY = currentY;
+    // Add offset to fine-tune alignment with actual PDF rendering
+    const sigY = currentY + DYNAMIC_LAYOUT.Y_OFFSET;
     const partyId = (signatory.party || 'signatory').replace(/\s+/g, '_').toLowerCase();
     
     // Signature field (left side)

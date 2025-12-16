@@ -258,6 +258,24 @@
   }
 }
 
+/* ===========================================
+   PDF Editable Text Hover Styles
+   =========================================== */
+
+/* Text layer container - ensure pointer cursor */
+.react-pdf__Page__textContent,
+.react-pdf__Page .react-pdf__Page__textContent {
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+/* Base styles for all text spans in PDF */
+.react-pdf__Page__textContent span,
+.react-pdf__Page .react-pdf__Page__textContent span {
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
 /* Smooth animations for signature fields */
 @keyframes field-pulse {
   0%, 100% {

@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   // Document Body
   effectiveDate: {
     fontSize: 11,
-    fontFamily: 'Times-Bold',
+    fontFamily: 'Helvetica',
     marginBottom: 12,
   },
   
@@ -155,7 +155,7 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
         {document.metadata.effectiveDate && (
           <View style={{ marginBottom: 12 }}>
             <Text style={styles.effectiveDate}>
-              Effective Date: {formatDate(document.metadata.effectiveDate)}
+              {document.metadata.effectiveDateLabel || 'Effective Date:'} {formatDate(document.metadata.effectiveDate)}
             </Text>
           </View>
         )}

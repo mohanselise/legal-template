@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
@@ -230,8 +230,17 @@ export function TemplatePDFReview({
   const [editableDocument, setEditableDocument] = useState<LegalDocument>(document);
   const [isEditing, setIsEditing] = useState(false);
   const [editingBlock, setEditingBlock] = useState<TextBlockMapping | null>(null);
+  const [isEditingEffectiveDate, setIsEditingEffectiveDate] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Hover state for block highlighting
+  const [hoveredBlock, setHoveredBlock] = useState<{
+    blockMapping: TextBlockMapping | null;
+    pageNumber: number;
+    boundingRect: { x: number; y: number; width: number; height: number } | null;
+  } | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const signatories = extractSignatories(editableDocument, formData);
 
@@ -244,34 +253,222 @@ export function TemplatePDFReview({
     }
   }, []);
 
-  // Add CSS for text layer hover effect
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof document === 'undefined' || !document.createElement) {
+  // Note: PDF text layer hover styles are defined in globals.css
+
+  /**
+   * Finds the document block that contains the given span text.
+   * Returns the block mapping and identifies which spans belong to it.
+   */
+  const findBlockForSpan = useCallback((
+    spanText: string,
+    allSpans: HTMLElement[],
+    spanIndex: number
+  ): { blockMapping: TextBlockMapping; matchingSpanIndices: number[] } | null => {
+    if (!spanText || spanText.length < 2) return null;
+
+    // Check for effective date patterns
+    const normalizedText = spanText.toLowerCase();
+    const effectiveDatePatterns = ['effective date', 'commencement date', 'start date', 'execution date', 'date:'];
+    
+    if (effectiveDatePatterns.some(pattern => normalizedText.includes(pattern))) {
+      // Find all spans that are part of the effective date line
+      // Get spans on the same line (similar Y position)
+      const currentSpan = allSpans[spanIndex];
+      const currentRect = currentSpan.getBoundingClientRect();
+      const lineThreshold = 5; // pixels
+      
+      const lineSpanIndices: number[] = [];
+      allSpans.forEach((span, idx) => {
+        const rect = span.getBoundingClientRect();
+        if (Math.abs(rect.top - currentRect.top) < lineThreshold) {
+          lineSpanIndices.push(idx);
+        }
+      });
+
+      return {
+        blockMapping: {
+          blockId: 'metadata-effectiveDate',
+          blockPath: [],
+          text: `${editableDocument.metadata.effectiveDateLabel || 'Effective Date:'} ${editableDocument.metadata.effectiveDate || ''}`.trim(),
+          type: 'paragraph',
+          isLeaf: true,
+          isTitle: false,
+        },
+        matchingSpanIndices: lineSpanIndices,
+      };
+    }
+
+    // Find matching document block
+    const blockMapping = findBlockByText(spanText, editableDocument);
+    if (!blockMapping) return null;
+
+    // Now find all spans that belong to this specific block
+    // Use stricter matching: span text must be a contiguous part of the block text
+    const blockTextNormalized = blockMapping.text.toLowerCase().replace(/\s+/g, ' ').trim();
+    const matchingSpanIndices: number[] = [];
+    
+    // Strategy: Find contiguous spans whose combined text matches the block
+    // Start from the current span and expand outward
+    let combinedText = '';
+    let startIdx = spanIndex;
+    let endIdx = spanIndex;
+    
+    // First, check if current span is in the block
+    const currentSpanText = (allSpans[spanIndex].textContent || '').toLowerCase().trim();
+    if (!blockTextNormalized.includes(currentSpanText) && currentSpanText.length > 3) {
+      return null;
+    }
+
+    // Expand backward to find start of block
+    for (let i = spanIndex; i >= 0; i--) {
+      const text = (allSpans[i].textContent || '').toLowerCase().trim();
+      if (!text) continue;
+      
+      // Check if this span's text appears in the block
+      if (blockTextNormalized.includes(text) || text.length <= 3) {
+        startIdx = i;
+      } else {
+        break;
+      }
+    }
+
+    // Expand forward to find end of block
+    for (let i = spanIndex; i < allSpans.length; i++) {
+      const text = (allSpans[i].textContent || '').toLowerCase().trim();
+      if (!text) continue;
+      
+      if (blockTextNormalized.includes(text) || text.length <= 3) {
+        endIdx = i;
+      } else {
+        break;
+      }
+    }
+
+    // Verify the combined text matches the block reasonably well
+    for (let i = startIdx; i <= endIdx; i++) {
+      const text = (allSpans[i].textContent || '').trim();
+      if (text) {
+        combinedText += (combinedText ? ' ' : '') + text;
+        matchingSpanIndices.push(i);
+      }
+    }
+
+    // Check if combined text is similar enough to block text
+    const combinedNormalized = combinedText.toLowerCase().replace(/\s+/g, ' ').trim();
+    const similarity = calculateSimilarity(combinedNormalized, blockTextNormalized);
+    
+    if (similarity < 0.3 && matchingSpanIndices.length > 5) {
+      // Too different, probably wrong block - just use spans near current
+      return {
+        blockMapping,
+        matchingSpanIndices: [spanIndex],
+      };
+    }
+
+    return {
+      blockMapping,
+      matchingSpanIndices,
+    };
+  }, [editableDocument]);
+
+  /**
+   * Calculate text similarity (0-1)
+   */
+  const calculateSimilarity = (text1: string, text2: string): number => {
+    if (!text1 || !text2) return 0;
+    const words1 = new Set(text1.split(/\s+/).filter(w => w.length > 2));
+    const words2 = new Set(text2.split(/\s+/).filter(w => w.length > 2));
+    if (words1.size === 0 || words2.size === 0) return 0;
+    
+    let matches = 0;
+    words1.forEach(w => { if (words2.has(w)) matches++; });
+    return matches / Math.max(words1.size, words2.size);
+  };
+
+  // Handle hover over PDF text to show block-level highlight
+  const handleTextHover = useCallback((event: React.MouseEvent<HTMLDivElement>, pageNumber: number) => {
+    // Don't process hover if already editing
+    if (isEditing) {
+      setHoveredBlock(null);
       return;
     }
+
+    const target = event.target as HTMLElement;
+    const textLayer = target.closest('.react-pdf__Page__textContent');
     
-    try {
-      const style = document.createElement('style');
-      style.textContent = `
-        .react-pdf__Page__textContent span {
-          cursor: pointer !important;
-          transition: background-color 0.2s ease;
-        }
-        .react-pdf__Page__textContent span:hover {
-          background-color: hsl(var(--selise-blue) / 0.1) !important;
-          border-radius: 2px;
-        }
-      `;
-      document.head.appendChild(style);
-      
-      return () => {
-        if (typeof document !== 'undefined' && document.head && document.head.contains(style)) {
-          document.head.removeChild(style);
-        }
-      };
-    } catch (error) {
-      console.warn('Failed to add text layer hover styles:', error);
+    if (!textLayer) {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = setTimeout(() => setHoveredBlock(null), 100);
+      return;
     }
+
+    const textSpan = target.closest('span');
+    if (!textSpan) return;
+
+    const pageElement = pageRefs.current.get(pageNumber);
+    if (!pageElement) return;
+
+    const textLayerElement = pageElement.querySelector('.react-pdf__Page__textContent');
+    if (!textLayerElement) return;
+
+    const allSpans = Array.from(textLayerElement.querySelectorAll('span')) as HTMLElement[];
+    const spanIndex = allSpans.indexOf(textSpan as HTMLElement);
+    if (spanIndex === -1) return;
+
+    const spanText = (textSpan.textContent || '').trim();
+    const result = findBlockForSpan(spanText, allSpans, spanIndex);
+    
+    if (!result) {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = setTimeout(() => setHoveredBlock(null), 100);
+      return;
+    }
+
+    const { blockMapping, matchingSpanIndices } = result;
+
+    // Calculate bounding rect for matching spans only
+    const pageRect = pageElement.getBoundingClientRect();
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+    matchingSpanIndices.forEach(idx => {
+      const span = allSpans[idx];
+      if (!span) return;
+      const rect = span.getBoundingClientRect();
+      const relativeX = rect.left - pageRect.left;
+      const relativeY = rect.top - pageRect.top;
+      
+      minX = Math.min(minX, relativeX);
+      minY = Math.min(minY, relativeY);
+      maxX = Math.max(maxX, relativeX + rect.width);
+      maxY = Math.max(maxY, relativeY + rect.height);
+    });
+
+    if (minX === Infinity) return;
+
+    const padding = 6;
+    const boundingRect = {
+      x: Math.max(0, minX - padding),
+      y: Math.max(0, minY - padding),
+      width: (maxX - minX) + (padding * 2),
+      height: (maxY - minY) + (padding * 2),
+    };
+
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+
+    setHoveredBlock({
+      blockMapping,
+      pageNumber,
+      boundingRect,
+    });
+  }, [isEditing, findBlockForSpan]);
+
+  // Clear hover on mouse leave
+  const handleTextLeave = useCallback(() => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => setHoveredBlock(null), 150);
   }, []);
 
   // Update editable document when prop changes
@@ -600,49 +797,59 @@ export function TemplatePDFReview({
     // Don't handle clicks if already editing
     if (isEditing) return;
 
-    // Check if click is on text layer
+    // If we have a hovered block, use it directly - this allows clicking anywhere in the highlight
+    if (hoveredBlock && hoveredBlock.blockMapping) {
+      const blockMapping = hoveredBlock.blockMapping;
+      
+      // Check if it's the effective date
+      if (blockMapping.blockId === 'metadata-effectiveDate') {
+        setIsEditingEffectiveDate(true);
+      } else {
+        setIsEditingEffectiveDate(false);
+      }
+      
+      setEditingBlock(blockMapping);
+      setIsEditing(true);
+      setHoveredBlock(null); // Clear hover when opening editor
+      return;
+    }
+
+    // Fallback: Check if click is on text layer when no hover state
     const target = event.target as HTMLElement;
     const textLayer = target.closest('.react-pdf__Page__textContent');
     
     if (!textLayer) return;
 
-    // Get the clicked text - try multiple strategies
-    const selection = window.getSelection();
-    let clickedText = '';
+    // Get the clicked text
+    const textElement = target.closest('span');
+    if (!textElement) return;
     
-    if (selection && selection.toString().trim()) {
-      // User selected text - use selection
-      clickedText = selection.toString().trim();
-    } else {
-      // User clicked on a text element - try to get surrounding text
-      const textElement = target.closest('span');
-      if (textElement) {
-        // Get text from the span and nearby siblings for better matching
-        const parent = textElement.parentElement;
-        if (parent) {
-          // Try to get a larger context (current span + siblings)
-          const siblings = Array.from(parent.children);
-          const currentIndex = siblings.indexOf(textElement);
-          const contextStart = Math.max(0, currentIndex - 1);
-          const contextEnd = Math.min(siblings.length, currentIndex + 2);
-          const contextSpans = siblings.slice(contextStart, contextEnd);
-          clickedText = contextSpans
-            .map(span => span.textContent?.trim() || '')
-            .join(' ')
-            .trim();
-        }
-        
-        // Fallback to just the clicked element's text
-        if (!clickedText) {
-          clickedText = textElement.textContent?.trim() || '';
-        }
-      }
-    }
-
-    // Need at least 3 characters to match
+    const clickedText = textElement.textContent?.trim() || '';
     if (!clickedText || clickedText.length < 3) return;
 
-    // Find the matching block (prioritizes paragraphs and leaf nodes)
+    // Check if clicking on effective date
+    const normalizedClicked = clickedText.toLowerCase();
+    const effectiveDatePatterns = ['effective date', 'commencement date', 'start date', 'execution date', 'date:'];
+    
+    if (effectiveDatePatterns.some(pattern => normalizedClicked.includes(pattern))) {
+      const label = editableDocument.metadata.effectiveDateLabel || 'Effective Date:';
+      const value = editableDocument.metadata.effectiveDate || '';
+      const fullText = `${label} ${value}`.trim();
+      
+      setIsEditingEffectiveDate(true);
+      setEditingBlock({
+        blockId: 'metadata-effectiveDate',
+        blockPath: [],
+        text: fullText,
+        type: 'paragraph',
+        isLeaf: true,
+        isTitle: false,
+      });
+      setIsEditing(true);
+      return;
+    }
+
+    // Find the matching block
     const blockMapping = findBlockByText(clickedText, editableDocument);
     
     if (!blockMapping) {
@@ -650,15 +857,7 @@ export function TemplatePDFReview({
       return;
     }
 
-    // Log what we found for debugging
-    console.log('Found block to edit:', {
-      type: blockMapping.type,
-      isLeaf: blockMapping.isLeaf,
-      isTitle: blockMapping.isTitle,
-      textPreview: blockMapping.text.substring(0, 50),
-    });
-
-    // Set editing state and open dialog
+    setIsEditingEffectiveDate(false);
     setEditingBlock(blockMapping);
     setIsEditing(true);
   };
@@ -668,18 +867,44 @@ export function TemplatePDFReview({
 
     setIsSavingEdit(true);
     try {
-      // Update the document - pass isTitle flag for article/section titles
-      const updated = updateBlockText(
-        editableDocument, 
-        editingBlock.blockPath, 
-        newText,
-        editingBlock.isTitle
-      );
+      let updated: LegalDocument;
+      
+      if (isEditingEffectiveDate) {
+        // Parse the edited text to extract label and value
+        // Format: "{label} {value}" or just "{value}" if no colon
+        updated = JSON.parse(JSON.stringify(editableDocument)) as LegalDocument;
+        
+        const trimmedText = newText.trim();
+        const colonIndex = trimmedText.indexOf(':');
+        
+        if (colonIndex > 0) {
+          // Has a colon - split into label and value
+          updated.metadata.effectiveDateLabel = trimmedText.substring(0, colonIndex + 1).trim();
+          updated.metadata.effectiveDate = trimmedText.substring(colonIndex + 1).trim();
+        } else {
+          // No colon - assume it's just the value, keep existing label
+          updated.metadata.effectiveDate = trimmedText;
+          // Ensure label exists (default if not set)
+          if (!updated.metadata.effectiveDateLabel) {
+            updated.metadata.effectiveDateLabel = 'Effective Date:';
+          }
+        }
+      } else {
+        // Update the document - pass isTitle flag for article/section titles
+        updated = updateBlockText(
+          editableDocument, 
+          editingBlock.blockPath, 
+          newText,
+          editingBlock.isTitle
+        );
+      }
+      
       setEditableDocument(updated);
       setHasUnsavedChanges(true);
       
       // Close editor
       setIsEditing(false);
+      setIsEditingEffectiveDate(false);
       setEditingBlock(null);
       
       // PDF will regenerate automatically via useEffect
@@ -693,6 +918,7 @@ export function TemplatePDFReview({
 
   const handleCancelEdit = () => {
     setIsEditing(false);
+    setIsEditingEffectiveDate(false);
     setEditingBlock(null);
   };
 
@@ -825,7 +1051,7 @@ export function TemplatePDFReview({
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
-                <span className="text-xs font-semibold text-[hsl(var(--fg))] min-w-[3.5rem] text-center px-2">
+                <span className="text-xs font-semibold text-[hsl(var(--fg))] min-w-14 text-center px-2">
                   {Math.round(scale * 100)}%
                 </span>
                 <button
@@ -881,7 +1107,7 @@ export function TemplatePDFReview({
                 <div className="flex flex-wrap items-center gap-2 text-xs text-[hsl(var(--globe-grey))]">
                   <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--bg))] border border-[hsl(var(--border))] px-3 py-1 font-semibold">
                     <Edit2 className="w-3 h-3" />
-                    Click any text to edit
+                    Hover over text to highlight, click to edit
                   </span>
                   {hasUnsavedChanges && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(var(--warning))/0.15] text-[hsl(var(--warning))] px-3 py-1 font-semibold">
@@ -935,7 +1161,37 @@ export function TemplatePDFReview({
                             height: 792 * scale,
                           }}
                           onClick={handlePageClick}
+                          onMouseMove={(e) => handleTextHover(e, page)}
+                          onMouseLeave={handleTextLeave}
                         >
+                          {/* Block highlight overlay - clickable */}
+                          {hoveredBlock && hoveredBlock.pageNumber === page && hoveredBlock.boundingRect && (
+                            <div
+                              className="absolute z-20 transition-all duration-150 ease-out cursor-pointer"
+                              style={{
+                                left: hoveredBlock.boundingRect.x,
+                                top: hoveredBlock.boundingRect.y,
+                                width: hoveredBlock.boundingRect.width,
+                                height: hoveredBlock.boundingRect.height,
+                                backgroundColor: 'rgba(0, 102, 178, 0.1)',
+                                border: '2px solid rgba(0, 102, 178, 0.5)',
+                                borderRadius: '4px',
+                                boxShadow: '0 2px 12px rgba(0, 102, 178, 0.2)',
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePageClick(e);
+                              }}
+                            >
+                              {/* Edit indicator tooltip */}
+                              <div 
+                                className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[hsl(var(--selise-blue))] text-white text-xs font-medium whitespace-nowrap shadow-lg pointer-events-none"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                                Click to edit
+                              </div>
+                            </div>
+                          )}
                           <Page
                             pageNumber={page}
                             scale={scale}
@@ -986,7 +1242,7 @@ export function TemplatePDFReview({
                               onSave={handleSaveEdit}
                               onCancel={handleCancelEdit}
                               isSaving={isSavingEdit}
-                              blockType={editingBlock?.type}
+                              blockType={isEditingEffectiveDate ? "effectiveDate" : editingBlock?.type}
                               isTitle={editingBlock?.isTitle}
                             />
                           )}

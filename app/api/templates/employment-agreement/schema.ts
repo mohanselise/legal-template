@@ -80,6 +80,7 @@ export interface EmploymentAgreement {
 export interface DocumentMetadata {
   title: string;
   effectiveDate: string;
+  effectiveDateLabel?: string; // Optional label (defaults to "Effective Date:" if not provided)
   documentType: 'employment-agreement';
   jurisdiction?: string;
   generatedAt: string;

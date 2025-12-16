@@ -381,11 +381,19 @@ export function EditableDocumentRenderer({
             {/* Effective Date */}
             <div className="mb-8">
               <p className="text-[hsl(var(--eerie-black))] dark:text-gray-200 font-semibold">
-                <strong>Effective Date:</strong> {new Date(document.metadata.effectiveDate).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
+                <strong>{document.metadata.effectiveDateLabel || 'Effective Date:'}</strong>{' '}
+                {(() => {
+                  const dateStr = document.metadata.effectiveDate;
+                  const date = new Date(dateStr);
+                  if (!isNaN(date.getTime()) && date.toString() !== 'Invalid Date') {
+                    return date.toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                  }
+                  return dateStr;
+                })()}
               </p>
             </div>
 

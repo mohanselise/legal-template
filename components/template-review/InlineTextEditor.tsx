@@ -47,6 +47,8 @@ function getBlockLabel(blockType?: string, isTitle?: boolean): { label: string; 
       return { label: "Definition", Icon: Type };
     case "table_cell":
       return { label: "Table Cell", Icon: Type };
+    case "effectiveDate":
+      return { label: "Effective Date", Icon: Type };
     default:
       return { label: "Text", Icon: Type };
   }
@@ -154,7 +156,15 @@ export function InlineTextEditor({
             <span>Edit {blockLabel}</span>
           </DialogTitle>
           <DialogDescription>
-            Make your changes below. Press <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Esc</kbd> to cancel or <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Ctrl+Enter</kbd> to save.
+            {blockType === "effectiveDate" ? (
+              <>
+                Edit the label and date value. Format: "Label: value" (e.g., "Effective Date: January 15, 2024" or "Commencement Date: Upon Signature"). Press <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Esc</kbd> to cancel or <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Ctrl+Enter</kbd> to save.
+              </>
+            ) : (
+              <>
+                Make your changes below. Press <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Esc</kbd> to cancel or <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Ctrl+Enter</kbd> to save.
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
         

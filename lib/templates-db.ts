@@ -194,19 +194,21 @@ export type { TemplatePage };
 /**
  * Fetch a single template page by slug and locale
  * Only returns published pages for public consumption
+ * In development, also allows unpublished pages for testing
  */
 export async function getTemplatePageBySlugAndLocale(
   slug: string,
   locale: string
 ): Promise<TemplatePageWithBlocks | null> {
   try {
-    const templatePage = await prisma.templatePage.findUnique({
+    // In development, allow viewing unpublished pages for testing
+    const isDevelopment = process.env.NODE_ENV === "development";
+    
+    const templatePage = await prisma.templatePage.findFirst({
       where: {
-        slug_locale: {
-          slug,
-          locale,
-        },
-        published: true,
+        slug,
+        locale,
+        ...(isDevelopment ? {} : { published: true }),
       },
     });
     return templatePage as TemplatePageWithBlocks;

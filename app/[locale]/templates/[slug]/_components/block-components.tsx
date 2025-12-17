@@ -45,7 +45,8 @@ function MediaBackground({
   );
 }
 
-// Default media assets per section (mirrors homepage look)
+// Default media assets per section
+// Only hero and CTA have prominent backgrounds; other sections are clean
 const defaults = {
   hero: {
     background: { src: "/graphics/whole-page-bg.webp", alt: "Gradient backdrop" },
@@ -53,29 +54,33 @@ const defaults = {
     side: { src: "/graphics/image-2.webp", alt: "Hero illustration" },
   },
   featureGrid: {
-    background: { src: "/graphics/whole-page-bg.webp", alt: "Gradient backdrop", overlay: "opacity-30" },
+    background: undefined,
   },
   stats: {
-    texture: { src: "/graphics/black-spin-bg.webp", alt: "Spin texture", overlay: "opacity-30 mix-blend-overlay" },
+    background: undefined,
+    texture: undefined,
   },
   steps: {
-    background: { src: "/graphics/2nd-bg.webp", alt: "Secondary gradient", overlay: "opacity-40" },
+    background: undefined,
   },
   testimonials: {
-    texture: { src: "/graphics/bg-black-texture.webp", alt: "Texture overlay", overlay: "opacity-20 mix-blend-overlay" },
+    background: undefined,
+    texture: undefined,
   },
   faq: {
-    background: { src: "/graphics/whole-page-bg.webp", alt: "Gradient backdrop", overlay: "opacity-25" },
+    background: undefined,
   },
   richText: {
-    texture: { src: "/graphics/black-spin-bg.webp", alt: "Subtle spin texture", overlay: "opacity-25 mix-blend-overlay" },
+    background: undefined,
+    texture: undefined,
   },
   cta: {
     background: { src: "/graphics/mountain-bg-overlayed.jpg", alt: "Mountain overlay backdrop" },
     texture: { src: "/graphics/bg-black-texture.webp", alt: "Texture overlay", overlay: "opacity-30 mix-blend-overlay" },
   },
   media: {
-    texture: { src: "/graphics/bg-black-texture.webp", alt: "Texture overlay", overlay: "opacity-30 mix-blend-overlay" },
+    background: undefined,
+    texture: undefined,
   },
 };
 
@@ -167,13 +172,13 @@ export function HeroBlock(block: HeroBlockProps) {
 
 type FeatureGridProps = Extract<TemplatePageBlock, { type: "featureGrid" }>;
 export function FeatureGridBlock(block: FeatureGridProps) {
-  const backgroundImage = withFallback(block.backgroundImage, defaults.featureGrid.background);
-  const textureImage = block.textureImage; // optional
+  const backgroundImage = block.backgroundImage || defaults.featureGrid.background;
+  const textureImage = block.textureImage;
   const columns = block.columns ?? 3;
   return (
     <section className="relative overflow-hidden bg-[hsl(var(--bg))] py-16 sm:py-24">
-      <MediaBackground media={backgroundImage} />
-      <MediaBackground media={textureImage} className="mix-blend-overlay opacity-50" />
+      {backgroundImage && <MediaBackground media={backgroundImage} />}
+      {textureImage && <MediaBackground media={textureImage} className="mix-blend-overlay opacity-50" />}
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center space-y-4">
           {block.title ? (
@@ -219,12 +224,12 @@ export function FeatureGridBlock(block: FeatureGridProps) {
 
 type StatsBlockProps = Extract<TemplatePageBlock, { type: "stats" }>;
 export function StatsBlock(block: StatsBlockProps) {
-  const backgroundImage = block.backgroundImage;
-  const textureImage = withFallback(block.textureImage, defaults.stats.texture);
+  const backgroundImage = block.backgroundImage || defaults.stats.background;
+  const textureImage = block.textureImage || defaults.stats.texture;
   return (
     <section className="relative overflow-hidden bg-[hsl(var(--bg))] py-16 sm:py-20">
-      <MediaBackground media={backgroundImage} />
-      <MediaBackground media={textureImage} className="mix-blend-overlay opacity-50" />
+      {backgroundImage && <MediaBackground media={backgroundImage} />}
+      {textureImage && <MediaBackground media={textureImage} className="mix-blend-overlay opacity-50" />}
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center space-y-3">
           {block.title ? <h2 className="text-3xl font-bold font-heading">{block.title}</h2> : null}
@@ -253,12 +258,12 @@ export function StatsBlock(block: StatsBlockProps) {
 
 type StepsBlockProps = Extract<TemplatePageBlock, { type: "steps" }>;
 export function StepsBlock(block: StepsBlockProps) {
-  const backgroundImage = withFallback(block.backgroundImage, defaults.steps.background);
+  const backgroundImage = block.backgroundImage || defaults.steps.background;
   const textureImage = block.textureImage;
   return (
-    <section className="relative overflow-hidden bg-[hsl(var(--gradient-light-from))] py-16 sm:py-24">
-      <MediaBackground media={backgroundImage} />
-      <MediaBackground media={textureImage} className="mix-blend-overlay opacity-40" />
+    <section className="relative overflow-hidden bg-[hsl(var(--bg))] py-16 sm:py-24">
+      {backgroundImage && <MediaBackground media={backgroundImage} />}
+      {textureImage && <MediaBackground media={textureImage} className="mix-blend-overlay opacity-40" />}
       <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center space-y-3">
           {block.title ? <h2 className="text-3xl font-bold font-heading">{block.title}</h2> : null}
@@ -294,12 +299,12 @@ export function StepsBlock(block: StepsBlockProps) {
 
 type TestimonialsBlockProps = Extract<TemplatePageBlock, { type: "testimonials" }>;
 export function TestimonialsBlock(block: TestimonialsBlockProps) {
-  const backgroundImage = block.backgroundImage;
-  const textureImage = withFallback(block.textureImage, defaults.testimonials.texture);
+  const backgroundImage = block.backgroundImage || defaults.testimonials.background;
+  const textureImage = block.textureImage || defaults.testimonials.texture;
   return (
     <section className="relative overflow-hidden bg-[hsl(var(--bg))] py-16 sm:py-24">
-      <MediaBackground media={backgroundImage} />
-      <MediaBackground media={textureImage} className="mix-blend-overlay opacity-40" />
+      {backgroundImage && <MediaBackground media={backgroundImage} />}
+      {textureImage && <MediaBackground media={textureImage} className="mix-blend-overlay opacity-40" />}
       <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="mx-auto max-w-3xl text-center space-y-3">
           {block.title ? <h2 className="text-3xl font-bold font-heading">{block.title}</h2> : null}
@@ -336,12 +341,12 @@ export function TestimonialsBlock(block: TestimonialsBlockProps) {
 
 type FAQBlockProps = Extract<TemplatePageBlock, { type: "faq" }>;
 export function FAQBlock(block: FAQBlockProps) {
-  const backgroundImage = withFallback(block.backgroundImage, defaults.faq.background);
+  const backgroundImage = block.backgroundImage || defaults.faq.background;
   const textureImage = block.textureImage;
   return (
     <section className="relative overflow-hidden bg-[hsl(var(--bg))] py-16 sm:py-24">
-      <MediaBackground media={backgroundImage} />
-      <MediaBackground media={textureImage} className="mix-blend-overlay opacity-40" />
+      {backgroundImage && <MediaBackground media={backgroundImage} />}
+      {textureImage && <MediaBackground media={textureImage} className="mix-blend-overlay opacity-40" />}
       <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-6">
         {block.title ? <h2 className="text-3xl font-bold font-heading text-center">{block.title}</h2> : null}
         <div className="space-y-4">
@@ -367,12 +372,12 @@ export function FAQBlock(block: FAQBlockProps) {
 
 type RichTextBlockProps = Extract<TemplatePageBlock, { type: "richText" }>;
 export function RichTextBlock(block: RichTextBlockProps) {
-  const backgroundImage = block.backgroundImage;
-  const textureImage = withFallback(block.textureImage, defaults.richText.texture);
+  const backgroundImage = block.backgroundImage || defaults.richText.background;
+  const textureImage = block.textureImage || defaults.richText.texture;
   return (
     <section className="relative overflow-hidden bg-[hsl(var(--bg))] py-12 sm:py-16">
-      <MediaBackground media={backgroundImage} />
-      <MediaBackground media={textureImage} className="mix-blend-overlay opacity-40" />
+      {backgroundImage && <MediaBackground media={backgroundImage} />}
+      {textureImage && <MediaBackground media={textureImage} className="mix-blend-overlay opacity-40" />}
       <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 space-y-4">
         {block.title ? <h2 className="text-2xl font-bold font-heading">{block.title}</h2> : null}
         <div className="space-y-4 text-base leading-relaxed text-foreground">
@@ -422,12 +427,12 @@ export function CTABlock(block: CTABlockProps) {
 
 type MediaBlockProps = Extract<TemplatePageBlock, { type: "media" }>;
 export function MediaBlock(block: MediaBlockProps) {
-  const backgroundImage = block.backgroundImage;
-  const textureImage = withFallback(block.textureImage, defaults.media.texture);
+  const backgroundImage = block.backgroundImage || defaults.media.background;
+  const textureImage = block.textureImage || defaults.media.texture;
   return (
     <section className="relative overflow-hidden bg-[hsl(var(--bg))] py-14 sm:py-18">
-      <MediaBackground media={backgroundImage} />
-      <MediaBackground media={textureImage} className="mix-blend-overlay opacity-40" />
+      {backgroundImage && <MediaBackground media={backgroundImage} />}
+      {textureImage && <MediaBackground media={textureImage} className="mix-blend-overlay opacity-40" />}
       <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-4 text-center">
         {block.title ? <h3 className="text-2xl font-bold font-heading text-foreground">{block.title}</h3> : null}
         {block.description ? (

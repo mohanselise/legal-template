@@ -113,6 +113,15 @@ export default async function TemplateLandingPage({
   const templatePage = await getTemplatePageBySlugAndLocale(slug, locale);
 
   console.log("[TemplateLanding] slug", slug, "locale", locale, "templatePage?", !!templatePage);
+  if (templatePage) {
+    console.log("[TemplateLanding] templatePage found:", {
+      title: templatePage.title,
+      published: templatePage.published,
+      hasBlocks: !!templatePage.blocks,
+      hasHtmlBody: !!templatePage.htmlBody,
+      htmlBodyLength: templatePage.htmlBody?.length || 0,
+    });
+  }
 
   if (templatePage) {
     let blocks = parseTemplatePageBlocks((templatePage as TemplatePageWithBlocks).blocks);
@@ -121,17 +130,25 @@ export default async function TemplateLandingPage({
     if (!blocks.length && templatePage.htmlBody) {
       try {
         const parsed = JSON.parse(templatePage.htmlBody);
+        console.log("[TemplateLanding] parsed htmlBody JSON:", {
+          isArray: Array.isArray(parsed),
+          type: typeof parsed,
+          keys: Array.isArray(parsed) ? parsed.length : Object.keys(parsed),
+        });
         blocks = parseTemplatePageBlocks(parsed);
         console.log("[TemplateLanding] parsed from htmlBody. rawArray?", Array.isArray(parsed), "blockCount", blocks.length);
       } catch (err) {
-        console.warn("[TemplateLanding] failed to parse htmlBody JSON", err);
+        console.error("[TemplateLanding] failed to parse htmlBody JSON", err);
+        console.error("[TemplateLanding] htmlBody content (first 500 chars):", templatePage.htmlBody.substring(0, 500));
       }
     }
 
-    console.log("[TemplateLanding] blocks count", blocks.length);
+    console.log("[TemplateLanding] final blocks count", blocks.length);
 
     if (blocks.length) {
       return <TemplatePageRenderer blocks={blocks} />;
+    } else {
+      console.warn("[TemplateLanding] templatePage exists but no blocks parsed. Falling back to default page.");
     }
   }
 

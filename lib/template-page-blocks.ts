@@ -168,7 +168,40 @@ export function parseTemplatePageBlocks(raw: unknown): TemplatePageBlocks {
   if (parsed.success) {
     return parsed.data;
   }
-  console.warn("[TEMPLATE_PAGE_BLOCKS] Failed to parse blocks", parsed.error);
+  
+  // Log detailed error information
+  console.warn("[TEMPLATE_PAGE_BLOCKS] Failed to parse blocks");
+  if (parsed.error instanceof z.ZodError) {
+    parsed.error.issues.forEach((issue, idx) => {
+      console.warn(`[TEMPLATE_PAGE_BLOCKS] Issue ${idx + 1}:`, {
+        path: issue.path.join("."),
+        message: issue.message,
+        code: issue.code,
+        expected: (issue as any).expected,
+        received: (issue as any).received,
+      });
+    });
+    
+    // Try to parse individual blocks and filter out invalid ones
+    if (Array.isArray(raw)) {
+      console.log("[TEMPLATE_PAGE_BLOCKS] Attempting to parse blocks individually...");
+      const validBlocks: TemplatePageBlock[] = [];
+      raw.forEach((block, idx) => {
+        const blockParsed = templatePageBlockSchema.safeParse(block);
+        if (blockParsed.success) {
+          validBlocks.push(blockParsed.data);
+        } else {
+          console.warn(`[TEMPLATE_PAGE_BLOCKS] Block ${idx} (type: ${(block as any)?.type || "unknown"}) failed validation:`, blockParsed.error.issues);
+        }
+      });
+      
+      if (validBlocks.length > 0) {
+        console.log(`[TEMPLATE_PAGE_BLOCKS] Successfully parsed ${validBlocks.length} of ${raw.length} blocks`);
+        return validBlocks as TemplatePageBlocks;
+      }
+    }
+  }
+  
   return [];
 }
 

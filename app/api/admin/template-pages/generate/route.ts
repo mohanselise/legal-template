@@ -32,17 +32,21 @@ function loadBrandGuide(): string {
 
 const BRAND_GUIDE = loadBrandGuide();
 
-const SYSTEM_PROMPT = `You are an expert marketing copywriter.
-You will produce SEO-first landing page content as structured JSON blocks (no HTML).
+const SYSTEM_PROMPT = `You are an expert SEO copywriter specializing in long-form, conversion-optimized landing pages.
+You will produce comprehensive, SEO-first landing page content as structured JSON blocks (no HTML).
 
 Key requirements:
 - Return ONLY valid JSON.
+- Generate LONG-FORM content: aim for 1500-2500 words of copy across all blocks.
 - Tone: professional, approachable, plain-English; avoid legalese unless required.
 - Follow SELISE brand guide (voice, clarity, accessibility). Avoid exaggerated or absolute claims (e.g., “100% legal compliance”, “guaranteed”). Use measured, trustworthy language.
 - Do NOT return HTML or hex colors. Use the block schema provided in the user message for structure.
 - Include the approved CTAs exactly as provided (primary and secondary).
 - Keep copy skimmable with clear headings, short paragraphs, bullets, and supporting subheadings.
 - OG/meta fields concise and SEO-friendly; ogImage must be null.
+- Include comprehensive FAQ sections (6-10 questions) targeting long-tail keywords.
+- Write detailed, substantive descriptions - not just placeholder text.
+- Each section should provide real value and answer user questions.
 `;
 
 export async function POST(request: NextRequest) {
@@ -117,7 +121,19 @@ export async function POST(request: NextRequest) {
       })),
     };
 
-    const userPrompt = `Generate a long-form, SEO-focused landing page for the template described below.
+    const userPrompt = `Generate a COMPREHENSIVE, long-form, SEO-focused landing page for the template described below.
+
+PAGE STRUCTURE REQUIREMENTS (include ALL of these sections):
+1. hero - Compelling headline, subtitle with value proposition, 4-6 bullet points, primary CTA
+2. featureGrid - 6-9 key features/benefits with detailed descriptions (2-3 sentences each)
+3. steps - 4-6 step process showing how the template works
+4. richText - 2-3 paragraphs of detailed content explaining the template's value, use cases, and benefits
+5. stats - 3-4 relevant statistics or metrics (can be industry stats or template benefits)
+6. faq - 8-12 comprehensive Q&As covering common questions, legal considerations, and use cases
+7. richText - Another section with detailed content about best practices or tips
+8. cta - Strong closing CTA with compelling copy
+
+Generate substantial content for each section - no placeholder or minimal text.
 
 BRAND GUIDE (abbreviated):
 ${BRAND_GUIDE}
@@ -139,6 +155,7 @@ Return strict JSON with this shape (no additional fields):
   "keywords": string[],
   "blocks": [
     // Include hero and a closing CTA; add other sections as needed for a complete landing page
+    // IMPORTANT: All blocks must include ALL required fields. CTA blocks MUST have primaryCta.
     {
       "type": "hero",
       "eyebrow"?: string,
@@ -196,7 +213,7 @@ Return strict JSON with this shape (no additional fields):
       "type": "cta",
       "title": string,
       "description"?: string,
-      "primaryCta": { "label": string, "href": string, "variant"?: "primary"|"secondary"|"ghost" },
+      "primaryCta": { "label": string, "href": "#generate", "variant"?: "primary"|"secondary"|"ghost" }, // REQUIRED for cta blocks - always include this
       "secondaryCta"?: { "label": string, "href": string, "variant"?: "primary"|"secondary"|"ghost" }
     }
   ]
@@ -231,9 +248,9 @@ Language rules:
             { role: "user", content: userPrompt },
           ],
           response_format: { type: "json_object" },
-          temperature: 0.5,
-          // Keep generation affordable; stay under typical credit limits and avoid 402/403
-          max_tokens: 1200,
+          temperature: 0.6,
+          // Increased for comprehensive long-form content generation
+          max_tokens: 4096,
         },
         {
           sessionId,

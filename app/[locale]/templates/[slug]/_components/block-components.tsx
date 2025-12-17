@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { TemplatePageBlock } from "@/lib/template-page-blocks";
 import { LucideIcon, Sparkles, CheckCircle2, ArrowRight, Quote } from "lucide-react";
 import Image from "next/image";
+import { SmartCTALink } from "./smart-cta-link";
+import { RichTextWithLinks } from "./rich-text-with-links";
 
 const iconMap: Record<string, LucideIcon> = {
   Sparkles,
@@ -124,10 +126,10 @@ export function HeroBlock(block: HeroBlockProps) {
             <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:justify-start">
               {block.primaryCta ? (
                 <Button asChild size="lg" className="group bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))]/90 shadow-2xl h-auto px-8 py-4 text-lg">
-                  <Link href={block.primaryCta.href}>
+                  <SmartCTALink href={block.primaryCta.href}>
                     {block.primaryCta.label}
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                  </Link>
+                  </SmartCTALink>
                 </Button>
               ) : null}
               {block.secondaryCta ? (
@@ -178,7 +180,9 @@ export function FeatureGridBlock(block: FeatureGridProps) {
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground font-heading">{block.title}</h2>
           ) : null}
           {block.description ? (
-            <p className="text-lg text-muted-foreground">{block.description}</p>
+            <p className="text-lg text-muted-foreground">
+              <RichTextWithLinks text={block.description} />
+            </p>
           ) : null}
         </div>
         <div
@@ -198,7 +202,9 @@ export function FeatureGridBlock(block: FeatureGridProps) {
                   <div className="space-y-2">
                     <h3 className="text-lg font-semibold text-foreground">{feature.title}</h3>
                     {feature.description ? (
-                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        <RichTextWithLinks text={feature.description} />
+                      </p>
                     ) : null}
                   </div>
                 </div>
@@ -223,7 +229,9 @@ export function StatsBlock(block: StatsBlockProps) {
         <div className="mx-auto max-w-3xl text-center space-y-3">
           {block.title ? <h2 className="text-3xl font-bold font-heading">{block.title}</h2> : null}
           {block.description ? (
-            <p className="text-lg text-muted-foreground">{block.description}</p>
+            <p className="text-lg text-muted-foreground">
+              <RichTextWithLinks text={block.description} />
+            </p>
           ) : null}
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -269,7 +277,11 @@ export function StepsBlock(block: StepsBlockProps) {
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-lg font-semibold text-foreground">{step.title}</h3>
-                  {step.description ? <p className="text-sm text-muted-foreground">{step.description}</p> : null}
+                  {step.description ? (
+                    <p className="text-sm text-muted-foreground">
+                      <RichTextWithLinks text={step.description} />
+                    </p>
+                  ) : null}
                 </div>
               </div>
             );
@@ -342,7 +354,9 @@ export function FAQBlock(block: FAQBlockProps) {
                 {item.question}
                 <span className="text-[hsl(var(--selise-blue))] group-open:rotate-90 transition-transform">›</span>
               </summary>
-              <p className="pt-3 text-sm text-muted-foreground leading-relaxed">{item.answer}</p>
+              <p className="pt-3 text-sm text-muted-foreground leading-relaxed">
+                <RichTextWithLinks text={item.answer} />
+              </p>
             </details>
           ))}
         </div>
@@ -364,7 +378,7 @@ export function RichTextBlock(block: RichTextBlockProps) {
         <div className="space-y-4 text-base leading-relaxed text-foreground">
           {block.body.map((paragraph, idx) => (
             <p key={idx} className="text-muted-foreground">
-              {paragraph}
+              <RichTextWithLinks text={paragraph} />
             </p>
           ))}
         </div>
@@ -391,7 +405,7 @@ export function CTABlock(block: CTABlockProps) {
             ) : null}
             <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
               <Button asChild size="lg" className="bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))]/90 h-auto px-8 py-4 text-lg">
-                <Link href={block.primaryCta.href}>{block.primaryCta.label}</Link>
+                <SmartCTALink href={block.primaryCta.href}>{block.primaryCta.label}</SmartCTALink>
               </Button>
               {block.secondaryCta ? (
                 <Button asChild size="lg" variant="outline" className="border-[hsl(var(--white))]/70 text-[hsl(var(--white))] hover:bg-[hsl(var(--white))]/10 h-auto px-8 py-4 text-lg">
@@ -416,7 +430,11 @@ export function MediaBlock(block: MediaBlockProps) {
       <MediaBackground media={textureImage} className="mix-blend-overlay opacity-40" />
       <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-4 text-center">
         {block.title ? <h3 className="text-2xl font-bold font-heading text-foreground">{block.title}</h3> : null}
-        {block.description ? <p className="text-muted-foreground">{block.description}</p> : null}
+        {block.description ? (
+          <p className="text-muted-foreground">
+            <RichTextWithLinks text={block.description} />
+          </p>
+        ) : null}
         <div className="overflow-hidden rounded-2xl border border-[hsl(var(--border))] shadow-sm">
           <img
             src={block.imageUrl}

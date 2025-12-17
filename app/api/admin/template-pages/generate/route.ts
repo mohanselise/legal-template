@@ -77,6 +77,22 @@ export async function POST(request: NextRequest) {
 
     const sessionId = await getSessionId();
 
+    // Fetch other available templates for internal linking
+    const otherTemplates = await prisma.template.findMany({
+      where: {
+        available: true,
+        id: { not: templateId },
+      },
+      select: {
+        title: true,
+        slug: true,
+        description: true,
+      },
+      orderBy: {
+        title: "asc",
+      },
+    });
+
     // Build context object
     const context = {
       templateTitle: template.title,
@@ -110,8 +126,8 @@ TEMPLATE CONTEXT (JSON):
 ${JSON.stringify(context, null, 2)}
 
 MANDATORY CTAs:
-- Primary CTA (prominent): /${locale}/templates/${template.slug}/generate
-- Secondary CTA (All Templates): /${locale}/templates
+- Primary CTA href: "#generate" (renderer will resolve to current page + /generate)
+- Secondary CTA href: "/${locale}/templates"
 
 Return strict JSON with this shape (no additional fields):
 {
@@ -186,8 +202,20 @@ Return strict JSON with this shape (no additional fields):
   ]
 }
 
+INTERNAL LINKING (for SEO):
+Use markdown links [Link Text](url) in text content to link to related templates where relevant.
+Available templates:
+${otherTemplates.map((t) => `- "${t.title}": /${locale}/templates/${t.slug}`).join("\n")}
+
+Guidelines:
+- Add 2-5 internal links naturally within richText, faq answers, or descriptions
+- Only link where contextually relevant (don't force links)
+- Use varied anchor text (template name, action phrases like "create your NDA")
+- Links should use markdown format: [anchor text](/en/templates/slug)
+
 Link rules:
 - href must be absolute (http/https), or start with "/", or start with "#".
+- For internal template links, use markdown format [text](url) in text fields.
 
 Language rules:
 - Avoid exaggerated/absolute claims (e.g., “100% compliance”, “guaranteed results”). Use measured, trustworthy phrasing.

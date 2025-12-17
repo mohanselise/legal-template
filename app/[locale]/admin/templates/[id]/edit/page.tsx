@@ -567,10 +567,17 @@ export default function EditTemplatePage() {
       }
 
       const { result } = await response.json();
+      
+      // The API returns structured blocks; store as JSON in htmlBody
+      // The landing page renderer will parse this JSON
+      const htmlBody = result.blocks 
+        ? JSON.stringify(result.blocks, null, 2) 
+        : (result.htmlBody || "");
+      
       landingPageForm.reset({
         title: result.title || template.title,
         description: result.description || template.description,
-        htmlBody: result.htmlBody || "",
+        htmlBody,
         ogTitle: result.ogTitle || result.title || template.title,
         ogDescription: result.ogDescription || result.description || template.description,
         ogImage: result.ogImage || "",

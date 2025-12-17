@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+interface GooglePlacePrediction {
+  place_id: string;
+  description: string;
+  structured_formatting: {
+    main_text: string;
+    secondary_text: string;
+  };
+  types?: string[];
+}
+
 interface GoogleAutocompleteResponse {
   predictions: Array<{
     place_id: string;
@@ -16,10 +26,9 @@ interface GoogleAutocompleteResponse {
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const input = searchParams.get('input');
-  const type = searchParams.get('type') || 'address';
+  const query = searchParams.get('query');
 
-  if (!input || input.length < 3) {
+  if (!query || query.length < 2) {
     return NextResponse.json({ predictions: [] });
   }
 
@@ -33,17 +42,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Use Google Places Autocomplete API
-    // types=address for street addresses, types=establishment for businesses
-    const typesParam = type === 'establishment' ? 'establishment' : 'address';
-    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=${typesParam}&key=${apiKey}`;
+    // Use Google Places Autocomplete API to find businesses by name
+    // types=establishment filters for businesses/companies
+    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&types=establishment&key=${apiKey}`;
     
     const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error(`Google Places API returned ${response.status}`);
     }
-    
+
     const data = (await response.json()) as GoogleAutocompleteResponse;
 
     if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
@@ -58,22 +66,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Return predictions in our expected format
-    const predictions = (data.predictions || []).map((item) => ({
-      description: item.description,
-      place_id: item.place_id,
+    // Autocomplete API already returns predictions in the format we need
+    // Just map them to our interface
+    const predictions: GooglePlacePrediction[] = (data.predictions || []).map((prediction) => ({
+      place_id: prediction.place_id,
+      description: prediction.description,
       structured_formatting: {
-        main_text: item.structured_formatting.main_text,
-        secondary_text: item.structured_formatting.secondary_text,
+        main_text: prediction.structured_formatting.main_text,
+        secondary_text: prediction.structured_formatting.secondary_text,
       },
-      types: item.types,
+      types: prediction.types,
     }));
 
     return NextResponse.json({ predictions });
   } catch (error) {
-    console.error('Error fetching address suggestions from Google Places:', error);
+    console.error('Error fetching business suggestions from Google Places:', error);
     return NextResponse.json(
-      { predictions: [], error: 'Failed to fetch suggestions' },
+      { predictions: [], error: 'Failed to fetch business suggestions' },
       { status: 500 }
     );
   }

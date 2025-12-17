@@ -1404,52 +1404,56 @@ export function TemplatePDFReview({
       </div>
 
       <Dialog open={showDownloadPrompt} onOpenChange={setShowDownloadPrompt}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Send with SELISE Signature (recommended)</DialogTitle>
-            <DialogDescription>
-              Enjoy legally compliant e-signatures with a full audit trail, Swiss-grade privacy, and a
-              safe, trackable workflow. Avoid version sprawl and keep signers aligned.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="shrink-0">
+            <DialogHeader>
+              <DialogTitle>Send with SELISE Signature (recommended)</DialogTitle>
+              <DialogDescription>
+                Enjoy legally compliant e-signatures with a full audit trail, Swiss-grade privacy, and a
+                safe, trackable workflow. Avoid version sprawl and keep signers aligned.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
-          <div className="space-y-3 text-sm text-[hsl(var(--fg))]">
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-[hsl(var(--selise-blue))] mt-0.5" />
-              <div>
-                <p className="font-semibold text-[hsl(var(--fg))]">Legal compliance & audit trail</p>
-                <p className="text-[hsl(var(--globe-grey))]">Time-stamped steps and evidence for every signer.</p>
+          <div className="flex-1 overflow-y-auto min-h-0 py-4">
+            <div className="space-y-3 text-sm text-[hsl(var(--fg))]">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[hsl(var(--selise-blue))] mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold text-[hsl(var(--fg))]">Legal compliance & audit trail</p>
+                  <p className="text-[hsl(var(--globe-grey))]">Time-stamped steps and evidence for every signer.</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-[hsl(var(--selise-blue))] mt-0.5" />
-              <div>
-                <p className="font-semibold text-[hsl(var(--fg))]">Swiss privacy and safety first</p>
-                <p className="text-[hsl(var(--globe-grey))]">Data handled with Swiss-grade security standards.</p>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[hsl(var(--selise-blue))] mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold text-[hsl(var(--fg))]">Swiss privacy and safety first</p>
+                  <p className="text-[hsl(var(--globe-grey))]">Data handled with Swiss-grade security standards.</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="w-4 h-4 text-[hsl(var(--selise-blue))] mt-0.5" />
-              <div>
-                <p className="font-semibold text-[hsl(var(--fg))]">No more version chasing</p>
-                <p className="text-[hsl(var(--globe-grey))]">One source of truth—track, remind, and complete faster.</p>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[hsl(var(--selise-blue))] mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold text-[hsl(var(--fg))]">No more version chasing</p>
+                  <p className="text-[hsl(var(--globe-grey))]">One source of truth—track, remind, and complete faster.</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter className="pt-4">
+          <DialogFooter className="shrink-0 pt-4 border-t border-[hsl(var(--border))] sm:flex-wrap sm:justify-start">
             <Button
               onClick={handleSendToSignature}
-              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))] w-full sm:w-auto"
+              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))] w-full sm:w-auto sm:flex-1 sm:min-w-0 max-w-full whitespace-normal"
               disabled={signatureFields.length === 0}
             >
               <Send className="w-4 h-4 mr-2" />
-              Send with SELISE Signature
+              Send with SELISE
             </Button>
             <Button
               variant="outline"
               onClick={handleDownloadPdf}
-              className="w-full sm:w-auto text-[hsl(var(--globe-grey))]"
+              className="w-full sm:w-auto sm:flex-1 sm:min-w-0 max-w-full whitespace-normal text-[hsl(var(--globe-grey))]"
             >
               Download PDF anyway
             </Button>

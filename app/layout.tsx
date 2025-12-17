@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
-import { Open_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import { ClerkProvider } from '@clerk/nextjs';
 import "./globals.css";
 
 // SELISE Brand Typography System
-const openSans = Open_Sans({
+// Using Aptos for body text until Open Sans local fonts are available
+// Aptos is the primary brand typeface and suitable for body text
+const openSans = localFont({
+  src: [
+    {
+      path: "../public/fonts/aptos/aptos-regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+  ],
   variable: "--font-open-sans",
-  subsets: ["latin"],
   display: "swap",
+  fallback: ["system-ui", "sans-serif"],
 });
 
 const aptos = localFont({

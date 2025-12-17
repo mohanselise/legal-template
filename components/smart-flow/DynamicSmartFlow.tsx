@@ -37,6 +37,7 @@ import { SignatoryEntry } from "@/lib/templates/signatory-config";
 import { Button } from "@/components/ui/button";
 import { Stepper, StepperCompact } from "@/components/ui/stepper";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Turnstile } from "next-turnstile";
 import { setTurnstileToken as storeTurnstileToken } from "@/lib/turnstile-token-manager";
 import { saveTemplateReview } from "@/components/template-review/TemplateReviewStorage";
@@ -102,20 +103,32 @@ function DynamicFieldWithApply({
   const isStandardApplied = standardValue && String(value) === String(standardValue);
   const showApplyButton = standardValue && !isStandardApplied && !justApplied;
 
+  // Helper component for help text tooltip
+  const HelpTextTooltip = ({ helpText }: { helpText: string }) => (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="text-[hsl(var(--globe-grey))] cursor-help hover:text-[hsl(var(--brand-primary))] transition-colors">
+          <HelpCircle className="h-4 w-4" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs">
+        <p>{helpText}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+
   // For text, number, email fields - wrap with inline Apply button
   if (['text', 'number', 'email'].includes(field.type)) {
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <label htmlFor={field.name} className="text-sm font-medium">
-            {field.label}
-            {field.required && <span className="text-destructive ml-1">*</span>}
-          </label>
-          {field.helpText && (
-            <span className="text-[hsl(var(--globe-grey))] cursor-help" title={field.helpText}>
-              <HelpCircle className="h-4 w-4" />
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            <label htmlFor={field.name} className="text-sm font-medium">
+              {field.label}
+              {field.required && <span className="text-destructive ml-1">*</span>}
+            </label>
+            {field.helpText && <HelpTextTooltip helpText={field.helpText} />}
+          </div>
         </div>
         <div className="relative">
           <input
@@ -126,7 +139,8 @@ function DynamicFieldWithApply({
             onChange={(e) => onChange(field.name, e.target.value)}
             className={`
               w-full rounded-xl border-2 px-4 py-3 text-base transition-all duration-200
-              placeholder:text-[hsl(var(--globe-grey))]/60 shadow-sm
+              bg-background text-foreground
+              placeholder:text-muted-foreground shadow-sm
               focus:border-[hsl(var(--brand-primary))] focus:outline-none focus:ring-4 focus:ring-[hsl(var(--brand-primary))/10]
               hover:border-[hsl(var(--brand-primary))/50]
               ${error ? 'border-amber-400 bg-amber-50/30' : 'border-[hsl(var(--border))]'}
@@ -153,6 +167,9 @@ function DynamicFieldWithApply({
             </span>
           )}
         </div>
+        {field.helpText && (
+          <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
+        )}
         {error && (
           <div className="flex items-center gap-2 mt-2 text-sm text-amber-700">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
@@ -168,15 +185,18 @@ function DynamicFieldWithApply({
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <label className="text-sm font-medium">
-            {field.label}
-            {field.required && <span className="text-destructive ml-1">*</span>}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">
+              {field.label}
+              {field.required && <span className="text-destructive ml-1">*</span>}
+            </label>
+            {field.helpText && <HelpTextTooltip helpText={field.helpText} />}
             {standardValue && !isStandardApplied && (
-              <span className="ml-2 text-xs text-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))]/10 px-2 py-0.5 rounded-full border border-[hsl(var(--brand-primary))]/20">
+              <span className="text-xs text-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))]/10 px-2 py-0.5 rounded-full border border-[hsl(var(--brand-primary))]/20">
                 Standard: {standardValue}
               </span>
             )}
-          </label>
+          </div>
           {showApplyButton && (
             <button
               type="button"
@@ -199,20 +219,47 @@ function DynamicFieldWithApply({
           enrichmentContext={enrichmentContext}
           formData={formData}
         />
+        {field.helpText && (
+          <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
+        )}
       </div>
     );
   }
 
-  // For other field types, use the standard renderer
+  // For checkbox fields
+  if (field.type === 'checkbox') {
+    return (
+      <div className="space-y-2">
+        <DynamicField
+          field={field}
+          value={value}
+          onChange={onChange}
+          error={error}
+          enrichmentContext={enrichmentContext}
+          formData={formData}
+        />
+        {field.helpText && (
+          <p className="text-xs text-[hsl(var(--globe-grey))] ml-7">{field.helpText}</p>
+        )}
+      </div>
+    );
+  }
+
+  // For other field types, use the standard renderer with help text
   return (
-    <DynamicField
-      field={field}
-      value={value}
-      onChange={onChange}
-      error={error}
-      enrichmentContext={enrichmentContext}
-      formData={formData}
-    />
+    <div className="space-y-2">
+      <DynamicField
+        field={field}
+        value={value}
+        onChange={onChange}
+        error={error}
+        enrichmentContext={enrichmentContext}
+        formData={formData}
+      />
+      {field.helpText && (
+        <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
+      )}
+    </div>
   );
 }
 
@@ -438,10 +485,114 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   const [dynamicFieldsError, setDynamicFieldsError] = useState<string | null>(null);
   const dynamicFieldsFetchedRef = useRef<Set<string>>(new Set());
   const [jurisdictionCache, setJurisdictionCache] = useState<JurisdictionCache>({});
+  const [failedDynamicScreens, setFailedDynamicScreens] = useState<Set<string>>(new Set());
   const [applyingStandard, setApplyingStandard] = useState(false);
   const [appliedStandard, setAppliedStandard] = useState(false);
+  
+  // Ref to track latest formData for recursive apply (avoids stale closure)
+  const formDataRef = useRef(formData);
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
+  
+  // Recursive apply function for standard screens - applies suggestions and checks for newly visible fields
+  const applyStandardsRecursively = useCallback((
+    currentScreen: ScreenWithFields,
+    maxIterations = 5 // Safety limit to prevent infinite loops
+  ) => {
+    let iterations = 0;
+    
+    const applyNextBatch = () => {
+      if (iterations >= maxIterations) {
+        setApplyingStandard(false);
+        setAppliedStandard(true);
+        return;
+      }
+      
+      iterations++;
+      
+      // Use ref to get latest formData (avoids stale closure)
+      const currentFormData = formDataRef.current;
+      
+      // Get currently visible fields with suggestions
+      const visibleFields = getVisibleFields(currentScreen) || [];
+      const fieldsWithSuggestions = getFieldsWithSuggestions(visibleFields, enrichmentContext);
+      
+      // Filter to unfilled fields using latest formData
+      const unfilledFields = fieldsWithSuggestions.filter(
+        (f) => !currentFormData[f.name] || currentFormData[f.name] === ''
+      );
+      
+      if (unfilledFields.length === 0) {
+        // No more unfilled fields, we're done
+        setApplyingStandard(false);
+        setAppliedStandard(true);
+        return;
+      }
+      
+      // Apply values to unfilled fields
+      unfilledFields.forEach((field) => {
+        setFieldValue(field.name, field.suggestedValue);
+      });
+      
+      // Wait for React to update state and check for newly visible fields
+      setTimeout(applyNextBatch, 150);
+    };
+    
+    setApplyingStandard(true);
+    applyNextBatch();
+  }, [getVisibleFields, enrichmentContext, setFieldValue]);
+  
+  // Recursive apply function for dynamic screens
+  const applyDynamicStandardsRecursively = useCallback((
+    screenId: string,
+    fields: DynamicFieldType[],
+    maxIterations = 5
+  ) => {
+    let iterations = 0;
+    
+    const applyNextBatch = () => {
+      if (iterations >= maxIterations) {
+        setApplyingStandard(false);
+        setAppliedStandard(true);
+        return;
+      }
+      
+      iterations++;
+      
+      // Use ref to get latest formData (avoids stale closure)
+      const currentFormData = formDataRef.current;
+      
+      // Get unfilled fields with standard values using latest formData
+      const unfilledFields = fields.filter(
+        (f) => f.standardValue && (!currentFormData[f.name] || currentFormData[f.name] === '')
+      );
+      
+      if (unfilledFields.length === 0) {
+        // No more unfilled fields, we're done
+        setApplyingStandard(false);
+        setAppliedStandard(true);
+        return;
+      }
+      
+      // Apply values to unfilled fields
+      unfilledFields.forEach((field) => {
+        setFieldValue(field.name, field.standardValue!);
+      });
+      
+      // Wait for React to update state and check again
+      setTimeout(applyNextBatch, 150);
+    };
+    
+    setApplyingStandard(true);
+    applyNextBatch();
+  }, [setFieldValue]);
+  
   // Track which step indices are currently being pre-fetched (for stepper loading indicator)
   const [prefetchingStepIndices, setPrefetchingStepIndices] = useState<Set<number>>(new Set());
+  
+  // Timeout for dynamic field generation (30 seconds - generous timeout)
+  const DYNAMIC_FIELDS_FETCH_TIMEOUT = 30000;
 
   // Animate through generation steps
   useEffect(() => {
@@ -556,6 +707,9 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
         // Fire the pre-fetch request
         (async () => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), DYNAMIC_FIELDS_FETCH_TIMEOUT);
+          
           try {
             const response = await fetch("/api/ai/generate-dynamic-fields", {
               method: "POST",
@@ -568,7 +722,10 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                 screenTitle: screen.title,
                 screenDescription: screen.description,
               }),
+              signal: controller.signal,
             });
+            
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
               const error = await response.json();
@@ -603,7 +760,11 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
               }));
             }
           } catch (error) {
-            console.error("❌ Pre-fetch error for screen:", screen.title, error);
+            clearTimeout(timeoutId);
+            const isTimeout = error instanceof Error && error.name === 'AbortError';
+            console.error(`❌ Pre-fetch ${isTimeout ? 'timeout' : 'error'} for screen:`, screen.title, error);
+            // Mark screen as failed
+            setFailedDynamicScreens((prev) => new Set([...prev, screen.id]));
             // Remove from prefetching set so it can be retried
             prefetchingRef.current.delete(screen.id);
             // Remove step index from loading indicator set
@@ -648,6 +809,9 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
       setDynamicFieldsLoading(true);
       setDynamicFieldsError(null);
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), DYNAMIC_FIELDS_FETCH_TIMEOUT);
+
       try {
         console.log("🔮 Generating dynamic fields for screen (on-demand):", screen.title);
         const response = await fetch("/api/ai/generate-dynamic-fields", {
@@ -661,7 +825,10 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
             screenTitle: screen.title,
             screenDescription: screen.description,
           }),
+          signal: controller.signal,
         });
+        
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           const error = await response.json();
@@ -684,9 +851,15 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
           }));
         }
       } catch (error) {
-        console.error("❌ Dynamic field generation error:", error);
+        clearTimeout(timeoutId);
+        const isTimeout = error instanceof Error && error.name === 'AbortError';
+        console.error(`❌ Dynamic field generation ${isTimeout ? 'timeout' : 'error'}:`, error);
+        // Mark screen as failed
+        setFailedDynamicScreens((prev) => new Set([...prev, screen.id]));
         setDynamicFieldsError(
-          error instanceof Error ? error.message : "Failed to generate fields"
+          isTimeout 
+            ? "Request timed out. Please try again or continue without additional questions."
+            : (error instanceof Error ? error.message : "Failed to generate fields")
         );
         // Remove from fetched set so user can retry
         dynamicFieldsFetchedRef.current.delete(screen.id);
@@ -697,6 +870,29 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
     fetchDynamicFields();
   }, [config, currentStep, formData, enrichmentContext, dynamicFieldsCache]);
+
+  // Auto-advance when user is on a failed dynamic screen
+  useEffect(() => {
+    const screen = config?.screens[currentStep];
+    if (!screen) return;
+
+    const screenType = (screen as any).type;
+    if (screenType !== "dynamic") return;
+
+    // Check if this screen has failed
+    if (failedDynamicScreens.has(screen.id)) {
+      // Show error message briefly, then auto-advance
+      setDynamicFieldsError("Couldn't load additional questions - proceeding...");
+      
+      const autoAdvanceTimeout = setTimeout(() => {
+        if (currentStep < totalSteps - 1) {
+          nextStep();
+        }
+      }, 2000);
+
+      return () => clearTimeout(autoAdvanceTimeout);
+    }
+  }, [currentStep, failedDynamicScreens, config, totalSteps, nextStep]);
 
   // Create step definitions from visible screens (respects conditional visibility)
   const stepDefinitions = useMemo(
@@ -1866,73 +2062,78 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                             ))}
 
                             {/* Apply Standards Banner - matches SmartFlow v2 design */}
-                            {dynamicFieldsCache[currentScreen.id].some(f => f.standardValue) && !appliedStandard && (
-                              <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4"
-                              >
-                                <div className="flex items-center justify-between gap-4 flex-wrap">
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-200/80">
-                                      <Zap className="h-5 w-5 text-amber-700" />
-                                    </div>
-                                    <div>
-                                      <p className="font-semibold text-[hsl(var(--fg))]">
-                                        Save time with {jurisdictionCache[currentScreen.id] || 'local'} defaults
-                                      </p>
-                                      <p className="text-sm text-[hsl(var(--globe-grey))]">
-                                        Auto-fill work hours, notice periods, and legal terms based on local standards
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <Button
-                                    onClick={() => {
-                                      setApplyingStandard(true);
-                                      const fields = dynamicFieldsCache[currentScreen.id];
-                                      fields.forEach((field) => {
-                                        if (field.standardValue) {
-                                          setFieldValue(field.name, field.standardValue);
-                                        }
-                                      });
-                                      // Show success feedback
-                                      setAppliedStandard(true);
-                                      setTimeout(() => {
-                                        setApplyingStandard(false);
-                                      }, 600);
-                                    }}
-                                    disabled={applyingStandard}
-                                    className="flex items-center gap-2 bg-[hsl(var(--brand-primary))] text-white hover:bg-[hsl(var(--brand-primary))/90] px-5"
+                            {(() => {
+                              const fields = dynamicFieldsCache[currentScreen.id];
+                              // Get only unfilled fields with standard values
+                              const unfilledFieldsWithStandards = fields.filter(
+                                (f) => f.standardValue && (!formData[f.name] || formData[f.name] === '')
+                              );
+                              
+                              // Show banner if there are unfilled fields with standards
+                              if (unfilledFieldsWithStandards.length > 0) {
+                                return (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4"
                                   >
-                                    <Zap className="h-4 w-4" />
-                                    Apply Standards
-                                  </Button>
-                                </div>
-                              </motion.div>
-                            )}
-
-                            {/* Applied Success State */}
-                            {appliedStandard && (
-                              <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200">
-                                    <Check className="h-5 w-5 text-emerald-700" />
-                                  </div>
-                                  <div>
-                                    <p className="font-semibold text-emerald-800">
-                                      {jurisdictionCache[currentScreen.id] || 'Standard'} defaults applied!
-                                    </p>
-                                    <p className="text-sm text-emerald-600">
-                                      Fields have been filled with recommended values
-                                    </p>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            )}
+                                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                                      <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-200/80">
+                                          <Zap className="h-5 w-5 text-amber-700" />
+                                        </div>
+                                        <div>
+                                          <p className="font-semibold text-[hsl(var(--fg))]">
+                                            Save time with {jurisdictionCache[currentScreen.id] || 'local'} defaults
+                                          </p>
+                                          <p className="text-sm text-[hsl(var(--globe-grey))]">
+                                            Auto-fill {unfilledFieldsWithStandards.length} field{unfilledFieldsWithStandards.length !== 1 ? 's' : ''} with local standards
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        onClick={() => {
+                                          // Use recursive apply to handle conditionally visible fields
+                                          applyDynamicStandardsRecursively(currentScreen.id, fields);
+                                        }}
+                                        disabled={applyingStandard}
+                                        className="flex items-center gap-2 bg-[hsl(var(--brand-primary))] text-white hover:bg-[hsl(var(--brand-primary))/90] px-5"
+                                      >
+                                        <Zap className="h-4 w-4" />
+                                        Apply Standards
+                                      </Button>
+                                    </div>
+                                  </motion.div>
+                                );
+                              }
+                              
+                              // Show success state when all fields with standards are filled
+                              if (appliedStandard && fields.some(f => f.standardValue)) {
+                                return (
+                                  <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200">
+                                        <Check className="h-5 w-5 text-emerald-700" />
+                                      </div>
+                                      <div>
+                                        <p className="font-semibold text-emerald-800">
+                                          {jurisdictionCache[currentScreen.id] || 'Standard'} defaults applied!
+                                        </p>
+                                        <p className="text-sm text-emerald-600">
+                                          Fields have been filled with recommended values
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                );
+                              }
+                              
+                              return null;
+                            })()}
                           </motion.div>
                         )}
 
@@ -1987,11 +2188,14 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                             getVisibleFields(currentScreen) || [],
                             enrichmentContext
                           );
-                          const hasUnfilledSuggestions = fieldsWithSuggestions.some(
+                          // Get only the unfilled fields with suggestions
+                          const unfilledFieldsWithSuggestions = fieldsWithSuggestions.filter(
                             (f) => !formData[f.name] || formData[f.name] === ''
                           );
 
-                          if (fieldsWithSuggestions.length > 0 && hasUnfilledSuggestions && !appliedStandard) {
+                          // Show banner if there are unfilled fields with suggestions
+                          // This allows the banner to reappear when conditionally visible fields become visible
+                          if (unfilledFieldsWithSuggestions.length > 0) {
                             return (
                               <motion.div
                                 initial={{ opacity: 0, y: 10 }}
@@ -2008,20 +2212,14 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                                         Save time with smart defaults
                                       </p>
                                       <p className="text-sm text-[hsl(var(--globe-grey))]">
-                                        Auto-fill {fieldsWithSuggestions.length} field{fieldsWithSuggestions.length !== 1 ? 's' : ''} with AI-suggested values
+                                        Auto-fill {unfilledFieldsWithSuggestions.length} field{unfilledFieldsWithSuggestions.length !== 1 ? 's' : ''} with AI-suggested values
                                       </p>
                                     </div>
                                   </div>
                                   <Button
                                     onClick={() => {
-                                      setApplyingStandard(true);
-                                      fieldsWithSuggestions.forEach((field) => {
-                                        setFieldValue(field.name, field.suggestedValue);
-                                      });
-                                      setAppliedStandard(true);
-                                      setTimeout(() => {
-                                        setApplyingStandard(false);
-                                      }, 600);
+                                      // Use recursive apply to handle conditionally visible fields
+                                      applyStandardsRecursively(currentScreen);
                                     }}
                                     disabled={applyingStandard}
                                     className="flex items-center gap-2 bg-[hsl(var(--brand-primary))] text-white hover:bg-[hsl(var(--brand-primary))/90] px-5"
@@ -2033,31 +2231,35 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                               </motion.div>
                             );
                           }
+                          
+                          // Show success state only when all fields with suggestions are filled
+                          if (appliedStandard && fieldsWithSuggestions.length > 0) {
+                            return (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200">
+                                    <Check className="h-5 w-5 text-emerald-700" />
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-emerald-800">
+                                      Smart defaults applied!
+                                    </p>
+                                    <p className="text-sm text-emerald-600">
+                                      Fields have been filled with recommended values
+                                    </p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            );
+                          }
+                          
                           return null;
                         })()}
 
-                        {/* Applied Success State for Standard Screens */}
-                        {(currentScreen as any)?.enableApplyStandards && appliedStandard && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200">
-                                <Check className="h-5 w-5 text-emerald-700" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-emerald-800">
-                                  Smart defaults applied!
-                                </p>
-                                <p className="text-sm text-emerald-600">
-                                  Fields have been filled with AI-suggested values
-                                </p>
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
                       </>
                     )}
                   </AnimatePresence>
@@ -2101,7 +2303,12 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                     {currentStep < totalSteps - 1 ? (
                       <Button
                         onClick={handleContinue}
-                        disabled={dynamicFieldsLoading || ((currentScreen as any)?.type === "dynamic" && !dynamicFieldsCache[currentScreen?.id || ""])}
+                        disabled={
+                          dynamicFieldsLoading || 
+                          ((currentScreen as any)?.type === "dynamic" && 
+                           (!dynamicFieldsCache[currentScreen?.id || ""] || 
+                            prefetchingStepIndices.has(currentStep)))
+                        }
                         className="flex items-center gap-3 px-8 py-4 group transition-all duration-300 hover:shadow-lg hover:shadow-[hsl(var(--brand-primary))/20]"
                         size="lg"
                       >
@@ -2124,11 +2331,24 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                       >
                         <Button
                           onClick={handleSubmit}
-                          disabled={isSubmitting || !turnstileToken || turnstileStatus !== "success"}
+                          disabled={
+                            isSubmitting || 
+                            !turnstileToken || 
+                            turnstileStatus !== "success" ||
+                            dynamicFieldsLoading ||
+                            ((currentScreen as any)?.type === "dynamic" && 
+                             (!dynamicFieldsCache[currentScreen?.id || ""] ||
+                              prefetchingStepIndices.has(currentStep)))
+                          }
                           className="flex items-center gap-3 px-8 py-4 bg-[hsl(var(--brand-primary))] text-[hsl(var(--brand-primary-foreground))] hover:bg-[hsl(var(--brand-primary))/90] shadow-lg shadow-[hsl(var(--brand-primary))/20] group transition-all duration-300"
                           size="lg"
                         >
-                          {isSubmitting ? (
+                          {(dynamicFieldsLoading || ((currentScreen as any)?.type === "dynamic" && prefetchingStepIndices.has(currentStep))) ? (
+                            <>
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                              Loading...
+                            </>
+                          ) : isSubmitting ? (
                             <>
                               <Loader2 className="w-5 h-5 animate-spin" />
                               Generating...

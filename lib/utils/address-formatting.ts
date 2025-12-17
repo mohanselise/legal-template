@@ -267,3 +267,63 @@ export function extractAddressFromNominatim(nominatimResult: {
   };
 }
 
+/**
+ * Extract structured address from Google Places API response
+ * Maps Google's address_components to our StructuredAddress format
+ */
+export function extractAddressFromGooglePlace(googlePlace: {
+  place_id: string;
+  name?: string;
+  formatted_address: string;
+  address_components: Array<{
+    long_name: string;
+    short_name: string;
+    types: string[];
+  }>;
+}): StructuredAddress {
+  const components = googlePlace.address_components || [];
+  
+  // Helper to find component by type
+  const getComponent = (types: string[]): string | undefined => {
+    const component = components.find(comp => 
+      types.some(type => comp.types.includes(type))
+    );
+    return component?.long_name;
+  };
+
+  const getShortComponent = (types: string[]): string | undefined => {
+    const component = components.find(comp => 
+      types.some(type => comp.types.includes(type))
+    );
+    return component?.short_name;
+  };
+
+  // Extract street address (street_number + route)
+  const streetNumber = getComponent(['street_number']);
+  const route = getComponent(['route']);
+  const street = [streetNumber, route].filter(Boolean).join(' ') || undefined;
+
+  // Extract city (locality, or sublocality if no locality)
+  const city = getComponent(['locality', 'sublocality', 'sublocality_level_1', 'administrative_area_level_3']);
+
+  // Extract state/province (administrative_area_level_1)
+  const state = getComponent(['administrative_area_level_1', 'administrative_area_level_2']);
+
+  // Extract postal code
+  const postalCode = getComponent(['postal_code']);
+
+  // Extract country
+  const country = getComponent(['country']);
+  const countryCode = getShortComponent(['country'])?.toUpperCase();
+
+  return {
+    raw: googlePlace.formatted_address,
+    street,
+    city,
+    state,
+    postalCode,
+    country,
+    countryCode,
+  };
+}
+

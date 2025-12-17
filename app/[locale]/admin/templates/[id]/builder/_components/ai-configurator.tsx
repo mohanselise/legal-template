@@ -50,7 +50,7 @@ interface ConditionGroup {
 interface FieldData {
   name: string;
   label: string;
-  type: "text" | "email" | "date" | "number" | "checkbox" | "select" | "textarea" | "phone" | "address" | "party" | "currency" | "percentage" | "url";
+  type: "text" | "email" | "date" | "number" | "checkbox" | "select" | "multiselect" | "textarea" | "phone" | "address" | "party" | "currency" | "percentage" | "url";
   required: boolean;
   placeholder?: string;
   helpText?: string;

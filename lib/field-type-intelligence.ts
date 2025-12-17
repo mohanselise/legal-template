@@ -343,6 +343,27 @@ export const FIELD_PATTERNS: FieldPattern[] = [
     description: "Yes/No checkbox",
   },
   {
+    fieldType: "multiselect",
+    namePatterns: [
+      /^(multiple|multi|many|several|various|selected)?(Types?|Options?|Choices?|Categories?|Skills?|Languages?|Interests?|Hobbies?|Features?|Benefits?|Services?|Products?)$/i,
+      /^(skills|languages|interests|hobbies|features|benefits|services|products|tags|labels)$/i,
+      /^(select|choose|pick).*multiple/i,
+    ],
+    labelPatterns: [
+      /select.*multiple/i,
+      /choose.*multiple/i,
+      /pick.*multiple/i,
+      /select all/i,
+      /multiple.*select/i,
+      /multiple.*choice/i,
+      /all that apply/i,
+      /check all/i,
+    ],
+    contextPatterns: ["multiple", "many", "several", "all that apply", "check all"],
+    priority: 42,
+    description: "Multiple options selection (checkboxes)",
+  },
+  {
     fieldType: "select",
     namePatterns: [
       /type$/i,
@@ -494,7 +515,8 @@ function getAlternativeTypes(fieldType: FieldType): FieldType[] {
     date: ["text"],
     number: ["text", "percentage", "currency"],
     checkbox: ["select"],
-    select: ["text", "checkbox"],
+    select: ["text", "checkbox", "multiselect"],
+    multiselect: ["select", "text"],
     textarea: ["text"],
     phone: ["text"],
     address: ["textarea", "party"],
@@ -563,6 +585,7 @@ ALWAYS use the most specific field type. Here's when to use each:
 | number | Counts, quantities, durations (not money!) |
 | checkbox | Yes/No questions, toggles |
 | select | Fixed options (provide options array) |
+| multiselect | Multiple options (checkboxes, stores array) |
 
 ### CRITICAL RULES
 

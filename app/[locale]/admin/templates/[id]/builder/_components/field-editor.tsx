@@ -53,7 +53,7 @@ const fieldSchema = z.object({
     .regex(/^[a-zA-Z][a-zA-Z0-9]*$/, "Must start with letter, alphanumeric only"),
   label: z.string().min(1, "Label is required"),
   type: z.enum([
-    "text", "email", "date", "number", "checkbox", "select",
+    "text", "email", "date", "number", "checkbox", "select", "multiselect",
     "textarea", "phone", "address", "party", "currency", "percentage", "url"
   ]),
   required: z.boolean().default(false),
@@ -101,6 +101,7 @@ const fieldTypeOptions: { value: FieldType; label: string; description?: string;
   { value: "number", label: "Number", description: "Numeric input (not for money!)", group: "Basic" },
   { value: "checkbox", label: "Checkbox", description: "Yes/No toggle", group: "Basic" },
   { value: "select", label: "Select / Dropdown", description: "Fixed options dropdown", group: "Basic" },
+  { value: "multiselect", label: "Multi-Select", description: "Multiple options (checkboxes)", group: "Basic" },
 ];
 
 export function FieldEditor({
@@ -302,13 +303,13 @@ export function FieldEditor({
       // Include options for select type and AI suggestion fields
       const payload: Record<string, unknown> = {
         ...data,
-        options: fieldType === "select" ? options : [],
+        options: (fieldType === "select" || fieldType === "multiselect") ? options : [],
         aiSuggestionEnabled: data.aiSuggestionEnabled ?? false,
         // UILM Translation Keys
         uilmLabelKey: data.uilmLabelKey?.trim() || null,
         uilmPlaceholderKey: data.uilmPlaceholderKey?.trim() || null,
         uilmHelpTextKey: data.uilmHelpTextKey?.trim() || null,
-        uilmOptionsKeys: fieldType === "select" ? uilmOptionsKeys : [],
+          uilmOptionsKeys: (fieldType === "select" || fieldType === "multiselect") ? uilmOptionsKeys : [],
         // Conditional visibility
         conditions: conditions ? JSON.stringify(conditions) : null,
       };
@@ -787,8 +788,8 @@ export function FieldEditor({
                       />
                     </div>
 
-                    {/* UILM Options Keys (for select type) */}
-                    {fieldType === "select" && options.length > 0 && (
+                    {/* UILM Options Keys (for select and multiselect types) */}
+                    {(fieldType === "select" || fieldType === "multiselect") && options.length > 0 && (
                       <div className="space-y-2">
                         <Label className="text-sm">Option Keys</Label>
                         <p className="text-xs text-[hsl(var(--globe-grey))]">
@@ -834,8 +835,8 @@ export function FieldEditor({
               description="Show this field only when specific conditions are met based on other form responses."
             />
 
-            {/* Options (for select type) */}
-            {fieldType === "select" && (
+            {/* Options (for select and multiselect types) */}
+            {(fieldType === "select" || fieldType === "multiselect") && (
               <div className="space-y-2">
                 <Label>Options</Label>
                 <div className="flex gap-2">
@@ -905,7 +906,7 @@ export function FieldEditor({
             </Button>
             <Button
               type="submit"
-              disabled={saving || (fieldType === "select" && options.length === 0)}
+              disabled={saving || ((fieldType === "select" || fieldType === "multiselect") && options.length === 0)}
               className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))]"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

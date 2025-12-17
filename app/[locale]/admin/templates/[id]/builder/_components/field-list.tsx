@@ -52,6 +52,7 @@ const fieldTypeIcons: Record<FieldType, React.ReactNode> = {
   number: <Hash className="h-4 w-4" />,
   checkbox: <CheckSquare className="h-4 w-4" />,
   select: <List className="h-4 w-4" />,
+  multiselect: <List className="h-4 w-4" />,
   textarea: <AlignLeft className="h-4 w-4" />,
   phone: <Phone className="h-4 w-4" />,
   address: <MapPin className="h-4 w-4" />,
@@ -68,6 +69,7 @@ const fieldTypeLabels: Record<FieldType, string> = {
   number: "Number",
   checkbox: "Checkbox",
   select: "Select",
+  multiselect: "Multiselect",
   textarea: "Textarea",
   phone: "Phone",
   address: "Address",
@@ -281,7 +283,7 @@ export function FieldList({ screen, allScreens = [], onFieldsUpdated }: FieldLis
                       <span className="text-xs text-[hsl(var(--globe-grey))]">
                         {fieldTypeLabels[field.type]}
                       </span>
-                      {field.type === "select" && field.options.length > 0 && (
+                      {(field.type === "select" || field.type === "multiselect") && field.options.length > 0 && (
                         <span className="text-xs text-[hsl(var(--globe-grey))]">
                           ({field.options.length} options)
                         </span>

@@ -121,6 +121,7 @@ enum FieldType {
   number
   checkbox
   select
+  multiselect // Multi-option selection (stores array of values)
   textarea    // Multi-line text input
   phone       // Phone with country code: { countryCode, number }
   address     // Composite: { street, city, state, postalCode, country }

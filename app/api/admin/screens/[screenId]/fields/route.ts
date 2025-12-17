@@ -8,7 +8,7 @@ const createFieldSchema = z.object({
   name: z.string().min(1, "Field name is required"),
   label: z.string().min(1, "Label is required"),
   type: z.enum([
-    "text", "email", "date", "number", "checkbox", "select",
+    "text", "email", "date", "number", "checkbox", "select", "multiselect",
     "textarea", "phone", "address", "party", "currency", "percentage", "url"
   ]),
   required: z.boolean().default(false),

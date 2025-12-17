@@ -8,7 +8,7 @@ const updateFieldSchema = z.object({
   name: z.string().min(1, "Field name is required").optional(),
   label: z.string().min(1, "Label is required").optional(),
   type: z.enum([
-    "text", "email", "date", "number", "checkbox", "select",
+    "text", "email", "date", "number", "checkbox", "select", "multiselect",
     "textarea", "phone", "address", "party", "currency", "percentage", "url"
   ]).optional(),
   required: z.boolean().optional(),

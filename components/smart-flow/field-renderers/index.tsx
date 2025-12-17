@@ -501,6 +501,145 @@ export function CheckboxField({ field, value, onChange, error, formData, enrichm
 }
 
 /**
+ * Multi-Select Field Renderer
+ * Renders options as toggleable cards (similar to SelectField but allows multiple selections)
+ */
+export function MultiSelectField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
+  const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
+
+  // Resolve template variables
+  const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
+  const resolvedPlaceholder = resolveTemplateVariables(field.placeholder, formData, enrichmentContext);
+  const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
+
+  // Ensure value is an array
+  const selectedValues = Array.isArray(value) ? value : (value ? [value] : []);
+
+  // Check if we have option descriptions from enrichment context
+  const getOptionLabel = (option: string) => {
+    const optionKey = `${field.name}_${option}_label`;
+    if (enrichmentContext && optionKey in enrichmentContext) {
+      return String(enrichmentContext[optionKey]);
+    }
+    return option;
+  };
+
+  const getOptionDescription = (option: string) => {
+    const optionKey = `${field.name}_${option}_description`;
+    if (enrichmentContext && optionKey in enrichmentContext) {
+      return String(enrichmentContext[optionKey]);
+    }
+    return null;
+  };
+
+  // Toggle option selection
+  const toggleOption = (option: string) => {
+    const newValues = selectedValues.includes(option)
+      ? selectedValues.filter((v) => v !== option)
+      : [...selectedValues, option];
+    onChange(field.name, newValues);
+  };
+
+  // Determine grid columns based on number of options
+  const getGridCols = () => {
+    if (field.options.length === 1) return "grid-cols-1";
+    if (field.options.length === 2) return "grid-cols-1 md:grid-cols-2";
+    if (field.options.length <= 4) return "grid-cols-1 md:grid-cols-2";
+    return "grid-cols-1 md:grid-cols-3";
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <Label className="text-sm font-medium">
+          {resolvedLabel}
+          {field.required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+        {showSuggestion && (
+          <AISuggestionBadge
+            suggestionKey={field.aiSuggestionKey!}
+            enrichmentContext={enrichmentContext}
+            currentValue={selectedValues}
+            onApply={(suggestedValue) => {
+              // Handle AI suggestion - could be array or single value
+              const suggestedArray = Array.isArray(suggestedValue) 
+                ? suggestedValue 
+                : (suggestedValue ? [suggestedValue] : []);
+              onChange(field.name, suggestedArray);
+            }}
+          />
+        )}
+      </div>
+
+      {/* Card-based multi-option selection */}
+      <div className={`grid ${getGridCols()} gap-3`}>
+        {field.options.map((option) => {
+          const isSelected = selectedValues.includes(option);
+          const optionLabel = getOptionLabel(option);
+          const optionDescription = getOptionDescription(option);
+
+          return (
+            <motion.button
+              key={option}
+              type="button"
+              onClick={() => toggleOption(option)}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className={cn(
+                'relative p-5 rounded-2xl border-2 transition-all text-left group overflow-hidden cursor-pointer',
+                isSelected
+                  ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.03] shadow-lg shadow-[hsl(var(--brand-primary))/10]'
+                  : 'border-[hsl(var(--border))] bg-background hover:border-[hsl(var(--brand-primary))/50] hover:shadow-md',
+                error && 'border-amber-400 bg-amber-50/50 shadow-md shadow-amber-200/30'
+              )}
+            >
+              <div className={cn(
+                "absolute top-0 right-0 p-3 opacity-0 transition-opacity duration-300",
+                isSelected && "opacity-100"
+              )}>
+                <div className="bg-[hsl(var(--brand-primary))] rounded-full p-1">
+                  <Check className="w-3 h-3 text-white" />
+                </div>
+              </div>
+
+              <div className="relative z-10">
+                <div className={cn(
+                  "font-semibold text-lg mb-1.5 transition-colors",
+                  isSelected ? "text-[hsl(var(--brand-primary))]" : "text-[hsl(var(--fg))]"
+                )}>
+                  {optionLabel}
+                </div>
+                {optionDescription && (
+                  <div className="text-sm text-[hsl(var(--brand-muted))] leading-relaxed group-hover:text-[hsl(var(--fg))] transition-colors">
+                    {optionDescription}
+                  </div>
+                )}
+              </div>
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {selectedValues.length > 0 && (
+        <p className="text-xs text-[hsl(var(--globe-grey))]">
+          {selectedValues.length} option{selectedValues.length !== 1 ? "s" : ""} selected
+        </p>
+      )}
+
+      {resolvedHelpText && (
+        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
+      )}
+      {error && (
+        <div className="flex items-center gap-2 mt-2 text-sm text-amber-700">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+          <span className="font-medium">{error}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * Select Field Renderer
  * Renders select options as cards (similar to Work Arrangement step)
  */
@@ -795,6 +934,8 @@ export function DynamicField(props: FieldRendererProps) {
       return <CheckboxField {...props} />;
     case "select":
       return <SelectField {...props} />;
+    case "multiselect":
+      return <MultiSelectField {...props} />;
     // New composite field types
     case "textarea":
       return <TextareaField {...props} />;

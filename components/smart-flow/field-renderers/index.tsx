@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   ADDITIONAL_SIGNATORIES_FIELD_NAME,
@@ -502,7 +503,7 @@ export function CheckboxField({ field, value, onChange, error, formData, enrichm
 
 /**
  * Multi-Select Field Renderer
- * Renders options as toggleable cards (similar to SelectField but allows multiple selections)
+ * Redesigned with checkbox-style UI for clear multi-selection indication
  */
 export function MultiSelectField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
   const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
@@ -540,21 +541,20 @@ export function MultiSelectField({ field, value, onChange, error, enrichmentCont
     onChange(field.name, newValues);
   };
 
-  // Determine grid columns based on number of options
-  const getGridCols = () => {
-    if (field.options.length === 1) return "grid-cols-1";
-    if (field.options.length === 2) return "grid-cols-1 md:grid-cols-2";
-    if (field.options.length <= 4) return "grid-cols-1 md:grid-cols-2";
-    return "grid-cols-1 md:grid-cols-3";
-  };
-
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <Label className="text-sm font-medium">
-          {resolvedLabel}
-          {field.required && <span className="text-destructive ml-1">*</span>}
-        </Label>
+        <div className="flex items-center gap-2">
+          <Label className="text-sm font-medium">
+            {resolvedLabel}
+            {field.required && <span className="text-destructive ml-1">*</span>}
+          </Label>
+          {selectedValues.length > 0 && (
+            <Badge variant="secondary" className="text-xs bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] border-[hsl(var(--selise-blue))]/20">
+              {selectedValues.length} selected
+            </Badge>
+          )}
+        </div>
         {showSuggestion && (
           <AISuggestionBadge
             suggestionKey={field.aiSuggestionKey!}
@@ -571,59 +571,96 @@ export function MultiSelectField({ field, value, onChange, error, enrichmentCont
         )}
       </div>
 
-      {/* Card-based multi-option selection */}
-      <div className={`grid ${getGridCols()} gap-3`}>
+      {/* Checkbox-style multi-select options */}
+      <div className="space-y-2">
         {field.options.map((option) => {
           const isSelected = selectedValues.includes(option);
           const optionLabel = getOptionLabel(option);
           const optionDescription = getOptionDescription(option);
 
           return (
-            <motion.button
+            <motion.label
               key={option}
-              type="button"
-              onClick={() => toggleOption(option)}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
+              htmlFor={`${field.name}-${option}`}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
               className={cn(
-                'relative p-5 rounded-2xl border-2 transition-all text-left group overflow-hidden cursor-pointer',
+                "flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all group",
+                "hover:shadow-md hover:border-[hsl(var(--selise-blue))]/40",
                 isSelected
-                  ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.03] shadow-lg shadow-[hsl(var(--brand-primary))/10]'
-                  : 'border-[hsl(var(--border))] bg-background hover:border-[hsl(var(--brand-primary))/50] hover:shadow-md',
-                error && 'border-amber-400 bg-amber-50/50 shadow-md shadow-amber-200/30'
+                  ? "border-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/5 shadow-sm"
+                  : "border-[hsl(var(--border))] bg-background",
+                error && "border-amber-400 bg-amber-50/50"
               )}
             >
-              <div className={cn(
-                "absolute top-0 right-0 p-3 opacity-0 transition-opacity duration-300",
-                isSelected && "opacity-100"
-              )}>
-                <div className="bg-[hsl(var(--brand-primary))] rounded-full p-1">
-                  <Check className="w-3 h-3 text-white" />
+              {/* Custom checkbox */}
+              <div className="relative shrink-0 mt-0.5">
+                <input
+                  type="checkbox"
+                  id={`${field.name}-${option}`}
+                  checked={isSelected}
+                  onChange={() => toggleOption(option)}
+                  className="sr-only"
+                />
+                <div
+                  className={cn(
+                    "w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                    isSelected
+                      ? "bg-[hsl(var(--selise-blue))] border-[hsl(var(--selise-blue))]"
+                      : "bg-background border-[hsl(var(--border))] group-hover:border-[hsl(var(--selise-blue))]/50"
+                  )}
+                >
+                  {isSelected && (
+                    <Check className="w-3.5 h-3.5 text-white stroke-3" />
+                  )}
                 </div>
               </div>
 
-              <div className="relative z-10">
-                <div className={cn(
-                  "font-semibold text-lg mb-1.5 transition-colors",
-                  isSelected ? "text-[hsl(var(--brand-primary))]" : "text-[hsl(var(--fg))]"
-                )}>
+              {/* Option content */}
+              <div className="flex-1 min-w-0">
+                <div
+                  className={cn(
+                    "font-medium text-sm transition-colors",
+                    isSelected
+                      ? "text-[hsl(var(--selise-blue))]"
+                      : "text-[hsl(var(--fg))]"
+                  )}
+                >
                   {optionLabel}
                 </div>
                 {optionDescription && (
-                  <div className="text-sm text-[hsl(var(--brand-muted))] leading-relaxed group-hover:text-[hsl(var(--fg))] transition-colors">
+                  <div className="text-xs text-[hsl(var(--globe-grey))] mt-1 leading-relaxed">
                     {optionDescription}
                   </div>
                 )}
               </div>
-            </motion.button>
+            </motion.label>
           );
         })}
       </div>
 
+      {/* Selected items summary (if any selected) */}
       {selectedValues.length > 0 && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">
-          {selectedValues.length} option{selectedValues.length !== 1 ? "s" : ""} selected
-        </p>
+        <div className="pt-2 border-t border-[hsl(var(--border))]">
+          <p className="text-xs font-medium text-[hsl(var(--globe-grey))] mb-2">
+            Selected:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {selectedValues.map((val) => {
+              const label = getOptionLabel(val);
+              return (
+                <Badge
+                  key={val}
+                  variant="secondary"
+                  className="text-xs bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] border-[hsl(var(--selise-blue))]/20 hover:bg-[hsl(var(--selise-blue))]/20"
+                >
+                  <Check className="w-3 h-3 mr-1" />
+                  {label}
+                </Badge>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {resolvedHelpText && (

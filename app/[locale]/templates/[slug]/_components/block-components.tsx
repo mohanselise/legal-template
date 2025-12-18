@@ -130,7 +130,7 @@ export function HeroBlock(block: HeroBlockProps) {
           {(block.primaryCta || block.secondaryCta) && (
             <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:justify-start">
               {block.primaryCta ? (
-                <Button asChild size="lg" className="group bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))]/90 shadow-2xl h-auto px-8 py-4 text-lg">
+                <Button asChild size="lg" className="group bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))] hover:text-[hsl(var(--oxford-blue))] shadow-2xl hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] h-auto px-8 py-4 text-lg transition-all">
                   <SmartCTALink href={block.primaryCta.href}>
                     {block.primaryCta.label}
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -409,7 +409,7 @@ export function CTABlock(block: CTABlockProps) {
               <p className="text-lg text-[hsl(var(--white))]/85">{block.description}</p>
             ) : null}
             <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-              <Button asChild size="lg" className="bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))]/90 h-auto px-8 py-4 text-lg">
+              <Button asChild size="lg" className="bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))] hover:text-[hsl(var(--oxford-blue))] h-auto px-8 py-4 text-lg transition-all shadow-lg hover:shadow-xl">
                 <SmartCTALink href={block.primaryCta.href}>{block.primaryCta.label}</SmartCTALink>
               </Button>
               {block.secondaryCta ? (

@@ -30,6 +30,9 @@ model Template {
   uilmTitleKey       String? // UILM key for translated title
   uilmDescriptionKey String? // UILM key for translated description
 
+  // Internal Preview Access
+  previewToken       String?  @unique // Secret token for draft preview access
+
   screens TemplateScreen[]
 
   createdAt DateTime @default(now())

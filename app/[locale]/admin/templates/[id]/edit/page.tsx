@@ -45,6 +45,9 @@ import {
   Eye,
   EyeOff,
   Image as ImageIcon,
+  Copy,
+  Link as LinkIcon,
+  RefreshCw,
 } from "lucide-react";
 import {
   DndContext,
@@ -290,6 +293,11 @@ export default function EditTemplatePage() {
   // AI Configurator panel state
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
+  // Preview token state
+  const [previewToken, setPreviewToken] = useState<string | null>(null);
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
+  const [isRevokingToken, setIsRevokingToken] = useState(false);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -330,6 +338,7 @@ export default function EditTemplatePage() {
       }
       const data = await response.json();
       setTemplate(data.template);
+      setPreviewToken((data.template as any).previewToken || null);
 
       // Reset form with template data
       form.reset({
@@ -690,6 +699,70 @@ export default function EditTemplatePage() {
     }
   };
 
+  // Preview token handlers
+  const handleGeneratePreviewToken = async () => {
+    setIsGeneratingToken(true);
+    try {
+      const response = await fetch(`/api/admin/templates/${templateId}/preview-token`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to generate preview token");
+      }
+
+      const data = await response.json();
+      setPreviewToken(data.previewToken);
+      toast.success("Preview link generated successfully");
+    } catch (error) {
+      console.error("Error generating preview token:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to generate preview token"
+      );
+    } finally {
+      setIsGeneratingToken(false);
+    }
+  };
+
+  const handleRevokePreviewToken = async () => {
+    setIsRevokingToken(true);
+    try {
+      const response = await fetch(`/api/admin/templates/${templateId}/preview-token`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to revoke preview token");
+      }
+
+      setPreviewToken(null);
+      toast.success("Preview link revoked successfully");
+    } catch (error) {
+      console.error("Error revoking preview token:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to revoke preview token"
+      );
+    } finally {
+      setIsRevokingToken(false);
+    }
+  };
+
+  const handleCopyPreviewLink = async () => {
+    if (!previewToken || !template?.slug) return;
+
+    const previewUrl = `${window.location.origin}/${locale}/templates/${template.slug}/generate?preview=${previewToken}`;
+    
+    try {
+      await navigator.clipboard.writeText(previewUrl);
+      toast.success("Preview link copied to clipboard");
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+      toast.error("Failed to copy preview link");
+    }
+  };
+
   const selectedIcon =
     iconOptions.find((opt) => opt.value === form.watch("icon"))?.icon ||
     FileText;
@@ -962,6 +1035,121 @@ export default function EditTemplatePage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Internal Preview Link Card - Only show for draft templates */}
+            {!form.watch("available") && (
+              <Card className="mb-6">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
+                    <CardTitle>Internal Preview Link</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Generate a shareable preview link for team review. This link allows access to draft templates without making them publicly available.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {previewToken ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Preview URL</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            readOnly
+                            value={`${typeof window !== "undefined" ? window.location.origin : ""}/${locale}/templates/${form.watch("slug") || template?.slug || "slug"}/generate?preview=${previewToken}`}
+                            className="font-mono text-sm"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={handleCopyPreviewLink}
+                            title="Copy preview link"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-[hsl(var(--globe-grey))]">
+                          Share this link with your team for internal review. The link will stop working if you revoke it or publish the template.
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleGeneratePreviewToken}
+                          disabled={isGeneratingToken}
+                          className="gap-2"
+                        >
+                          {isGeneratingToken ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-4 w-4" />
+                              Regenerate Link
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleRevokePreviewToken}
+                          disabled={isRevokingToken}
+                          className="gap-2 text-destructive hover:text-destructive"
+                        >
+                          {isRevokingToken ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Revoking...
+                            </>
+                          ) : (
+                            <>
+                              <X className="h-4 w-4" />
+                              Revoke Access
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-[hsl(var(--selise-blue))]/5 border border-[hsl(var(--selise-blue))]/20 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <LinkIcon className="h-5 w-5 text-[hsl(var(--selise-blue))] mt-0.5" />
+                          <div>
+                            <p className="font-medium text-[hsl(var(--fg))]">No preview link generated</p>
+                            <p className="text-sm text-[hsl(var(--globe-grey))] mt-1">
+                              Generate a preview link to share this draft template with your team for review and feedback.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={handleGeneratePreviewToken}
+                        disabled={isGeneratingToken}
+                        className="gap-2"
+                      >
+                        {isGeneratingToken ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <LinkIcon className="h-4 w-4" />
+                            Generate Preview Link
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* AI Configuration Card */}
             <Card className="mb-6">

@@ -53,6 +53,8 @@ export const createTemplateSchema = z.object({
   // UILM Translation Keys (Module: templates, ID: 03e5475d-506d-4ad1-8d07-23fa768a7925)
   uilmTitleKey: z.string().optional().nullable(),
   uilmDescriptionKey: z.string().optional().nullable(),
+  // Internal Preview Access
+  previewToken: z.string().optional().nullable(),
 });
 
 export const updateTemplateSchema = createTemplateSchema.partial();

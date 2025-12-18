@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
-import { ArrowLeft, Clock, FileText, Sparkles, Settings } from "lucide-react";
+import { ArrowLeft, Clock, FileText, Sparkles, Settings, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,10 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { DynamicSmartFlow } from "@/components/smart-flow/DynamicSmartFlow";
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ preview?: string }>;
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -33,8 +35,9 @@ export async function generateMetadata({ params }: Props) {
   };
 }
 
-export default async function TemplateGeneratePage({ params }: Props) {
+export default async function TemplateGeneratePage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
+  const { preview } = await searchParams;
 
   // Fetch template with screens and fields from database
   const template = await prisma.template.findUnique({
@@ -61,8 +64,11 @@ export default async function TemplateGeneratePage({ params }: Props) {
     redirect(`/${locale}/templates/employment-agreement/generate`);
   }
 
-  // For templates that aren't available yet, show coming soon page
-  if (!template.available) {
+  // Check if preview token is valid for draft templates
+  const isPreviewMode = !template.available && preview && template.previewToken && preview === template.previewToken;
+
+  // For templates that aren't available yet, show coming soon page (unless in preview mode)
+  if (!template.available && !isPreviewMode) {
     return (
       <div className="container max-w-4xl py-16">
         <Link
@@ -134,7 +140,27 @@ export default async function TemplateGeneratePage({ params }: Props) {
       screens: template.screens,
     };
 
-    return <DynamicSmartFlow config={config} locale={locale} />;
+    return (
+      <div className="relative">
+        {/* Preview Mode Banner */}
+        {isPreviewMode && (
+          <div className="sticky top-0 z-50 bg-[hsl(var(--selise-blue))]/10 border-b border-[hsl(var(--selise-blue))]/20 px-4 py-2">
+            <div className="container max-w-7xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Eye className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+                <Badge variant="outline" className="bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] border-[hsl(var(--selise-blue))]/30">
+                  Preview Mode
+                </Badge>
+                <span className="text-sm text-[hsl(var(--globe-grey))]">
+                  This template is in draft and not publicly available
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+        <DynamicSmartFlow config={config} locale={locale} />
+      </div>
+    );
   }
 
   // For available templates without screens configured

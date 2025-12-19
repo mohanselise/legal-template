@@ -34,6 +34,13 @@ import type { SignatoryEntry } from "@/lib/templates/signatory-config";
 import { InlineTextEditor } from "./InlineTextEditor";
 import { findBlockByText, updateBlockText, type TextBlockMapping } from "@/lib/pdf/text-block-mapper";
 import { Edit2 } from "lucide-react";
+import {
+  trackDocumentPreviewLoaded,
+  trackDocumentDownloaded,
+  trackDocumentSentSelise,
+  trackSignatureFieldAdded,
+  trackDocumentEdited,
+} from "@/lib/analytics";
 
 // Dynamically import react-pdf components to avoid SSR issues
 const Document = dynamic(
@@ -556,6 +563,9 @@ export function TemplatePDFReview({
         if (responseData.signatureFields && Array.isArray(responseData.signatureFields)) {
           setApiSignatureFields(responseData.signatureFields);
         }
+
+        // Track document preview loaded
+        trackDocumentPreviewLoaded(templateSlug);
       } else {
         throw new Error("Invalid response format from PDF generation API");
       }
@@ -637,6 +647,9 @@ export function TemplatePDFReview({
       a.click();
       window.URL.revokeObjectURL(url);
       window.document.body.removeChild(a);
+
+      // Track document downloaded
+      trackDocumentDownloaded(templateSlug);
     } catch (error) {
       console.error("Error downloading PDF:", error);
       alert("Failed to download document. Please try again.");
@@ -721,6 +734,9 @@ export function TemplatePDFReview({
 
       const rolloutResult = await rolloutResponse.json();
       
+      // Track document sent to SELISE
+      trackDocumentSentSelise(templateSlug, signatoriesForAPI.length);
+      
       // Store result and payload in sessionStorage for success page
       if (typeof window !== 'undefined') {
         window.sessionStorage.setItem(
@@ -784,7 +800,14 @@ export function TemplatePDFReview({
   };
 
   const handleSignatureFieldsChange = (fields: SignatureField[]) => {
+    const previousLength = signatureFields.length;
     setSignatureFields(fields);
+    
+    // Track when signature fields are added
+    if (fields.length > previousLength) {
+      const newField = fields[fields.length - 1];
+      trackSignatureFieldAdded(templateSlug, newField.type || 'signature');
+    }
   };
 
   const handlePageClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -902,11 +925,15 @@ export function TemplatePDFReview({
       setEditableDocument(updated);
       setHasUnsavedChanges(true);
       
+      // Track document edited
+      const editType = isEditingEffectiveDate ? 'effective_date' : (editingBlock?.isTitle ? 'title' : 'text');
+      trackDocumentEdited(templateSlug, editType);
+      
       // Close editor
       setIsEditing(false);
       setIsEditingEffectiveDate(false);
       setEditingBlock(null);
-      
+
       // PDF will regenerate automatically via useEffect
     } catch (error) {
       console.error('Error saving edit:', error);

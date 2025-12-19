@@ -15,6 +15,7 @@ import {
 } from "@/lib/templates-db";
 import { parseTemplatePageBlocks } from "@/lib/template-page-blocks";
 import { TemplatePageRenderer } from "./_components/template-page-renderer";
+import { stripLocalePrefix } from "@/lib/utils/strip-locale-prefix";
 
 export const dynamic = "force-dynamic";
 
@@ -256,7 +257,7 @@ export default async function TemplateLandingPage({
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="group bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))]/90 shadow-2xl h-auto px-8 py-4 text-lg">
-                <Link href={template.href}>
+                <Link href={stripLocalePrefix(template.href)}>
                   {t('generateYourAgreementNow')}
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
@@ -297,7 +298,7 @@ export default async function TemplateLandingPage({
             {t('generateYourTemplateNow', { template: template.title.toLowerCase() })}
           </p>
           <Button asChild size="lg" className="group bg-[hsl(var(--selise-blue))] text-[hsl(var(--white))] hover:bg-[hsl(var(--oxford-blue))] shadow-2xl h-auto px-10 py-5 text-lg">
-            <Link href={template.href}>
+            <Link href={stripLocalePrefix(template.href)}>
               <Sparkles className="mr-2 h-5 w-5" />
               {t('startGenerating')}
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />

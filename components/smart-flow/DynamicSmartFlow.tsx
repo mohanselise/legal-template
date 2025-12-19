@@ -41,6 +41,13 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 import { Turnstile } from "next-turnstile";
 import { setTurnstileToken as storeTurnstileToken } from "@/lib/turnstile-token-manager";
 import { saveTemplateReview } from "@/components/template-review/TemplateReviewStorage";
+import {
+  trackSmartflowStarted,
+  trackStepCompleted,
+  trackStandardsApplied,
+  trackDocumentGenerationStarted,
+  trackDocumentGenerated,
+} from "@/lib/analytics";
 
 // Screen icons mapping based on common screen titles
 const SCREEN_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -664,6 +671,13 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     setApplyingStandard(false);
   }, [currentStep]);
 
+  // Track smartflow started when component mounts with config
+  useEffect(() => {
+    if (config) {
+      trackSmartflowStarted(config.slug, config.title);
+    }
+  }, [config]);
+
   // Track which screens are being pre-fetched to avoid duplicate requests
   const prefetchingRef = useRef<Set<string>>(new Set());
 
@@ -1095,6 +1109,11 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
       const result = await response.json();
       console.log("✅ [DynamicSmartFlow] Document generated successfully after re-verification");
 
+      // Track document generated
+      if (config) {
+        trackDocumentGenerated(config.slug, config.title);
+      }
+
       // Store result in sessionStorage for review page
       const reviewData = {
         document: result.document,
@@ -1130,6 +1149,11 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
   const handleSubmit = async () => {
     if (!canProceed() || !turnstileToken) return;
+
+    // Track document generation started
+    if (config) {
+      trackDocumentGenerationStarted(config.slug, config.title);
+    }
 
     setSubmitting(true);
     setIsGenerating(true);
@@ -1180,6 +1204,11 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
       const result = await response.json();
       console.log("✅ [DynamicSmartFlow] Document generated successfully");
+
+      // Track document generated
+      if (config) {
+        trackDocumentGenerated(config.slug, config.title);
+      }
 
       // Store result in sessionStorage for review page using the reusable storage utility
       const reviewData = {
@@ -1590,6 +1619,11 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
     if (canProceed()) {
       // Use visible screen for the current step
       const screen = visibleScreens[currentStep];
+
+      // Track step completion
+      if (config && screen) {
+        trackStepCompleted(currentStep + 1, screen.id || screen.title || `step_${currentStep + 1}`, config.slug);
+      }
 
       // Trigger AI enrichment without waiting for the response
       runAiEnrichmentInBackground(screen);
@@ -2093,6 +2127,15 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                                       </div>
                                       <Button
                                         onClick={() => {
+                                          // Track standards applied
+                                          if (config) {
+                                            const unfilledCount = fields.filter(
+                                              (f) => f.standardValue && (!formData[f.name] || formData[f.name] === '')
+                                            ).length;
+                                            if (unfilledCount > 0) {
+                                              trackStandardsApplied(config.slug, unfilledCount);
+                                            }
+                                          }
                                           // Use recursive apply to handle conditionally visible fields
                                           applyDynamicStandardsRecursively(currentScreen.id, fields);
                                         }}
@@ -2218,6 +2261,19 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                                   </div>
                                   <Button
                                     onClick={() => {
+                                      // Track standards applied
+                                      if (config) {
+                                        const fieldsWithSuggestions = getFieldsWithSuggestions(
+                                          getVisibleFields(currentScreen) || [],
+                                          enrichmentContext
+                                        );
+                                        const unfilledCount = fieldsWithSuggestions.filter(
+                                          (f) => !formData[f.name] || formData[f.name] === ''
+                                        ).length;
+                                        if (unfilledCount > 0) {
+                                          trackStandardsApplied(config.slug, unfilledCount);
+                                        }
+                                      }
                                       // Use recursive apply to handle conditionally visible fields
                                       applyStandardsRecursively(currentScreen);
                                     }}

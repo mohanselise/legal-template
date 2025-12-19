@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ClerkProvider } from '@clerk/nextjs';
+import { GoogleAnalytics } from '@next/third-parties/google';
+import { ClarityProvider } from '@/components/providers/ClarityProvider';
 import "./globals.css";
 
 // SELISE Brand Typography System
@@ -55,13 +57,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body
           className={`${openSans.variable} ${aptos.variable} ${bahnschrift.variable} antialiased`}
         >
-          {children}
+          <ClarityProvider>
+            {children}
+          </ClarityProvider>
+          {gaMeasurementId && (
+            <GoogleAnalytics gaId={gaMeasurementId} />
+          )}
         </body>
       </html>
     </ClerkProvider>

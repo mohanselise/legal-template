@@ -236,3 +236,21 @@ export async function getAllTemplatePageSlugs(): Promise<
   }
 }
 
+/**
+ * Fetch all published template pages with updatedAt for sitemap generation
+ */
+export async function getAllPublishedTemplatePagesForSitemap(): Promise<
+  Array<{ slug: string; locale: string; updatedAt: Date }>
+> {
+  try {
+    const pages = await prisma.templatePage.findMany({
+      where: { published: true },
+      select: { slug: true, locale: true, updatedAt: true },
+    });
+    return pages;
+  } catch (error) {
+    console.error("[TEMPLATES_DB] Failed to fetch template pages for sitemap:", error);
+    return [];
+  }
+}
+

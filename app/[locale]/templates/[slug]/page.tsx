@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { Link } from "@/i18n/routing";
+import { Link, routing } from "@/i18n/routing";
 import Image from "next/image";
 import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
@@ -16,6 +16,8 @@ import {
 import { parseTemplatePageBlocks } from "@/lib/template-page-blocks";
 import { TemplatePageRenderer } from "./_components/template-page-renderer";
 import { stripLocalePrefix } from "@/lib/utils/strip-locale-prefix";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://legal-template-generator.selise.ch';
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +62,13 @@ export async function generateMetadata({
   // Check for custom landing page first
   const templatePage = await getTemplatePageBySlugAndLocale(slug, locale);
   
+  // Build hreflang alternates for all locales
+  const alternatesLanguages: Record<string, string> = {};
+  for (const loc of routing.locales) {
+    alternatesLanguages[loc] = `${BASE_URL}/${loc}/templates/${slug}`;
+  }
+  alternatesLanguages['x-default'] = `${BASE_URL}/en/templates/${slug}`;
+  
   if (templatePage) {
     return {
       title: templatePage.title,
@@ -70,6 +79,10 @@ export async function generateMetadata({
         description: templatePage.ogDescription || templatePage.description,
         type: 'website',
         ...(templatePage.ogImage && { images: [templatePage.ogImage] }),
+      },
+      alternates: {
+        canonical: `${BASE_URL}/${locale}/templates/${slug}`,
+        languages: alternatesLanguages,
       },
     };
   }
@@ -90,6 +103,10 @@ export async function generateMetadata({
       title: `${template.title} | Free Legal Contract Generator`,
       description: template.description,
       type: 'website',
+    },
+    alternates: {
+      canonical: `${BASE_URL}/${locale}/templates/${slug}`,
+      languages: alternatesLanguages,
     },
   };
 }

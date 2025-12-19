@@ -14,10 +14,38 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <textarea
         className={cn(
-          "flex min-h-[80px] w-full rounded-md border border-[hsl(var(--input))] bg-background text-foreground",
-          "px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground",
-          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))]",
+          // Base styles
+          "flex min-h-[80px] w-full rounded-lg border px-4 py-3",
+          "bg-background text-foreground",
+          "text-base font-normal leading-relaxed",
+          "shadow-sm transition-[color,box-shadow,border-color,background-color]",
+          
+          // Text selection - improved contrast and visibility
+          "selection:bg-[hsl(var(--selise-blue))] selection:text-white",
+          "selection:bg-opacity-80",
+          
+          // Placeholder
+          "placeholder:text-muted-foreground placeholder:opacity-60",
+          
+          // Focus states - clear and visible
+          "outline-none",
+          "focus-visible:border-[hsl(var(--selise-blue))]",
+          "focus-visible:ring-2 focus-visible:ring-[hsl(var(--selise-blue))] focus-visible:ring-opacity-20",
+          "focus-visible:bg-background",
+          
+          // Invalid states
+          "aria-invalid:border-destructive",
+          "aria-invalid:ring-2 aria-invalid:ring-destructive/20",
+          
+          // Disabled states
           "disabled:cursor-not-allowed disabled:opacity-50",
+          "disabled:bg-muted/50",
+          
+          // Ensure text is selectable and cursor is visible
+          "cursor-text select-text",
+          "hover:border-[hsl(var(--border))]",
+          "resize-y",
+          
           className
         )}
         ref={ref}

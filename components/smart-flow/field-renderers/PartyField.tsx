@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { FieldRendererProps, PartyValue } from "./types";
 import { COUNTRIES } from "./types";
+import { CountrySelect } from "./CountrySelect";
 import { resolveTemplateVariables, getNestedValue, parseCompositeValue } from "./utils";
 import { useGooglePlacesSearch, type GooglePlacePrediction, type GooglePlaceDetails } from "@/lib/hooks/useGooglePlacesSearch";
 import { usePlacesAutocomplete } from "@/lib/hooks/usePlacesAutocomplete";
@@ -540,28 +541,13 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
               <Label htmlFor={`${field.name}-country`} className="text-xs text-[hsl(var(--globe-grey))]">
                 Country
               </Label>
-              <Select
+              <CountrySelect
+                id={`${field.name}-country`}
                 value={partyValue.country && partyValue.country.trim() ? partyValue.country : undefined}
                 onValueChange={(val) => updateField("country", val)}
-              >
-                <SelectTrigger 
-                  id={`${field.name}-country`} 
-                  className={cn(
-                    "w-full rounded-lg border-2 px-4 py-2.5 text-base shadow-sm",
-                    "h-[44px] data-[size=default]:h-[44px]",
-                    error ? "border-destructive" : ""
-                  )}
-                >
-                  <SelectValue placeholder="Select country" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  {COUNTRIES.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
-                      {country.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select country"
+                error={!!error}
+              />
             </div>
           </div>
         </div>

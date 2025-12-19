@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { FieldRendererProps, AddressValue } from "./types";
 import { COUNTRIES } from "./types";
+import { CountrySelect } from "./CountrySelect";
 import { resolveTemplateVariables, getNestedValue, parseCompositeValue } from "./utils";
 
 const DEFAULT_ADDRESS: AddressValue = {
@@ -220,21 +221,13 @@ export function AddressField({ field, value, onChange, error, enrichmentContext,
             <Label htmlFor={`${field.name}-country`} className="text-xs text-[hsl(var(--globe-grey))]">
               Country
             </Label>
-            <Select
-              value={addressValue.country || "CH"}
+            <CountrySelect
+              id={`${field.name}-country`}
+              value={addressValue.country}
               onValueChange={(val) => updateField("country", val)}
-            >
-              <SelectTrigger id={`${field.name}-country`} className={cn(error ? "border-destructive" : "")}>
-                <SelectValue placeholder="Select country" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                {COUNTRIES.map((country) => (
-                  <SelectItem key={country.code} value={country.code}>
-                    {country.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select country"
+              error={!!error}
+            />
           </div>
         </div>
       </div>

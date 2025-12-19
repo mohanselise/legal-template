@@ -67,6 +67,11 @@
   --color-brand-surface: var(--brand-surface);
   --color-brand-surface-strong: var(--brand-surface-strong);
   --color-brand-border: var(--brand-border);
+  
+  /* Button Colors for Better Contrast */
+  --color-button-primary: var(--button-primary);
+  --color-button-primary-hover: var(--button-primary-hover);
+  --color-button-primary-foreground: var(--button-primary-foreground);
 }
 
 :root {
@@ -154,6 +159,11 @@
   --brand-surface: 206 100% 97%;
   --brand-surface-strong: 206 100% 92%;
   --brand-border: 206 92% 80%;
+  
+  /* Button-specific colors for better contrast */
+  --button-primary: 206 100% 28%;        /* Darker SELISE blue for buttons - better contrast with white text (~6.2:1) */
+  --button-primary-hover: 204 100% 11%;  /* Oxford blue on hover - excellent contrast (~15:1) */
+  --button-primary-foreground: 0 0% 100%; /* White text */
 }
 
 .dark {
@@ -207,6 +217,11 @@
   --brand-surface: 206 65% 18%;
   --brand-surface-strong: 206 60% 24%;
   --brand-border: 206 50% 32%;
+  
+  /* Button-specific colors for better contrast (dark mode) */
+  --button-primary: 206 100% 45%;        /* Lighter for dark mode */
+  --button-primary-hover: 206 100% 50%; /* Even lighter on hover */
+  --button-primary-foreground: 0 0% 100%; /* White text */
 }
 
 .text-on-media {
@@ -225,14 +240,26 @@
     font-family: var(--font-aptos), system-ui, sans-serif;
   }
   
-  /* Improve form input legibility */
-  input, textarea, select {
+  /* Improve form input legibility and interaction */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  textarea,
+  select {
     font-size: 16px; /* Prevents zoom on iOS */
+    user-select: text; /* Ensure text is selectable */
+    -webkit-user-select: text; /* Safari */
+    cursor: text; /* Show text cursor */
   }
   
   /* Better placeholder contrast */
   ::placeholder {
     opacity: 0.6;
+  }
+  
+  /* Ensure text selection is visible in form fields */
+  input::selection,
+  textarea::selection {
+    background-color: hsl(var(--selise-blue));
+    color: white;
   }
 }
 

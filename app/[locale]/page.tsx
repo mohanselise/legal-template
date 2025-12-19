@@ -249,7 +249,7 @@ export default async function Home() {
                   <CardFooter className="mt-auto pt-0">
                     <Button
                       asChild
-                      className="w-full justify-between bg-[hsl(var(--selise-blue))] text-white hover:bg-[hsl(var(--oxford-blue))] hover:text-white focus-visible:ring-[hsl(var(--selise-blue))] focus-visible:ring-offset-2"
+                      className="w-full justify-between bg-[hsl(var(--button-primary))] text-[hsl(var(--button-primary-foreground))] hover:bg-[hsl(var(--button-primary-hover))] hover:text-[hsl(var(--button-primary-foreground))] focus-visible:ring-[hsl(var(--button-primary))] focus-visible:ring-opacity-40 focus-visible:ring-offset-2"
                     >
                       <Link href={template.href}>
                         <span>{tTemplates('templatesSection.generateNow')}</span>

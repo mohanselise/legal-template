@@ -8,18 +8,40 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       data-slot="input"
       className={cn(
-        "file:text-foreground selection:bg-primary selection:text-primary-foreground",
-        "h-11 w-full min-w-0 rounded-lg border-2 px-4 py-2.5",
+        // Base styles
+        "h-11 w-full min-w-0 rounded-lg border px-4 py-2.5",
         "bg-background text-foreground",
         "text-base font-normal leading-tight",
-        "shadow-sm transition-[color,box-shadow,border-color]",
+        "shadow-sm transition-[color,box-shadow,border-color,background-color]",
+        
+        // Text selection - improved contrast and visibility
+        "selection:bg-[hsl(var(--selise-blue))] selection:text-white",
+        "selection:bg-opacity-80",
+        
+        // File input styles
+        "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground",
+        
+        // Placeholder
+        "placeholder:text-muted-foreground placeholder:opacity-60",
+        
+        // Focus states - clear and visible
         "outline-none",
-        "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium",
-        "placeholder:text-muted-foreground",
+        "focus-visible:border-[hsl(var(--selise-blue))]",
+        "focus-visible:ring-2 focus-visible:ring-[hsl(var(--selise-blue))] focus-visible:ring-opacity-20",
+        "focus-visible:bg-background",
+        
+        // Invalid states
+        "aria-invalid:border-destructive",
+        "aria-invalid:ring-2 aria-invalid:ring-destructive/20",
+        
+        // Disabled states
         "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-        "focus-visible:border-blue-500 dark:focus-visible:border-blue-400",
-        "focus-visible:ring-blue-500/30 dark:focus-visible:ring-blue-400/30 focus-visible:ring-4",
-        "aria-invalid:ring-destructive/30 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        "disabled:bg-muted/50",
+        
+        // Ensure text is selectable and cursor is visible
+        "cursor-text select-text",
+        "hover:border-[hsl(var(--border))]",
+        
         className
       )}
       {...props}

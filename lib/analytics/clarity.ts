@@ -33,17 +33,21 @@ export function initClarity(projectId: string): void {
     return;
   }
 
-  // Dynamically load Clarity script
-  (function(c: Window, l: Document, a: string, r: string, i: string, t: HTMLScriptElement | null, y: HTMLScriptElement | null) {
-    c[a] = c[a] || function() { (c[a].q = c[a].q || []).push(arguments); };
-    t = l.createElement(r) as HTMLScriptElement;
+  // Dynamically load Clarity script (matches official Clarity snippet)
+  (function(c: Window & { clarity?: unknown }, l: Document, a: string, r: string, i: string) {
+    c[a] = c[a] || function(...args: unknown[]) { 
+      ((c[a] as { q?: unknown[] }).q = (c[a] as { q?: unknown[] }).q || []).push(args); 
+    };
+    const t = l.createElement(r) as HTMLScriptElement;
     t.async = true;
     t.src = 'https://www.clarity.ms/tag/' + i;
-    y = l.getElementsByTagName(r)[0] as HTMLScriptElement | null;
-    if (y) {
-      y.parentNode?.insertBefore(t, y);
+    const y = l.getElementsByTagName(r)[0];
+    if (y && y.parentNode) {
+      y.parentNode.insertBefore(t, y);
+    } else {
+      l.head.appendChild(t);
     }
-  })(window, document, 'clarity', 'script', 'clarity', null, null);
+  })(window, document, 'clarity', 'script', projectId);
 }
 
 /**

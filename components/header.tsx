@@ -57,12 +57,6 @@ export default function Header() {
             >
               {t('contact')}
             </a>
-            <Link
-              href="/templates/employment-agreement/generate"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity font-subheading"
-            >
-              {t('generateDocument')}
-            </Link>
             <LanguageSwitcher />
           </div>
 
@@ -118,13 +112,6 @@ export default function Header() {
             >
               {t('contact')}
             </a>
-            <Link
-              href="/templates/employment-agreement/generate"
-              className="block rounded-md bg-primary px-3 py-2 text-base font-semibold text-primary-foreground hover:opacity-90 font-subheading"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('generateDocument')}
-            </Link>
             <div className="px-3 py-2">
               <LanguageSwitcher />
             </div>

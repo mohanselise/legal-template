@@ -1690,7 +1690,6 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
               <div className="space-y-3 text-sm leading-relaxed text-[hsl(var(--brand-muted))]">
                 <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.notLegalAdvice')}</strong> {t('welcome.notLegalAdviceText')}</p>
                 <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.aiGenerated')}</strong> {t('welcome.aiGeneratedText')}</p>
-                <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.jurisdiction')}</strong> {t('welcome.jurisdictionText')}</p>
                 <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.reviewRequired')}</strong> {t('welcome.reviewRequiredText')}</p>
               </div>
             </CollapsibleContent>

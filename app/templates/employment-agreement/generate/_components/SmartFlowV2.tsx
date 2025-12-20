@@ -829,7 +829,6 @@ function SmartFlowContent() {
             <div className="space-y-2 text-sm leading-relaxed text-[hsl(var(--brand-muted))]">
               <p><strong className="text-[hsl(var(--brand-primary))]">Not Legal Advice:</strong> This tool does not provide legal advice and generates documents for informational purposes only.</p>
               <p><strong className="text-[hsl(var(--brand-primary))]">AI-Generated:</strong> AI is inaccurate by nature. Content may contain errors or omissions.</p>
-              <p><strong className="text-[hsl(var(--brand-primary))]">Jurisdiction:</strong> This is a Switzerland-based product that may not comply with laws in your jurisdiction.</p>
               <p><strong className="text-[hsl(var(--brand-primary))]">Review Required:</strong> Always consult a qualified legal advisor before using any generated document.</p>
             </div>
           </div>

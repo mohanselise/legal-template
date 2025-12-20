@@ -18,9 +18,9 @@ import { resolveTemplateVariables, getNestedValue, parseCompositeValue } from ".
 const DEFAULT_PHONE: PhoneValue = { countryCode: "+41", number: "" };
 
 /**
- * AI Suggestion Badge
+ * AI Suggestion Status Badge - shows status only (loading/applied/available)
  */
-function AISuggestionBadge({
+function AISuggestionStatusBadge({
   suggestionKey,
   enrichmentContext,
   currentValue,
@@ -50,10 +50,10 @@ function AISuggestionBadge({
     return null;
   }
   
-  // Check if values match (comparing normalized phone values)
   const currentPhone = parseCompositeValue<PhoneValue>(currentValue, DEFAULT_PHONE);
   const suggestedPhone = parseCompositeValue<PhoneValue>(suggestedValue, DEFAULT_PHONE);
   
+  // Applied state
   if (currentPhone.countryCode === suggestedPhone.countryCode && 
       currentPhone.number === suggestedPhone.number) {
     return (
@@ -62,11 +62,12 @@ function AISuggestionBadge({
           bg-emerald-50 text-emerald-600 border border-emerald-200"
       >
         <Check className="h-3 w-3" />
-        <span>AI applied</span>
+        <span>Standard applied</span>
       </span>
     );
   }
 
+  // No badge shown when suggestion is available but not applied
   return null;
 }
 
@@ -115,6 +116,11 @@ export function PhoneField({ field, value, onChange, error, enrichmentContext, f
     phoneValue.countryCode === suggestedPhone.countryCode && 
     phoneValue.number === suggestedPhone.number;
 
+  // Show inline button only when field is empty
+  const showInlineButton = hasSuggestion && !isApplied && !phoneValue.number;
+  const displayValue = suggestedPhone ? `${suggestedPhone.countryCode} ${suggestedPhone.number}` : "";
+  const truncatedDisplay = displayValue.length > 20 ? displayValue.substring(0, 20) + "..." : displayValue;
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -123,7 +129,7 @@ export function PhoneField({ field, value, onChange, error, enrichmentContext, f
           {field.required && <span className="text-destructive ml-1">*</span>}
         </Label>
         {showSuggestion && (
-          <AISuggestionBadge
+          <AISuggestionStatusBadge
             suggestionKey={field.aiSuggestionKey!}
             enrichmentContext={enrichmentContext}
             currentValue={value}
@@ -164,22 +170,23 @@ export function PhoneField({ field, value, onChange, error, enrichmentContext, f
             onChange={(e) => handleNumberChange(e.target.value)}
             className={cn(
               error ? "border-destructive" : "",
-              hasSuggestion && !isApplied ? "pr-20" : ""
+              showInlineButton ? "pr-48" : ""
             )}
           />
-          {hasSuggestion && !isApplied && (
+          {showInlineButton && (
             <div className="absolute right-2 top-1/2 -translate-y-1/2">
               <button
                 type="button"
                 onClick={handleApplySuggestion}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md
-                  bg-transparent text-[hsl(var(--selise-blue))] 
-                  hover:bg-[hsl(var(--selise-blue))]/10 transition-colors cursor-pointer
-                  border border-[hsl(var(--selise-blue))]/30 hover:border-[hsl(var(--selise-blue))]/50"
-                title={`Apply suggestion: ${suggestedPhone?.countryCode} ${suggestedPhone?.number}`}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md
+                  bg-[hsl(var(--selise-blue))]/5 text-[hsl(var(--selise-blue))] 
+                  hover:bg-[hsl(var(--selise-blue))]/15 transition-all cursor-pointer
+                  border border-[hsl(var(--selise-blue))]/20 hover:border-[hsl(var(--selise-blue))]/40
+                  shadow-sm hover:shadow"
+                title={`Apply standard value: ${displayValue}`}
               >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Apply</span>
+                <Sparkles className="h-3 w-3" />
+                <span className="whitespace-nowrap">Use standard: <span className="font-semibold">{truncatedDisplay}</span></span>
               </button>
             </div>
           )}

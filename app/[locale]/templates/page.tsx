@@ -107,7 +107,7 @@ export default async function TemplatesPage({
     <div className="min-h-screen bg-background text-foreground font-sans">
 
       {/* Hero Section */}
-      <section className="relative min-h-[60vh] w-full overflow-hidden flex items-center justify-center">
+      <section className="relative w-full overflow-hidden flex items-center justify-center pt-24 pb-20">
         {/* Background Image */}
         <div className="absolute inset-0">
           <Image
@@ -119,8 +119,8 @@ export default async function TemplatesPage({
           />
         </div>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-6 lg:px-8 py-20 text-center">
-          <Badge className="bg-white/10 text-white hover:bg-white/20 border-white/20 backdrop-blur-sm mb-8 px-4 py-2 text-sm font-subheading uppercase tracking-[0.14em]">
+        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-6 lg:px-8 text-center">
+          <Badge className="bg-white/10 text-white hover:bg-white/20 border-white/20 backdrop-blur-sm mb-6 px-4 py-2 text-sm font-subheading uppercase tracking-[0.14em]">
             {t('templateLibrary')}
           </Badge>
 
@@ -128,74 +128,11 @@ export default async function TemplatesPage({
             {t('title')}
           </h1>
 
-          <p className="mt-6 text-xl leading-relaxed text-white/90 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg leading-relaxed text-white/80 max-w-2xl mx-auto">
             {t('description')}
           </p>
 
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <Button asChild size="lg" className="bg-[hsl(var(--selise-blue))] text-white hover:bg-[hsl(var(--oxford-blue))] px-8 h-12 text-base font-semibold border-0">
-              <Link href="#library">{t('browseAvailableTemplates')}</Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="bg-white/10 text-white hover:bg-white/20 border-white/20 backdrop-blur-sm px-8 h-12 text-base font-semibold">
-              <Link href="#upcoming">{t('templatesSection.requestTemplate')}</Link>
-            </Button>
-          </div>
-
-          {/* Stats Bar */}
-          <div className="mt-16 grid grid-cols-2 gap-8 md:grid-cols-4 border-t border-white/10 pt-10 w-full max-w-4xl">
-            <div className="flex flex-col items-center">
-              <span className="text-3xl font-bold text-white">{totalAvailable}</span>
-              <span className="text-sm text-white/70 uppercase tracking-widest mt-1">{t('live')}</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-3xl font-bold text-white">{upcomingTemplates.length}</span>
-              <span className="text-sm text-white/70 uppercase tracking-widest mt-1">{t('inProgress')}</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-3xl font-bold text-white">3m</span>
-              <span className="text-sm text-white/70 uppercase tracking-widest mt-1">Avg. Time</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-3xl font-bold text-white">0$</span>
-              <span className="text-sm text-white/70 uppercase tracking-widest mt-1">{t('alwaysFree')}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Library Section - Light Background */}
-      <section id="library" className="py-24 bg-muted/30">
-        <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl font-heading">
-              {t('readyToGenerate')}
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              {t('availableDescription')}
-            </p>
-          </div>
-
-          {/* Features Grid */}
-          <div className="mb-16 grid gap-8 sm:grid-cols-3">
-            {[
-              { icon: ShieldCheck, title: t('legallyVetted'), body: "Compliant with Swiss laws and regulations." },
-              { icon: Sparkles, title: t('readyInMinutes'), body: "Answer a few questions and get your document instantly." },
-              { icon: CheckCircle2, title: t('fullyCustomizable'), body: "Tailor every clause to your specific needs." },
-            ].map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.title} className="flex flex-col items-center text-center p-6 rounded-2xl bg-background border border-border shadow-sm">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]">
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="font-bold text-foreground mb-2">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.body}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-6">
+          <div className="mt-8 w-full max-w-3xl mx-auto">
             <TemplateSearchGrid
               templates={availableTemplateCards}
               ctaLabel={t('templatesSection.generateNow')}
@@ -212,8 +149,57 @@ export default async function TemplatesPage({
               currentPage={currentPage}
               totalResults={totalAvailable}
               pageSize={PAGE_SIZE}
+              hideGrid={true}
+              showResultsLabel={false}
+              searchContainerClassName="lg:max-w-none"
+              searchIconClassName="text-white/50"
+              inputClassName="h-14 text-lg bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:bg-white/20 focus:ring-white/30 backdrop-blur-md shadow-2xl"
             />
           </div>
+
+          {/* Compact Stats Bar */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-white/80">
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold text-white">{totalAvailable}</span>
+              <span className="text-xs uppercase tracking-widest opacity-70">{t('live')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold text-white">{upcomingTemplates.length}</span>
+              <span className="text-xs uppercase tracking-widest opacity-70">{t('inProgress')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Timer className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+              <span className="text-xs uppercase tracking-widest opacity-70">3m Avg. Time</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+              <span className="text-xs uppercase tracking-widest opacity-70">{t('legallyVetted')}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Library Grid Section */}
+      <section id="library" className="py-12 bg-muted/30">
+        <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+          <TemplateSearchGrid
+            templates={availableTemplateCards}
+            ctaLabel={t('templatesSection.generateNow')}
+            liveBadgeLabel={t('live')}
+            popularBadgeLabel={t('mostPopular')}
+            searchPlaceholder={t('searchPlaceholder')}
+            noResultsText={t('searchNoResults')}
+            resultsLabelText={t('searchResultsLabel', { visible: availableTemplates.length, total: totalAvailable })}
+            clearLabel={t('searchClear')}
+            clearSearchLabel={t('searchClearAria')}
+            useLocalizedLink
+            mode="server"
+            initialQuery={query}
+            currentPage={currentPage}
+            totalResults={totalAvailable}
+            pageSize={PAGE_SIZE}
+            hideSearch={true}
+          />
         </div>
       </section>
 

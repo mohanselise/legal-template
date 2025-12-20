@@ -2198,33 +2198,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                     ) : (
                       /* Standard Screen: Show regular fields (filtered by conditions) */
                       <>
-                        <AnimatePresence mode="popLayout">
-                          {currentScreen && getVisibleFields(currentScreen).map((field) => (
-                            <motion.div
-                              key={field.id}
-                              variants={{
-                                hidden: { opacity: 0, y: 20 },
-                                show: { opacity: 1, y: 0 }
-                              }}
-                              initial="hidden"
-                              animate="show"
-                              exit={{ opacity: 0, scale: 0.95 }}
-                              layout
-                              data-field-error={errors[field.name] ? "true" : undefined}
-                            >
-                              <DynamicField
-                                field={field as FieldConfig}
-                                value={formData[field.name]}
-                                onChange={setFieldValue}
-                                error={errors[field.name]}
-                                enrichmentContext={enrichmentContext}
-                                formData={formData}
-                              />
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-
-                        {/* Apply Standards Banner for Standard Screens */}
+                        {/* Apply Standards Banner for Standard Screens - shown before fields */}
                         {(currentScreen as any)?.enableApplyStandards && currentScreen && (() => {
                           const fieldsWithSuggestions = getFieldsWithSuggestions(
                             getVisibleFields(currentScreen) || [],
@@ -2240,9 +2214,9 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                           if (unfilledFieldsWithSuggestions.length > 0) {
                             return (
                               <motion.div
-                                initial={{ opacity: 0, y: 10 }}
+                                initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4"
+                                className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4 mb-6"
                               >
                                 <div className="flex items-center justify-between gap-4 flex-wrap">
                                   <div className="flex items-center gap-3">
@@ -2277,7 +2251,8 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                                       applyStandardsRecursively(currentScreen);
                                     }}
                                     disabled={applyingStandard}
-                                    className="flex items-center gap-2 bg-[hsl(var(--brand-primary))] text-white hover:bg-[hsl(var(--brand-primary))/90] px-5"
+                                    className="flex items-center gap-2 bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] px-5 shadow-md hover:shadow-lg transition-all font-medium [&>*]:!text-white [&_svg]:!text-white"
+                                    style={{ color: 'white' }}
                                   >
                                     <Zap className="h-4 w-4" />
                                     Apply Standards
@@ -2293,7 +2268,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                               <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                                className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 mb-6"
                               >
                                 <div className="flex items-center gap-3">
                                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200">
@@ -2314,6 +2289,32 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                           
                           return null;
                         })()}
+
+                        <AnimatePresence mode="popLayout">
+                          {currentScreen && getVisibleFields(currentScreen).map((field) => (
+                            <motion.div
+                              key={field.id}
+                              variants={{
+                                hidden: { opacity: 0, y: 20 },
+                                show: { opacity: 1, y: 0 }
+                              }}
+                              initial="hidden"
+                              animate="show"
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              layout
+                              data-field-error={errors[field.name] ? "true" : undefined}
+                            >
+                              <DynamicField
+                                field={field as FieldConfig}
+                                value={formData[field.name]}
+                                onChange={setFieldValue}
+                                error={errors[field.name]}
+                                enrichmentContext={enrichmentContext}
+                                formData={formData}
+                              />
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
 
                       </>
                     )}

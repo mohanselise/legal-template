@@ -8,9 +8,9 @@ import type { FieldRendererProps } from "./types";
 import { resolveTemplateVariables, getNestedValue, getSuggestionPlaceholder } from "./utils";
 
 /**
- * AI Suggestion Badge
+ * AI Suggestion Status Badge - shows status only
  */
-function AISuggestionBadge({
+function AISuggestionStatusBadge({
   suggestionKey,
   enrichmentContext,
   currentValue,
@@ -18,7 +18,6 @@ function AISuggestionBadge({
   suggestionKey: string;
   enrichmentContext?: Record<string, unknown>;
   currentValue: unknown;
-  onApply: (value: unknown) => void;
 }) {
   if (!suggestionKey) return null;
   
@@ -40,26 +39,31 @@ function AISuggestionBadge({
   if (suggestedValue === undefined || suggestedValue === null) {
     return null;
   }
+
+  const currentStr = currentValue !== undefined && currentValue !== null 
+    ? String(currentValue) 
+    : "";
   
-  if (String(suggestedValue) === String(currentValue)) {
+  if (String(suggestedValue) === currentStr) {
     return (
       <span 
         className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full 
           bg-emerald-50 text-emerald-600 border border-emerald-200"
       >
         <Check className="h-3 w-3" />
-        <span>AI applied</span>
+        <span>Standard applied</span>
       </span>
     );
   }
 
+  // No badge shown when suggestion is available but not applied
   return null;
 }
 
 /**
- * AI Apply Button
+ * AI Suggestion Indicator
  */
-function AIApplyButton({
+function AISuggestionIndicator({
   suggestionKey,
   enrichmentContext,
   currentValue,
@@ -76,7 +80,19 @@ function AIApplyButton({
   const suggestedValue = getNestedValue(enrichmentContext, suggestionKey);
   
   if (suggestedValue === undefined || suggestedValue === null) return null;
-  if (String(suggestedValue) === String(currentValue)) return null;
+
+  const suggestedStr = String(suggestedValue);
+  const currentStr = currentValue !== undefined && currentValue !== null 
+    ? String(currentValue) 
+    : "";
+  
+  // Don't show if already applied or user has custom input
+  if (suggestedStr === currentStr) return null;
+  if (currentStr.length > 0) return null;
+
+  const displayValue = suggestedStr.length > 25 
+    ? suggestedStr.substring(0, 25) + "..." 
+    : suggestedStr;
 
   return (
     <button
@@ -86,14 +102,15 @@ function AIApplyButton({
         e.stopPropagation();
         onApply(suggestedValue);
       }}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md
-        bg-transparent text-[hsl(var(--selise-blue))] 
-        hover:bg-[hsl(var(--selise-blue))]/10 transition-colors cursor-pointer
-        border border-[hsl(var(--selise-blue))]/30 hover:border-[hsl(var(--selise-blue))]/50"
-      title={`Apply suggestion: ${String(suggestedValue).substring(0, 30)}...`}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md
+        bg-[hsl(var(--selise-blue))]/5 text-[hsl(var(--selise-blue))] 
+        hover:bg-[hsl(var(--selise-blue))]/15 transition-all cursor-pointer
+        border border-[hsl(var(--selise-blue))]/20 hover:border-[hsl(var(--selise-blue))]/40
+        shadow-sm hover:shadow"
+      title={`Apply standard value: ${suggestedStr}`}
     >
-      <Sparkles className="h-3.5 w-3.5" />
-      <span>Apply</span>
+      <Sparkles className="h-3 w-3" />
+      <span className="whitespace-nowrap">Use standard: <span className="font-semibold">{displayValue}</span></span>
     </button>
   );
 }
@@ -143,6 +160,13 @@ export function UrlField({ field, value, onChange, error, enrichmentContext, for
   const isValid = isValidUrl(urlValue);
   const normalizedUrl = urlValue ? normalizeUrl(urlValue) : "";
 
+  // Check if suggestion is available and field is empty
+  const hasEnrichment = enrichmentContext && Object.keys(enrichmentContext).length > 0;
+  const suggestedValue = showSuggestion && hasEnrichment
+    ? getNestedValue(enrichmentContext, field.aiSuggestionKey!)
+    : null;
+  const showInlineButton = showSuggestion && hasEnrichment && suggestedValue !== null && urlValue.length === 0;
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -151,11 +175,10 @@ export function UrlField({ field, value, onChange, error, enrichmentContext, for
           {field.required && <span className="text-destructive ml-1">*</span>}
         </Label>
         {showSuggestion && (
-          <AISuggestionBadge
+          <AISuggestionStatusBadge
             suggestionKey={field.aiSuggestionKey!}
             enrichmentContext={enrichmentContext}
             currentValue={value}
-            onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
           />
         )}
       </div>
@@ -172,18 +195,10 @@ export function UrlField({ field, value, onChange, error, enrichmentContext, for
           className={cn(
             "pl-10",
             error || (!isValid && urlValue) ? "border-destructive" : "",
-            showSuggestion && enrichmentContext && Object.keys(enrichmentContext).length > 0 ? "pr-32" : "pr-10"
+            urlValue && isValid ? "pr-10" : ""
           )}
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          {showSuggestion && (
-            <AIApplyButton
-              suggestionKey={field.aiSuggestionKey!}
-              enrichmentContext={enrichmentContext}
-              currentValue={value}
-              onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
-            />
-          )}
           {urlValue && isValid && (
             <a
               href={normalizedUrl}
@@ -197,6 +212,14 @@ export function UrlField({ field, value, onChange, error, enrichmentContext, for
           )}
         </div>
       </div>
+      {showInlineButton && (
+        <AISuggestionIndicator
+          suggestionKey={field.aiSuggestionKey!}
+          enrichmentContext={enrichmentContext}
+          currentValue={value}
+          onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
+        />
+      )}
       {!isValid && urlValue && (
         <p className="text-xs text-destructive">Please enter a valid URL</p>
       )}

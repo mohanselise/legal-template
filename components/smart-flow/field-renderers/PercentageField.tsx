@@ -8,9 +8,9 @@ import type { FieldRendererProps } from "./types";
 import { resolveTemplateVariables, getNestedValue, getSuggestionPlaceholder } from "./utils";
 
 /**
- * AI Suggestion Badge
+ * AI Suggestion Status Badge - shows status only
  */
-function AISuggestionBadge({
+function AISuggestionStatusBadge({
   suggestionKey,
   enrichmentContext,
   currentValue,
@@ -18,7 +18,6 @@ function AISuggestionBadge({
   suggestionKey: string;
   enrichmentContext?: Record<string, unknown>;
   currentValue: unknown;
-  onApply: (value: unknown) => void;
 }) {
   if (!suggestionKey) return null;
   
@@ -40,26 +39,31 @@ function AISuggestionBadge({
   if (suggestedValue === undefined || suggestedValue === null) {
     return null;
   }
+
+  const currentStr = currentValue !== undefined && currentValue !== null 
+    ? String(currentValue) 
+    : "";
   
-  if (String(suggestedValue) === String(currentValue)) {
+  if (String(suggestedValue) === currentStr) {
     return (
       <span 
         className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full 
           bg-emerald-50 text-emerald-600 border border-emerald-200"
       >
         <Check className="h-3 w-3" />
-        <span>AI applied</span>
+        <span>Standard applied</span>
       </span>
     );
   }
 
+  // No badge shown when suggestion is available but not applied
   return null;
 }
 
 /**
- * AI Apply Button
+ * AI Suggestion Indicator
  */
-function AIApplyButton({
+function AISuggestionIndicator({
   suggestionKey,
   enrichmentContext,
   currentValue,
@@ -76,7 +80,14 @@ function AIApplyButton({
   const suggestedValue = getNestedValue(enrichmentContext, suggestionKey);
   
   if (suggestedValue === undefined || suggestedValue === null) return null;
-  if (String(suggestedValue) === String(currentValue)) return null;
+
+  const currentStr = currentValue !== undefined && currentValue !== null 
+    ? String(currentValue) 
+    : "";
+  
+  // Don't show if already applied or user has custom input
+  if (String(suggestedValue) === currentStr) return null;
+  if (currentStr.length > 0) return null;
 
   return (
     <button
@@ -86,14 +97,15 @@ function AIApplyButton({
         e.stopPropagation();
         onApply(suggestedValue);
       }}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md
-        bg-transparent text-[hsl(var(--selise-blue))] 
-        hover:bg-[hsl(var(--selise-blue))]/10 transition-colors cursor-pointer
-        border border-[hsl(var(--selise-blue))]/30 hover:border-[hsl(var(--selise-blue))]/50"
-      title={`Apply suggestion: ${suggestedValue}%`}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md
+        bg-[hsl(var(--selise-blue))]/5 text-[hsl(var(--selise-blue))] 
+        hover:bg-[hsl(var(--selise-blue))]/15 transition-all cursor-pointer
+        border border-[hsl(var(--selise-blue))]/20 hover:border-[hsl(var(--selise-blue))]/40
+        shadow-sm hover:shadow"
+      title={`Apply standard value: ${suggestedValue}%`}
     >
-      <Sparkles className="h-3.5 w-3.5" />
-      <span>Apply</span>
+      <Sparkles className="h-3 w-3" />
+      <span className="whitespace-nowrap">Use standard: <span className="font-semibold">{String(suggestedValue)}%</span></span>
     </button>
   );
 }
@@ -131,6 +143,14 @@ export function PercentageField({ field, value, onChange, error, enrichmentConte
     }
   };
 
+  // Check if suggestion is available and field is empty
+  const currentStr = value !== undefined && value !== null ? String(value) : "";
+  const hasEnrichment = enrichmentContext && Object.keys(enrichmentContext).length > 0;
+  const suggestedValue = showSuggestion && hasEnrichment
+    ? getNestedValue(enrichmentContext, field.aiSuggestionKey!)
+    : null;
+  const showInlineButton = showSuggestion && hasEnrichment && suggestedValue !== null && currentStr.length === 0;
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -139,11 +159,10 @@ export function PercentageField({ field, value, onChange, error, enrichmentConte
           {field.required && <span className="text-destructive ml-1">*</span>}
         </Label>
         {showSuggestion && (
-          <AISuggestionBadge
+          <AISuggestionStatusBadge
             suggestionKey={field.aiSuggestionKey!}
             enrichmentContext={enrichmentContext}
             currentValue={value}
-            onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
           />
         )}
       </div>
@@ -157,22 +176,23 @@ export function PercentageField({ field, value, onChange, error, enrichmentConte
           onChange={(e) => handleChange(e.target.value)}
           className={cn(
             "pr-12 font-mono",
-            error ? "border-destructive" : "",
-            showSuggestion && enrichmentContext && Object.keys(enrichmentContext).length > 0 ? "pr-28" : "pr-12"
+            error ? "border-destructive" : ""
           )}
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-          {showSuggestion && (
-            <AIApplyButton
-              suggestionKey={field.aiSuggestionKey!}
-              enrichmentContext={enrichmentContext}
-              currentValue={value}
-              onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
-            />
-          )}
           <Percent className="h-4 w-4 text-muted-foreground" />
         </div>
       </div>
+      {showInlineButton && (
+        <div className="mt-2">
+          <AISuggestionIndicator
+            suggestionKey={field.aiSuggestionKey!}
+            enrichmentContext={enrichmentContext}
+            currentValue={value}
+            onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
+          />
+        </div>
+      )}
       {resolvedHelpText && (
         <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}

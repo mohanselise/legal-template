@@ -18,9 +18,9 @@ import { resolveTemplateVariables, getNestedValue, parseCompositeValue } from ".
 const DEFAULT_CURRENCY: CurrencyValue = { amount: "", currency: "CHF" };
 
 /**
- * AI Suggestion Badge
+ * AI Suggestion Status Badge - shows status only (loading/applied/available)
  */
-function AISuggestionBadge({
+function AISuggestionStatusBadge({
   suggestionKey,
   enrichmentContext,
   currentValue,
@@ -53,10 +53,10 @@ function AISuggestionBadge({
   const currentCurrency = parseCompositeValue<CurrencyValue>(currentValue, DEFAULT_CURRENCY);
   const suggestedCurrency = parseCompositeValue<CurrencyValue>(suggestedValue, DEFAULT_CURRENCY);
   
-  // Check if both amount and currency match
   const amountMatch = String(currentCurrency.amount) === String(suggestedCurrency.amount);
   const currencyMatch = currentCurrency.currency === suggestedCurrency.currency;
   
+  // Applied state
   if (amountMatch && currencyMatch) {
     return (
       <span 
@@ -64,11 +64,12 @@ function AISuggestionBadge({
           bg-emerald-50 text-emerald-600 border border-emerald-200"
       >
         <Check className="h-3 w-3" />
-        <span>AI applied</span>
+        <span>Standard applied</span>
       </span>
     );
   }
 
+  // No badge shown when suggestion is available but not applied
   return null;
 }
 
@@ -127,6 +128,10 @@ export function CurrencyField({ field, value, onChange, error, enrichmentContext
   const selectedCurrencyInfo = CURRENCIES.find(c => c.code === currencyValue.currency);
   const currencySymbol = selectedCurrencyInfo?.symbol || currencyValue.currency;
 
+  // Show inline button only when field is empty
+  const showInlineButton = hasSuggestion && !isApplied && !currencyValue.amount;
+  const displayValue = suggestedCurrency ? `${suggestedCurrency.currency} ${suggestedCurrency.amount}` : "";
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -135,7 +140,7 @@ export function CurrencyField({ field, value, onChange, error, enrichmentContext
           {field.required && <span className="text-destructive ml-1">*</span>}
         </Label>
         {showSuggestion && (
-          <AISuggestionBadge
+          <AISuggestionStatusBadge
             suggestionKey={field.aiSuggestionKey!}
             enrichmentContext={enrichmentContext}
             currentValue={value}
@@ -181,22 +186,23 @@ export function CurrencyField({ field, value, onChange, error, enrichmentContext
             className={cn(
               "pl-12 font-mono",
               error ? "border-destructive" : "",
-              hasSuggestion && !isApplied ? "pr-20" : ""
+              showInlineButton ? "pr-44" : ""
             )}
           />
-          {hasSuggestion && !isApplied && (
+          {showInlineButton && (
             <div className="absolute right-2 top-1/2 -translate-y-1/2">
               <button
                 type="button"
                 onClick={handleApplySuggestion}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md
-                  bg-transparent text-[hsl(var(--selise-blue))] 
-                  hover:bg-[hsl(var(--selise-blue))]/10 transition-colors cursor-pointer
-                  border border-[hsl(var(--selise-blue))]/30 hover:border-[hsl(var(--selise-blue))]/50"
-                title={`Apply suggestion: ${suggestedCurrency?.currency} ${suggestedCurrency?.amount}`}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md
+                  bg-[hsl(var(--selise-blue))]/5 text-[hsl(var(--selise-blue))] 
+                  hover:bg-[hsl(var(--selise-blue))]/15 transition-all cursor-pointer
+                  border border-[hsl(var(--selise-blue))]/20 hover:border-[hsl(var(--selise-blue))]/40
+                  shadow-sm hover:shadow"
+                title={`Apply standard value: ${displayValue}`}
               >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Apply</span>
+                <Sparkles className="h-3 w-3" />
+                <span className="whitespace-nowrap">Use standard: <span className="font-semibold">{displayValue}</span></span>
               </button>
             </div>
           )}

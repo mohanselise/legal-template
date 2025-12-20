@@ -31,9 +31,9 @@ const DEFAULT_PARTY: PartyValue = {
 };
 
 /**
- * AI Suggestion Badge
+ * AI Suggestion Status Badge - shows status only
  */
-function AISuggestionBadge({
+function AISuggestionStatusBadge({
   suggestionKey,
   enrichmentContext,
   currentValue,
@@ -82,11 +82,12 @@ function AISuggestionBadge({
           bg-emerald-50 text-emerald-600 border border-emerald-200"
       >
         <Check className="h-3 w-3" />
-        <span>AI applied</span>
+        <span>Standard applied</span>
       </span>
     );
   }
 
+  // No badge shown when suggestion is available but not applied
   return null;
 }
 
@@ -262,6 +263,12 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
     partyValue.postalCode === suggestedParty.postalCode &&
     partyValue.country === suggestedParty.country;
 
+  // Check if party is empty
+  const isEmpty = !partyValue.name && !partyValue.street && !partyValue.city;
+  
+  // Show inline button only when field is empty
+  const showInlineButton = hasSuggestion && !isApplied && isEmpty;
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -276,30 +283,30 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
             {field.required && <span className="text-destructive ml-1">*</span>}
           </Label>
         </div>
-        <div className="flex items-center gap-2">
-          {showSuggestion && (
-            <AISuggestionBadge
-              suggestionKey={field.aiSuggestionKey!}
-              enrichmentContext={enrichmentContext}
-              currentValue={value}
-            />
-          )}
-          {hasSuggestion && !isApplied && (
-            <button
-              type="button"
-              onClick={handleApplySuggestion}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md
-                bg-transparent text-[hsl(var(--selise-blue))] 
-                hover:bg-[hsl(var(--selise-blue))]/10 transition-colors cursor-pointer
-                border border-[hsl(var(--selise-blue))]/30 hover:border-[hsl(var(--selise-blue))]/50"
-              title="Apply AI suggestion"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Apply</span>
-            </button>
-          )}
-        </div>
+        {showSuggestion && (
+          <AISuggestionStatusBadge
+            suggestionKey={field.aiSuggestionKey!}
+            enrichmentContext={enrichmentContext}
+            currentValue={value}
+          />
+        )}
       </div>
+
+      {showInlineButton && (
+        <button
+          type="button"
+          onClick={handleApplySuggestion}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md
+            bg-[hsl(var(--selise-blue))]/5 text-[hsl(var(--selise-blue))] 
+            hover:bg-[hsl(var(--selise-blue))]/15 transition-all cursor-pointer
+            border border-[hsl(var(--selise-blue))]/20 hover:border-[hsl(var(--selise-blue))]/40
+            shadow-sm hover:shadow w-fit"
+          title="Apply standard party details"
+        >
+          <Sparkles className="h-3 w-3" />
+          <span className="whitespace-nowrap">Use standard party details</span>
+        </button>
+      )}
 
       <div className="space-y-3 p-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/20">
         {/* Name Field - Primary identifier with business search */}

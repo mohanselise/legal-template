@@ -64,6 +64,13 @@ type TemplateSearchGridProps = {
   pageSize?: number;
   searchParamKey?: string;
   pageParamKey?: string;
+  className?: string;
+  searchContainerClassName?: string;
+  inputClassName?: string;
+  searchIconClassName?: string;
+  showResultsLabel?: boolean;
+  hideSearch?: boolean;
+  hideGrid?: boolean;
 };
 
 const iconMap: Record<string, LucideIcon> = {
@@ -109,6 +116,13 @@ export function TemplateSearchGrid({
   pageSize = 12,
   searchParamKey = "q",
   pageParamKey = "page",
+  className,
+  searchContainerClassName,
+  inputClassName,
+  searchIconClassName,
+  showResultsLabel = true,
+  hideSearch = false,
+  hideGrid = false,
 }: TemplateSearchGridProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -198,103 +212,113 @@ export function TemplateSearchGrid({
   const disableNext = currentPageSafe >= totalPages;
 
   return (
-    <div className="mt-6 space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex w-full items-center gap-3 lg:max-w-md">
-          <div className="relative w-full">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              aria-label={searchPlaceholder}
-              placeholder={searchPlaceholder}
-              value={query}
-              onChange={(event) => handleQueryChange(event.target.value)}
-              className="pl-10"
-            />
-            {query ? (
-              <button
-                type="button"
-                aria-label={clearSearchLabel}
-                onClick={() => setQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition hover:text-foreground"
-              >
-                <XCircle className="h-4 w-4" />
-              </button>
-            ) : null}
+    <div className={`space-y-6 ${className || ""}`}>
+      {!hideSearch && (
+        <div className={`flex flex-col gap-4 lg:flex-row lg:items-center ${showResultsLabel ? 'lg:justify-between' : 'lg:justify-center'} lg:gap-6 w-full ${searchContainerClassName || ""}`}>
+          <div className={`flex w-full items-center gap-3 ${showResultsLabel ? 'lg:flex-1 lg:max-w-md' : 'lg:w-auto lg:max-w-md'}`}>
+            <div className="relative w-full">
+              <Search className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${searchIconClassName || "text-muted-foreground"}`} />
+              <Input
+                aria-label={searchPlaceholder}
+                placeholder={searchPlaceholder}
+                value={query}
+                onChange={(event) => handleQueryChange(event.target.value)}
+                className={`pl-10 ${inputClassName || ""}`}
+              />
+              {query ? (
+                <button
+                  type="button"
+                  aria-label={clearSearchLabel}
+                  onClick={() => setQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition hover:text-foreground"
+                >
+                  <XCircle className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
           </div>
-        </div>
-        <div className="rounded-xl border border-border bg-[hsl(var(--card))]/80 px-4 py-3 text-sm text-muted-foreground backdrop-blur-sm dark:bg-[hsl(var(--background))]/70">
-          {resultsLabel}
-        </div>
-      </div>
-
-      {visibleTemplates.length === 0 ? (
-        <div className="flex items-center justify-between rounded-2xl border border-dashed border-border bg-[hsl(var(--card))]/70 px-6 py-6 text-sm text-muted-foreground backdrop-blur-sm dark:bg-[hsl(var(--background))]/60">
-          <span>{noResultsText}</span>
-          {query ? (
-            <Button variant="ghost" size="sm" onClick={() => setQuery("")}>
-              {clearLabel}
-            </Button>
-          ) : null}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
-          {visibleTemplates.map((template) => {
-            const Icon = resolveIcon(template.iconName);
-            return (
-              <Card
-                key={template.id}
-                className="group flex h-full flex-col justify-between border-2 border-[hsl(var(--selise-blue))]/20 bg-card text-card-foreground transition-all hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))]"
-              >
-                <CardHeader>
-                  <Badge className="w-fit bg-[hsl(var(--selise-blue))]/12 text-[hsl(var(--selise-blue))] font-subheading uppercase tracking-[0.12em]">
-                    {template.popular ? popularBadgeLabel : liveBadgeLabel}
-                  </Badge>
-                  <div className="mt-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
-                    <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
-                  </div>
-                  <CardTitle className="mt-6 text-2xl">{template.title}</CardTitle>
-                  <CardDescription className="mt-3 text-base leading-relaxed">
-                    {template.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter className="pt-0">
-                  <Button
-                    asChild
-                    className="group w-full bg-[hsl(var(--selise-blue))] text-[hsl(var(--white))] hover:bg-[hsl(var(--oxford-blue))] shadow-md"
-                  >
-                    <LinkComponent href={template.href}>{ctaLabel}</LinkComponent>
-                  </Button>
-                </CardFooter>
-              </Card>
-            );
-          })}
+          {showResultsLabel && (
+            <div className="flex items-center lg:shrink-0">
+              <div className="rounded-xl border border-border bg-[hsl(var(--card))]/80 px-4 py-3 text-sm text-muted-foreground backdrop-blur-sm dark:bg-[hsl(var(--background))]/70 whitespace-nowrap">
+                {resultsLabel}
+              </div>
+            </div>
+          )}
         </div>
       )}
-      {mode === "server" && totalPages > 1 ? (
-        <div className="flex items-center justify-between rounded-2xl border border-border bg-[hsl(var(--card))]/80 px-4 py-3 text-sm text-muted-foreground backdrop-blur-sm dark:bg-[hsl(var(--background))]/70">
-          <span>
-            Page {currentPageSafe} of {totalPages}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPageSafe - 1)}
-              disabled={disablePrev}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(currentPageSafe + 1)}
-              disabled={disableNext}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      ) : null}
+
+      {!hideGrid && (
+        <>
+          {visibleTemplates.length === 0 ? (
+            <div className="flex items-center justify-between rounded-2xl border border-dashed border-border bg-[hsl(var(--card))]/70 px-6 py-6 text-sm text-muted-foreground backdrop-blur-sm dark:bg-[hsl(var(--background))]/60">
+              <span>{noResultsText}</span>
+              {query ? (
+                <Button variant="ghost" size="sm" onClick={() => setQuery("")}>
+                  {clearLabel}
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+              {visibleTemplates.map((template) => {
+                const Icon = resolveIcon(template.iconName);
+                return (
+                  <Card
+                    key={template.id}
+                    className="group flex h-full flex-col justify-between border-2 border-[hsl(var(--selise-blue))]/20 bg-card text-card-foreground transition-all hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))]"
+                  >
+                    <CardHeader>
+                      <Badge className="w-fit bg-[hsl(var(--selise-blue))]/12 text-[hsl(var(--selise-blue))] font-subheading uppercase tracking-[0.12em]">
+                        {template.popular ? popularBadgeLabel : liveBadgeLabel}
+                      </Badge>
+                      <div className="mt-6 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--selise-blue))] to-[hsl(var(--sky-blue))] shadow-lg">
+                        <Icon className="h-7 w-7 text-[hsl(var(--white))]" />
+                      </div>
+                      <CardTitle className="mt-6 text-2xl">{template.title}</CardTitle>
+                      <CardDescription className="mt-3 text-base leading-relaxed">
+                        {template.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardFooter className="pt-0">
+                      <Button
+                        asChild
+                        className="group w-full bg-[hsl(var(--selise-blue))] text-[hsl(var(--white))] hover:bg-[hsl(var(--oxford-blue))] shadow-md"
+                      >
+                        <LinkComponent href={template.href}>{ctaLabel}</LinkComponent>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+          {mode === "server" && totalPages > 1 ? (
+            <div className="flex items-center justify-between rounded-2xl border border-border bg-[hsl(var(--card))]/80 px-4 py-3 text-sm text-muted-foreground backdrop-blur-sm dark:bg-[hsl(var(--background))]/70">
+              <span>
+                Page {currentPageSafe} of {totalPages}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPageSafe - 1)}
+                  disabled={disablePrev}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(currentPageSafe + 1)}
+                  disabled={disableNext}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

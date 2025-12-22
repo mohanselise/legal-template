@@ -29,10 +29,27 @@ export interface DocumentBlock {
   text?: string; // For leaf nodes like paragraph, table_cell
 }
 
+/**
+ * Configuration for AI-controlled signature page content
+ * Allows jurisdiction-appropriate attestation language and labels
+ */
+export interface SignaturePageConfig {
+  /** Section title (default: "Signatures") */
+  title?: string;
+  /** Attestation clause (default: "IN WITNESS WHEREOF...") */
+  attestationClause?: string;
+  /** Signature field label (default: "Signature") */
+  signatureLabel?: string;
+  /** Date field label (default: "Date") */
+  dateLabel?: string;
+}
+
 export interface LegalDocument {
   metadata: DocumentMetadata;
   content: DocumentBlock[]; // The main body content (Articles, Sections, etc.)
   signatories: SignatoryData[]; // Data for the signature page
+  /** Optional AI-controlled signature page configuration */
+  signaturePageConfig?: SignaturePageConfig;
 }
 
 /**
@@ -81,9 +98,13 @@ export interface DocumentMetadata {
   title: string;
   effectiveDate: string;
   effectiveDateLabel?: string; // Optional label (defaults to "Effective Date:" if not provided)
-  documentType: 'employment-agreement';
+  documentType: string; // Flexible document type (e.g., 'employment-agreement', 'nda', 'contract')
   jurisdiction?: string;
   generatedAt: string;
+  /** Date format locale for rendering (e.g., "en-US", "en-GB", "de-DE") */
+  dateLocale?: string;
+  /** Page number format template (e.g., "Page {page} of {total}", "Seite {page} von {total}") */
+  pageNumberFormat?: string;
 }
 
 export interface Parties {

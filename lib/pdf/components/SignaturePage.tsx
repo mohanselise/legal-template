@@ -1,7 +1,18 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import type { SignatoryData } from '@/app/api/templates/employment-agreement/schema';
+import type { SignatoryData, SignaturePageConfig } from '@/app/api/templates/employment-agreement/schema';
 import { SIG_PAGE_LAYOUT } from '../signature-layout';
+
+/**
+ * Default configuration for signature page
+ * Used when AI doesn't provide custom values
+ */
+const DEFAULT_SIGNATURE_CONFIG: Required<SignaturePageConfig> = {
+  title: 'Signatures',
+  attestationClause: 'IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first above written.',
+  signatureLabel: 'Signature',
+  dateLabel: 'Date',
+};
 
 /**
  * Inline-flow signature page styles
@@ -30,9 +41,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   
-  // Signature block container (relative positioning for flow)
+  // Signature block container with FIXED HEIGHT for deterministic overlay positioning
+  // The fixed height ensures overlay calculations match actual PDF rendering
+  // Values must stay in sync with SIG_PAGE_LAYOUT in signature-layout.ts
   signatureBlock: {
-    marginBottom: 40,
+    height: SIG_PAGE_LAYOUT.BLOCK_HEIGHT,      // Fixed height for consistent positioning
+    marginBottom: SIG_PAGE_LAYOUT.BLOCK_GAP,   // Gap between blocks
     paddingTop: 20,
   },
   
@@ -85,9 +99,19 @@ const styles = StyleSheet.create({
 
 interface SignaturePageProps {
   signatories: SignatoryData[];
+  /** Optional AI-controlled configuration for jurisdiction-appropriate content */
+  config?: SignaturePageConfig;
 }
 
-export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => {
+export const SignaturePage: React.FC<SignaturePageProps> = ({ 
+  signatories,
+  config = {},
+}) => {
+  // Merge provided config with defaults
+  const { title, attestationClause, signatureLabel, dateLabel } = {
+    ...DEFAULT_SIGNATURE_CONFIG,
+    ...config,
+  };
   /**
    * Format any party type string for display
    * Converts camelCase, snake_case, kebab-case → TITLE CASE
@@ -180,10 +204,10 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Signatures</Text>
-        <Text style={styles.subtitle}>
-          IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first above written.
-        </Text>
+        <Text style={styles.title}>{title}</Text>
+        {attestationClause && (
+          <Text style={styles.subtitle}>{attestationClause}</Text>
+        )}
       </View>
 
       {/* Signature Blocks - using relative positioning for proper flow */}
@@ -223,13 +247,13 @@ export const SignaturePage: React.FC<SignaturePageProps> = ({ signatories }) => 
               {/* Signature Field */}
               <View style={styles.signatureField}>
                 <View style={styles.fieldLine} />
-                <Text style={styles.fieldLabel}>Signature</Text>
+                <Text style={styles.fieldLabel}>{signatureLabel}</Text>
               </View>
 
               {/* Date Field */}
               <View style={styles.dateField}>
                 <View style={styles.fieldLine} />
-                <Text style={styles.fieldLabel}>Date</Text>
+                <Text style={styles.fieldLabel}>{dateLabel}</Text>
               </View>
             </View>
           </View>

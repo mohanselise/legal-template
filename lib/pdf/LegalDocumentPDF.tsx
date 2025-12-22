@@ -82,19 +82,34 @@ const styles = StyleSheet.create({
 
 /**
  * Format date string for display in document
+ * Uses locale from document metadata for jurisdiction-appropriate formatting
+ * @param dateString - The date string to format
+ * @param locale - The locale to use (e.g., 'en-US', 'en-GB', 'de-DE')
  */
-const formatDate = (dateString: string): string => {
+const formatDate = (dateString: string, locale: string = 'en-US'): string => {
   const parsedDate = new Date(dateString);
 
   if (Number.isNaN(parsedDate.getTime())) {
     return dateString;
   }
 
-  return parsedDate.toLocaleDateString('en-US', {
+  return parsedDate.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
+};
+
+/**
+ * Format page number string using template from document metadata
+ * @param pageNumber - Current page number
+ * @param totalPages - Total number of pages
+ * @param format - Page number format template (default: "Page {page} of {total}")
+ */
+const formatPageNumber = (pageNumber: number, totalPages: number, format: string = 'Page {page} of {total}'): string => {
+  return format
+    .replace('{page}', String(pageNumber))
+    .replace('{total}', String(totalPages));
 };
 
 // ==========================================
@@ -155,7 +170,7 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
         {document.metadata.effectiveDate && (
           <View style={{ marginBottom: 12 }}>
             <Text style={styles.effectiveDate}>
-              {document.metadata.effectiveDateLabel || 'Effective Date:'} {formatDate(document.metadata.effectiveDate)}
+              {document.metadata.effectiveDateLabel || 'Effective Date:'} {formatDate(document.metadata.effectiveDate, document.metadata.dateLocale)}
             </Text>
           </View>
         )}
@@ -168,7 +183,10 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
         {/* Signature Section - flows naturally after content, breaks to new page if needed */}
         {hasSignatories && (
           <View break style={{ marginTop: 40 }}>
-            <SignaturePage signatories={document.signatories!} />
+            <SignaturePage 
+              signatories={document.signatories!} 
+              config={document.signaturePageConfig}
+            />
           </View>
         )}
 
@@ -177,7 +195,7 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
           <View style={styles.footerContent}>
             <Text>{document.metadata.title}</Text>
             <Text render={({ pageNumber, totalPages }) => (
-              `Page ${pageNumber} of ${totalPages}`
+              formatPageNumber(pageNumber, totalPages, document.metadata.pageNumberFormat)
             )} />
           </View>
         </View>

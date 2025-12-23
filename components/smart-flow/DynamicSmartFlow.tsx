@@ -558,6 +558,9 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
   
   // Timeout for dynamic field generation (30 seconds - generous timeout)
   const DYNAMIC_FIELDS_FETCH_TIMEOUT = 30000;
+  
+  // Timeout for waiting state - if no data comes through after this period, auto-proceed
+  const DYNAMIC_SCREEN_WAITING_TIMEOUT = 20000;
 
   // Animate through generation steps
   useEffect(() => {
@@ -866,6 +869,40 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
       return () => clearTimeout(autoAdvanceTimeout);
     }
   }, [currentStep, failedDynamicScreens, config, totalSteps, nextStep]);
+
+  // Auto-advance when dynamic screen is stuck in "waiting" state (no loading, no error, no data)
+  useEffect(() => {
+    const screen = config?.screens[currentStep];
+    if (!screen) return;
+
+    const screenType = (screen as any).type;
+    if (screenType !== "dynamic") return;
+
+    // Check if we're in the "waiting" state - prefetch in progress but no data yet
+    const isWaiting = 
+      !dynamicFieldsLoading && 
+      !dynamicFieldsError && 
+      !dynamicFieldsCache[screen.id];
+
+    if (!isWaiting) return;
+
+    // Start a timeout to auto-proceed if no data comes through
+    const waitingTimeout = setTimeout(() => {
+      console.log("⏰ Dynamic screen waiting timeout reached, auto-proceeding...");
+      
+      // Show a brief message before advancing
+      setDynamicFieldsError("Taking too long to load - proceeding...");
+      
+      // Auto-advance after a brief delay to show the message
+      setTimeout(() => {
+        if (currentStep < totalSteps - 1) {
+          nextStep();
+        }
+      }, 1500);
+    }, DYNAMIC_SCREEN_WAITING_TIMEOUT);
+
+    return () => clearTimeout(waitingTimeout);
+  }, [currentStep, config, dynamicFieldsLoading, dynamicFieldsError, dynamicFieldsCache, totalSteps, nextStep]);
 
   // Create step definitions from visible screens (respects conditional visibility)
   const stepDefinitions = useMemo(
@@ -2143,10 +2180,22 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                           </motion.div>
                         )}
 
-                        {/* Show nothing while waiting but no error */}
+                        {/* Show waiting state while prefetch is in progress (no loading spinner, no error, no data yet) */}
                         {!dynamicFieldsLoading && !dynamicFieldsError && !dynamicFieldsCache[currentScreen.id] && (
-                          <div className="py-8 text-center text-[hsl(var(--brand-muted))]">
-                            <p>Preparing dynamic questions...</p>
+                          <div className="py-8 text-center">
+                            <div className="flex flex-col items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full bg-[hsl(var(--selise-blue))] animate-pulse" />
+                                <div className="h-2 w-2 rounded-full bg-[hsl(var(--selise-blue))] animate-pulse [animation-delay:0.2s]" />
+                                <div className="h-2 w-2 rounded-full bg-[hsl(var(--selise-blue))] animate-pulse [animation-delay:0.4s]" />
+                              </div>
+                              <p className="text-[hsl(var(--globe-grey))]">
+                                Preparing dynamic questions...
+                              </p>
+                              <p className="text-sm text-[hsl(var(--globe-grey))] opacity-70">
+                                This may take a moment. Will auto-continue shortly if needed.
+                              </p>
+                            </div>
                           </div>
                         )}
                       </>

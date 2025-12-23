@@ -62,7 +62,7 @@ export function DroppableScreen({
   const isSignatoryScreen = (screen as any).type === "signatory";
 
   // Determine if we should show the drop indicator
-  const showDropIndicator = (isDraggingField || isDraggingPalette) && !isSignatoryScreen;
+  const showDropIndicator = Boolean(isDraggingField || isDraggingPalette) && !isSignatoryScreen;
   const isDropTarget = isOver && !isSignatoryScreen;
 
   return (

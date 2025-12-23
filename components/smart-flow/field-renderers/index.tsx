@@ -52,9 +52,9 @@ function getNestedValue(obj: Record<string, unknown>, key: string): unknown {
 
 /**
  * Resolve template variables in a string
- * Supports {{variableName}} syntax
+ * Supports {{variableName}} and {{variableName|fallback text}} syntax
  * Looks up values from formData first, then enrichmentContext
- * Falls back to showing the variable name if not found
+ * Falls back to provided fallback text, or shows the variable name if not found
  */
 function resolveTemplateVariables(
   template: string | null | undefined,
@@ -63,9 +63,12 @@ function resolveTemplateVariables(
 ): string {
   if (!template) return "";
 
-  // Match all {{variableName}} patterns
-  return template.replace(/\{\{([^}]+)\}\}/g, (match, variableName) => {
+  // Match all {{variableName}} or {{variableName|fallback text}} patterns
+  return template.replace(/\{\{([^}|]+)(?:\|([^}]*))?\}\}/g, (match, variableName, fallbackText) => {
     const trimmedName = variableName.trim();
+    const fallback = fallbackText !== undefined && fallbackText.trim() !== "" 
+      ? fallbackText.trim() 
+      : `[${trimmedName}]`;
 
     // Try to get value from formData first
     if (formData) {
@@ -83,8 +86,8 @@ function resolveTemplateVariables(
       }
     }
 
-    // Fallback: return a placeholder indicating the variable name
-    return `[${trimmedName}]`;
+    // Fallback: use provided fallback text or default placeholder
+    return fallback;
   });
 }
 
@@ -638,15 +641,19 @@ export function MultiSelectField({ field, value, onChange, error, enrichmentCont
   const getOptionLabel = (option: string) => {
     const optionKey = `${field.name}_${option}_label`;
     if (enrichmentContext && optionKey in enrichmentContext) {
-      return String(enrichmentContext[optionKey]);
+      // Apply variable interpolation to enrichment label
+      return resolveTemplateVariables(String(enrichmentContext[optionKey]), formData, enrichmentContext);
     }
-    return option;
+    // Apply variable interpolation to raw option
+    return resolveTemplateVariables(option, formData, enrichmentContext);
   };
 
   const getOptionDescription = (option: string) => {
     const optionKey = `${field.name}_${option}_description`;
     if (enrichmentContext && optionKey in enrichmentContext) {
-      return String(enrichmentContext[optionKey]);
+      // Apply variable interpolation to enrichment description
+      const description = resolveTemplateVariables(String(enrichmentContext[optionKey]), formData, enrichmentContext);
+      return description || null;
     }
     return null;
   };
@@ -805,15 +812,19 @@ export function SelectField({ field, value, onChange, error, enrichmentContext, 
     // Try to get a more descriptive label from enrichment context if available
     const optionKey = `${field.name}_${option}_label`;
     if (enrichmentContext && optionKey in enrichmentContext) {
-      return String(enrichmentContext[optionKey]);
+      // Apply variable interpolation to enrichment label
+      return resolveTemplateVariables(String(enrichmentContext[optionKey]), formData, enrichmentContext);
     }
-    return option;
+    // Apply variable interpolation to raw option
+    return resolveTemplateVariables(option, formData, enrichmentContext);
   };
 
   const getOptionDescription = (option: string) => {
     const optionKey = `${field.name}_${option}_description`;
     if (enrichmentContext && optionKey in enrichmentContext) {
-      return String(enrichmentContext[optionKey]);
+      // Apply variable interpolation to enrichment description
+      const description = resolveTemplateVariables(String(enrichmentContext[optionKey]), formData, enrichmentContext);
+      return description || null;
     }
     return null;
   };

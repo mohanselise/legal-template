@@ -82,6 +82,11 @@ interface FieldEditorProps {
   availableFormFields?: AvailableFormField[];
   currentScreen?: TemplateScreen & { fields?: TemplateField[] };
   allScreens?: (TemplateScreen & { fields?: TemplateField[] })[];
+  // Default values when creating from palette drag
+  defaultType?: FieldType;
+  defaultLabel?: string;
+  defaultPlaceholder?: string;
+  defaultRequired?: boolean;
 }
 
 const fieldTypeOptions: { value: FieldType; label: string; description?: string; group: string }[] = [
@@ -114,6 +119,10 @@ export function FieldEditor({
   availableFormFields = [],
   currentScreen,
   allScreens = [],
+  defaultType,
+  defaultLabel,
+  defaultPlaceholder,
+  defaultRequired,
 }: FieldEditorProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -254,12 +263,13 @@ export function FieldEditor({
           setConditions(null);
         }
       } else {
+        // Use default values from palette drag if provided
         reset({
           name: "",
-          label: "",
-          type: "text",
-          required: false,
-          placeholder: "",
+          label: defaultLabel || "",
+          type: defaultType || "text",
+          required: defaultRequired || false,
+          placeholder: defaultPlaceholder || "",
           helpText: "",
           options: [],
           aiSuggestionEnabled: false,
@@ -278,7 +288,7 @@ export function FieldEditor({
       setError(null);
       setNewOption("");
     }
-  }, [open, field, reset]);
+  }, [open, field, reset, defaultType, defaultLabel, defaultPlaceholder, defaultRequired]);
 
   const addOption = () => {
     if (newOption.trim() && !options.includes(newOption.trim())) {

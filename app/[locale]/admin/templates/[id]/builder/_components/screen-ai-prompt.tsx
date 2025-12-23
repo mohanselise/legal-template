@@ -62,6 +62,7 @@ export function ScreenAIPrompt({
     const [previousFormFields, setPreviousFormFields] = useState<ContextVariable[]>([]);
     const [showPreviousFields, setShowPreviousFields] = useState(false);
     const [showPreviousContext, setShowPreviousContext] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(true);
 
     const {
         register,
@@ -237,15 +238,31 @@ export function ScreenAIPrompt({
     return (
         <Card className="border-[hsl(var(--border))]">
             <CardHeader>
-                <div className="flex items-center gap-2">
-                    <Wand2 className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
-                    <CardTitle>AI Enrichment Prompt</CardTitle>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Wand2 className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
+                        <CardTitle>AI Enrichment Prompt</CardTitle>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                        className="h-8 w-8 p-0"
+                    >
+                        {isCollapsed ? (
+                            <ChevronDown className="h-4 w-4" />
+                        ) : (
+                            <ChevronUp className="h-4 w-4" />
+                        )}
+                    </Button>
                 </div>
                 <CardDescription>
                     Configure the AI prompt that runs when this screen is completed
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            {!isCollapsed && (
+                <CardContent>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     {/* Enable / Disable */}
                     <div className="flex items-center justify-between rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 p-4">
@@ -437,7 +454,8 @@ export function ScreenAIPrompt({
                         </Button>
                     </div>
                 </form>
-            </CardContent>
+                </CardContent>
+            )}
         </Card>
     );
 }

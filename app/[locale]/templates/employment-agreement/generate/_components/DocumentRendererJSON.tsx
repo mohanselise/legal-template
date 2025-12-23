@@ -556,7 +556,7 @@ export function DocumentRendererJSON({ document }: DocumentRendererJSONProps) {
                        {/* Standard Signature Fields */}
                        <div className="flex items-end gap-4">
                           <span className="text-sm font-semibold text-slate-700 dark:text-gray-400 min-w-[80px]">
-                            Signature:
+                            Signature
                           </span>
                           <div className="flex-1 border-b-2 border-slate-400 dark:border-gray-600 pb-1 min-h-[32px]">
                           </div>
@@ -584,7 +584,7 @@ export function DocumentRendererJSON({ document }: DocumentRendererJSONProps) {
 
                         <div className="flex items-end gap-4">
                           <span className="text-sm font-semibold text-slate-700 dark:text-gray-400 min-w-[80px]">
-                            Date:
+                            Date
                           </span>
                           <div className="flex-1 border-b-2 border-slate-400 dark:border-gray-600 pb-1 min-h-[32px]">
                           </div>

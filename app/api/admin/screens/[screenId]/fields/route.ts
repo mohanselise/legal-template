@@ -193,15 +193,13 @@ export async function PATCH(
 
     const { fieldIds } = validation.data;
 
-    // Update order for each field
-    await prisma.$transaction(
-      fieldIds.map((fieldId, index) =>
-        prisma.templateField.update({
-          where: { id: fieldId },
-          data: { order: index },
-        })
-      )
-    );
+    // Update order for each field sequentially (no transaction needed for HTTP mode)
+    for (let index = 0; index < fieldIds.length; index++) {
+      await prisma.templateField.update({
+        where: { id: fieldIds[index] },
+        data: { order: index },
+      });
+    }
 
     // Fetch updated fields
     const fields = await prisma.templateField.findMany({

@@ -16,6 +16,8 @@ const updateFieldSchema = z.object({
   helpText: z.string().nullable().optional(),
   options: z.array(z.string()).optional(),
   order: z.number().int().min(0).optional(),
+  // Cross-screen movement - move field to a different screen
+  screenId: z.string().optional(),
   // AI Smart Suggestions from enrichment context
   aiSuggestionEnabled: z.boolean().optional(),
   aiSuggestionKey: z.string().nullable().optional().transform(val => val?.trim() || null),
@@ -97,11 +99,25 @@ export async function PATCH(
       return NextResponse.json({ error: "Field not found" }, { status: 404 });
     }
 
-    // If updating name, check for duplicates
+    // If moving to a new screen, verify target screen exists
+    const targetScreenId = validation.data.screenId || existingField.screenId;
+    if (validation.data.screenId && validation.data.screenId !== existingField.screenId) {
+      const targetScreen = await prisma.templateScreen.findUnique({
+        where: { id: validation.data.screenId },
+      });
+      if (!targetScreen) {
+        return NextResponse.json(
+          { error: "Target screen not found" },
+          { status: 404 }
+        );
+      }
+    }
+
+    // If updating name, check for duplicates in the target screen
     if (validation.data.name && validation.data.name !== existingField.name) {
       const duplicateField = await prisma.templateField.findFirst({
         where: {
-          screenId: existingField.screenId,
+          screenId: targetScreenId,
           name: validation.data.name,
           NOT: { id: fieldId },
         },
@@ -119,6 +135,16 @@ export async function PATCH(
     const updateData: Record<string, unknown> = { ...validation.data };
     if (validation.data.type) {
       updateData.type = validation.data.type as FieldType;
+    }
+    
+    // Handle cross-screen movement - assign new order if moving screens
+    if (validation.data.screenId && validation.data.screenId !== existingField.screenId) {
+      // Get the next order in the target screen
+      const lastFieldInTarget = await prisma.templateField.findFirst({
+        where: { screenId: validation.data.screenId },
+        orderBy: { order: "desc" },
+      });
+      updateData.order = lastFieldInTarget ? lastFieldInTarget.order + 1 : 0;
     }
     
     // Handle aiSuggestionKey - convert empty string to null

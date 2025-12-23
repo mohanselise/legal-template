@@ -83,10 +83,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Template, TemplateScreen, TemplateField, TemplatePage } from "@/lib/db";
 import { ScreenEditor } from "../builder/_components/screen-editor";
-import { FieldList } from "../builder/_components/field-list";
-import { ScreenAIPrompt } from "../builder/_components/screen-ai-prompt";
 import { DeleteDialog } from "../builder/_components/delete-dialog";
 import { AIConfigurator } from "../builder/_components/ai-configurator";
+import { FormBuilderDnd } from "../builder/_components/form-builder-dnd";
 
 // Icon options
 const iconOptions = [
@@ -1433,37 +1432,19 @@ export default function EditTemplatePage() {
               </Card>
             </div>
 
-            {/* Main Content Area - Fields and AI Panel */}
+            {/* Main Content Area - Field Palette, Fields and AI Panel */}
             <div className={`flex-1 min-w-0 flex flex-col lg:flex-row gap-4`}>
-              {/* Fields Panel - Flexible width */}
-              <div className={`space-y-4 ${aiPanelOpen ? "flex-1 min-w-0" : "flex-1"}`}>
-                {selectedScreen ? (
-                  <>
-                    <FieldList
-                      screen={selectedScreen}
-                      allScreens={screens}
-                      onFieldsUpdated={handleFieldsUpdated}
-                    />
-                    <ScreenAIPrompt
-                      templateId={templateId}
-                      screen={selectedScreen}
-                      allScreens={screens}
-                      onSaved={handleFieldsUpdated}
-                    />
-                  </>
-                ) : (
-                  <Card className="border-[hsl(var(--border))] h-full min-h-[400px]">
-                    <CardContent className="h-full flex items-center justify-center">
-                      <div className="text-center text-[hsl(var(--globe-grey))]">
-                        <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium">Select a screen</p>
-                        <p className="text-sm mt-1">
-                          Choose a screen from the list to manage its fields
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+              {/* Form Builder with DnD - includes field palette and screen content */}
+              <div className={`${aiPanelOpen ? "flex-1 min-w-0" : "flex-1"}`}>
+                <FormBuilderDnd
+                  templateId={templateId}
+                  screens={screens}
+                  selectedScreenId={selectedScreenId}
+                  onSelectScreen={setSelectedScreenId}
+                  onScreensReordered={setScreens}
+                  onFieldsUpdated={fetchScreens}
+                  aiPanelOpen={aiPanelOpen}
+                />
               </div>
 
               {/* AI Configurator Panel - Fixed width when open */}

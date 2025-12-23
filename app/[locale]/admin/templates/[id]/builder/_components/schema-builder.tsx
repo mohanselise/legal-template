@@ -1,177 +1,214 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
-    Plus,
-    Trash2,
     ChevronRight,
     ChevronDown,
     Code,
     LayoutList,
     AlertCircle,
+    Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import type { FieldType } from "@/lib/db";
 
-interface SchemaField {
+interface SubsequentScreen {
     id: string;
-    name: string;
-    type: "string" | "number" | "boolean" | "array" | "object";
-    description?: string;
-    enum?: string[]; // For strings
-    properties?: SchemaField[]; // For objects
-    items?: SchemaField; // For arrays
+    title: string;
+    order: number;
+    fields: Array<{
+        id: string;
+        name: string;
+        label: string;
+        type: FieldType;
+        options?: string[]; // For select fields - becomes enum
+    }>;
 }
 
 interface SchemaBuilderProps {
     value: string;
     onChange: (value: string) => void;
+    subsequentScreens?: SubsequentScreen[];
 }
 
-// Helper to generate a unique ID
-const generateId = () => Math.random().toString(36).substring(2, 9);
-
-// Helper to parse JSON schema into internal state
-const parseSchemaToState = (schemaStr: string): SchemaField[] => {
-    try {
-        // Handle empty or invalid schema strings
-        if (!schemaStr || !schemaStr.trim()) return [];
-
-        const schema = JSON.parse(schemaStr);
-        if (schema.type !== "object" || !schema.properties) return [];
-
-        const parseProperties = (properties: any): SchemaField[] => {
-            return Object.entries(properties).map(([key, value]: [string, any]) => {
-                const field: SchemaField = {
-                    id: generateId(),
-                    name: key,
-                    type: value.type || "string",
-                    description: value.description,
-                };
-
-                if (value.enum && Array.isArray(value.enum)) {
-                    field.enum = value.enum;
-                }
-
-                if (value.type === "object" && value.properties) {
-                    field.properties = parseProperties(value.properties);
-                }
-
-                if (value.type === "array" && value.items) {
-                    // Handle array of objects or primitives
-                    if (value.items.type === "object" && value.items.properties) {
-                        field.items = {
-                            id: generateId(),
-                            name: "item",
-                            type: "object",
-                            properties: parseProperties(value.items.properties)
-                        }
-                    } else {
-                        field.items = {
-                            id: generateId(),
-                            name: "item",
-                            type: value.items.type || "string",
-                        }
-                    }
-                }
-
-                return field;
-            });
-        };
-
-        return parseProperties(schema.properties);
-    } catch (e) {
-        console.error("Failed to parse schema", e);
-        return [];
+// Map FieldType to JSON Schema type and structure
+const fieldTypeToSchemaType = (
+    fieldType: FieldType,
+    options?: string[]
+): { type: "string" | "number" | "boolean" | "object"; enum?: string[]; properties?: any; required?: string[] } => {
+    switch (fieldType) {
+        case "text":
+        case "email":
+        case "url":
+        case "textarea":
+        case "date":
+            return { type: "string" };
+        
+        case "number":
+        case "percentage":
+            return { type: "number" };
+        
+        case "checkbox":
+            return { type: "boolean" };
+        
+        case "select":
+            return {
+                type: "string",
+                enum: options && options.length > 0 ? options : undefined,
+            };
+        
+        case "multiselect":
+            return {
+                type: "string",
+                enum: options && options.length > 0 ? options : undefined,
+            };
+        
+        case "party":
+            return {
+                type: "object",
+                properties: {
+                    name: { type: "string" },
+                    street: { type: "string" },
+                    city: { type: "string" },
+                    state: { type: "string" },
+                    postalCode: { type: "string" },
+                    country: { type: "string" },
+                },
+                required: ["name", "street", "city", "state", "postalCode", "country"],
+            };
+        
+        case "address":
+            return {
+                type: "object",
+                properties: {
+                    street: { type: "string" },
+                    city: { type: "string" },
+                    state: { type: "string" },
+                    postalCode: { type: "string" },
+                    country: { type: "string" },
+                },
+                required: ["street", "city", "state", "postalCode", "country"],
+            };
+        
+        case "currency":
+            return {
+                type: "object",
+                properties: {
+                    amount: { type: "number" },
+                    currency: { type: "string" },
+                },
+                required: ["amount", "currency"],
+            };
+        
+        case "phone":
+            return {
+                type: "object",
+                properties: {
+                    countryCode: { type: "string" },
+                    number: { type: "string" },
+                },
+                required: ["countryCode", "number"],
+            };
+        
+        default:
+            return { type: "string" };
     }
 };
 
-// Helper to convert internal state to JSON schema
-const convertStateToSchema = (fields: SchemaField[]): string => {
-    const buildProperties = (fields: SchemaField[]): any => {
-        const properties: any = {};
-        fields.forEach((field) => {
-            const prop: any = { type: field.type };
-            if (field.description) prop.description = field.description;
+// Parse JSON schema to get selected field names
+const parseSchemaToSelectedFields = (schemaStr: string): Set<string> => {
+    const selected = new Set<string>();
+    try {
+        if (!schemaStr || !schemaStr.trim()) return selected;
 
-            if (field.type === "object" && field.properties) {
-                prop.properties = buildProperties(field.properties);
-                prop.required = field.properties.map(f => f.name);
+        const schema = JSON.parse(schemaStr);
+        if (schema.type === "object" && schema.properties) {
+            Object.keys(schema.properties).forEach((key) => {
+                selected.add(key);
+            });
+        }
+    } catch (e) {
+        console.error("Failed to parse schema", e);
+    }
+    return selected;
+};
+
+// Convert selected fields to JSON schema
+const convertSelectedFieldsToSchema = (
+    selectedFields: Set<string>,
+    subsequentScreens: SubsequentScreen[]
+): string => {
+    const properties: any = {};
+    const required: string[] = [];
+
+    subsequentScreens.forEach((screen) => {
+        screen.fields.forEach((field) => {
+            if (selectedFields.has(field.name)) {
+                const schemaDef = fieldTypeToSchemaType(field.type, field.options);
+                properties[field.name] = {
+                    type: schemaDef.type,
+                    description: field.label,
+                    ...(schemaDef.enum && { enum: schemaDef.enum }),
+                    ...(schemaDef.properties && { properties: schemaDef.properties }),
+                    ...(schemaDef.required && { required: schemaDef.required }),
+                };
+                required.push(field.name);
             }
-
-            if (field.type === "array" && field.items) {
-                if (field.items.type === "object" && field.items.properties) {
-                    prop.items = {
-                        type: "object",
-                        properties: buildProperties(field.items.properties),
-                        required: field.items.properties.map(f => f.name)
-                    }
-                } else {
-                    prop.items = { type: field.items.type };
-                    if (field.items.enum) {
-                        prop.items.enum = field.items.enum;
-                    }
-                }
-            }
-
-            if (field.type === "string" && field.enum && field.enum.length > 0) {
-                prop.enum = field.enum;
-            }
-
-            properties[field.name] = prop;
         });
-        return properties;
-    };
+    });
 
     const schema = {
         type: "object",
-        properties: buildProperties(fields),
-        required: fields.map((f) => f.name),
+        properties,
+        required,
     };
 
     return JSON.stringify(schema, null, 2);
 };
 
-export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
+export function SchemaBuilder({ value, onChange, subsequentScreens = [] }: SchemaBuilderProps) {
     const [mode, setMode] = useState<"visual" | "code">("visual");
-    const [fields, setFields] = useState<SchemaField[]>(() => parseSchemaToState(value));
+    const [selectedFields, setSelectedFields] = useState<Set<string>>(() => 
+        parseSchemaToSelectedFields(value)
+    );
+    const [expandedScreens, setExpandedScreens] = useState<Set<string>>(new Set());
     const [jsonError, setJsonError] = useState<string | null>(null);
     const lastSyncedSchema = useRef<string>(value);
 
-    // Keep local fields in sync with incoming value when using the visual builder
+    // Initialize expanded screens
+    useEffect(() => {
+        if (subsequentScreens.length > 0 && expandedScreens.size === 0) {
+            setExpandedScreens(new Set(subsequentScreens.map(s => s.id)));
+        }
+    }, [subsequentScreens, expandedScreens.size]);
+
+    // Keep selected fields in sync with incoming value when using visual mode
     useEffect(() => {
         if (mode !== "visual") return;
         if (value === lastSyncedSchema.current) return;
 
-        setFields(parseSchemaToState(value));
+        setSelectedFields(parseSchemaToSelectedFields(value));
         lastSyncedSchema.current = value;
     }, [value, mode]);
 
     // Handle mode switch
     const toggleMode = () => {
         if (mode === "visual") {
-            // Switching to code: generate JSON from state
-            const schema = convertStateToSchema(fields);
+            // Switching to code: generate JSON from selected fields
+            const schema = convertSelectedFieldsToSchema(selectedFields, subsequentScreens);
             lastSyncedSchema.current = schema;
             onChange(schema);
             setMode("code");
         } else {
-            // Switching to visual: parse JSON to state
+            // Switching to visual: parse JSON to selected fields
             try {
-                const parsed = parseSchemaToState(value);
-                setFields(parsed);
+                const parsed = parseSchemaToSelectedFields(value);
+                setSelectedFields(parsed);
                 lastSyncedSchema.current = value;
                 setJsonError(null);
                 setMode("visual");
@@ -181,129 +218,65 @@ export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
         }
     };
 
-    // Update parent when fields change (if in visual mode)
+    // Update parent when selected fields change (if in visual mode)
     useEffect(() => {
-        if (mode !== "visual") return;
+        if (mode !== "visual" || !subsequentScreens.length) return;
 
-        const schema = convertStateToSchema(fields);
+        const schema = convertSelectedFieldsToSchema(selectedFields, subsequentScreens);
         lastSyncedSchema.current = schema;
         if (schema !== value) {
             onChange(schema);
         }
-    }, [fields, mode, onChange, value]);
+    }, [selectedFields, mode, onChange, value, subsequentScreens]);
 
-    const addField = (parentId?: string, isArrayItem?: boolean) => {
-        const newField: SchemaField = {
-            id: generateId(),
-            name: isArrayItem ? "item" : "",
-            type: "string",
-        };
-
-        if (!parentId) {
-            setFields([...fields, newField]);
-            return;
-        }
-
-        // Recursive update
-        const updateFields = (currentFields: SchemaField[]): SchemaField[] => {
-            return currentFields.map((field) => {
-                if (field.id === parentId) {
-                    if (field.type === 'array') {
-                        // For arrays, we set the 'items' property
-                        return { ...field, items: newField };
-                    }
-                    return {
-                        ...field,
-                        properties: [...(field.properties || []), newField],
-                    };
-                }
-                if (field.properties) {
-                    return { ...field, properties: updateFields(field.properties) };
-                }
-                if (field.items && field.items.type === 'object' && field.items.properties) {
-                    // Search inside array items if they are objects
-                    // If the parentId matches the array item's ID (which acts as a container for object properties)
-                    if (field.items.id === parentId) {
-                        return {
-                            ...field,
-                            items: {
-                                ...field.items,
-                                properties: [...(field.items.properties || []), newField]
-                            }
-                        }
-                    }
-                    return {
-                        ...field,
-                        items: {
-                            ...field.items,
-                            properties: updateFields(field.items.properties)
-                        }
-                    }
-                }
-                return field;
-            });
-        };
-
-        setFields(updateFields(fields));
+    const toggleFieldSelection = (fieldName: string) => {
+        setSelectedFields((prev) => {
+            const next = new Set(prev);
+            if (next.has(fieldName)) {
+                next.delete(fieldName);
+            } else {
+                next.add(fieldName);
+            }
+            return next;
+        });
     };
 
-    const updateField = (id: string, updates: Partial<SchemaField>) => {
-        const updateRecursive = (currentFields: SchemaField[]): SchemaField[] => {
-            return currentFields.map((field) => {
-                if (field.id === id) {
-                    return { ...field, ...updates };
-                }
-                if (field.properties) {
-                    return { ...field, properties: updateRecursive(field.properties) };
-                }
-                if (field.items) {
-                    if (field.items.id === id) {
-                        return { ...field, items: { ...field.items, ...updates } };
-                    }
-                    if (field.items.type === 'object' && field.items.properties) {
-                        return {
-                            ...field,
-                            items: {
-                                ...field.items,
-                                properties: updateRecursive(field.items.properties)
-                            }
-                        }
-                    }
-                }
-                return field;
-            });
-        };
-        setFields(updateRecursive(fields));
+    const toggleScreenExpansion = (screenId: string) => {
+        setExpandedScreens((prev) => {
+            const next = new Set(prev);
+            if (next.has(screenId)) {
+                next.delete(screenId);
+            } else {
+                next.add(screenId);
+            }
+            return next;
+        });
     };
 
-    const deleteField = (id: string) => {
-        const deleteRecursive = (currentFields: SchemaField[]): SchemaField[] => {
-            return currentFields
-                .filter((field) => field.id !== id)
-                .map((field) => {
-                    if (field.properties) {
-                        return { ...field, properties: deleteRecursive(field.properties) };
-                    }
-                    if (field.items) {
-                        if (field.items.id === id) {
-                            const { items, ...rest } = field;
-                            return rest as SchemaField;
-                        }
-                        if (field.items.type === 'object' && field.items.properties) {
-                            return {
-                                ...field,
-                                items: {
-                                    ...field.items,
-                                    properties: deleteRecursive(field.items.properties)
-                                }
-                            }
-                        }
-                    }
-                    return field;
-                });
+    // Get field type label for display
+    const getFieldTypeLabel = (fieldType: FieldType): string => {
+        const labels: Record<FieldType, string> = {
+            text: "Text",
+            email: "Email",
+            date: "Date",
+            number: "Number",
+            checkbox: "Boolean",
+            select: "Select",
+            multiselect: "Multi-Select",
+            textarea: "Text Area",
+            phone: "Phone",
+            address: "Address",
+            party: "Party",
+            currency: "Currency",
+            percentage: "Percentage",
+            url: "URL",
         };
-        setFields(deleteRecursive(fields));
+        return labels[fieldType] || fieldType;
     };
+
+    const sortedScreens = useMemo(() => {
+        return [...subsequentScreens].sort((a, b) => a.order - b.order);
+    }, [subsequentScreens]);
 
     return (
         <div className="space-y-4">
@@ -311,7 +284,7 @@ export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
                 <div className="flex items-center gap-2">
                     <Label>Output Schema</Label>
                     <Badge variant="outline" className="text-xs">
-                        {mode === "visual" ? "Visual Builder" : "JSON Code"}
+                        {mode === "visual" ? "Visual" : "Code"}
                     </Badge>
                 </div>
                 <div className="flex items-center gap-2">
@@ -346,313 +319,125 @@ export function SchemaBuilder({ value, onChange }: SchemaBuilderProps) {
                 </div>
             ) : (
                 <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 p-4 space-y-4">
-                    {fields.length === 0 ? (
+                    {sortedScreens.length === 0 ? (
                         <div className="text-center py-8 text-[hsl(var(--globe-grey))]">
                             <LayoutList className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">No fields defined</p>
-                            <Button
-                                variant="link"
-                                size="sm"
-                                onClick={() => addField()}
-                                className="mt-1"
-                            >
-                                Add your first field
-                            </Button>
+                            <p className="text-sm">No subsequent screens available</p>
+                            <p className="text-xs text-[hsl(var(--globe-grey))] mt-1">
+                                Add screens after this one to select fields for the output schema
+                            </p>
                         </div>
                     ) : (
-                        <div className="space-y-2">
-                            {fields.map((field) => (
-                                <FieldRow
-                                    key={field.id}
-                                    field={field}
-                                    onUpdate={updateField}
-                                    onDelete={deleteField}
-                                    onAddChild={addField}
-                                />
-                            ))}
-                        </div>
-                    )}
-                    {fields.length > 0 && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => addField()}
-                            className="w-full border-dashed"
-                        >
-                            <Plus className="h-3 w-3 mr-2" />
-                            Add Root Field
-                        </Button>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-}
+                        <div className="space-y-3">
+                            {sortedScreens.map((screen) => {
+                                const isExpanded = expandedScreens.has(screen.id);
+                                const screenFields = screen.fields || [];
+                                const selectedCount = screenFields.filter(f => selectedFields.has(f.name)).length;
 
-interface FieldRowProps {
-    field: SchemaField;
-    onUpdate: (id: string, updates: Partial<SchemaField>) => void;
-    onDelete: (id: string) => void;
-    onAddChild: (parentId: string) => void;
-    level?: number;
-}
-
-function FieldRow({
-    field,
-    onUpdate,
-    onDelete,
-    onAddChild,
-    level = 0,
-}: FieldRowProps) {
-    const [expanded, setExpanded] = useState(true);
-
-    const hasChildren = field.type === "object" || (field.type === "array" && field.items?.type === "object");
-
-    return (
-        <div className="space-y-2">
-            <div
-                className={cn(
-                    "flex items-start gap-2 p-2 rounded-md bg-background border border-[hsl(var(--border))] group hover:border-[hsl(var(--selise-blue))]/50 transition-colors",
-                    level > 0 && "ml-6"
-                )}
-            >
-                {hasChildren && (
-                    <button
-                        type="button"
-                        onClick={() => setExpanded(!expanded)}
-                        className="mt-2.5 text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--fg))]"
-                    >
-                        {expanded ? (
-                            <ChevronDown className="h-4 w-4" />
-                        ) : (
-                            <ChevronRight className="h-4 w-4" />
-                        )}
-                    </button>
-                )}
-                {!hasChildren && <div className="w-4" />}
-
-                <div className="grid grid-cols-12 gap-2 flex-1">
-                    <div className="col-span-4">
-                        <Label className="text-xs text-[hsl(var(--globe-grey))] mb-1 block">
-                            Name
-                        </Label>
-                        <Input
-                            value={field.name}
-                            onChange={(e) => onUpdate(field.id, { name: e.target.value })}
-                            placeholder="field_name"
-                            className="h-8 text-sm font-mono"
-                        />
-                    </div>
-                    <div className="col-span-3">
-                        <Label className="text-xs text-[hsl(var(--globe-grey))] mb-1 block">
-                            Type
-                        </Label>
-                        <Select
-                            value={field.type}
-                            onValueChange={(value: any) =>
-                                onUpdate(field.id, { type: value })
-                            }
-                        >
-                            <SelectTrigger className="h-8">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="string">String</SelectItem>
-                                <SelectItem value="number">Number</SelectItem>
-                                <SelectItem value="boolean">Boolean</SelectItem>
-                                <SelectItem value="array">Array</SelectItem>
-                                <SelectItem value="object">Object</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="col-span-5">
-                        <Label className="text-xs text-[hsl(var(--globe-grey))] mb-1 block">
-                            Description
-                        </Label>
-                        <div className="flex gap-2">
-                            <Input
-                                value={field.description || ""}
-                                onChange={(e) =>
-                                    onUpdate(field.id, { description: e.target.value })
-                                }
-                                placeholder="Description..."
-                                className="h-8 text-sm"
-                            />
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => onDelete(field.id)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-
-                    {/* Enum Options for String Type */}
-                    {field.type === "string" && (
-                        <div className="col-span-12 pt-2 border-t border-dashed border-[hsl(var(--border))]">
-                            <Label className="text-xs text-[hsl(var(--globe-grey))] mb-1 block">
-                                Enum Options (Allowed Values)
-                            </Label>
-                            <div className="flex flex-wrap gap-2 mb-2">
-                                {field.enum?.map((option, idx) => (
-                                    <Badge key={idx} variant="secondary" className="gap-1 pr-1 bg-[hsl(var(--brand-primary))/0.1] text-[hsl(var(--brand-primary))] hover:bg-[hsl(var(--brand-primary))/0.2]">
-                                        {option}
+                                return (
+                                    <div
+                                        key={screen.id}
+                                        className="border border-[hsl(var(--border))] rounded-md bg-background"
+                                    >
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                const newEnum = field.enum?.filter((_, i) => i !== idx);
-                                                onUpdate(field.id, { enum: newEnum?.length ? newEnum : undefined });
-                                            }}
-                                            className="h-3.5 w-3.5 rounded-full hover:bg-[hsl(var(--brand-primary))/0.2] flex items-center justify-center transition-colors"
+                                            onClick={() => toggleScreenExpansion(screen.id)}
+                                            className="w-full flex items-center justify-between p-3 hover:bg-[hsl(var(--muted))]/50 transition-colors"
                                         >
-                                            <X className="h-2.5 w-2.5" />
+                                            <div className="flex items-center gap-2">
+                                                {isExpanded ? (
+                                                    <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                                                ) : (
+                                                    <ChevronRight className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                                                )}
+                                                <span className="font-medium text-sm text-[hsl(var(--fg))]">
+                                                    {screen.title}
+                                                </span>
+                                                {selectedCount > 0 && (
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        {selectedCount} selected
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </button>
-                                    </Badge>
-                                ))}
-                            </div>
-                            <div className="flex gap-2">
-                                <Input
-                                    placeholder="Add allowed value (e.g. USD, EUR)..."
-                                    className="h-7 text-xs flex-1"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            const val = (e.currentTarget as HTMLInputElement).value.trim();
-                                            if (val) {
-                                                const currentEnum = field.enum || [];
-                                                if (!currentEnum.includes(val)) {
-                                                    onUpdate(field.id, { enum: [...currentEnum, val] });
-                                                }
-                                                (e.currentTarget as HTMLInputElement).value = '';
-                                            }
-                                        }
-                                    }}
-                                />
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 text-xs"
-                                    onClick={(e) => {
-                                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                                        const val = input.value.trim();
-                                        if (val) {
-                                            const currentEnum = field.enum || [];
-                                            if (!currentEnum.includes(val)) {
-                                                onUpdate(field.id, { enum: [...currentEnum, val] });
-                                            }
-                                            input.value = '';
-                                        }
-                                    }}
-                                >
-                                    Add
-                                </Button>
-                            </div>
+                                        {isExpanded && (
+                                            <div className="px-3 pb-3 space-y-2 border-t border-[hsl(var(--border))] pt-3">
+                                                {screenFields.length === 0 ? (
+                                                    <p className="text-xs text-[hsl(var(--globe-grey))] italic">
+                                                        No fields in this screen
+                                                    </p>
+                                                ) : (
+                                                    screenFields.map((field) => {
+                                                        const isSelected = selectedFields.has(field.name);
+                                                        const schemaDef = fieldTypeToSchemaType(field.type, field.options);
+                                                        const hasEnum = schemaDef.enum && schemaDef.enum.length > 0;
+                                                        const isObject = schemaDef.type === "object";
+
+                                                        return (
+                                                            <div
+                                                                key={field.id}
+                                                                className={cn(
+                                                                    "flex items-start gap-3 p-2 rounded-md border transition-colors",
+                                                                    isSelected
+                                                                        ? "border-[hsl(var(--selise-blue))]/50 bg-[hsl(var(--selise-blue))]/5"
+                                                                        : "border-[hsl(var(--border))] hover:border-[hsl(var(--selise-blue))]/30"
+                                                                )}
+                                                            >
+                                                                <Checkbox
+                                                                    checked={isSelected}
+                                                                    onCheckedChange={() => toggleFieldSelection(field.name)}
+                                                                    className="mt-0.5"
+                                                                />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="font-medium text-sm text-[hsl(var(--fg))]">
+                                                                            {field.label}
+                                                                        </span>
+                                                                        <Badge variant="outline" className="text-xs">
+                                                                            {getFieldTypeLabel(field.type)}
+                                                                        </Badge>
+                                                                        {isObject && (
+                                                                            <Badge variant="outline" className="text-xs">
+                                                                                Object
+                                                                            </Badge>
+                                                                        )}
+                                                                        {hasEnum && (
+                                                                            <Badge variant="outline" className="text-xs">
+                                                                                {schemaDef.enum!.length} options
+                                                                            </Badge>
+                                                                        )}
+                                                                    </div>
+                                                                    <p className="text-xs text-[hsl(var(--globe-grey))] mt-0.5 font-mono">
+                                                                        {field.name}
+                                                                    </p>
+                                                                    {hasEnum && isSelected && (
+                                                                        <div className="mt-2 flex flex-wrap gap-1">
+                                                                            {schemaDef.enum!.map((option, idx) => (
+                                                                                <Badge
+                                                                                    key={idx}
+                                                                                    variant="secondary"
+                                                                                    className="text-xs"
+                                                                                >
+                                                                                    {option}
+                                                                                </Badge>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
-                </div>
-            </div>
-
-            {/* Nested Properties (Object) */}
-            {field.type === "object" && expanded && (
-                <div className="space-y-2">
-                    {field.properties?.map((child) => (
-                        <FieldRow
-                            key={child.id}
-                            field={child}
-                            onUpdate={onUpdate}
-                            onDelete={onDelete}
-                            onAddChild={onAddChild}
-                            level={level + 1}
-                        />
-                    ))}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onAddChild(field.id)}
-                        className={cn("h-7 text-xs text-[hsl(var(--selise-blue))]", level > 0 ? "ml-8" : "ml-6")}
-                    >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Property
-                    </Button>
-                </div>
-            )}
-
-            {/* Array Items */}
-            {field.type === "array" && expanded && (
-                <div className={cn("space-y-2", level > 0 && "ml-6")}>
-                    <div className="pl-4 border-l-2 border-[hsl(var(--border))]">
-                        <Label className="text-xs text-[hsl(var(--globe-grey))] mb-2 block">Array Items Type</Label>
-                        {field.items ? (
-                            field.items.type === 'object' ? (
-                                // Array of Objects
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Badge variant="outline">Object</Badge>
-                                        <Button variant="ghost" size="sm" onClick={() => onDelete(field.items!.id)} className="h-6 w-6 p-0"><Trash2 className="h-3 w-3" /></Button>
-                                    </div>
-                                    {field.items.properties?.map((child) => (
-                                        <FieldRow
-                                            key={child.id}
-                                            field={child}
-                                            onUpdate={onUpdate}
-                                            onDelete={onDelete}
-                                            onAddChild={onAddChild}
-                                            level={0} // Reset level visually relative to container
-                                        />
-                                    ))}
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => onAddChild(field.items!.id)}
-                                        className="h-7 text-xs text-[hsl(var(--selise-blue))]"
-                                    >
-                                        <Plus className="h-3 w-3 mr-1" />
-                                        Add Item Property
-                                    </Button>
-                                </div>
-                            ) : (
-                                // Array of Primitives
-                                <div className="flex items-center gap-2">
-                                    <Select
-                                        value={field.items.type}
-                                        onValueChange={(value: any) => {
-                                            if (value === 'object') {
-                                                // Convert to object
-                                                onUpdate(field.id, { items: { ...field.items!, type: 'object', properties: [] } })
-                                            } else {
-                                                onUpdate(field.items!.id, { type: value })
-                                            }
-                                        }}
-                                    >
-                                        <SelectTrigger className="h-8 w-32">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="string">String</SelectItem>
-                                            <SelectItem value="number">Number</SelectItem>
-                                            <SelectItem value="boolean">Boolean</SelectItem>
-                                            <SelectItem value="object">Object</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <Button variant="ghost" size="sm" onClick={() => onDelete(field.items!.id)} className="h-8 w-8 p-0 text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                                </div>
-                            )
-                        ) : (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => onAddChild(field.id)}
-                                className="h-7 text-xs"
-                            >
-                                <Plus className="h-3 w-3 mr-1" />
-                                Define Items
-                            </Button>
-                        )}
-                    </div>
                 </div>
             )}
         </div>
     );
 }
+

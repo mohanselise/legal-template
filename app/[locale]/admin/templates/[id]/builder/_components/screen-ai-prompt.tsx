@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -235,6 +235,31 @@ export function ScreenAIPrompt({
         setPreviousFormFields(variables);
     }, [allScreens, screen.order]);
 
+    // Compute subsequent screens for schema builder
+    const subsequentScreens = useMemo(() => {
+        return allScreens
+            .filter((s) => {
+                const screenWithFields = s as ScreenWithFields;
+                return s.order > screen.order && screenWithFields.fields && screenWithFields.fields.length > 0;
+            })
+            .sort((a, b) => a.order - b.order)
+            .map((s) => {
+                const screenWithFields = s as ScreenWithFields;
+                return {
+                    id: s.id,
+                    title: s.title,
+                    order: s.order,
+                    fields: screenWithFields.fields.map((field) => ({
+                        id: field.id,
+                        name: field.name,
+                        label: field.label,
+                        type: field.type,
+                        options: field.options && field.options.length > 0 ? field.options : undefined,
+                    })),
+                };
+            });
+    }, [allScreens, screen.order]);
+
     return (
         <Card className="border-[hsl(var(--border))]">
             <CardHeader>
@@ -434,6 +459,7 @@ export function ScreenAIPrompt({
                                 onChange={(value) =>
                                     setValue("aiOutputSchema", value, { shouldDirty: true })
                                 }
+                                subsequentScreens={subsequentScreens}
                             />
                             {!aiPromptEnabled && (
                                 <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg border border-dashed border-[hsl(var(--border))] bg-background/80 text-xs font-medium text-[hsl(var(--globe-grey))]">

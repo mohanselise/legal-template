@@ -433,6 +433,7 @@ export default function FormBuilderPage() {
           {selectedScreen ? (
             <FieldList
               screen={selectedScreen}
+              allScreens={screens}
               onFieldsUpdated={handleFieldsUpdated}
             />
           ) : (

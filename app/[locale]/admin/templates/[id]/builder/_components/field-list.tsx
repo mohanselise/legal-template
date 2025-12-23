@@ -20,6 +20,7 @@ import {
   Banknote,
   Percent,
   Link2,
+  ArrowRightLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { FieldEditor, type AvailableContextKey } from "./field-editor";
 import { DeleteDialog } from "./delete-dialog";
 import { SignatoryInfoManager } from "./signatory-info-manager";
@@ -191,6 +201,32 @@ export function FieldList({ screen, allScreens = [], onFieldsUpdated }: FieldLis
     onFieldsUpdated();
   };
 
+  const handleMoveField = async (field: TemplateField, targetScreenId: string) => {
+    try {
+      const response = await fetch(`/api/admin/fields/${field.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ screenId: targetScreenId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to move field");
+      }
+
+      toast.success(`Field "${field.label}" moved successfully`);
+      await onFieldsUpdated();
+    } catch (error) {
+      console.error("Error moving field:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to move field");
+    }
+  };
+
+  // Get other screens (excluding current screen) for move dropdown
+  const otherScreens = useMemo(() => {
+    return allScreens.filter((s) => s.id !== screen.id && (s as any).type !== "signatory");
+  }, [allScreens, screen.id]);
+
   // Check if this is a signatory screen
   const isSignatoryScreen = (screen as any).type === "signatory";
 
@@ -300,6 +336,37 @@ export function FieldList({ screen, allScreens = [], onFieldsUpdated }: FieldLis
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
+                    {otherScreens.length > 0 && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ArrowRightLeft className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Move to Screen</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          {otherScreens.map((targetScreen) => (
+                            <DropdownMenuItem
+                              key={targetScreen.id}
+                              onClick={() => handleMoveField(field, targetScreen.id)}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">{targetScreen.title}</span>
+                                <span className="text-xs text-[hsl(var(--globe-grey))]">
+                                  {targetScreen.fields.length} field{targetScreen.fields.length !== 1 ? "s" : ""}
+                                </span>
+                              </div>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"

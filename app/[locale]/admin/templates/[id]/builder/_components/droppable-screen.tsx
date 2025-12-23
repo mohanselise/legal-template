@@ -32,6 +32,7 @@ interface DroppableScreenProps {
   onAddField: () => void;
   onEditField: (field: TemplateField) => void;
   onDeleteField: (field: TemplateField) => void;
+  onMoveField?: (field: TemplateField, targetScreenId: string) => Promise<void>;
   onFieldsUpdated: () => void;
   isDraggingField?: boolean;
   isDraggingPalette?: boolean;
@@ -45,6 +46,7 @@ export function DroppableScreen({
   onAddField,
   onEditField,
   onDeleteField,
+  onMoveField,
   onFieldsUpdated,
   isDraggingField,
   isDraggingPalette,
@@ -135,6 +137,8 @@ export function DroppableScreen({
                   screenId={screen.id}
                   onEdit={onEditField}
                   onDelete={onDeleteField}
+                  onMoveField={onMoveField}
+                  allScreens={allScreens}
                   isDraggingOver={isDropTarget}
                 />
               ))}

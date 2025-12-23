@@ -20,11 +20,20 @@ import {
   Banknote,
   Percent,
   Link2,
+  ArrowRightLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type { TemplateField, FieldType } from "@/lib/db";
+import type { TemplateField, FieldType, TemplateScreen } from "@/lib/db";
 
 // Field type icons mapping
 const fieldTypeIcons: Record<FieldType, React.ReactNode> = {
@@ -62,11 +71,17 @@ const fieldTypeLabels: Record<FieldType, string> = {
   url: "URL",
 };
 
+interface ScreenWithFields extends TemplateScreen {
+  fields: TemplateField[];
+}
+
 interface SortableFieldProps {
   field: TemplateField;
   screenId: string;
   onEdit: (field: TemplateField) => void;
   onDelete: (field: TemplateField) => void;
+  onMoveField?: (field: TemplateField, targetScreenId: string) => Promise<void>;
+  allScreens?: ScreenWithFields[];
   isDraggingOver?: boolean;
 }
 
@@ -75,8 +90,14 @@ export function SortableField({
   screenId,
   onEdit,
   onDelete,
+  onMoveField,
+  allScreens = [],
   isDraggingOver,
 }: SortableFieldProps) {
+  // Get other screens (excluding current screen and signatory screens) for move dropdown
+  const otherScreens = allScreens.filter(
+    (s) => s.id !== screenId && (s as any).type !== "signatory"
+  );
   const {
     attributes,
     listeners,
@@ -174,6 +195,37 @@ export function SortableField({
         >
           <Pencil className="h-4 w-4" />
         </Button>
+        {onMoveField && otherScreens.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Move to Screen</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {otherScreens.map((targetScreen) => (
+                <DropdownMenuItem
+                  key={targetScreen.id}
+                  onClick={() => onMoveField(field, targetScreen.id)}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{targetScreen.title}</span>
+                    <span className="text-xs text-[hsl(var(--globe-grey))]">
+                      {targetScreen.fields.length} field{targetScreen.fields.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <Button
           variant="ghost"
           size="icon"

@@ -283,6 +283,28 @@ export function FormBuilderDnd({
     }
   };
 
+  // Handle moving a field via dropdown menu
+  const handleMoveField = async (field: TemplateField, targetScreenId: string) => {
+    try {
+      const response = await fetch(`/api/admin/fields/${field.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ screenId: targetScreenId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to move field");
+      }
+
+      toast.success(`Field "${field.label}" moved successfully`);
+      await onFieldsUpdated();
+    } catch (error) {
+      console.error("Error moving field:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to move field");
+    }
+  };
+
   // Handle adding a field via button
   const handleAddField = (screenId: string) => {
     setEditingScreenId(screenId);
@@ -377,6 +399,7 @@ export function FormBuilderDnd({
                 onAddField={() => handleAddField(selectedScreen.id)}
                 onEditField={handleEditField}
                 onDeleteField={handleDeleteField}
+                onMoveField={handleMoveField}
                 onFieldsUpdated={onFieldsUpdated}
                 isDraggingField={activeDragType === "field"}
                 isDraggingPalette={activeDragType === "palette"}

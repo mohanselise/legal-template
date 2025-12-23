@@ -770,7 +770,7 @@ export default function EditTemplatePage() {
 
   if (isLoading) {
     return (
-      <div className="container max-w-7xl py-8 px-4">
+      <div className="w-full mx-auto max-w-[95%] xl:max-w-[1600px] py-8 px-4">
         <div className="flex items-center gap-4 mb-8">
           <Skeleton className="h-10 w-10 rounded-lg" />
           <div className="space-y-2">
@@ -810,7 +810,7 @@ export default function EditTemplatePage() {
   }
 
   return (
-    <div className="container max-w-7xl py-8 px-4">
+    <div className="w-full mx-auto max-w-[95%] xl:max-w-[1600px] py-8 px-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">

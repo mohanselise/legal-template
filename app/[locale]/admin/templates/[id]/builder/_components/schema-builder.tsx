@@ -150,14 +150,16 @@ const convertSelectedFieldsToSchema = (
         screen.fields.forEach((field) => {
             if (selectedFields.has(field.name)) {
                 const schemaDef = fieldTypeToSchemaType(field.type, field.options);
-                properties[field.name] = {
+                // Add "AI" prefix to distinguish from regular form fields
+                const aiFieldName = `AI${field.name}`;
+                properties[aiFieldName] = {
                     type: schemaDef.type,
                     description: field.label,
                     ...(schemaDef.enum && { enum: schemaDef.enum }),
                     ...(schemaDef.properties && { properties: schemaDef.properties }),
                     ...(schemaDef.required && { required: schemaDef.required }),
                 };
-                required.push(field.name);
+                required.push(aiFieldName);
             }
         });
     });

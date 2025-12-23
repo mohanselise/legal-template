@@ -100,8 +100,13 @@ export function ScreenAIPrompt({
             const schema = JSON.parse(schemaStr);
             if (schema.type !== "object" || !schema.properties) return;
 
-            const selectedFieldNames = Object.keys(schema.properties);
-            if (selectedFieldNames.length === 0) return;
+            const schemaFieldNames = Object.keys(schema.properties);
+            if (schemaFieldNames.length === 0) return;
+
+            // Extract original field names by removing "AI" prefix
+            const selectedFieldNames = schemaFieldNames.map((name) =>
+                name.startsWith("AI") ? name.slice(2) : name
+            );
 
             // Find matching fields in subsequent screens
             const fieldsToUpdate: Array<{ id: string; name: string }> = [];
@@ -109,7 +114,7 @@ export function ScreenAIPrompt({
             subsequentScreens.forEach((screen) => {
                 screen.fields.forEach((field) => {
                     // Only update if:
-                    // 1. Field name is in the schema
+                    // 1. Field name is in the schema (after removing AI prefix)
                     // 2. AI suggestions are not already enabled (respect manual overrides)
                     if (selectedFieldNames.includes(field.name) && !field.aiSuggestionEnabled) {
                         fieldsToUpdate.push({ id: field.id, name: field.name });
@@ -127,7 +132,8 @@ export function ScreenAIPrompt({
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             aiSuggestionEnabled: true,
-                            aiSuggestionKey: field.name,
+                            // Use AI prefix to match the schema field name
+                            aiSuggestionKey: `AI${field.name}`,
                         }),
                     })
                 )

@@ -972,22 +972,20 @@ function SmartFlowContent() {
           </Collapsible>
 
           {/* Human Verification - Simplified styling */}
-          <div className="mb-8 rounded-2xl border border-[hsl(var(--brand-border))] bg-card p-6">
-            <div className="mb-4 text-center">
-              <h3 className="text-lg font-semibold text-[hsl(var(--fg))] font-heading mb-2">
-                {t('welcome.verifyHuman')}
+          <div className="mb-6 rounded-lg border border-[hsl(var(--brand-border))] bg-card p-4">
+            <div className="mb-3 text-center">
+              <h3 className="text-sm font-medium text-[hsl(var(--fg))] font-heading">
+                Security verification
               </h3>
-              <p className="text-sm text-[hsl(var(--brand-muted))]">
-                {t('welcome.verifyHumanDescription')}
-              </p>
             </div>
             {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
-              <div className="flex flex-col items-center gap-4">
+              <div className="flex flex-col items-center gap-3">
                 <Turnstile
                   siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
                   retry="auto"
                   refreshExpired="auto"
                   sandbox={false} // Using production keys
+                  theme="light"
                   onError={() => {
                     setTurnstileStatus('error');
                     setTurnstileToken(null);

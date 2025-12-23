@@ -20,7 +20,6 @@ import {
   Scale,
   PenTool,
   ClipboardCheck,
-  HelpCircle,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -31,13 +30,14 @@ import {
   type TemplateConfig,
   type ScreenWithFields,
 } from "./DynamicFormContext";
+import { evaluateConditions } from "@/lib/templates/conditions";
+import type { TemplateField } from "@/lib/db";
 import { DynamicField, type FieldConfig } from "./field-renderers";
 import { SignatoryScreenRenderer } from "./SignatoryScreenRenderer";
 import { SignatoryEntry } from "@/lib/templates/signatory-config";
 import { Button } from "@/components/ui/button";
 import { Stepper, StepperCompact } from "@/components/ui/stepper";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Turnstile } from "next-turnstile";
 import { setTurnstileToken as storeTurnstileToken } from "@/lib/turnstile-token-manager";
 import { saveTemplateReview } from "@/components/template-review/TemplateReviewStorage";
@@ -71,203 +71,6 @@ function getScreenIcon(title: string): React.ComponentType<{ className?: string 
     if (lowerTitle.includes(key)) return icon;
   }
   return FileText;
-}
-
-/**
- * Dynamic Field with inline Apply button for standard values
- * Matches the SmartFlow v2 design with Apply button inside/next to input
- */
-interface DynamicFieldWithApplyProps {
-  field: FieldConfig;
-  value: unknown;
-  onChange: (name: string, value: unknown) => void;
-  error?: string;
-  enrichmentContext?: Record<string, unknown>;
-  formData?: Record<string, unknown>;
-  standardValue?: string;
-}
-
-function DynamicFieldWithApply({
-  field,
-  value,
-  onChange,
-  error,
-  enrichmentContext,
-  formData,
-  standardValue,
-}: DynamicFieldWithApplyProps) {
-  const [justApplied, setJustApplied] = useState(false);
-
-  const handleApply = () => {
-    if (standardValue) {
-      onChange(field.name, standardValue);
-      setJustApplied(true);
-      setTimeout(() => setJustApplied(false), 1500);
-    }
-  };
-
-  // Check if the current value matches the standard value
-  const isStandardApplied = standardValue && String(value) === String(standardValue);
-  const showApplyButton = standardValue && !isStandardApplied && !justApplied;
-
-  // Helper component for help text tooltip
-  const HelpTextTooltip = ({ helpText }: { helpText: string }) => (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="text-[hsl(var(--globe-grey))] cursor-help hover:text-[hsl(var(--brand-primary))] transition-colors">
-          <HelpCircle className="h-4 w-4" />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs">
-        <p>{helpText}</p>
-      </TooltipContent>
-    </Tooltip>
-  );
-
-  // For text, number, email fields - wrap with inline Apply button
-  if (['text', 'number', 'email'].includes(field.type)) {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <label htmlFor={field.name} className="text-sm font-medium">
-              {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
-            </label>
-            {field.helpText && <HelpTextTooltip helpText={field.helpText} />}
-          </div>
-        </div>
-        <div className="relative">
-          <input
-            id={field.name}
-            type={field.type === 'number' ? 'number' : 'text'}
-            placeholder={standardValue || field.placeholder || ''}
-            value={String(value || '')}
-            onChange={(e) => onChange(field.name, e.target.value)}
-            className={`
-              w-full rounded-xl border-2 px-4 py-3 text-base transition-all duration-200
-              bg-background text-foreground
-              placeholder:text-muted-foreground shadow-sm
-              focus:border-[hsl(var(--brand-primary))] focus:outline-none focus:ring-4 focus:ring-[hsl(var(--brand-primary))/10]
-              hover:border-[hsl(var(--brand-primary))/50]
-              ${error ? 'border-amber-400 bg-amber-50/30' : 'border-[hsl(var(--border))]'}
-              ${showApplyButton ? 'pr-24' : ''}
-            `}
-          />
-          {showApplyButton && (
-            <button
-              type="button"
-              onClick={handleApply}
-              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg
-                bg-transparent text-[hsl(var(--brand-primary))] 
-                hover:bg-[hsl(var(--brand-primary))]/10 transition-colors cursor-pointer
-                border border-[hsl(var(--brand-primary))]/30 hover:border-[hsl(var(--brand-primary))]/50"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Apply</span>
-            </button>
-          )}
-          {justApplied && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
-              <Check className="h-4 w-4" />
-              Applied
-            </span>
-          )}
-        </div>
-        {field.helpText && (
-          <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
-        )}
-        {error && (
-          <div className="flex items-center gap-2 mt-2 text-sm text-amber-700">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-            <span className="font-medium">{error}</span>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // For select fields with standard value
-  if (field.type === 'select') {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium">
-              {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
-            </label>
-            {field.helpText && <HelpTextTooltip helpText={field.helpText} />}
-            {standardValue && !isStandardApplied && (
-              <span className="text-xs text-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))]/10 px-2 py-0.5 rounded-full border border-[hsl(var(--brand-primary))]/20">
-                Standard: {standardValue}
-              </span>
-            )}
-          </div>
-          {showApplyButton && (
-            <button
-              type="button"
-              onClick={handleApply}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md
-                bg-transparent text-[hsl(var(--brand-primary))] 
-                hover:bg-[hsl(var(--brand-primary))]/10 transition-colors cursor-pointer
-                border border-[hsl(var(--brand-primary))]/30"
-            >
-              <Sparkles className="h-3 w-3" />
-              Apply
-            </button>
-          )}
-        </div>
-        <DynamicField
-          field={field}
-          value={value}
-          onChange={onChange}
-          error={error}
-          enrichmentContext={enrichmentContext}
-          formData={formData}
-        />
-        {field.helpText && (
-          <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
-        )}
-      </div>
-    );
-  }
-
-  // For checkbox fields
-  if (field.type === 'checkbox') {
-    return (
-      <div className="space-y-2">
-        <DynamicField
-          field={field}
-          value={value}
-          onChange={onChange}
-          error={error}
-          enrichmentContext={enrichmentContext}
-          formData={formData}
-        />
-        {field.helpText && (
-          <p className="text-xs text-[hsl(var(--globe-grey))] ml-7">{field.helpText}</p>
-        )}
-      </div>
-    );
-  }
-
-  // For other field types, use the standard renderer with help text
-  return (
-    <div className="space-y-2">
-      <DynamicField
-        field={field}
-        value={value}
-        onChange={onChange}
-        error={error}
-        enrichmentContext={enrichmentContext}
-        formData={formData}
-      />
-      {field.helpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
-      )}
-    </div>
-  );
 }
 
 // Tips to show during loading
@@ -364,7 +167,162 @@ function extractPromptVariables(prompt: string): string[] {
 }
 
 /**
+ * Maps a variable name to its source screen and field definition.
+ * Returns null if the variable doesn't correspond to any form field
+ * (it might be from enrichment context instead).
+ */
+function mapVariableToScreenAndField(
+  variableName: string,
+  screens: ScreenWithFields[]
+): { screenIndex: number; field: TemplateField } | null {
+  for (let screenIndex = 0; screenIndex < screens.length; screenIndex++) {
+    const screen = screens[screenIndex];
+    for (const field of screen.fields) {
+      if (field.name === variableName) {
+        return { screenIndex, field };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Finds the screen index where a variable from enrichment context is generated.
+ * Enrichment context values come from aiPrompt outputs on previous screens.
+ * Returns the screen index if found, or -1 if not found.
+ */
+function findEnrichmentSourceScreen(
+  variableName: string,
+  screens: ScreenWithFields[]
+): number {
+  for (let screenIndex = 0; screenIndex < screens.length; screenIndex++) {
+    const screen = screens[screenIndex];
+    const aiOutputSchema = (screen as any).aiOutputSchema;
+    
+    if (aiOutputSchema) {
+      try {
+        const schema = typeof aiOutputSchema === 'string' 
+          ? JSON.parse(aiOutputSchema) 
+          : aiOutputSchema;
+        
+        // Check if the variable is defined in this screen's output schema
+        if (schema.properties && variableName in schema.properties) {
+          return screenIndex;
+        }
+      } catch {
+        // Skip invalid JSON schemas
+      }
+    }
+  }
+  return -1;
+}
+
+/**
+ * Check if a value is considered "filled" (non-empty)
+ */
+function isValueFilled(value: unknown): boolean {
+  if (value === undefined || value === null || value === '') return false;
+  if (typeof value === 'string' && value.trim() === '') return false;
+  return true;
+}
+
+/**
+ * Check if a variable is resolved considering:
+ * 1. Has a value in formData or enrichmentContext
+ * 2. The field is not visible (conditions evaluate to false)
+ * 3. User has passed the screen containing the field
+ * 4. Variable comes from enrichmentContext (AI output from previous screen)
+ */
+function isVariableResolved(
+  variableName: string,
+  formData: Record<string, unknown>,
+  enrichmentContext: Record<string, unknown>,
+  screens: ScreenWithFields[],
+  currentStep: number
+): boolean {
+  // Check 1: Does the variable have a value?
+  const allContext = { ...formData, ...enrichmentContext };
+  if (isValueFilled(allContext[variableName])) {
+    return true;
+  }
+
+  // Check 2: Is this a form field variable?
+  const fieldMapping = mapVariableToScreenAndField(variableName, screens);
+  
+  if (fieldMapping) {
+    const { screenIndex, field } = fieldMapping;
+    
+    // Check 2a: Is the field not visible due to conditions?
+    const conditions = (field as any).conditions;
+    if (conditions && !evaluateConditions(conditions, formData)) {
+      // Field is hidden, user won't fill it - consider resolved
+      return true;
+    }
+    
+    // Check 2b: Has the user passed this screen?
+    // currentStep is 0-indexed, so if currentStep > screenIndex, user has moved past
+    if (currentStep > screenIndex) {
+      // User has passed this screen - the field was either:
+      // - Filled (handled in Check 1)
+      // - Optional and skipped
+      // - Hidden due to screen-level conditions
+      return true;
+    }
+    
+    // Field is visible and user hasn't passed it yet - not resolved
+    return false;
+  }
+
+  // Check 3: Is this an enrichment context variable?
+  const enrichmentSourceScreen = findEnrichmentSourceScreen(variableName, screens);
+  
+  if (enrichmentSourceScreen >= 0) {
+    // Variable comes from AI enrichment on a previous screen
+    // It's resolved if user has passed the screen that generates it
+    if (currentStep > enrichmentSourceScreen) {
+      // User completed the enrichment screen - even if no value,
+      // the enrichment either ran or won't run
+      return true;
+    }
+    // User hasn't passed the enrichment screen yet
+    return false;
+  }
+
+  // Unknown variable source - consider it resolved to avoid blocking
+  // (might be a typo in the prompt or a variable that will be added later)
+  console.warn(`Unknown variable source for: ${variableName}`);
+  return true;
+}
+
+/**
+ * Check if all required variables for a prompt are resolved.
+ * A variable is resolved if:
+ * 1. It has a non-empty value in formData or enrichmentContext
+ * 2. The field that provides it is not visible (conditions evaluate to false)
+ * 3. The user has passed the screen containing the field
+ * 4. For enrichment variables, the source screen has been completed
+ *
+ * This is the sophisticated calculation that considers conditional visibility
+ * and screen navigation, not just whether values exist.
+ */
+function arePromptVariablesResolved(
+  prompt: string,
+  formData: Record<string, unknown>,
+  enrichmentContext: Record<string, unknown>,
+  screens: ScreenWithFields[],
+  currentStep: number
+): boolean {
+  const requiredVars = extractPromptVariables(prompt);
+  if (requiredVars.length === 0) return true; // No variables needed, can fetch immediately
+
+  return requiredVars.every((varName) =>
+    isVariableResolved(varName, formData, enrichmentContext, screens, currentStep)
+  );
+}
+
+/**
  * Check if all required variables for a prompt are available in the form data or enrichment context
+ * @deprecated Use arePromptVariablesResolved() for sophisticated checking with visibility/navigation
  */
 function arePromptVariablesAvailable(
   prompt: string,
@@ -703,13 +661,14 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
     if (dynamicScreens.length === 0) return;
 
-    // Check each dynamic screen to see if its variables are available
+    // Check each dynamic screen to see if its variables are resolved
+    // A variable is resolved if: has a value, field is hidden, or user passed the screen
     dynamicScreens.forEach(({ screen, index: stepIndex }) => {
       const dynamicPrompt = (screen as any).dynamicPrompt;
       const dynamicMaxFields = (screen as any).dynamicMaxFields || 5;
 
-      // Check if all required variables are now available
-      if (arePromptVariablesAvailable(dynamicPrompt, formData, enrichmentContext)) {
+      // Check if all required variables are now resolved (considering visibility and navigation)
+      if (arePromptVariablesResolved(dynamicPrompt, formData, enrichmentContext, config.screens, currentStep)) {
         // Mark as prefetching to prevent duplicate requests
         prefetchingRef.current.add(screen.id);
 
@@ -791,7 +750,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
         })();
       }
     });
-  }, [config, formData, enrichmentContext, dynamicFieldsCache]);
+  }, [config, formData, enrichmentContext, dynamicFieldsCache, currentStep]);
 
   // Fetch dynamic fields when entering a dynamic screen (fallback if not pre-fetched)
   useEffect(() => {
@@ -1696,22 +1655,20 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
           </Collapsible>
 
           {/* Human Verification - Simplified styling */}
-          <div className="mb-8 rounded-2xl border border-[hsl(var(--brand-border))] bg-card p-6">
-            <div className="mb-4 text-center">
-              <h3 className="text-lg font-semibold text-[hsl(var(--fg))] font-heading mb-2">
-                {t('welcome.verifyHuman')}
+          <div className="mb-6 rounded-lg border border-[hsl(var(--brand-border))] bg-card p-4">
+            <div className="mb-3 text-center">
+              <h3 className="text-sm font-medium text-[hsl(var(--fg))] font-heading">
+                Security verification
               </h3>
-              <p className="text-sm text-[hsl(var(--brand-muted))]">
-                {t('welcome.verifyHumanDescription')}
-              </p>
             </div>
             {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
-              <div className="flex flex-col items-center gap-4">
+              <div className="flex flex-col items-center gap-3">
                 <Turnstile
                   siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
                   retry="auto"
                   refreshExpired="auto"
                   sandbox={false}
+                  theme="light"
                   onError={() => {
                     setTurnstileStatus("error");
                     setTurnstileToken(null);
@@ -2066,35 +2023,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                               </div>
                             </div>
 
-                            {dynamicFieldsCache[currentScreen.id].map((field) => (
-                              <motion.div
-                                key={field.id}
-                                variants={{
-                                  hidden: { opacity: 0, y: 20 },
-                                  show: { opacity: 1, y: 0 }
-                                }}
-                                initial="hidden"
-                                animate="show"
-                                exit={{ opacity: 0, y: -20 }}
-                                layout
-                                data-field-error={errors[field.name] ? "true" : undefined}
-                              >
-                                <DynamicFieldWithApply
-                                  field={{
-                                    ...field,
-                                    type: field.type as any,
-                                  } as FieldConfig}
-                                  value={formData[field.name]}
-                                  onChange={setFieldValue}
-                                  error={errors[field.name]}
-                                  enrichmentContext={enrichmentContext}
-                                  formData={formData}
-                                  standardValue={field.standardValue}
-                                />
-                              </motion.div>
-                            ))}
-
-                            {/* Apply Standards Banner - matches SmartFlow v2 design */}
+                            {/* Apply Standards Banner for Dynamic Screens - shown before fields */}
                             {(() => {
                               const fields = dynamicFieldsCache[currentScreen.id];
                               // Get only unfilled fields with standard values
@@ -2106,9 +2035,9 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                               if (unfilledFieldsWithStandards.length > 0) {
                                 return (
                                   <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
+                                    initial={{ opacity: 0, y: -10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4"
+                                    className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100/50 p-4 mb-6"
                                   >
                                     <div className="flex items-center justify-between gap-4 flex-wrap">
                                       <div className="flex items-center gap-3">
@@ -2139,7 +2068,8 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                                           applyDynamicStandardsRecursively(currentScreen.id, fields);
                                         }}
                                         disabled={applyingStandard}
-                                        className="flex items-center gap-2 bg-[hsl(var(--brand-primary))] text-white hover:bg-[hsl(var(--brand-primary))/90] px-5"
+                                        className="flex items-center gap-2 bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] px-5 shadow-md hover:shadow-lg transition-all font-medium [&>*]:!text-white [&_svg]:!text-white"
+                                        style={{ color: 'white' }}
                                       >
                                         <Zap className="h-4 w-4" />
                                         Apply Standards
@@ -2155,7 +2085,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                                   <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
-                                    className="rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+                                    className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 mb-6"
                                   >
                                     <div className="flex items-center gap-3">
                                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-200">
@@ -2176,6 +2106,40 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                               
                               return null;
                             })()}
+
+                            {dynamicFieldsCache[currentScreen.id].map((field) => (
+                              <motion.div
+                                key={field.id}
+                                variants={{
+                                  hidden: { opacity: 0, y: 20 },
+                                  show: { opacity: 1, y: 0 }
+                                }}
+                                initial="hidden"
+                                animate="show"
+                                exit={{ opacity: 0, y: -20 }}
+                                layout
+                                data-field-error={errors[field.name] ? "true" : undefined}
+                              >
+                                <DynamicField
+                                  field={{
+                                    ...field,
+                                    type: field.type as any,
+                                    // Enable AI suggestion for fields with standardValue
+                                    aiSuggestionEnabled: !!field.standardValue,
+                                    aiSuggestionKey: field.standardValue ? `_dynamic_${field.name}` : undefined,
+                                  } as FieldConfig}
+                                  value={formData[field.name]}
+                                  onChange={setFieldValue}
+                                  error={errors[field.name]}
+                                  // Inject standardValue into enrichmentContext so field renderers can find it
+                                  enrichmentContext={{
+                                    ...enrichmentContext,
+                                    ...(field.standardValue ? { [`_dynamic_${field.name}`]: field.standardValue } : {}),
+                                  }}
+                                  formData={formData}
+                                />
+                              </motion.div>
+                            ))}
                           </motion.div>
                         )}
 

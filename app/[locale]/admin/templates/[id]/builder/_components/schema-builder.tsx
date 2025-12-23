@@ -220,12 +220,26 @@ export function SchemaBuilder({ value, onChange, subsequentScreens = [] }: Schem
 
     // Update parent when selected fields change (if in visual mode)
     useEffect(() => {
-        if (mode !== "visual" || !subsequentScreens.length) return;
+        if (mode !== "visual") return;
+        
+        // If no subsequent screens, don't modify existing schema
+        if (!subsequentScreens.length) return;
 
         const schema = convertSelectedFieldsToSchema(selectedFields, subsequentScreens);
-        lastSyncedSchema.current = schema;
-        if (schema !== value) {
-            onChange(schema);
+        
+        // Avoid overwriting non-empty schema with empty schema
+        // This can happen when existing schema has field names that don't match subsequent screen fields
+        const generatedProperties = JSON.parse(schema).properties || {};
+        const hasGeneratedFields = Object.keys(generatedProperties).length > 0;
+        
+        // Only update if:
+        // 1. We generated fields, OR
+        // 2. User explicitly cleared all selections (selectedFields is empty)
+        if (hasGeneratedFields || selectedFields.size === 0) {
+            lastSyncedSchema.current = schema;
+            if (schema !== value) {
+                onChange(schema);
+            }
         }
     }, [selectedFields, mode, onChange, value, subsequentScreens]);
 

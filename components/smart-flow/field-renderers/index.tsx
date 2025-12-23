@@ -865,7 +865,8 @@ export function SelectField({ field, value, onChange, error, enrichmentContext, 
       <div className={`grid ${getGridCols()} gap-3`}>
         {field.options.map((option) => {
           const isSelected = value === option;
-          const isSuggested = suggestedOptionStr !== null && option === suggestedOptionStr && !isSelected;
+          const isSuggested = suggestedOptionStr !== null && option === suggestedOptionStr;
+          const hasSelection = value !== null && value !== undefined && value !== '';
           const optionLabel = getOptionLabel(option);
           const optionDescription = getOptionDescription(option);
 
@@ -877,10 +878,10 @@ export function SelectField({ field, value, onChange, error, enrichmentContext, 
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
               className={cn(
-                'relative p-5 rounded-2xl border-2 transition-all text-left group overflow-hidden cursor-pointer',
+                'relative p-5 rounded-2xl border-2 transition-all text-left group overflow-visible cursor-pointer',
                 isSelected
                   ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))/0.03] shadow-lg shadow-[hsl(var(--brand-primary))/10]'
-                  : isSuggested
+                  : isSuggested && !hasSelection
                   ? 'border-[hsl(var(--border))] border-dashed bg-[hsl(var(--selise-blue))]/3 hover:border-[hsl(var(--selise-blue))]/30 hover:bg-[hsl(var(--selise-blue))]/5 shadow-sm hover:shadow-md'
                   : 'border-[hsl(var(--border))] bg-background hover:border-[hsl(var(--brand-primary))/50] hover:shadow-md',
                 error && 'border-amber-400 bg-amber-50/50 shadow-md shadow-amber-200/30'
@@ -897,13 +898,22 @@ export function SelectField({ field, value, onChange, error, enrichmentContext, 
 
               {/* Recommended badge for suggested option */}
               {isSuggested && (
-                <div className="absolute top-2 left-2 z-20 animate-pulse">
+                <div className={cn(
+                  "absolute -top-2 left-2 z-[100]",
+                  !hasSelection && "animate-pulse"
+                )}>
                   <span 
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-[hsl(var(--oxford-blue))] shadow-md border border-[hsl(var(--oxford-blue))]/50"
-                    style={{ color: 'white' }}
+                    className={cn(
+                      "inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full shadow-md border",
+                      "bg-[hsl(var(--white))] opacity-100",
+                      hasSelection
+                        ? "text-[hsl(var(--selise-blue))] border-[hsl(var(--selise-blue))]/30"
+                        : "text-[hsl(var(--selise-blue))] border-[hsl(var(--selise-blue))]/40"
+                    )}
+                    style={{ backgroundColor: 'white' }}
                   >
-                    <Sparkles className="h-2.5 w-2.5" style={{ color: 'white' }} />
-                    <span style={{ color: 'white' }}>Recommended</span>
+                    <Sparkles className="h-2.5 w-2.5 text-[hsl(var(--selise-blue))]" />
+                    <span className="text-[hsl(var(--selise-blue))]">Recommended</span>
                   </span>
                 </div>
               )}

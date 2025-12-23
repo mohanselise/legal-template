@@ -142,3 +142,91 @@ export function parseCompositeValue<T>(value: unknown, defaultValue: T): T {
   
   return defaultValue;
 }
+
+/**
+ * Get default currency based on user's locale
+ * Maps locale/country codes to currencies, falls back to CHF
+ */
+export function getDefaultCurrency(locale?: string): string {
+  // Try to use browser's locale if not provided
+  const userLocale = locale || (typeof window !== 'undefined' ? navigator.language : 'en-US');
+  
+  // Map common country codes to currencies
+  const countryToCurrency: Record<string, string> = {
+    'US': 'USD',
+    'GB': 'GBP',
+    'CH': 'CHF',
+    'DE': 'EUR',
+    'FR': 'EUR',
+    'IT': 'EUR',
+    'ES': 'EUR',
+    'NL': 'EUR',
+    'BE': 'EUR',
+    'AT': 'EUR',
+    'PT': 'EUR',
+    'IE': 'EUR',
+    'FI': 'EUR',
+    'GR': 'EUR',
+    'LU': 'EUR',
+    'JP': 'JPY',
+    'CN': 'CNY',
+    'IN': 'INR',
+    'AU': 'AUD',
+    'CA': 'CAD',
+    'SG': 'SGD',
+    'HK': 'HKD',
+    'SE': 'SEK',
+    'NO': 'NOK',
+    'DK': 'DKK',
+    'PL': 'PLN',
+    'CZ': 'CZK',
+    'AE': 'AED',
+    'SA': 'SAR',
+    'BR': 'BRL',
+    'MX': 'MXN',
+  };
+  
+  try {
+    // Extract country code from locale (e.g., "en-US" -> "US", "de-CH" -> "CH")
+    const localeParts = userLocale.split('-');
+    if (localeParts.length > 1) {
+      const countryCode = localeParts[localeParts.length - 1].toUpperCase();
+      const currency = countryToCurrency[countryCode];
+      if (currency) {
+        return currency;
+      }
+    }
+    
+    // Also try underscore separator (e.g., "en_US")
+    const localePartsUnderscore = userLocale.split('_');
+    if (localePartsUnderscore.length > 1) {
+      const countryCode = localePartsUnderscore[localePartsUnderscore.length - 1].toUpperCase();
+      const currency = countryToCurrency[countryCode];
+      if (currency) {
+        return currency;
+      }
+    }
+    
+    // Try to use Intl API if available (for more accurate detection)
+    if (typeof Intl !== 'undefined' && Intl.Locale) {
+      try {
+        const localeObj = new Intl.Locale(userLocale);
+        const region = localeObj.region;
+        if (region) {
+          const currency = countryToCurrency[region.toUpperCase()];
+          if (currency) {
+            return currency;
+          }
+        }
+      } catch {
+        // Intl.Locale might not be available in all browsers
+      }
+    }
+  } catch (error) {
+    // Fall through to default
+    console.debug('Failed to detect currency from locale:', error);
+  }
+  
+  // Fallback to CHF (Swiss Franc) as default
+  return 'CHF';
+}

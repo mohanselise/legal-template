@@ -87,13 +87,12 @@ function AISuggestionIndicator({
     ? String(currentValue) 
     : "";
   
-  // Don't show if already applied or user has custom input
+  // Don't show if already applied
   if (suggestedStr === currentStr) return null;
-  if (currentStr.length > 0) return null;
 
-  // Truncate for display
-  const displayValue = suggestedStr.length > 25 
-    ? suggestedStr.substring(0, 25) + "..." 
+  // Truncate for display (longer for textarea)
+  const displayValue = suggestedStr.length > 50 
+    ? suggestedStr.substring(0, 50) + "..." 
     : suggestedStr;
 
   return (
@@ -109,7 +108,7 @@ function AISuggestionIndicator({
         hover:bg-[hsl(var(--selise-blue))]/15 transition-all cursor-pointer
         border border-[hsl(var(--selise-blue))]/20 hover:border-[hsl(var(--selise-blue))]/40
         shadow-sm hover:shadow"
-      title={`Apply standard value: ${suggestedStr.substring(0, 100)}`}
+      title={`Apply standard value: ${suggestedStr.substring(0, 200)}`}
     >
       <Sparkles className="h-3 w-3" />
       <span className="whitespace-nowrap">Use standard: <span className="font-semibold">{displayValue}</span></span>
@@ -130,13 +129,12 @@ export function TextareaField({ field, value, onChange, error, enrichmentContext
     ? getSuggestionPlaceholder(field.aiSuggestionKey, enrichmentContext, field.placeholder)
     : resolveTemplateVariables(field.placeholder, formData, enrichmentContext);
 
-  // Check if suggestion is available and field is empty
-  const currentStr = value !== undefined && value !== null ? String(value) : "";
+  // Check if suggestion is available
   const hasEnrichment = enrichmentContext && Object.keys(enrichmentContext).length > 0;
   const suggestedValue = showSuggestion && hasEnrichment
     ? getNestedValue(enrichmentContext, field.aiSuggestionKey!)
     : null;
-  const showInlineButton = showSuggestion && hasEnrichment && suggestedValue !== null && currentStr.length === 0;
+  const hasSuggestion = showSuggestion && hasEnrichment && suggestedValue !== null;
 
   return (
     <div className="space-y-2">
@@ -162,11 +160,12 @@ export function TextareaField({ field, value, onChange, error, enrichmentContext
           rows={4}
           className={cn(
             "min-h-[100px] resize-y",
-            error ? "border-destructive" : ""
+            error ? "border-destructive" : "",
+            hasSuggestion ? "pb-16" : ""
           )}
         />
-        {showSuggestion && showInlineButton && (
-          <div className="absolute right-2 top-2">
+        {hasSuggestion && (
+          <div className="absolute right-2 bottom-2">
             <AISuggestionIndicator
               suggestionKey={field.aiSuggestionKey!}
               enrichmentContext={enrichmentContext}

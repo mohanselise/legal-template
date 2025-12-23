@@ -135,8 +135,60 @@ export function FieldEditor({
   const [uilmOptionsKeys, setUilmOptionsKeys] = useState<string[]>([]);
   const [conditions, setConditions] = useState<ConditionGroup | null>(null);
 
+  // Compute available AI context keys from previous screens if not provided
+  const computedContextKeys: AvailableContextKey[] = useMemo(() => {
+    // If already provided, use the prop
+    if (availableContextKeys.length > 0) {
+      return availableContextKeys;
+    }
+    
+    // Otherwise, compute from allScreens
+    const keys: AvailableContextKey[] = [];
+    
+    if (!currentScreen) return keys;
+    
+    // Get previous screens (those with order < current screen's order)
+    const previousScreens = allScreens
+      .filter((s) => s.order < currentScreen.order)
+      .sort((a, b) => a.order - b.order);
+
+    previousScreens.forEach((prevScreen) => {
+      const schemaStr = (prevScreen as any).aiOutputSchema;
+      if (!schemaStr || !schemaStr.trim()) return;
+
+      try {
+        const schema = JSON.parse(schemaStr);
+        if (schema.type === "object" && schema.properties) {
+          // Flatten schema properties to get all fields
+          const flattenProperties = (properties: Record<string, any>, prefix = ""): void => {
+            Object.entries(properties).forEach(([key, value]: [string, any]) => {
+              const fullKey = prefix ? `${prefix}.${key}` : key;
+              keys.push({
+                screenTitle: prevScreen.title,
+                key: fullKey,
+                type: value.type || "unknown",
+                fullPath: fullKey,
+              });
+
+              // Recursively handle nested objects
+              if (value.type === "object" && value.properties) {
+                flattenProperties(value.properties, fullKey);
+              }
+            });
+          };
+
+          flattenProperties(schema.properties);
+        }
+      } catch (e) {
+        console.error(`Failed to parse schema for screen ${prevScreen.title}`, e);
+      }
+    });
+
+    return keys;
+  }, [availableContextKeys, allScreens, currentScreen]);
+
   // Check if there are any variables available
-  const hasVariables = availableFormFields.length > 0 || availableContextKeys.length > 0;
+  const hasVariables = availableFormFields.length > 0 || computedContextKeys.length > 0;
 
   // Compute available fields for condition editor
   // Includes fields from previous screens AND fields before this one on the current screen
@@ -540,7 +592,7 @@ export function FieldEditor({
                       Template Variables
                     </span>
                     <Badge variant="secondary" className="text-xs">
-                      {availableFormFields.length + availableContextKeys.length}
+                      {availableFormFields.length + computedContextKeys.length}
                     </Badge>
                   </div>
                   {variablesSectionExpanded ? (
@@ -588,13 +640,13 @@ export function FieldEditor({
                     )}
 
                     {/* AI Context from Previous Steps */}
-                    {availableContextKeys.length > 0 && (
+                    {computedContextKeys.length > 0 && (
                       <div className="space-y-2">
                         <Label className="text-xs font-medium text-[hsl(var(--globe-grey))] uppercase tracking-wider">
                           AI Context from Previous Steps
                         </Label>
                         <div className="flex flex-wrap gap-2">
-                          {availableContextKeys.map((ctx, idx) => (
+                          {computedContextKeys.map((ctx, idx) => (
                             <button
                               key={idx}
                               type="button"
@@ -666,13 +718,13 @@ export function FieldEditor({
                   {watch("aiSuggestionEnabled") && (
                     <div className="space-y-3">
                       {/* Available Context Keys */}
-                      {availableContextKeys.length > 0 ? (
+                      {computedContextKeys.length > 0 ? (
                         <div className="space-y-2">
                           <Label className="text-sm">
                             Select from Available Context Keys
                           </Label>
                           <div className="flex flex-wrap gap-2 p-3 bg-[hsl(var(--muted))]/30 rounded-lg border border-[hsl(var(--border))]">
-                            {availableContextKeys.map((ctx, idx) => {
+                            {computedContextKeys.map((ctx, idx) => {
                               const isSelected = watch("aiSuggestionKey") === ctx.fullPath;
                               return (
                                 <button

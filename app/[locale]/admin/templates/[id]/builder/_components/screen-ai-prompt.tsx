@@ -92,6 +92,56 @@ export function ScreenAIPrompt({
     const hasToggleChanged = aiPromptEnabled !== initialToggleState;
     const isSaveDisabled = isSaving || (!isDirty && !hasToggleChanged);
 
+    // Auto-enable AI suggestions for fields in the output schema
+    const enableAISuggestionsForSchemaFields = async (schemaStr: string | null) => {
+        if (!schemaStr || !schemaStr.trim()) return;
+
+        try {
+            const schema = JSON.parse(schemaStr);
+            if (schema.type !== "object" || !schema.properties) return;
+
+            const selectedFieldNames = Object.keys(schema.properties);
+            if (selectedFieldNames.length === 0) return;
+
+            // Find matching fields in subsequent screens
+            const fieldsToUpdate: Array<{ id: string; name: string }> = [];
+            
+            subsequentScreens.forEach((screen) => {
+                screen.fields.forEach((field) => {
+                    // Only update if:
+                    // 1. Field name is in the schema
+                    // 2. AI suggestions are not already enabled (respect manual overrides)
+                    if (selectedFieldNames.includes(field.name) && !field.aiSuggestionEnabled) {
+                        fieldsToUpdate.push({ id: field.id, name: field.name });
+                    }
+                });
+            });
+
+            if (fieldsToUpdate.length === 0) return;
+
+            // Update each field in parallel
+            await Promise.all(
+                fieldsToUpdate.map((field) =>
+                    fetch(`/api/admin/fields/${field.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            aiSuggestionEnabled: true,
+                            aiSuggestionKey: field.name,
+                        }),
+                    })
+                )
+            );
+
+            if (fieldsToUpdate.length > 0) {
+                toast.success(`Auto-enabled AI suggestions for ${fieldsToUpdate.length} field${fieldsToUpdate.length > 1 ? 's' : ''}`);
+            }
+        } catch (e) {
+            console.error("Failed to auto-enable AI suggestions:", e);
+            // Don't show error toast - this is a secondary operation
+        }
+    };
+
     const onSubmit = async (data: PromptFormData) => {
         setIsSaving(true);
         try {
@@ -119,6 +169,11 @@ export function ScreenAIPrompt({
 
             if (!response.ok) {
                 throw new Error("Failed to save AI prompt");
+            }
+
+            // Auto-enable AI suggestions for fields in the output schema
+            if (payload.aiOutputSchema) {
+                await enableAISuggestionsForSchemaFields(payload.aiOutputSchema);
             }
 
             toast.success("AI prompt saved successfully");
@@ -255,6 +310,7 @@ export function ScreenAIPrompt({
                         label: field.label,
                         type: field.type,
                         options: field.options && field.options.length > 0 ? field.options : undefined,
+                        aiSuggestionEnabled: field.aiSuggestionEnabled ?? false,
                     })),
                 };
             });

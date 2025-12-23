@@ -118,32 +118,24 @@ export const BlockRenderer: React.FC<BlockRendererProps> = ({ block, level = 0 }
   const { type, props = {}, children = [], text } = block;
 
   switch (type) {
-    case 'article': {
-      // AI now controls the full display title (e.g., "CLAUSE 1: Parties" for UK)
-      // Fallback to legacy behavior for existing documents without prefix
-      const hasPrefix = /^(ARTICLE|CLAUSE|SECTION|Article|Clause|Section)\s+\d+/i.test(props.title || '');
-      const displayTitle = hasPrefix 
-        ? props.title 
-        : (props.number ? `ARTICLE ${props.number}: ${props.title}` : props.title);
-      
+    case 'article':
       return (
         <View style={styles.article}>
           <Text style={styles.articleTitle}>
-            {displayTitle}
+            {props.title}
           </Text>
           {children.map((child, index) => (
             <BlockRenderer key={child.id || index} block={child} level={level + 1} />
           ))}
         </View>
       );
-    }
 
     case 'section':
       return (
         <View style={styles.section}>
           {props.title && (
             <Text style={styles.sectionTitle}>
-              {props.number ? `${props.number} ` : ''}{props.title}
+              {props.title}
             </Text>
           )}
           {children.map((child, index) => (

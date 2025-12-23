@@ -43,7 +43,7 @@ export const SIG_PAGE_LAYOUT = {
   // These coordinates are used by both PDF and overlay systems
   // SIG_BOX_Y_OFFSET positions the overlay at the signature line within the fixed block
   SIG_BOX_X_OFFSET: 0,  // Aligned with left edge of content
-  SIG_BOX_Y_OFFSET: 135, // Position at signature line (adjusted to align with actual rendered line)
+  SIG_BOX_Y_OFFSET: 150, // Position at signature line (adjusted to align with actual rendered line)
   SIG_BOX_HEIGHT: 45,
   SIG_BOX_WIDTH: 220,
   

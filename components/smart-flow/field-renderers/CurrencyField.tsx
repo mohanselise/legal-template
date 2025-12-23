@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+import { useLocale } from "next-intl";
 import { Sparkles, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,9 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { FieldRendererProps, CurrencyValue } from "./types";
 import { CURRENCIES } from "./types";
-import { resolveTemplateVariables, getNestedValue, parseCompositeValue } from "./utils";
-
-const DEFAULT_CURRENCY: CurrencyValue = { amount: "", currency: "CHF" };
+import { resolveTemplateVariables, getNestedValue, parseCompositeValue, getDefaultCurrency } from "./utils";
 
 /**
  * AI Suggestion Status Badge - shows status only (loading/applied/available)
@@ -24,10 +24,12 @@ function AISuggestionStatusBadge({
   suggestionKey,
   enrichmentContext,
   currentValue,
+  defaultCurrency,
 }: {
   suggestionKey: string;
   enrichmentContext?: Record<string, unknown>;
   currentValue: unknown;
+  defaultCurrency: CurrencyValue;
 }) {
   if (!suggestionKey) return null;
   
@@ -50,8 +52,8 @@ function AISuggestionStatusBadge({
     return null;
   }
   
-  const currentCurrency = parseCompositeValue<CurrencyValue>(currentValue, DEFAULT_CURRENCY);
-  const suggestedCurrency = parseCompositeValue<CurrencyValue>(suggestedValue, DEFAULT_CURRENCY);
+  const currentCurrency = parseCompositeValue<CurrencyValue>(currentValue, defaultCurrency);
+  const suggestedCurrency = parseCompositeValue<CurrencyValue>(suggestedValue, defaultCurrency);
   
   const amountMatch = String(currentCurrency.amount) === String(suggestedCurrency.amount);
   const currencyMatch = currentCurrency.currency === suggestedCurrency.currency;
@@ -78,7 +80,12 @@ function AISuggestionStatusBadge({
  * Stores: { amount: number|string, currency: string }
  */
 export function CurrencyField({ field, value, onChange, error, enrichmentContext, formData }: FieldRendererProps) {
+  const locale = useLocale();
   const showSuggestion = field.aiSuggestionEnabled && field.aiSuggestionKey;
+  
+  // Get default currency based on user's locale
+  const defaultCurrencyCode = useMemo(() => getDefaultCurrency(locale), [locale]);
+  const DEFAULT_CURRENCY: CurrencyValue = useMemo(() => ({ amount: "", currency: defaultCurrencyCode }), [defaultCurrencyCode]);
   
   const resolvedLabel = resolveTemplateVariables(field.label, formData, enrichmentContext);
   const resolvedHelpText = resolveTemplateVariables(field.helpText, formData, enrichmentContext);
@@ -144,6 +151,7 @@ export function CurrencyField({ field, value, onChange, error, enrichmentContext
             suggestionKey={field.aiSuggestionKey!}
             enrichmentContext={enrichmentContext}
             currentValue={value}
+            defaultCurrency={DEFAULT_CURRENCY}
           />
         )}
       </div>
@@ -152,7 +160,7 @@ export function CurrencyField({ field, value, onChange, error, enrichmentContext
         {/* Currency Selector */}
         <div className="w-[130px] flex-shrink-0">
           <Select
-            value={currencyValue.currency || "CHF"}
+            value={currencyValue.currency || defaultCurrencyCode}
             onValueChange={handleCurrencyChange}
           >
             <SelectTrigger className={cn(error ? "border-destructive" : "")}>

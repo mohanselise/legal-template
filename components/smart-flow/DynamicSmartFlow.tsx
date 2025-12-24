@@ -1886,21 +1886,21 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
               transition={{ duration: 0.3 }}
             >
               {/* Card Container - Premium Glassmorphism */}
-              <div className="bg-gradient-to-br from-background/95 to-[hsl(var(--brand-primary))/5] backdrop-blur-xl rounded-3xl shadow-xl shadow-[hsl(var(--brand-primary))/5] border border-[hsl(var(--border))] p-8 md:p-12 relative overflow-hidden">
+              <div className="bg-gradient-to-br from-background/95 to-[hsl(var(--brand-primary))/5] backdrop-blur-xl rounded-3xl shadow-xl shadow-[hsl(var(--brand-primary))/5] border border-[hsl(var(--border))] p-5 sm:p-8 md:p-12 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[hsl(var(--brand-primary))/5] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
                 {/* Screen Header with Icon */}
-                <div className="mb-8 space-y-3">
+                <div className="mb-6 sm:mb-8 space-y-3">
                   {currentScreen?.title && (() => {
                     const IconComponent = getScreenIcon(currentScreen.title);
                     return (
-                      <div className="w-14 h-14 bg-[hsl(var(--brand-primary))/0.1] rounded-2xl flex items-center justify-center text-[hsl(var(--brand-primary))]">
-                        <IconComponent className="w-7 h-7" />
+                      <div className="w-10 h-10 sm:w-14 sm:h-14 bg-[hsl(var(--brand-primary))/0.1] rounded-2xl flex items-center justify-center text-[hsl(var(--brand-primary))]">
+                        <IconComponent className="w-5 h-5 sm:w-7 sm:h-7" />
                       </div>
                     );
                   })()}
                   <div>
-                    <h2 className="text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))] font-heading">
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-[hsl(var(--fg))] font-heading">
                       {currentScreen?.title}
                     </h2>
                     {currentScreen?.description && (
@@ -1947,7 +1947,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
 
                 {/* Fields with Staggered Animation */}
                 <motion.div
-                  className="space-y-8 relative z-10"
+                  className="space-y-5 sm:space-y-8 relative z-10"
                   variants={{
                     hidden: { opacity: 0 },
                     show: {
@@ -2378,18 +2378,18 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                            (!dynamicFieldsCache[currentScreen?.id || ""] || 
                             prefetchingStepIndices.has(currentStep)))
                         }
-                        className="flex items-center gap-3 px-8 py-4 group transition-all duration-300 hover:shadow-lg hover:shadow-[hsl(var(--brand-primary))/20]"
+                        className="flex items-center gap-2 sm:gap-3 px-5 py-3 sm:px-8 sm:py-4 group transition-all duration-300 hover:shadow-lg hover:shadow-[hsl(var(--brand-primary))/20]"
                         size="lg"
                       >
                         {dynamicFieldsLoading ? (
                           <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            Loading...
+                            <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                            <span className="text-sm sm:text-base">Loading...</span>
                           </>
                         ) : (
                           <>
-                            {t('navigation.continue')}
-                            <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                            <span className="text-sm sm:text-base">{t('navigation.continue')}</span>
+                            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1" />
                           </>
                         )}
                       </Button>
@@ -2409,23 +2409,23 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                              (!dynamicFieldsCache[currentScreen?.id || ""] ||
                               prefetchingStepIndices.has(currentStep)))
                           }
-                          className="flex items-center gap-3 px-8 py-4 bg-[hsl(var(--brand-primary))] text-[hsl(var(--brand-primary-foreground))] hover:bg-[hsl(var(--brand-primary))/90] shadow-lg shadow-[hsl(var(--brand-primary))/20] group transition-all duration-300"
+                          className="flex items-center gap-2 sm:gap-3 px-5 py-3 sm:px-8 sm:py-4 bg-[hsl(var(--brand-primary))] text-[hsl(var(--brand-primary-foreground))] hover:bg-[hsl(var(--brand-primary))/90] shadow-lg shadow-[hsl(var(--brand-primary))/20] group transition-all duration-300"
                           size="lg"
                         >
                           {(dynamicFieldsLoading || ((currentScreen as any)?.type === "dynamic" && prefetchingStepIndices.has(currentStep))) ? (
                             <>
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                              Loading...
+                              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                              <span className="text-sm sm:text-base">Loading...</span>
                             </>
                           ) : isSubmitting ? (
                             <>
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                              Generating...
+                              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                              <span className="text-sm sm:text-base">Generating...</span>
                             </>
                           ) : (
                             <>
-                              <Sparkles className="w-5 h-5 transition-transform group-hover:scale-110" />
-                              Generate Document
+                              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:scale-110" />
+                              <span className="text-sm sm:text-base">Generate Document</span>
                             </>
                           )}
                         </Button>

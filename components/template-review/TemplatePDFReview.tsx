@@ -222,6 +222,7 @@ export function TemplatePDFReview({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isPreparingContract, setIsPreparingContract] = useState(false);
   const [showDownloadPrompt, setShowDownloadPrompt] = useState(false);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -258,6 +259,21 @@ export function TemplatePDFReview({
         mod.pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${mod.pdfjs.version}/build/pdf.worker.min.mjs`;
       });
     }
+  }, []);
+
+  // Track container width for responsive PDF rendering
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0].contentRect.width;
+      // Subtract padding (p-4 sm:p-6 = 16px on mobile, 24px on larger)
+      const padding = width < 640 ? 32 : 48;
+      setContainerWidth(width - padding);
+    });
+    
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, []);
 
   // Note: PDF text layer hover styles are defined in globals.css
@@ -778,12 +794,19 @@ export function TemplatePDFReview({
   };
 
   const handleFitWidth = () => {
-    if (containerRef.current) {
-      const containerWidth = containerRef.current.clientWidth - 64;
+    if (containerRef.current && containerWidth) {
       const pageWidthInPixels = 612;
       setScale(containerWidth / pageWidthInPixels);
     }
   };
+
+  // Calculate responsive page width
+  const pageWidth = containerWidth && containerWidth < 612 
+    ? containerWidth 
+    : 612;
+  
+  // Calculate responsive page height (maintain aspect ratio)
+  const pageHeight = (pageWidth / 612) * 792;
 
   const handleFitPage = () => {
     setScale(1.0);
@@ -1068,8 +1091,8 @@ export function TemplatePDFReview({
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Zoom Controls */}
-              <div className="flex items-center border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] divide-x divide-[hsl(var(--border))] shadow-sm">
+              {/* Desktop Zoom Controls */}
+              <div className="hidden md:flex items-center border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] divide-x divide-[hsl(var(--border))] shadow-sm">
                 <button
                   onClick={handleZoomOut}
                   disabled={scale <= 0.5}
@@ -1091,8 +1114,26 @@ export function TemplatePDFReview({
                 </button>
               </div>
 
-              {/* Fit Presets */}
-              <div className="hidden sm:flex items-center border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] divide-x divide-[hsl(var(--border))] shadow-sm">
+              {/* Mobile Zoom Controls - Simplified */}
+              <div className="flex md:hidden items-center gap-2">
+                <button
+                  onClick={handleFitWidth}
+                  className="px-3 py-1.5 text-xs font-semibold text-[hsl(var(--fg))] border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] hover:bg-[hsl(var(--muted))] transition-colors"
+                  title="Fit Width"
+                >
+                  Fit
+                </button>
+                <button
+                  onClick={handleFitPage}
+                  className="px-3 py-1.5 text-xs font-semibold text-[hsl(var(--fg))] border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] hover:bg-[hsl(var(--muted))] transition-colors"
+                  title="100%"
+                >
+                  100%
+                </button>
+              </div>
+
+              {/* Desktop Fit Presets */}
+              <div className="hidden md:flex items-center border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] divide-x divide-[hsl(var(--border))] shadow-sm">
                 <button
                   onClick={handleFitWidth}
                   className="px-3 py-1.5 text-xs font-semibold text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
@@ -1121,7 +1162,7 @@ export function TemplatePDFReview({
           </div>
 
           {/* PDF Viewer */}
-          <div ref={containerRef} className="flex-1 overflow-auto p-4 sm:p-6 bg-[hsl(var(--muted))]/40 rounded-b-2xl">
+          <div ref={containerRef} className="flex-1 overflow-auto p-4 sm:p-6 bg-[hsl(var(--muted))]/40 rounded-b-2xl pb-24 md:pb-6">
             {isLoadingPdf ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
@@ -1184,8 +1225,8 @@ export function TemplatePDFReview({
                           }}
                           className="bg-white shadow-xl mx-auto relative rounded-lg"
                           style={{
-                            width: 612 * scale,
-                            height: 792 * scale,
+                            width: pageWidth * scale,
+                            height: pageHeight * scale,
                           }}
                           onClick={handlePageClick}
                           onMouseMove={(e) => handleTextHover(e, page)}
@@ -1222,13 +1263,13 @@ export function TemplatePDFReview({
                           <Page
                             pageNumber={page}
                             scale={scale}
-                            width={612}
+                            width={pageWidth}
                             renderTextLayer={true}
                             renderAnnotationLayer={true}
                             loading={
                               <div
                                 className="flex items-center justify-center bg-[hsl(var(--bg))]"
-                                style={{ width: 612 * scale, height: 792 * scale }}
+                                style={{ width: pageWidth * scale, height: pageHeight * scale }}
                               >
                                 <Loader2 className="w-8 h-8 animate-spin text-[hsl(var(--globe-grey))]" />
                               </div>
@@ -1242,6 +1283,7 @@ export function TemplatePDFReview({
                               scale={scale}
                               pageRef={null}
                               pageElement={pageRefs.current.get(page) || null}
+                              pageWidth={pageWidth}
                               onFieldsChange={handleSignatureFieldsChange}
                               selectedField={selectedField}
                               onSelectField={setSelectedField}
@@ -1428,6 +1470,29 @@ export function TemplatePDFReview({
             </div>
           </aside>
         )}
+      </div>
+
+      {/* Mobile Floating Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 md:hidden z-40 bg-[hsl(var(--bg))] border-t border-[hsl(var(--border))] p-4 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.35)] safe-area-pb">
+        <div className="flex gap-3">
+          <Button
+            onClick={() => setShowDownloadPrompt(true)}
+            variant="outline"
+            className="flex-1 border-[hsl(var(--border))] text-[hsl(var(--globe-grey))]"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
+          {signatureFields.length > 0 && (
+            <Button
+              onClick={handleSendToSignature}
+              className="flex-1 bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))] shadow-md"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Send
+            </Button>
+          )}
+        </div>
       </div>
 
       <Dialog open={showDownloadPrompt} onOpenChange={setShowDownloadPrompt}>

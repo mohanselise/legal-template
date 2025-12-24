@@ -30,6 +30,8 @@ interface SignatureFieldOverlayProps {
   pageRef: React.RefObject<HTMLDivElement | null> | null;
   /** Direct element reference (alternative to pageRef) */
   pageElement?: HTMLDivElement | null;
+  /** Base PDF width in points (default 612 for standard letter size) */
+  pageWidth?: number;
   onFieldsChange: (fields: SignatureField[]) => void;
   selectedField: string | null;
   onSelectField: (fieldId: string | null) => void;
@@ -97,6 +99,7 @@ export function SignatureFieldOverlay({
   scale,
   pageRef,
   pageElement,
+  pageWidth = 612,
   onFieldsChange,
   selectedField,
   onSelectField,
@@ -104,6 +107,9 @@ export function SignatureFieldOverlay({
   selectedFieldType,
   onPageClick,
 }: SignatureFieldOverlayProps) {
+  // Calculate proportional dimensions
+  const baseWidth = pageWidth;
+  const baseHeight = (baseWidth / 612) * 792;
   // Get the actual page element - prefer pageElement prop, fallback to pageRef
   const getPageElement = (): HTMLDivElement | null => {
     return pageElement || pageRef?.current || null;
@@ -150,8 +156,9 @@ export function SignatureFieldOverlay({
     if (field && element) {
       const rect = element.getBoundingClientRect();
       // Calculate offset from mouse position to field top-left corner
-      const fieldScreenX = field.x * scale;
-      const fieldScreenY = field.y * scale;
+      // Convert PDF points to screen pixels using proportional scaling
+      const fieldScreenX = (field.x / 612) * baseWidth * scale;
+      const fieldScreenY = (field.y / 792) * baseHeight * scale;
       setDragStart({
         x: event.clientX - rect.left - fieldScreenX,
         y: event.clientY - rect.top - fieldScreenY,
@@ -185,11 +192,12 @@ export function SignatureFieldOverlay({
     if (!element) return;
 
     if (isResizing && resizeState) {
-      // Convert pixel delta to PDF points (divide by scale)
+      // Convert pixel delta to PDF points using proportional scaling
       const deltaXPixels = event.clientX - resizeState.startX;
       const deltaYPixels = event.clientY - resizeState.startY;
-      const deltaX = deltaXPixels / scale;
-      const deltaY = deltaYPixels / scale;
+      // Account for proportional scaling: convert screen pixels to PDF points
+      const deltaX = (deltaXPixels / scale) * (612 / baseWidth);
+      const deltaY = (deltaYPixels / scale) * (792 / baseHeight);
       
       const field = fields.find((f) => f.id === resizeState.fieldId);
       if (!field) return;
@@ -218,11 +226,12 @@ export function SignatureFieldOverlay({
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
     
-    // Convert screen pixels to PDF points (divide by scale)
-    const x = (mouseX - dragStart.x) / scale;
-    const y = (mouseY - dragStart.y) / scale;
+    // Convert screen pixels to PDF points using proportional scaling
+    // First convert to base width/height coordinates, then to PDF points
+    const x = ((mouseX - dragStart.x) / scale) * (612 / baseWidth);
+    const y = ((mouseY - dragStart.y) / scale) * (792 / baseHeight);
 
-    // Ensure fields stay within page bounds (612pt × 792pt)
+    // Ensure fields stay within page bounds (proportional to baseWidth/baseHeight)
     const field = fields.find((f) => f.id === selectedField);
     if (!field) return;
     
@@ -267,8 +276,11 @@ export function SignatureFieldOverlay({
         const rect = element.getBoundingClientRect();
         const deltaXPixels = event.clientX - currentResizeState.startX;
         const deltaYPixels = event.clientY - currentResizeState.startY;
-        const deltaX = deltaXPixels / scale;
-        const deltaY = deltaYPixels / scale;
+        // Account for proportional scaling: convert screen pixels to PDF points
+        const currentBaseWidth = pageWidth;
+        const currentBaseHeight = (currentBaseWidth / 612) * 792;
+        const deltaX = (deltaXPixels / scale) * (612 / currentBaseWidth);
+        const deltaY = (deltaYPixels / scale) * (792 / currentBaseHeight);
         
         const field = fieldsRef.current.find((f) => f.id === currentResizeState.fieldId);
         if (!field) return;
@@ -293,8 +305,11 @@ export function SignatureFieldOverlay({
         const rect = element.getBoundingClientRect();
         const mouseX = event.clientX - rect.left;
         const mouseY = event.clientY - rect.top;
-        const x = (mouseX - currentDragStart.x) / scale;
-        const y = (mouseY - currentDragStart.y) / scale;
+        // Convert screen pixels to PDF points using proportional scaling
+        const currentBaseWidth = pageWidth;
+        const currentBaseHeight = (currentBaseWidth / 612) * 792;
+        const x = ((mouseX - currentDragStart.x) / scale) * (612 / currentBaseWidth);
+        const y = ((mouseY - currentDragStart.y) / scale) * (792 / currentBaseHeight);
 
         const field = fieldsRef.current.find((f) => f.id === currentSelectedField);
         if (!field) return;
@@ -327,7 +342,7 @@ export function SignatureFieldOverlay({
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [isDragging, isResizing, scale, pageElement, pageRef]);
+  }, [isDragging, isResizing, scale, pageElement, pageRef, pageWidth]);
 
   const handleDeleteField = (fieldId: string) => {
     onFieldsChange(fields.filter((f) => f.id !== fieldId));
@@ -409,10 +424,10 @@ export function SignatureFieldOverlay({
               isSelected ? 'z-50' : isHovered ? 'z-40' : 'z-30'
             }`}
             style={{
-              left: `${field.x * scale}px`,
-              top: `${field.y * scale}px`,
-              width: `${field.width * scale}px`,
-              height: `${field.height * scale}px`,
+              left: `${(field.x / 612) * baseWidth * scale}px`,
+              top: `${(field.y / 792) * baseHeight * scale}px`,
+              width: `${(field.width / 612) * baseWidth * scale}px`,
+              height: `${(field.height / 792) * baseHeight * scale}px`,
               overflow: 'visible',
             }}
             onMouseDown={(e) => handleFieldMouseDown(field.id, e)}

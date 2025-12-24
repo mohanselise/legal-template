@@ -96,26 +96,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       data.href = `/templates/${data.slug}/generate`;
     }
 
-    // Validate signatory screen exists when publishing template
-    if (data.available === true && !existing.available) {
-      const signatoryScreen = await prisma.templateScreen.findFirst({
-        where: { 
-          templateId: id, 
-          type: "signatory" 
-        },
-      });
-
-      if (!signatoryScreen) {
-        return NextResponse.json(
-          { 
-            error: "Template must have at least one signatory screen before publishing",
-            details: "Add a signatory screen in the Form Builder to collect signature information."
-          },
-          { status: 400 }
-        );
-      }
-    }
-
     const template = await prisma.template.update({
       where: { id },
       data,

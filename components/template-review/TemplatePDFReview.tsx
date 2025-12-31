@@ -33,7 +33,7 @@ import { ensureAdditionalSignatoryArray } from "@/lib/templates/signatory-fields
 import type { SignatoryEntry } from "@/lib/templates/signatory-config";
 import { InlineTextEditor } from "./InlineTextEditor";
 import { findBlockByText, updateBlockText, type TextBlockMapping } from "@/lib/pdf/text-block-mapper";
-import { Edit2 } from "lucide-react";
+import { Edit2, Type, Heading, List } from "lucide-react";
 import {
   trackDocumentPreviewLoaded,
   trackDocumentDownloaded,
@@ -41,6 +41,32 @@ import {
   trackSignatureFieldAdded,
   trackDocumentEdited,
 } from "@/lib/analytics";
+
+/** Get a friendly label for the block type */
+function getBlockLabel(blockType?: string, isTitle?: boolean): { label: string; Icon: typeof Type } {
+  if (isTitle) {
+    return { label: "Heading", Icon: Heading };
+  }
+  
+  switch (blockType) {
+    case "article":
+      return { label: "Article Title", Icon: Heading };
+    case "section":
+      return { label: "Section Title", Icon: Heading };
+    case "paragraph":
+      return { label: "Paragraph", Icon: FileText };
+    case "list_item":
+      return { label: "List Item", Icon: List };
+    case "definition_item":
+      return { label: "Definition", Icon: Type };
+    case "table_cell":
+      return { label: "Table Cell", Icon: Type };
+    case "effectiveDate":
+      return { label: "Effective Date", Icon: Type };
+    default:
+      return { label: "Text", Icon: Type };
+  }
+}
 
 // Dynamically import react-pdf components to avoid SSR issues
 const Document = dynamic(
@@ -249,6 +275,7 @@ export function TemplatePDFReview({
     boundingRect: { x: number; y: number; width: number; height: number } | null;
   } | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [clickedHighlight, setClickedHighlight] = useState<string | null>(null);
 
   const signatories = extractSignatories(editableDocument, formData);
 
@@ -468,7 +495,7 @@ export function TemplatePDFReview({
 
     if (minX === Infinity) return;
 
-    const padding = 6;
+    const padding = 10;
     const boundingRect = {
       x: Math.max(0, minX - padding),
       y: Math.max(0, minY - padding),
@@ -844,6 +871,7 @@ export function TemplatePDFReview({
     if (isEditing) return;
 
     // If we have a hovered block, use it directly - this allows clicking anywhere in the highlight
+    // This includes clicks on the highlight overlay itself, not just the text
     if (hoveredBlock && hoveredBlock.blockMapping) {
       const blockMapping = hoveredBlock.blockMapping;
       
@@ -1233,31 +1261,61 @@ export function TemplatePDFReview({
                           onMouseLeave={handleTextLeave}
                         >
                           {/* Block highlight overlay - clickable */}
-                          {hoveredBlock && hoveredBlock.pageNumber === page && hoveredBlock.boundingRect && (
+                          {hoveredBlock && hoveredBlock.pageNumber === page && hoveredBlock.boundingRect && hoveredBlock.blockMapping && (
                             <div
-                              className="absolute z-20 transition-all duration-150 ease-out cursor-pointer"
+                              data-highlight-overlay
+                              className={`absolute z-20 cursor-pointer animate-fade-in-zoom ${
+                                clickedHighlight === `${page}-${hoveredBlock.blockMapping.blockId}` ? 'animate-[highlight-click_0.3s_ease-out]' : ''
+                              }`}
                               style={{
                                 left: hoveredBlock.boundingRect.x,
                                 top: hoveredBlock.boundingRect.y,
                                 width: hoveredBlock.boundingRect.width,
                                 height: hoveredBlock.boundingRect.height,
-                                backgroundColor: 'rgba(0, 102, 178, 0.1)',
-                                border: '2px solid rgba(0, 102, 178, 0.5)',
-                                borderRadius: '4px',
-                                boxShadow: '0 2px 12px rgba(0, 102, 178, 0.2)',
+                                backgroundColor: 'rgba(0, 102, 178, 0.18)',
+                                border: '2.5px solid rgba(0, 102, 178, 0.7)',
+                                borderRadius: '6px',
+                                boxShadow: '0 4px 16px rgba(0, 102, 178, 0.25)',
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handlePageClick(e);
+                                // Add click feedback
+                                const highlightId = `${page}-${hoveredBlock.blockMapping?.blockId}`;
+                                setClickedHighlight(highlightId);
+                                setTimeout(() => setClickedHighlight(null), 300);
+                                
+                                // Directly handle the click with the hovered block
+                                if (hoveredBlock.blockMapping) {
+                                  const blockMapping = hoveredBlock.blockMapping;
+                                  if (blockMapping.blockId === 'metadata-effectiveDate') {
+                                    setIsEditingEffectiveDate(true);
+                                  } else {
+                                    setIsEditingEffectiveDate(false);
+                                  }
+                                  setEditingBlock(blockMapping);
+                                  setIsEditing(true);
+                                  setHoveredBlock(null);
+                                }
                               }}
                             >
-                              {/* Edit indicator tooltip */}
-                              <div 
-                                className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[hsl(var(--selise-blue))] text-white text-xs font-medium whitespace-nowrap shadow-lg pointer-events-none"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                                Click to edit
-                              </div>
+                              {/* Edit indicator tooltip with block type */}
+                              {(() => {
+                                const { label: blockLabel, Icon: BlockIcon } = getBlockLabel(
+                                  hoveredBlock.blockMapping?.type,
+                                  hoveredBlock.blockMapping?.isTitle
+                                );
+                                return (
+                                  <div 
+                                    className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-2 rounded-lg bg-[hsl(var(--selise-blue))] text-white text-xs font-semibold whitespace-nowrap shadow-xl pointer-events-none z-30"
+                                    style={{
+                                      animation: 'slide-down 0.2s ease-out',
+                                    }}
+                                  >
+                                    <BlockIcon className="w-3.5 h-3.5" />
+                                    <span>Edit {blockLabel}</span>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           )}
                           <Page

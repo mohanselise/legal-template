@@ -298,6 +298,7 @@
 .react-pdf__Page .react-pdf__Page__textContent {
   cursor: pointer !important;
   user-select: none !important;
+  transition: opacity 0.15s ease-out;
 }
 
 /* Base styles for all text spans in PDF */
@@ -305,6 +306,33 @@
 .react-pdf__Page .react-pdf__Page__textContent span {
   cursor: pointer !important;
   user-select: none !important;
+  transition: opacity 0.15s ease-out;
+}
+
+/* Enhanced hover state for editable text spans */
+.react-pdf__Page__textContent span:hover,
+.react-pdf__Page .react-pdf__Page__textContent span:hover {
+  opacity: 0.85;
+}
+
+/* Better visual indication for editable text areas */
+.react-pdf__Page__textContent[data-editable="true"],
+.react-pdf__Page .react-pdf__Page__textContent[data-editable="true"] {
+  position: relative;
+}
+
+/* Ensure highlight overlays have proper z-index and are clickable */
+[data-highlight-overlay] {
+  pointer-events: auto !important;
+  touch-action: manipulation;
+}
+
+/* Improve accessibility - ensure sufficient contrast for highlights */
+@media (prefers-contrast: high) {
+  [data-highlight-overlay] {
+    border-width: 3px !important;
+    background-color: rgba(0, 102, 178, 0.25) !important;
+  }
 }
 
 /* Smooth animations for signature fields */
@@ -341,6 +369,37 @@
 
 .animate-slide-down {
   animation: slide-down 0.3s ease-out;
+}
+
+/* Click feedback animation for PDF highlights */
+@keyframes highlight-click {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 4px 16px rgba(0, 102, 178, 0.25);
+  }
+  50% {
+    transform: scale(0.98);
+    box-shadow: 0 6px 20px rgba(0, 102, 178, 0.4);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 16px rgba(0, 102, 178, 0.25);
+  }
+}
+
+@keyframes fade-in-zoom {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-zoom {
+  animation: fade-in-zoom 0.2s ease-out;
 }
 
 /* Loading animation for PDF */

@@ -215,26 +215,50 @@ export function TemplateSearchGrid({
     <div className={`space-y-6 ${className || ""}`}>
       {!hideSearch && (
         <div className={`flex flex-col gap-4 lg:flex-row lg:items-center ${showResultsLabel ? 'lg:justify-between' : 'lg:justify-center'} lg:gap-6 w-full ${searchContainerClassName || ""}`}>
-          <div className={`flex w-full items-center gap-3 ${showResultsLabel ? 'lg:flex-1 lg:max-w-md' : 'lg:w-auto lg:max-w-md'}`}>
-            <div className="relative w-full">
-              <Search className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${searchIconClassName || "text-muted-foreground"}`} />
-              <Input
-                aria-label={searchPlaceholder}
-                placeholder={searchPlaceholder}
-                value={query}
-                onChange={(event) => handleQueryChange(event.target.value)}
-                className={`pl-10 ${inputClassName || ""}`}
-              />
-              {query ? (
-                <button
-                  type="button"
-                  aria-label={clearSearchLabel}
-                  onClick={() => setQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition hover:text-foreground"
-                >
-                  <XCircle className="h-4 w-4" />
-                </button>
-              ) : null}
+          <div className={`flex w-full items-center ${showResultsLabel ? 'lg:flex-1 lg:max-w-md' : 'w-full'}`}>
+            <div className="relative w-full group">
+              {/* Subtle glow effect on focus */}
+              <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-[hsl(var(--selise-blue))]/30 via-[hsl(var(--selise-blue))]/20 to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 blur-md -z-10" />
+              
+              <div className="relative">
+                <Search className={`pointer-events-none absolute left-5 sm:left-4 top-1/2 h-5 w-5 sm:h-4 sm:w-4 -translate-y-1/2 z-10 transition-all duration-200 ${searchIconClassName || "text-muted-foreground group-focus-within:text-[hsl(var(--selise-blue))] group-focus-within:scale-110"}`} />
+                <Input
+                  aria-label={searchPlaceholder}
+                  placeholder={searchPlaceholder}
+                  value={query}
+                  onChange={(event) => handleQueryChange(event.target.value)}
+                  className={`pl-14 sm:pl-11 pr-14 sm:pr-11 h-16 sm:h-12 text-lg sm:text-base font-normal
+                    rounded-xl sm:rounded-lg
+                    border-2 sm:border
+                    shadow-xl sm:shadow-lg
+                    transition-all duration-200 ease-out
+                    focus-visible:shadow-2xl focus-visible:shadow-[hsl(var(--selise-blue))]/20
+                    focus-visible:border-[hsl(var(--selise-blue))]/50
+                    hover:shadow-lg hover:border-[hsl(var(--border))]/80
+                    ${inputClassName || ""}`}
+                />
+                {query ? (
+                  <button
+                    type="button"
+                    aria-label={clearSearchLabel}
+                    onClick={() => {
+                      setQuery("");
+                      handleQueryChange("");
+                    }}
+                    className="absolute right-4 sm:right-3 top-1/2 -translate-y-1/2 z-10
+                      rounded-lg sm:rounded-full p-2.5 sm:p-1.5 
+                      text-muted-foreground hover:text-foreground 
+                      hover:bg-muted/70 active:bg-muted active:scale-90
+                      transition-all duration-200 cursor-pointer touch-manipulation
+                      min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0
+                      flex items-center justify-center
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--selise-blue))] focus-visible:ring-offset-2
+                      backdrop-blur-sm"
+                  >
+                    <XCircle className="h-5 w-5 sm:h-4 sm:w-4" />
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
           {showResultsLabel && (

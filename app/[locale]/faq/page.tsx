@@ -116,7 +116,7 @@ export default async function FAQPage() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="border-[hsl(var(--selise-blue))] text-[hsl(var(--selise-blue))] px-7 py-5 h-auto">
-                <Link href="/contact">{t('reachSupport')}</Link>
+                <a href="https://selisegroup.com/contact-us/" target="_blank" rel="noopener noreferrer">{t('reachSupport')}</a>
               </Button>
             </div>
           </div>
@@ -171,10 +171,10 @@ export default async function FAQPage() {
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button asChild size="lg" className="group bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] px-7 py-5 h-auto">
-                <Link href="/contact">
+                <a href="https://selisegroup.com/contact-us/" target="_blank" rel="noopener noreferrer">
                   {t('contactSelise')}
                   <MessageSquare className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Link>
+                </a>
               </Button>
               <Button asChild variant="outline" size="lg" className="border-[hsl(var(--selise-blue))] text-[hsl(var(--selise-blue))] px-7 py-5 h-auto">
                 <Link href="/templates/employment-agreement/generate">

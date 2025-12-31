@@ -120,7 +120,7 @@ export default function AboutPage() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="border-[hsl(var(--selise-blue))] text-[hsl(var(--selise-blue))] px-7 py-5 h-auto">
-                <Link href="/contact">Talk to SELISE</Link>
+                <a href="https://selisegroup.com/contact-us/" target="_blank" rel="noopener noreferrer">Talk to SELISE</a>
               </Button>
             </div>
           </div>

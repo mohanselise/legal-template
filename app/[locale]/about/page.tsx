@@ -121,7 +121,7 @@ export default async function AboutPage() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="border-[hsl(var(--selise-blue))] text-[hsl(var(--selise-blue))] px-7 py-5 h-auto">
-                <Link href="/contact">{t('talkToSelise')}</Link>
+                <a href="https://selisegroup.com/contact-us/" target="_blank" rel="noopener noreferrer">{t('talkToSelise')}</a>
               </Button>
             </div>
           </div>

@@ -232,8 +232,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    background-color: hsl(var(--background));
+  }
   body {
     @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
     font-family: var(--font-open-sans), system-ui, sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {

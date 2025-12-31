@@ -926,7 +926,7 @@ function SmartFlowContent() {
           </div>
 
           {/* Trust Stats */}
-          <div className="mb-8 grid grid-cols-3 gap-4 rounded-2xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-6">
+          <div className="mb-8 grid grid-cols-1 gap-4 rounded-2xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-6 sm:grid-cols-3">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Users className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
@@ -934,14 +934,14 @@ function SmartFlowContent() {
               </div>
               <p className="text-xs text-[hsl(var(--brand-muted))]">{t('welcome.documentsGenerated')}</p>
             </div>
-            <div className="text-center border-x border-[hsl(var(--brand-border))]">
+            <div className="text-center border-t border-[hsl(var(--brand-border))] pt-4 sm:border-t-0 sm:border-x sm:pt-0">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Shield className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
                 <span className="text-2xl font-bold text-[hsl(var(--fg))]">98%</span>
               </div>
               <p className="text-xs text-[hsl(var(--brand-muted))]">{t('welcome.satisfactionRate')}</p>
             </div>
-            <div className="text-center">
+            <div className="text-center border-t border-[hsl(var(--brand-border))] pt-4 sm:border-t-0 sm:pt-0">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
                 <span className="text-2xl font-bold text-[hsl(var(--fg))]">&lt;5m</span>
@@ -984,31 +984,25 @@ function SmartFlowContent() {
                   siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
                   retry="auto"
                   refreshExpired="auto"
-                  sandbox={false} // Using production keys
+                  sandbox={false}
                   theme="light"
                   onError={() => {
-                    setTurnstileStatus('error');
+                    setTurnstileStatus("error");
                     setTurnstileToken(null);
                   }}
                   onExpire={() => {
-                    setTurnstileStatus('expired');
+                    setTurnstileStatus("expired");
                     setTurnstileToken(null);
                   }}
                   onLoad={() => {
-                    setTurnstileStatus('required');
+                    setTurnstileStatus("required");
                   }}
                   onVerify={(token) => {
-                    setTurnstileStatus('success');
-                    setTurnstileToken(token); // Update local state
-                    storeTurnstileToken(token); // Store with timestamp in sessionStorage
+                    setTurnstileStatus("success");
+                    setTurnstileToken(token);
+                    storeTurnstileToken(token);
                   }}
                 />
-                {turnstileStatus === 'success' && turnstileToken && (
-                  <div className="flex items-center justify-center gap-2 text-sm text-emerald-600">
-                    <Check className="h-4 w-4" />
-                    <span>{t('welcome.verificationComplete')}</span>
-                  </div>
-                )}
                 {turnstileStatus === 'error' && (
                   <div className="flex items-center justify-center gap-2 text-sm text-red-600">
                     <AlertTriangle className="h-4 w-4" />

@@ -20,6 +20,9 @@ import {
   Scale,
   PenTool,
   ClipboardCheck,
+  Users,
+  Shield,
+  Clock,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -1670,6 +1673,31 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
             <br />
             <span className="text-[hsl(var(--brand-muted))]">{t('welcome.subtitle2')}</span>
           </p>
+
+          {/* Trust Stats */}
+          <div className="mb-8 grid grid-cols-1 gap-4 rounded-2xl border border-[hsl(var(--brand-border))] bg-[hsl(var(--brand-surface))] p-6 sm:grid-cols-3">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Users className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
+                <span className="text-2xl font-bold text-[hsl(var(--fg))]">10K+</span>
+              </div>
+              <p className="text-xs text-[hsl(var(--brand-muted))]">{t('welcome.documentsGenerated')}</p>
+            </div>
+            <div className="text-center border-t border-[hsl(var(--brand-border))] pt-4 sm:border-t-0 sm:border-x sm:pt-0">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Shield className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
+                <span className="text-2xl font-bold text-[hsl(var(--fg))]">98%</span>
+              </div>
+              <p className="text-xs text-[hsl(var(--brand-muted))]">{t('welcome.satisfactionRate')}</p>
+            </div>
+            <div className="text-center border-t border-[hsl(var(--brand-border))] pt-4 sm:border-t-0 sm:pt-0">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Clock className="h-4 w-4 text-[hsl(var(--brand-primary))]" />
+                <span className="text-2xl font-bold text-[hsl(var(--fg))]">&lt;5m</span>
+              </div>
+              <p className="text-xs text-[hsl(var(--brand-muted))]">{t('welcome.averageTime')}</p>
+            </div>
+          </div>
 
           {/* Collapsible Disclaimer */}
           <Collapsible className="mb-8">

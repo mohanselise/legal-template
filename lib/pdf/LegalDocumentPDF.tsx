@@ -185,7 +185,7 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
     <Document>
       {/* Single Document with content and signatures flowing together */}
       <Page size={pageSize} style={pageStyle} wrap>
-        {/* Letterhead Background - rendered on all pages */}
+        {/* Letterhead Background - MUST be first to render behind content */}
         {hasLetterhead && (
           <Image
             src={letterhead.imageDataUrl}
@@ -195,7 +195,6 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
               left: 0,
               width: letterhead.pageWidth,
               height: letterhead.pageHeight,
-              zIndex: 0,
             }}
             fixed
           />
@@ -206,7 +205,6 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
           <View
             style={{
               position: 'relative',
-              zIndex: 1,
               ...contentMargins,
             }}
           >

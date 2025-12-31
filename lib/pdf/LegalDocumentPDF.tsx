@@ -12,6 +12,7 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
 } from '@react-pdf/renderer';
 import type { LegalDocument } from '@/app/api/templates/employment-agreement/schema';
@@ -157,48 +158,126 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
   // Check if we should include signatures in the document flow
   const hasSignatories = includeSignaturePage && document.signatories && document.signatories.length > 0;
 
+  // Get letterhead configuration
+  const letterhead = document.letterhead;
+  const hasLetterhead = !!letterhead;
+
+  // Calculate content area margins from letterhead (only when letterhead exists)
+  const contentMargins = hasLetterhead
+    ? {
+        paddingTop: letterhead.contentArea.y,
+        paddingLeft: letterhead.contentArea.x,
+        paddingRight: letterhead.pageWidth - letterhead.contentArea.x - letterhead.contentArea.width,
+        paddingBottom: letterhead.pageHeight - letterhead.contentArea.y - letterhead.contentArea.height,
+      }
+    : undefined;
+
+  // Create dynamic page style with letterhead support
+  const pageStyle = hasLetterhead
+    ? {
+        ...styles.page,
+        padding: 0, // Remove default padding when using letterhead
+        backgroundColor: '#ffffff',
+      }
+    : styles.page;
+
   return (
     <Document>
       {/* Single Document with content and signatures flowing together */}
-      <Page size={pageSize} style={styles.page} wrap>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>{document.metadata.title}</Text>
-        </View>
-
-        {/* Effective Date */}
-        {document.metadata.effectiveDate && (
-          <View style={{ marginBottom: 12 }}>
-            <Text style={styles.effectiveDate}>
-              {document.metadata.effectiveDateLabel || 'Effective Date:'} {formatDate(document.metadata.effectiveDate, document.metadata.dateLocale)}
-            </Text>
-          </View>
+      <Page size={pageSize} style={pageStyle} wrap>
+        {/* Letterhead Background - rendered on all pages */}
+        {hasLetterhead && (
+          <Image
+            src={letterhead.imageDataUrl}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: letterhead.pageWidth,
+              height: letterhead.pageHeight,
+              zIndex: 0,
+            }}
+            fixed
+          />
         )}
 
-        {/* Main Content Blocks */}
-        {document.content.map((block, index) => (
-          <BlockRenderer key={block.id || index} block={block} level={0} />
-        ))}
+        {/* Content Container - only wrap with margins when letterhead exists */}
+        {hasLetterhead ? (
+          <View
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              ...contentMargins,
+            }}
+          >
+            {/* Effective Date */}
+            {document.metadata.effectiveDate && (
+              <View style={{ marginBottom: 12 }}>
+                <Text style={styles.effectiveDate}>
+                  {document.metadata.effectiveDateLabel || 'Effective Date:'} {formatDate(document.metadata.effectiveDate, document.metadata.dateLocale)}
+                </Text>
+              </View>
+            )}
 
-        {/* Signature Section - flows naturally after content, breaks to new page if needed */}
-        {hasSignatories && (
-          <View break style={{ marginTop: 40 }}>
-            <SignaturePage 
-              signatories={document.signatories!} 
-              config={document.signaturePageConfig}
-            />
+            {/* Main Content Blocks */}
+            {document.content.map((block, index) => (
+              <BlockRenderer key={block.id || index} block={block} level={0} />
+            ))}
+
+            {/* Signature Section - flows naturally after content, breaks to new page if needed */}
+            {hasSignatories && (
+              <View break style={{ marginTop: 40 }}>
+                <SignaturePage 
+                  signatories={document.signatories!} 
+                  config={document.signaturePageConfig}
+                />
+              </View>
+            )}
           </View>
+        ) : (
+          <>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.title}>{document.metadata.title}</Text>
+            </View>
+
+            {/* Effective Date */}
+            {document.metadata.effectiveDate && (
+              <View style={{ marginBottom: 12 }}>
+                <Text style={styles.effectiveDate}>
+                  {document.metadata.effectiveDateLabel || 'Effective Date:'} {formatDate(document.metadata.effectiveDate, document.metadata.dateLocale)}
+                </Text>
+              </View>
+            )}
+
+            {/* Main Content Blocks */}
+            {document.content.map((block, index) => (
+              <BlockRenderer key={block.id || index} block={block} level={0} />
+            ))}
+
+            {/* Signature Section - flows naturally after content, breaks to new page if needed */}
+            {hasSignatories && (
+              <View break style={{ marginTop: 40 }}>
+                <SignaturePage 
+                  signatories={document.signatories!} 
+                  config={document.signaturePageConfig}
+                />
+              </View>
+            )}
+          </>
         )}
 
         {/* Footer on all pages */}
-        <View style={styles.footer} fixed>
-          <View style={styles.footerContent}>
-            <Text>{document.metadata.title}</Text>
-            <Text render={({ pageNumber, totalPages }) => (
-              formatPageNumber(pageNumber, totalPages, document.metadata.pageNumberFormat)
-            )} />
+        {!hasLetterhead && (
+          <View style={styles.footer} fixed>
+            <View style={styles.footerContent}>
+              <Text>{document.metadata.title}</Text>
+              <Text render={({ pageNumber, totalPages }) => (
+                formatPageNumber(pageNumber, totalPages, document.metadata.pageNumberFormat)
+              )} />
+            </View>
           </View>
-        </View>
+        )}
       </Page>
     </Document>
   );

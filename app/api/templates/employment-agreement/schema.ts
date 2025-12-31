@@ -44,12 +44,37 @@ export interface SignaturePageConfig {
   dateLabel?: string;
 }
 
+/**
+ * Letterhead configuration for document background
+ */
+export interface LetterheadConfig {
+  /** Base64 encoded image data URL */
+  imageDataUrl: string;
+  /** Page width in points (72 DPI) */
+  pageWidth: number;
+  /** Page height in points (72 DPI) */
+  pageHeight: number;
+  /** Content area where text should be placed */
+  contentArea: {
+    /** Left margin in points */
+    x: number;
+    /** Top margin in points */
+    y: number;
+    /** Content width in points */
+    width: number;
+    /** Content height in points */
+    height: number;
+  };
+}
+
 export interface LegalDocument {
   metadata: DocumentMetadata;
   content: DocumentBlock[]; // The main body content (Articles, Sections, etc.)
   signatories: SignatoryData[]; // Data for the signature page
   /** Optional AI-controlled signature page configuration */
   signaturePageConfig?: SignaturePageConfig;
+  /** Optional letterhead configuration for document background */
+  letterhead?: LetterheadConfig;
 }
 
 /**

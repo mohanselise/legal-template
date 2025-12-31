@@ -13,6 +13,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   ArrowLeft,
+  FileImage,
 } from "lucide-react";
 import type { LegalDocument } from "@/app/api/templates/employment-agreement/schema";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,8 @@ import type { SignatoryEntry } from "@/lib/templates/signatory-config";
 import { InlineTextEditor } from "./InlineTextEditor";
 import { findBlockByText, updateBlockText, type TextBlockMapping } from "@/lib/pdf/text-block-mapper";
 import { Edit2, Type, Heading, List } from "lucide-react";
+import { LetterheadUploadDialog } from "./LetterheadUploadDialog";
+import type { LetterheadConfig } from "@/app/api/templates/employment-agreement/schema";
 import {
   trackDocumentPreviewLoaded,
   trackDocumentDownloaded,
@@ -276,6 +279,9 @@ export function TemplatePDFReview({
   } | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [clickedHighlight, setClickedHighlight] = useState<string | null>(null);
+
+  // Letterhead state
+  const [showLetterheadDialog, setShowLetterheadDialog] = useState(false);
 
   const signatories = extractSignatories(editableDocument, formData);
 
@@ -1000,6 +1006,16 @@ export function TemplatePDFReview({
     setEditingBlock(null);
   };
 
+  const handleLetterheadConfirm = (letterheadConfig: LetterheadConfig) => {
+    const updated = {
+      ...editableDocument,
+      letterhead: letterheadConfig,
+    };
+    setEditableDocument(updated);
+    setHasUnsavedChanges(true);
+    // PDF will regenerate automatically via useEffect
+  };
+
   if (isPreparingContract) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-[hsl(var(--gradient-light-to))] px-4">
@@ -1089,6 +1105,15 @@ export function TemplatePDFReview({
                   Send for Signature
                 </Button>
               )}
+              <Button
+                variant="outline"
+                onClick={() => setShowLetterheadDialog(true)}
+                className="border-[hsl(var(--border))] text-[hsl(var(--globe-grey))]"
+                title="Upload company letterhead"
+              >
+                <FileImage className="w-4 h-4 mr-2" />
+                Letterhead
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => setShowDownloadPrompt(true)}
@@ -1610,6 +1635,14 @@ export function TemplatePDFReview({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Letterhead Upload Dialog */}
+      <LetterheadUploadDialog
+        open={showLetterheadDialog}
+        onClose={() => setShowLetterheadDialog(false)}
+        onConfirm={handleLetterheadConfirm}
+        existingLetterhead={editableDocument.letterhead}
+      />
     </div>
   );
 }

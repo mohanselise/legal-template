@@ -90,9 +90,12 @@ function AISuggestionIndicator({
   // Don't show if already applied
   if (suggestedStr === currentStr) return null;
 
-  // Truncate for display (longer for textarea)
-  const displayValue = suggestedStr.length > 50 
-    ? suggestedStr.substring(0, 50) + "..." 
+  // Truncate for display (shorter on mobile)
+  const displayValue = suggestedStr.length > 40 
+    ? suggestedStr.substring(0, 40) + "..." 
+    : suggestedStr;
+  const displayValueMobile = suggestedStr.length > 20 
+    ? suggestedStr.substring(0, 20) + "..." 
     : suggestedStr;
 
   return (
@@ -103,15 +106,30 @@ function AISuggestionIndicator({
         e.stopPropagation();
         onApply(suggestedValue);
       }}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md
-        bg-[hsl(var(--selise-blue))]/5 text-[hsl(var(--selise-blue))] 
-        hover:bg-[hsl(var(--selise-blue))]/15 transition-all cursor-pointer
-        border border-[hsl(var(--selise-blue))]/20 hover:border-[hsl(var(--selise-blue))]/40
-        shadow-sm hover:shadow"
+      className="inline-flex items-center justify-center gap-2 sm:gap-1.5 px-4 sm:px-2.5 py-3 sm:py-1 
+        text-sm sm:text-xs font-semibold sm:font-medium rounded-lg sm:rounded-md
+        bg-[hsl(var(--selise-blue))]/10 sm:bg-[hsl(var(--selise-blue))]/5 
+        text-[hsl(var(--selise-blue))] 
+        hover:bg-[hsl(var(--selise-blue))]/20 sm:hover:bg-[hsl(var(--selise-blue))]/15 
+        active:bg-[hsl(var(--selise-blue))]/25 sm:active:bg-[hsl(var(--selise-blue))]/20
+        transition-all cursor-pointer touch-manipulation
+        border-2 sm:border border-[hsl(var(--selise-blue))]/40 sm:border-[hsl(var(--selise-blue))]/20 
+        hover:border-[hsl(var(--selise-blue))]/60 sm:hover:border-[hsl(var(--selise-blue))]/40
+        active:border-[hsl(var(--selise-blue))]/80 sm:active:border-[hsl(var(--selise-blue))]/60
+        shadow-md sm:shadow-sm hover:shadow-lg sm:hover:shadow 
+        active:shadow-inner sm:active:shadow-inner
+        w-full sm:w-auto min-h-[44px] sm:min-h-0"
       title={`Apply standard value: ${suggestedStr.substring(0, 200)}`}
     >
-      <Sparkles className="h-3 w-3" />
-      <span className="whitespace-nowrap">Use standard: <span className="font-semibold">{displayValue}</span></span>
+      <Sparkles className="h-4 w-4 sm:h-3 sm:w-3 flex-shrink-0" />
+      <span className="whitespace-nowrap">
+        <span className="hidden sm:inline">Use standard: </span>
+        <span className="sm:hidden">Standard: </span>
+        <span className="font-semibold">
+          <span className="hidden sm:inline">{displayValue}</span>
+          <span className="sm:hidden">{displayValueMobile}</span>
+        </span>
+      </span>
     </button>
   );
 }
@@ -161,18 +179,30 @@ export function TextareaField({ field, value, onChange, error, enrichmentContext
           className={cn(
             "min-h-[100px] resize-y",
             error ? "border-destructive" : "",
-            hasSuggestion ? "pb-16" : ""
+            hasSuggestion ? "pb-16 sm:pb-16" : ""
           )}
         />
         {hasSuggestion && (
-          <div className="absolute right-2 bottom-2">
-            <AISuggestionIndicator
-              suggestionKey={field.aiSuggestionKey!}
-              enrichmentContext={enrichmentContext}
-              currentValue={value}
-              onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
-            />
-          </div>
+          <>
+            {/* Desktop: Inside textarea (bottom-right) */}
+            <div className="absolute right-2 bottom-2 hidden sm:block">
+              <AISuggestionIndicator
+                suggestionKey={field.aiSuggestionKey!}
+                enrichmentContext={enrichmentContext}
+                currentValue={value}
+                onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
+              />
+            </div>
+            {/* Mobile: Below textarea */}
+            <div className="mt-2 sm:hidden">
+              <AISuggestionIndicator
+                suggestionKey={field.aiSuggestionKey!}
+                enrichmentContext={enrichmentContext}
+                currentValue={value}
+                onApply={(suggestedValue) => onChange(field.name, suggestedValue)}
+              />
+            </div>
+          </>
         )}
       </div>
       {resolvedHelpText && (

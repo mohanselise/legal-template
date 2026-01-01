@@ -2,12 +2,8 @@
  * Utilities for letterhead processing and PDF conversion
  */
 
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Configure PDF.js worker for client-side usage
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-}
+// pdfjs-dist is loaded dynamically to avoid server-side evaluation errors
+// (DOMMatrix is not defined in Node.js environment)
 
 /**
  * Convert PDF file to image (first page only)
@@ -15,8 +11,16 @@ if (typeof window !== 'undefined') {
  * @returns Base64 data URL of the first page as image
  */
 export async function pdfToImage(file: File): Promise<string> {
-  // Ensure worker is configured
-  if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+  // Only run in browser environment
+  if (typeof window === 'undefined') {
+    throw new Error('pdfToImage can only be used in browser environment');
+  }
+
+  // Dynamic import to avoid server-side evaluation
+  const pdfjsLib = await import('pdfjs-dist');
+  
+  // Configure worker
+  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
   }
   

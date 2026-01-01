@@ -35,17 +35,24 @@ export function ContentAreaEditor({
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [dragHandle, setDragHandle] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
   // Calculate scale to fit image in container
   useEffect(() => {
-    if (containerRef.current) {
-      const containerWidth = containerRef.current.clientWidth - 40; // Padding
-      const containerHeight = containerRef.current.clientHeight - 40;
-      const scaleX = containerWidth / imageWidth;
-      const scaleY = containerHeight / imageHeight;
-      setScale(Math.min(scaleX, scaleY, 1)); // Don't scale up
-    }
+    const calculateScale = () => {
+      if (!containerRef.current) return;
+      // Use fixed max dimensions to ensure the preview fits within the modal
+      const maxWidth = 600; // Max width for preview
+      const maxHeight = 500; // Max height for preview
+      const scaleX = maxWidth / imageWidth;
+      const scaleY = maxHeight / imageHeight;
+      setScale(Math.min(scaleX, scaleY, 1)); // Don't scale up, fit within bounds
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
   }, [imageWidth, imageHeight]);
 
   const scaledWidth = imageWidth * scale;
@@ -61,11 +68,13 @@ export function ContentAreaEditor({
     e.preventDefault();
     setIsDragging(true);
     setDragHandle(handle || 'move');
-    const rect = containerRef.current?.getBoundingClientRect();
+    const rect = imageContainerRef.current?.getBoundingClientRect();
     if (rect) {
+      const px = (e.clientX - rect.left) / scale;
+      const py = (e.clientY - rect.top) / scale;
       setDragStart({
-        x: e.clientX - rect.left - 20 - scaledArea.x,
-        y: e.clientY - rect.top - 20 - scaledArea.y,
+        x: px - contentArea.x,
+        y: py - contentArea.y,
       });
     }
   };
@@ -79,18 +88,18 @@ export function ContentAreaEditor({
   useEffect(() => {
     if (isDragging) {
       const handleMouseMoveGlobal = (e: MouseEvent) => {
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        const x = (e.clientX - rect.left - 20) / scale;
-        const y = (e.clientY - rect.top - 20) / scale;
+        if (!imageContainerRef.current) return;
+        const rect = imageContainerRef.current.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / scale;
+        const y = (e.clientY - rect.top) / scale;
 
         if (!dragStart || !dragHandle) return;
 
         let newArea = { ...contentArea };
 
         if (dragHandle === 'move') {
-          newArea.x = Math.max(0, Math.min(x - dragStart.x / scale, imageWidth - contentArea.width));
-          newArea.y = Math.max(0, Math.min(y - dragStart.y / scale, imageHeight - contentArea.height));
+          newArea.x = Math.max(0, Math.min(x - dragStart.x, imageWidth - contentArea.width));
+          newArea.y = Math.max(0, Math.min(y - dragStart.y, imageHeight - contentArea.height));
         } else if (dragHandle === 'nw') {
           const newX = Math.max(0, Math.min(x, contentArea.x + contentArea.width - 50));
           const newY = Math.max(0, Math.min(y, contentArea.y + contentArea.height - 50));
@@ -150,11 +159,12 @@ export function ContentAreaEditor({
       
       <div
         ref={containerRef}
-        className="relative border-2 border-dashed border-[hsl(var(--border))] rounded-lg bg-[hsl(var(--muted))]/20 p-5 overflow-auto"
-        style={{ minHeight: '400px', maxHeight: '600px' }}
+        className="relative border-2 border-dashed border-[hsl(var(--border))] rounded-lg bg-[hsl(var(--muted))]/20 p-5 overflow-hidden flex items-center justify-center"
+        style={{ minHeight: '400px', maxHeight: '550px' }}
         onMouseUp={handleMouseUp}
       >
         <div
+          ref={imageContainerRef}
           className="relative mx-auto"
           style={{
             width: scaledWidth,

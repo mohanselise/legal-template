@@ -71,21 +71,29 @@ Analyze the provided letterhead image and return a JSON object with:
 1. Page dimensions (width and height in pixels)
 2. Content area coordinates (x, y, width, height in pixels) - the rectangular area where document text should be placed
 
+IMPORTANT MARGIN REQUIREMENTS:
+- The default document margin is 1 inch (72 points) on all sides
+- For a typical 8.5" x 11" letter at 300 DPI (2550 x 3300 pixels), 1 inch = 300 pixels
+- Left margin (x): Should be AT LEAST 300 pixels (1 inch) from the left edge
+- Right margin: Content should end AT LEAST 300 pixels from the right edge
+- Top margin (y): Should start below any header graphics, but at minimum 300 pixels from top
+- Bottom margin: Should end above any footer graphics, but at minimum 300 pixels from bottom
+
 The content area should:
 - Avoid header graphics, logos, and decorative elements at the top
 - Avoid footer graphics, contact information, and decorative elements at the bottom
-- Leave appropriate margins on left and right sides
-- Be the largest usable rectangular area for text content
+- Maintain at least 1-inch (300px at 300 DPI) margins on left and right sides
+- Be a conservative, safe rectangular area for text content - err on the side of smaller rather than larger
 
 Return ONLY valid JSON in this exact format:
 {
   "pageWidth": 2550,
   "pageHeight": 3300,
   "contentArea": {
-    "x": 200,
-    "y": 400,
-    "width": 2150,
-    "height": 2500
+    "x": 300,
+    "y": 450,
+    "width": 1950,
+    "height": 2400
   }
 }
 

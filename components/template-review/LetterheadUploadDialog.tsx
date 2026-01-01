@@ -86,8 +86,8 @@ export function LetterheadUploadDialog({
       setImageDimensions(dimensions);
       setIsProcessing(false);
 
-      // Auto-detect content area
-      await detectContentArea(dataUrl);
+      // Auto-detect content area - pass dimensions directly since state update is async
+      await detectContentArea(dataUrl, dimensions);
     } catch (error) {
       console.error("Error processing file:", error);
       alert(error instanceof Error ? error.message : "Failed to process file");
@@ -95,15 +95,17 @@ export function LetterheadUploadDialog({
     }
   };
 
-  const detectContentArea = async (dataUrl: string) => {
+  const detectContentArea = async (dataUrl: string, dims?: { width: number; height: number }) => {
     setIsDetecting(true);
+    // Use passed dimensions or fall back to state
+    const dimensions = dims || imageDimensions;
     try {
       const formData = new FormData();
       formData.append("imageDataUrl", dataUrl);
-      // Include dimensions for better AI detection
-      if (imageDimensions) {
-        formData.append("width", imageDimensions.width.toString());
-        formData.append("height", imageDimensions.height.toString());
+      // Include dimensions for accurate AI detection
+      if (dimensions) {
+        formData.append("width", dimensions.width.toString());
+        formData.append("height", dimensions.height.toString());
       }
 
       const response = await fetch("/api/letterhead/detect-content-area", {
@@ -122,13 +124,14 @@ export function LetterheadUploadDialog({
       }
     } catch (error) {
       console.error("Error detecting content area:", error);
-      // Fallback to default content area
-      if (imageDimensions) {
+      // Fallback to default content area using passed dimensions or state
+      const fallbackDims = dims || imageDimensions;
+      if (fallbackDims) {
         setContentArea({
-          x: imageDimensions.width * 0.1, // 10% margin
-          y: imageDimensions.height * 0.15, // 15% top margin
-          width: imageDimensions.width * 0.8, // 80% width
-          height: imageDimensions.height * 0.7, // 70% height
+          x: fallbackDims.width * 0.1, // 10% margin
+          y: fallbackDims.height * 0.15, // 15% top margin
+          width: fallbackDims.width * 0.8, // 80% width
+          height: fallbackDims.height * 0.7, // 70% height
         });
         setShowEditor(true);
       }
@@ -283,8 +286,8 @@ export function LetterheadUploadDialog({
                 </Button>
                 <Button
                   onClick={() => {
-                    if (imageDataUrl) {
-                      detectContentArea(imageDataUrl);
+                    if (imageDataUrl && imageDimensions) {
+                      detectContentArea(imageDataUrl, imageDimensions);
                     }
                   }}
                   disabled={isDetecting}

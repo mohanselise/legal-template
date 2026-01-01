@@ -162,13 +162,27 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
   const letterhead = document.letterhead;
   const hasLetterhead = !!letterhead;
 
+  // Default 1-inch margin in points (72 points = 1 inch)
+  const DEFAULT_MARGIN = 72;
+
   // Calculate content area margins from letterhead (only when letterhead exists)
+  // For subsequent pages, we use the same left/right margins but reset top/bottom to defaults
   const contentMargins = hasLetterhead
     ? {
         paddingTop: letterhead.contentArea.y,
         paddingLeft: letterhead.contentArea.x,
         paddingRight: letterhead.pageWidth - letterhead.contentArea.x - letterhead.contentArea.width,
         paddingBottom: letterhead.pageHeight - letterhead.contentArea.y - letterhead.contentArea.height,
+      }
+    : undefined;
+
+  // Margins for continuation pages (2nd page and beyond) - use left/right from letterhead but standard top/bottom
+  const continuationMargins = hasLetterhead
+    ? {
+        paddingTop: DEFAULT_MARGIN,
+        paddingLeft: letterhead.contentArea.x,
+        paddingRight: letterhead.pageWidth - letterhead.contentArea.x - letterhead.contentArea.width,
+        paddingBottom: DEFAULT_MARGIN,
       }
     : undefined;
 
@@ -201,11 +215,19 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
         )}
 
         {/* Content Container - only wrap with margins when letterhead exists */}
+        {/* Note: react-pdf applies the View style to all page breaks, so content stays within bounds */}
         {hasLetterhead ? (
           <View
             style={{
               position: 'relative',
-              ...contentMargins,
+              paddingTop: contentMargins?.paddingTop,
+              paddingLeft: contentMargins?.paddingLeft,
+              paddingRight: contentMargins?.paddingRight,
+              paddingBottom: contentMargins?.paddingBottom,
+              // Ensure content wrapping respects boundaries on all pages
+              maxWidth: letterhead.contentArea.width,
+              marginLeft: letterhead.contentArea.x,
+              marginRight: 'auto',
             }}
           >
             {/* Effective Date */}

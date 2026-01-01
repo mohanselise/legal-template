@@ -21,6 +21,9 @@ interface ContentAreaEditorProps {
   onCancel: () => void;
 }
 
+// Default 1-inch margin (approximately 12% of page width for standard letter size)
+const DEFAULT_HORIZONTAL_MARGIN_PERCENT = 0.12;
+
 export function ContentAreaEditor({
   imageUrl,
   imageWidth,
@@ -30,7 +33,17 @@ export function ContentAreaEditor({
   onConfirm,
   onCancel,
 }: ContentAreaEditorProps) {
-  const [contentArea, setContentArea] = useState<ContentArea>(initialContentArea);
+  // Fixed horizontal margins (1-inch default)
+  const fixedX = Math.round(imageWidth * DEFAULT_HORIZONTAL_MARGIN_PERCENT);
+  const fixedWidth = Math.round(imageWidth * (1 - 2 * DEFAULT_HORIZONTAL_MARGIN_PERCENT));
+  
+  // Only y and height are adjustable
+  const [contentArea, setContentArea] = useState<ContentArea>({
+    x: fixedX,
+    y: initialContentArea.y,
+    width: fixedWidth,
+    height: initialContentArea.height,
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [dragHandle, setDragHandle] = useState<string | null>(null);
@@ -97,46 +110,17 @@ export function ContentAreaEditor({
 
         let newArea = { ...contentArea };
 
-        if (dragHandle === 'move') {
-          newArea.x = Math.max(0, Math.min(x - dragStart.x, imageWidth - contentArea.width));
-          newArea.y = Math.max(0, Math.min(y - dragStart.y, imageHeight - contentArea.height));
-        } else if (dragHandle === 'nw') {
-          const newX = Math.max(0, Math.min(x, contentArea.x + contentArea.width - 50));
-          const newY = Math.max(0, Math.min(y, contentArea.y + contentArea.height - 50));
-          newArea.width = contentArea.x + contentArea.width - newX;
-          newArea.height = contentArea.y + contentArea.height - newY;
-          newArea.x = newX;
-          newArea.y = newY;
-        } else if (dragHandle === 'ne') {
-          const newY = Math.max(0, Math.min(y, contentArea.y + contentArea.height - 50));
-          const newWidth = Math.max(50, Math.min(x - contentArea.x, imageWidth - contentArea.x));
-          newArea.width = newWidth;
-          newArea.height = contentArea.y + contentArea.height - newY;
-          newArea.y = newY;
-        } else if (dragHandle === 'sw') {
-          const newX = Math.max(0, Math.min(x, contentArea.x + contentArea.width - 50));
-          const newHeight = Math.max(50, Math.min(y - contentArea.y, imageHeight - contentArea.y));
-          newArea.width = contentArea.x + contentArea.width - newX;
-          newArea.height = newHeight;
-          newArea.x = newX;
-        } else if (dragHandle === 'se') {
-          const newWidth = Math.max(50, Math.min(x - contentArea.x, imageWidth - contentArea.x));
-          const newHeight = Math.max(50, Math.min(y - contentArea.y, imageHeight - contentArea.y));
-          newArea.width = newWidth;
-          newArea.height = newHeight;
-        } else if (dragHandle === 'n') {
+        // Only allow vertical adjustments - x and width are fixed
+        if (dragHandle === 'n') {
+          // Adjust top edge
           const newY = Math.max(0, Math.min(y, contentArea.y + contentArea.height - 50));
           newArea.height = contentArea.y + contentArea.height - newY;
           newArea.y = newY;
         } else if (dragHandle === 's') {
+          // Adjust bottom edge
           newArea.height = Math.max(50, Math.min(y - contentArea.y, imageHeight - contentArea.y));
-        } else if (dragHandle === 'w') {
-          const newX = Math.max(0, Math.min(x, contentArea.x + contentArea.width - 50));
-          newArea.width = contentArea.x + contentArea.width - newX;
-          newArea.x = newX;
-        } else if (dragHandle === 'e') {
-          newArea.width = Math.max(50, Math.min(x - contentArea.x, imageWidth - contentArea.x));
         }
+        // Note: 'move', corner handles, and horizontal handles are disabled
 
         setContentArea(newArea);
         onContentAreaChange(newArea);
@@ -154,7 +138,7 @@ export function ContentAreaEditor({
   return (
     <div className="flex flex-col gap-4">
       <div className="text-sm text-muted-foreground">
-        Drag the rectangle to adjust the content area. Use the corner and edge handles to resize.
+        Drag the top or bottom edge to adjust the content area. This excludes your letterhead header and footer from the document text area.
       </div>
       
       <div
@@ -181,84 +165,42 @@ export function ContentAreaEditor({
             }}
           />
           
-          {/* Content area overlay */}
+          {/* Content area overlay - no move cursor since horizontal position is fixed */}
           <div
-            className="absolute border-2 border-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/10 cursor-move"
+            className="absolute border-2 border-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/10"
             style={{
               left: scaledArea.x,
               top: scaledArea.y,
               width: scaledArea.width,
               height: scaledArea.height,
             }}
-            onMouseDown={(e) => handleMouseDown(e, 'move')}
           >
-            {/* Resize handles */}
-            {/* Corner handles */}
+            {/* Only top and bottom edge handles for vertical adjustment */}
             <div
-              className="absolute -top-1 -left-1 w-3 h-3 bg-[hsl(var(--selise-blue))] border border-white rounded cursor-nwse-resize"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                handleMouseDown(e, 'nw');
-              }}
-            />
-            <div
-              className="absolute -top-1 -right-1 w-3 h-3 bg-[hsl(var(--selise-blue))] border border-white rounded cursor-nesw-resize"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                handleMouseDown(e, 'ne');
-              }}
-            />
-            <div
-              className="absolute -bottom-1 -left-1 w-3 h-3 bg-[hsl(var(--selise-blue))] border border-white rounded cursor-nesw-resize"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                handleMouseDown(e, 'sw');
-              }}
-            />
-            <div
-              className="absolute -bottom-1 -right-1 w-3 h-3 bg-[hsl(var(--selise-blue))] border border-white rounded cursor-nwse-resize"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                handleMouseDown(e, 'se');
-              }}
-            />
-            
-            {/* Edge handles */}
-            <div
-              className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-[hsl(var(--selise-blue))] border border-white rounded cursor-ns-resize"
+              className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-16 h-3 bg-[hsl(var(--selise-blue))] border border-white rounded cursor-ns-resize flex items-center justify-center"
               onMouseDown={(e) => {
                 e.stopPropagation();
                 handleMouseDown(e, 'n');
               }}
-            />
+            >
+              <div className="w-8 h-0.5 bg-white rounded" />
+            </div>
             <div
-              className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-[hsl(var(--selise-blue))] border border-white rounded cursor-ns-resize"
+              className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-16 h-3 bg-[hsl(var(--selise-blue))] border border-white rounded cursor-ns-resize flex items-center justify-center"
               onMouseDown={(e) => {
                 e.stopPropagation();
                 handleMouseDown(e, 's');
               }}
-            />
-            <div
-              className="absolute -left-1 top-1/2 -translate-y-1/2 w-3 h-3 bg-[hsl(var(--selise-blue))] border border-white rounded cursor-ew-resize"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                handleMouseDown(e, 'w');
-              }}
-            />
-            <div
-              className="absolute -right-1 top-1/2 -translate-y-1/2 w-3 h-3 bg-[hsl(var(--selise-blue))] border border-white rounded cursor-ew-resize"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                handleMouseDown(e, 'e');
-              }}
-            />
+            >
+              <div className="w-8 h-0.5 bg-white rounded" />
+            </div>
           </div>
         </div>
       </div>
 
       <div className="flex justify-between items-center text-sm">
         <div className="text-muted-foreground">
-          Content Area: {Math.round(contentArea.x)}, {Math.round(contentArea.y)} - {Math.round(contentArea.width)} × {Math.round(contentArea.height)} px
+          Content Area: Top {Math.round(contentArea.y)}px, Bottom {Math.round(imageHeight - contentArea.y - contentArea.height)}px excluded
         </div>
       </div>
 

@@ -187,10 +187,15 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
     : undefined;
 
   // Create dynamic page style with letterhead support
+  // Apply content area as page padding so text stays within bounds on ALL pages
   const pageStyle = hasLetterhead
     ? {
         ...styles.page,
-        padding: 0, // Remove default padding when using letterhead
+        // Use content area to define page margins
+        paddingTop: letterhead.contentArea.y,
+        paddingLeft: letterhead.contentArea.x,
+        paddingRight: letterhead.pageWidth - letterhead.contentArea.x - letterhead.contentArea.width,
+        paddingBottom: letterhead.pageHeight - letterhead.contentArea.y - letterhead.contentArea.height,
         backgroundColor: '#ffffff',
       }
     : styles.page;
@@ -214,22 +219,14 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
           />
         )}
 
-        {/* Content Container - only wrap with margins when letterhead exists */}
-        {/* Note: react-pdf applies the View style to all page breaks, so content stays within bounds */}
+        {/* Content - Page padding from letterhead.contentArea ensures text stays within bounds on ALL pages */}
         {hasLetterhead ? (
-          <View
-            style={{
-              position: 'relative',
-              paddingTop: contentMargins?.paddingTop,
-              paddingLeft: contentMargins?.paddingLeft,
-              paddingRight: contentMargins?.paddingRight,
-              paddingBottom: contentMargins?.paddingBottom,
-              // Ensure content wrapping respects boundaries on all pages
-              maxWidth: letterhead.contentArea.width,
-              marginLeft: letterhead.contentArea.x,
-              marginRight: 'auto',
-            }}
-          >
+          <>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.title}>{document.metadata.title}</Text>
+            </View>
+
             {/* Effective Date */}
             {document.metadata.effectiveDate && (
               <View style={{ marginBottom: 12 }}>
@@ -253,7 +250,7 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
                 />
               </View>
             )}
-          </View>
+          </>
         ) : (
           <>
             {/* Header */}

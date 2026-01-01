@@ -60,51 +60,45 @@ export async function POST(request: NextRequest) {
     // Using GPT-4o via OpenRouter for vision capabilities
     const openrouter = await getOpenRouterClient();
     
+    // Fixed horizontal margins (12% of page width, matching the ContentAreaEditor)
+    const fixedX = Math.round(imageWidth * 0.12);
+    const fixedWidth = Math.round(imageWidth * 0.76); // 1 - 2*0.12 = 0.76
+    
     const completion = await openrouter.chat.completions.create({
       model: 'openai/gpt-4o', // GPT-4o supports vision
       messages: [
         {
           role: 'system',
-          content: `You are an expert at analyzing letterhead designs and document layouts. Your task is to identify the content area where text should be placed, avoiding header graphics, logos, and footer elements.
+          content: `You are an expert at analyzing letterhead designs and document layouts. Your task is to identify the VERTICAL content area (top and bottom boundaries only) where text should be placed, avoiding header graphics, logos, and footer elements.
 
 Analyze the provided letterhead image and return a JSON object with:
-1. Page dimensions (width and height in pixels)
-2. Content area coordinates (x, y, width, height in pixels) - the rectangular area where document text should be placed
+1. The TOP boundary (y coordinate in pixels) - where content should START (below any header/logo)
+2. The BOTTOM boundary (contentBottom in pixels) - where content should END (above any footer graphics)
 
-IMPORTANT MARGIN REQUIREMENTS:
-- The default document margin is 1 inch (72 points) on all sides
-- For a typical 8.5" x 11" letter at 300 DPI (2550 x 3300 pixels), 1 inch = 300 pixels
-- Left margin (x): Should be AT LEAST 300 pixels (1 inch) from the left edge
-- Right margin: Content should end AT LEAST 300 pixels from the right edge
-- Top margin (y): Should start below any header graphics, but at minimum 300 pixels from top
-- Bottom margin: Should end above any footer graphics, but at minimum 300 pixels from bottom
+Focus ONLY on detecting:
+- Where the header/logo graphics END (this determines the top of content area)
+- Where the footer graphics BEGIN (this determines the bottom of content area)
 
-The content area should:
-- Avoid header graphics, logos, and decorative elements at the top
-- Avoid footer graphics, contact information, and decorative elements at the bottom
-- Maintain at least 1-inch (300px at 300 DPI) margins on left and right sides
-- Be a conservative, safe rectangular area for text content - err on the side of smaller rather than larger
+The horizontal margins are FIXED at 12% of the page width on each side - you do not need to detect these.
 
 Return ONLY valid JSON in this exact format:
 {
-  "pageWidth": 2550,
-  "pageHeight": 3300,
-  "contentArea": {
-    "x": 300,
-    "y": 450,
-    "width": 1950,
-    "height": 2400
-  }
+  "contentTop": 450,
+  "contentBottom": 2850
 }
 
-All coordinates are in pixels relative to the image dimensions.`,
+Where:
+- contentTop: Y coordinate in pixels where text content should start (below header)
+- contentBottom: Y coordinate in pixels where text content should end (above footer)
+
+All coordinates are in pixels relative to the image dimensions (${imageWidth}x${imageHeight}).`,
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `Analyze this letterhead image (${imageWidth}x${imageHeight} pixels) and detect the content area where text should be placed. Return the coordinates in pixels.`,
+              text: `Analyze this letterhead image (${imageWidth}x${imageHeight} pixels) and detect the vertical content boundaries. Return contentTop (Y where content starts, below header) and contentBottom (Y where content ends, above footer).`,
             },
             {
               type: 'image_url',
@@ -126,27 +120,26 @@ All coordinates are in pixels relative to the image dimensions.`,
 
     const result = JSON.parse(responseContent);
 
-    // Validate response structure
-    if (!result.pageWidth || !result.pageHeight || !result.contentArea) {
-      throw new Error('Invalid AI response structure');
+    // Validate response structure - now expects contentTop and contentBottom
+    if (result.contentTop === undefined || result.contentBottom === undefined) {
+      throw new Error('Invalid AI response structure - expected contentTop and contentBottom');
     }
 
-    // Ensure content area is within bounds
+    // Calculate content area with fixed horizontal margins and AI-detected vertical bounds
+    const contentTop = Math.max(0, Math.min(result.contentTop, imageHeight));
+    const contentBottom = Math.max(contentTop + 50, Math.min(result.contentBottom, imageHeight));
+    
     const contentArea = {
-      x: Math.max(0, Math.min(result.contentArea.x, imageWidth)),
-      y: Math.max(0, Math.min(result.contentArea.y, imageHeight)),
-      width: Math.max(0, Math.min(result.contentArea.width, imageWidth - result.contentArea.x)),
-      height: Math.max(0, Math.min(result.contentArea.height, imageHeight - result.contentArea.y)),
+      x: fixedX,
+      y: contentTop,
+      width: fixedWidth,
+      height: contentBottom - contentTop,
     };
-
-    // Use AI-detected dimensions or fallback to provided/default dimensions
-    const finalPageWidth = result.pageWidth || imageWidth;
-    const finalPageHeight = result.pageHeight || imageHeight;
 
     return NextResponse.json({
       success: true,
-      pageWidth: finalPageWidth,
-      pageHeight: finalPageHeight,
+      pageWidth: imageWidth,
+      pageHeight: imageHeight,
       contentArea,
     });
   } catch (error) {

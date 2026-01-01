@@ -28,7 +28,10 @@ export const SIG_PAGE_LAYOUT = {
   // Header Positioning
   HEADER_Y: 72,
   HEADER_HEIGHT: 60,
-  SIGNATURE_PAGE_OVERHEAD: 110,  // Total space before first block (marginTop + header + margins)
+  // Total space before first block when letterhead is applied:
+  // - No marginTop (letterhead contentArea provides padding)
+  // - Header (title + subtitle + margins): ~70pt
+  SIGNATURE_PAGE_OVERHEAD: 70,
   
   // Block Layout - FIXED HEIGHT for deterministic overlay positioning
   // These values MUST match the styles in SignaturePage.tsx
@@ -90,10 +93,19 @@ export const getMaxSignatoriesPerPage = (letterhead?: LetterheadConfig): number 
   const availableHeight = letterhead.contentArea.height - SIG_PAGE_LAYOUT.SIGNATURE_PAGE_OVERHEAD;
   
   // Each signature block needs BLOCK_HEIGHT + BLOCK_GAP (200pt total)
+  // BUT the last block doesn't need a gap, so:
+  // - First block: BLOCK_HEIGHT (160pt)
+  // - Each additional: BLOCK_HEIGHT + BLOCK_GAP (200pt)
+  // Formula: n = floor((availableHeight - BLOCK_HEIGHT) / blockSpace) + 1
   const blockSpace = SIG_PAGE_LAYOUT.BLOCK_HEIGHT + SIG_PAGE_LAYOUT.BLOCK_GAP;
   
-  // Calculate how many blocks fit, minimum 1
-  const maxPerPage = Math.max(1, Math.floor(availableHeight / blockSpace));
+  // Check if at least one block fits
+  if (availableHeight < SIG_PAGE_LAYOUT.BLOCK_HEIGHT) {
+    return 1; // Minimum 1 signatory per page
+  }
+  
+  // Calculate how many blocks fit (accounting for no gap after last block)
+  const maxPerPage = Math.floor((availableHeight - SIG_PAGE_LAYOUT.BLOCK_HEIGHT) / blockSpace) + 1;
   
   return maxPerPage;
 };

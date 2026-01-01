@@ -242,8 +242,9 @@ export const LegalDocumentPDF: React.FC<LegalDocumentPDFProps> = ({
             ))}
 
             {/* Signature Section - flows naturally after content, breaks to new page if needed */}
+            {/* minPresenceAhead ensures the entire signature section stays together */}
             {hasSignatories && (
-              <View break style={{ marginTop: 40 }}>
+              <View break style={{ marginTop: hasLetterhead ? 0 : 40 }}>
                 <SignaturePage 
                   signatories={document.signatories!} 
                   config={document.signaturePageConfig}

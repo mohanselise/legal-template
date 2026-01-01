@@ -532,7 +532,7 @@ function ReviewContent() {
       const metadataFields = generateSignatureFieldMetadata(
         signatories,
         numPages,  // Actual page count from rendered PDF
-        generatedDocument.letterhead
+        isLegacyDocument(generatedDocument) ? undefined : generatedDocument.letterhead
       );
       const fields = convertMetadataToFields(metadataFields, numPages);
       console.log('✅ Regenerated signature fields with actual page count:', numPages, fields);
@@ -617,7 +617,7 @@ function ReviewContent() {
     ];
 
     // Pass letterhead to adjust positions when letterhead content area differs from default margins
-    const metadataFields = generateSignatureFieldMetadata(signatories, totalPages, generatedDocument.letterhead);
+    const metadataFields = generateSignatureFieldMetadata(signatories, totalPages, isLegacyDocument(generatedDocument) ? undefined : generatedDocument.letterhead);
     const defaultFields = convertMetadataToFields(metadataFields, totalPages);
 
     console.log('⚠️ Using locally generated signature fields (fallback):', defaultFields);

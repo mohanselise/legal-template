@@ -103,10 +103,13 @@ export function generateSignatureFieldMetadata(
   
   // For Y positioning: The signature page uses letterhead.contentArea.y for top padding
   // instead of the default 72pt. We need to adjust the Y offset to account for this difference.
-  // BLOCK_START_Y (140) was calibrated for 72pt default top margin.
+  // BLOCK_START_Y (140) was calibrated for 72pt default top margin + 40pt marginTop.
+  // When letterhead is applied, we removed the marginTop: 40 from the View wrapper,
+  // so we subtract 40 to move overlays up to match the actual PDF position.
   const defaultTopMargin = 72; // Default 1-inch top margin in points
+  const marginTopRemoved = 40; // marginTop we removed from View wrapper when letterhead is applied
   const topMarginOffset = letterhead 
-    ? (letterhead.contentArea.y - defaultTopMargin) 
+    ? (letterhead.contentArea.y - defaultTopMargin - marginTopRemoved) 
     : 0;
 
   return signatories.flatMap((signatory, index) => {

@@ -93,7 +93,8 @@ export function generateSignatureFieldMetadata(
 ): SignatureFieldMetadata[] {
   // Calculate content pages (everything before signature pages)
   // If numPages already includes signature pages, we need to adjust
-  const signaturePageCount = calculateSignaturePages(signatories.length);
+  // Pass letterhead to account for reduced signatories per page with smaller content area
+  const signaturePageCount = calculateSignaturePages(signatories.length, letterhead);
   const contentPages = Math.max(1, numPages - signaturePageCount);
 
   // When letterhead is applied, use its content area margins instead of defaults
@@ -109,11 +110,11 @@ export function generateSignatureFieldMetadata(
     : 0;
 
   return signatories.flatMap((signatory, index) => {
-    // Get the Y position for this signatory (handles pagination)
-    const blockTop = getSignatureBlockPosition(index);
+    // Get the Y position for this signatory (handles pagination with letterhead-aware max per page)
+    const blockTop = getSignatureBlockPosition(index, letterhead);
     
-    // Get which page this signatory's block will appear on
-    const pageNumber = getSignaturePageNumber(index, contentPages);
+    // Get which page this signatory's block will appear on (letterhead-aware)
+    const pageNumber = getSignaturePageNumber(index, contentPages, letterhead);
     
     // Absolute X position relative to page - use letterhead margin if available
     const blockLeft = marginX;

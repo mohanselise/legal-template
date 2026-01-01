@@ -629,24 +629,21 @@ export function TemplatePDFReview({
     setNumPages(numPages);
     setPageNumber(numPages);
 
-    // Initialize signature fields
-    if (apiSignatureFields && apiSignatureFields.length > 0 && signatureFields.length === 0) {
-      const convertedFields = convertMetadataToFields(apiSignatureFields, numPages);
-      setSignatureFields(convertedFields);
-    } else if (signatureFields.length === 0 && signatories.length > 0) {
-      // Generate default signature fields
-      // Pass letterhead to adjust positions when letterhead content area differs from default margins
+    // ALWAYS regenerate signature fields with actual page count
+    // This ensures correct positioning regardless of letterhead/content changes
+    // The API uses estimated page count which may be wrong when letterhead reduces content area
+    if (signatories.length > 0) {
       const metadataFields = generateSignatureFieldMetadata(
         signatories.map((sig, idx) => ({
           party: sig.role || `signatory_${idx}`, // Use role as party type or generate a unique one
           name: sig.name,
           email: sig.email,
         })),
-        numPages,
+        numPages,  // Actual page count from rendered PDF
         editableDocument.letterhead
       );
-      const defaultFields = convertMetadataToFields(metadataFields, numPages);
-      setSignatureFields(defaultFields);
+      const fields = convertMetadataToFields(metadataFields, numPages);
+      setSignatureFields(fields);
     }
   };
 

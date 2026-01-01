@@ -517,17 +517,30 @@ function ReviewContent() {
     // Navigate to last page where signature fields are typically placed
     setPageNumber(numPages);
 
-    // If we have API-provided signature fields, convert and use them now that we know the actual page count
-    if (apiSignatureFields && apiSignatureFields.length > 0 && signatureFields.length === 0) {
-      const convertedFields = convertMetadataToFields(apiSignatureFields, numPages);
-      console.log('✅ Using API-provided signature fields with actual page count:', convertedFields);
-      setSignatureFields(convertedFields);
+    // ALWAYS regenerate signature fields with actual page count
+    // This ensures correct positioning regardless of letterhead/content changes
+    // The API uses estimated page count which may be wrong when letterhead reduces content area
+    if (generatedDocument) {
+      const empInfo = getEmployerInfo(generatedDocument, formData);
+      const emplInfo = getEmployeeInfo(generatedDocument, formData);
+
+      const signatories = [
+        { party: 'employer' as const, name: empInfo.name, email: empInfo.email },
+        { party: 'employee' as const, name: emplInfo.name, email: emplInfo.email },
+      ];
+
+      const metadataFields = generateSignatureFieldMetadata(
+        signatories,
+        numPages,  // Actual page count from rendered PDF
+        generatedDocument.letterhead
+      );
+      const fields = convertMetadataToFields(metadataFields, numPages);
+      console.log('✅ Regenerated signature fields with actual page count:', numPages, fields);
+      setSignatureFields(fields);
 
       // Save to sessionStorage
-      if (generatedDocument) {
-        const docId = generatedDocument.metadata?.generatedAt || Date.now().toString();
-        saveSignatureFields(convertedFields, docId);
-      }
+      const docId = generatedDocument.metadata?.generatedAt || Date.now().toString();
+      saveSignatureFields(fields, docId);
     }
   };
 

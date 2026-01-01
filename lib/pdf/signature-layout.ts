@@ -12,7 +12,13 @@
  * FIXED-HEIGHT BLOCKS: Each signatory block has a fixed height to ensure
  * deterministic positioning. This eliminates cumulative positioning errors
  * that occurred when variable-height content caused overlay drift.
+ * 
+ * LETTERHEAD SUPPORT: When letterhead reduces the content area, fewer
+ * signatories fit per page. Functions accept optional letterhead config
+ * to calculate dynamic pagination.
  */
+
+import type { LetterheadConfig } from '@/app/api/templates/employment-agreement/schema';
 
 export const SIG_PAGE_LAYOUT = {
   PAGE_WIDTH: 612, // US Letter Width (pt)
@@ -22,6 +28,7 @@ export const SIG_PAGE_LAYOUT = {
   // Header Positioning
   HEADER_Y: 72,
   HEADER_HEIGHT: 60,
+  SIGNATURE_PAGE_OVERHEAD: 110,  // Total space before first block (marginTop + header + margins)
   
   // Block Layout - FIXED HEIGHT for deterministic overlay positioning
   // These values MUST match the styles in SignaturePage.tsx
@@ -60,22 +67,56 @@ export const SIG_PAGE_LAYOUT = {
 export const CONTENT_WIDTH = SIG_PAGE_LAYOUT.PAGE_WIDTH - (SIG_PAGE_LAYOUT.MARGIN_X * 2);
 
 /**
+ * Calculate the maximum number of signatories that fit on a signature page.
+ * 
+ * When letterhead is applied with a smaller content area, fewer signatories
+ * fit per page. This function dynamically calculates the max based on
+ * available content height.
+ * 
+ * @param letterhead Optional letterhead configuration
+ * @returns Maximum signatories per page (default: 3, fewer with small letterhead)
+ * 
+ * @example
+ * getMaxSignatoriesPerPage()                    // → 3 (default)
+ * getMaxSignatoriesPerPage({ contentArea: { height: 500 } }) // → 2
+ */
+export const getMaxSignatoriesPerPage = (letterhead?: LetterheadConfig): number => {
+  if (!letterhead) {
+    return SIG_PAGE_LAYOUT.MAX_SIGNATORIES_PER_PAGE;
+  }
+
+  // Calculate available height for signature blocks
+  // Content area height minus signature page overhead (marginTop + header + margins)
+  const availableHeight = letterhead.contentArea.height - SIG_PAGE_LAYOUT.SIGNATURE_PAGE_OVERHEAD;
+  
+  // Each signature block needs BLOCK_HEIGHT + BLOCK_GAP (200pt total)
+  const blockSpace = SIG_PAGE_LAYOUT.BLOCK_HEIGHT + SIG_PAGE_LAYOUT.BLOCK_GAP;
+  
+  // Calculate how many blocks fit, minimum 1
+  const maxPerPage = Math.max(1, Math.floor(availableHeight / blockSpace));
+  
+  return maxPerPage;
+};
+
+/**
  * Calculates the absolute Y position for a specific signatory block.
  * 
  * This is the CRITICAL function that ensures PDF and overlay alignment.
  * Both SignaturePage.tsx and signature-field-metadata.ts use this same function.
  * 
  * @param index 0-based index of the signatory
+ * @param letterhead Optional letterhead for dynamic pagination
  * @returns Absolute Y position in points from top of page
  * 
  * @example
- * getSignatureBlockPosition(0) // → 160 (first signatory)
- * getSignatureBlockPosition(1) // → 330 (second signatory)
- * getSignatureBlockPosition(2) // → 500 (third signatory)
+ * getSignatureBlockPosition(0) // → 140 (first signatory)
+ * getSignatureBlockPosition(1) // → 340 (second signatory)
+ * getSignatureBlockPosition(2) // → 540 (third signatory)
  */
-export const getSignatureBlockPosition = (index: number): number => {
+export const getSignatureBlockPosition = (index: number, letterhead?: LetterheadConfig): number => {
   // Handle pagination - wrap to next page if needed
-  const indexOnPage = index % SIG_PAGE_LAYOUT.MAX_SIGNATORIES_PER_PAGE;
+  const maxPerPage = getMaxSignatoriesPerPage(letterhead);
+  const indexOnPage = index % maxPerPage;
   return SIG_PAGE_LAYOUT.BLOCK_START_Y + (indexOnPage * (SIG_PAGE_LAYOUT.BLOCK_HEIGHT + SIG_PAGE_LAYOUT.BLOCK_GAP));
 };
 
@@ -83,18 +124,22 @@ export const getSignatureBlockPosition = (index: number): number => {
  * Calculates which page a signatory's signature block will appear on.
  * @param index 0-based index of the signatory
  * @param totalContentPages Total pages of document content before signature pages
+ * @param letterhead Optional letterhead for dynamic pagination
  * @returns 1-based page number
  */
-export const getSignaturePageNumber = (index: number, totalContentPages: number): number => {
-  const signatoryPageIndex = Math.floor(index / SIG_PAGE_LAYOUT.MAX_SIGNATORIES_PER_PAGE);
+export const getSignaturePageNumber = (index: number, totalContentPages: number, letterhead?: LetterheadConfig): number => {
+  const maxPerPage = getMaxSignatoriesPerPage(letterhead);
+  const signatoryPageIndex = Math.floor(index / maxPerPage);
   return totalContentPages + 1 + signatoryPageIndex;
 };
 
 /**
  * Calculate total signature pages needed
  * @param signatoryCount Number of signatories
+ * @param letterhead Optional letterhead for dynamic pagination
  * @returns Number of pages needed for signatures
  */
-export const calculateSignaturePages = (signatoryCount: number): number => {
-  return Math.ceil(signatoryCount / SIG_PAGE_LAYOUT.MAX_SIGNATORIES_PER_PAGE);
+export const calculateSignaturePages = (signatoryCount: number, letterhead?: LetterheadConfig): number => {
+  const maxPerPage = getMaxSignatoriesPerPage(letterhead);
+  return Math.ceil(signatoryCount / maxPerPage);
 };

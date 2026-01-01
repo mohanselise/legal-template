@@ -91,6 +91,7 @@ async function main() {
     console.log('📦 Events:', JSON.stringify(allEvents, null, 2), '\n');
 
     if (Array.isArray(allEvents)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const statuses = allEvents.map((e: any) => e.Status).filter(Boolean);
       console.log('📋 Event types found:', [...new Set(statuses)].join(', '));
     }
@@ -221,6 +222,7 @@ async function waitForPreparationSuccess(accessToken: string, documentId: string
 
     if (response.ok) {
       const events = await response.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const found = Array.isArray(events) && events.some(
         (e: any) => e.Status === 'preparation_success' && e.Success === true
       );
@@ -371,6 +373,7 @@ async function waitForRolloutSuccess(accessToken: string, documentId: string): P
         console.log(JSON.stringify(events, null, 2));
         console.log('');
         
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const found = Array.isArray(events) && events.some(
           (e: any) => e.Status === 'rollout_success'
         );
@@ -391,6 +394,7 @@ async function waitForRolloutSuccess(accessToken: string, documentId: string): P
   return false;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getAllEvents(accessToken: string, documentId: string): Promise<any> {
   const response = await fetch(GET_EVENTS_API, {
     method: 'POST',

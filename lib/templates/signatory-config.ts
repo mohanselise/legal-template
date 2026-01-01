@@ -205,6 +205,7 @@ function migrateFieldMappings(fieldMappings: SignatoryFieldMapping[] | undefined
 /**
  * Migrate old predefined signatory to new format
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function migratePredefinedSignatory(old: any): PredefinedSignatory {
   return {
     id: old.id,

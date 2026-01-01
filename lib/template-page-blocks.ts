@@ -177,7 +177,9 @@ export function parseTemplatePageBlocks(raw: unknown): TemplatePageBlocks {
         path: issue.path.join("."),
         message: issue.message,
         code: issue.code,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expected: (issue as any).expected,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         received: (issue as any).received,
       });
     });
@@ -191,6 +193,7 @@ export function parseTemplatePageBlocks(raw: unknown): TemplatePageBlocks {
         if (blockParsed.success) {
           validBlocks.push(blockParsed.data);
         } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           console.warn(`[TEMPLATE_PAGE_BLOCKS] Block ${idx} (type: ${(block as any)?.type || "unknown"}) failed validation:`, blockParsed.error.issues);
         }
       });

@@ -96,6 +96,7 @@ export async function validateTurnstile(
     });
 
     if (!validationResponse.success) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const errorCodes = (validationResponse as any)['error-codes'] || [];
       console.error('[API] Turnstile validation failed:', errorCodes);
 

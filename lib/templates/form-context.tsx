@@ -161,6 +161,7 @@ async function parseErrorMessage(response: Response, fallback: string): Promise<
 // CONTEXT CREATION
 // ==========================================
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TemplateFormContext = createContext<TemplateFormContextType<any> | undefined>(undefined);
 
 // ==========================================

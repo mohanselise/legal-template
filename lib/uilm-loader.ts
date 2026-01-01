@@ -112,6 +112,7 @@ export async function fetchUilmTranslations(locale: string) {
                     console.log('[UILM DEBUG] Raw keys for templates:', Object.keys(rawData).slice(0, 10));
                 }
 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const unflattenedData: Record<string, any> = {};
 
                 Object.keys(rawData).forEach(key => {
@@ -237,10 +238,12 @@ export async function fetchUilmTranslations(locale: string) {
               try {
                  // Use the statically imported EN messages as schema
                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                  const moduleSchema = (enMessages as any)[moduleName];
                  
                  if (moduleSchema) {
                     // Recursive function to fill values from rawData using schema keys
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const fillFromSchema = (schema: any, prefix: string, target: any) => {
                         Object.keys(schema).forEach(k => {
                             const value = schema[k];

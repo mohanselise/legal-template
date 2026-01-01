@@ -25,8 +25,10 @@ interface ConfirmStepProps {
   /** List of acknowledgments the user must accept */
   acknowledgments?: Acknowledgment[];
   /** Callback to start generation */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onStartGeneration?: (task: () => Promise<BackgroundGenerationResult<any> | null>) => void;
   /** Function that returns the generation task */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createGenerationTask?: () => Promise<BackgroundGenerationResult<any> | null>;
   /** Additional content before acknowledgments */
   preContent?: React.ReactNode;

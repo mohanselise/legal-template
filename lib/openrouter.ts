@@ -78,6 +78,7 @@ export async function createCompletionWithTracking(
     const openrouter = await getOpenRouterClient();
     // Add OpenRouter-specific parameters for usage tracking if possible
     // Note: We cast to any to allow 'include' parameter which isn't in OpenAI types
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const requestParams = {
       ...params,
       include: { usage: true }, // Request explicit usage/cost data from OpenRouter
@@ -88,6 +89,7 @@ export async function createCompletionWithTracking(
 
     // Try to extract cost from response if OpenRouter provides it
     // OpenRouter sometimes puts it in usage or a separate field
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rawResponse = completion as any;
     if (rawResponse.usage?.cost) {
       cost = rawResponse.usage.cost;

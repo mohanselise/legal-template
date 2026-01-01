@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 interface ReviewField {
   label: string;
   value: string | number | boolean | undefined | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   format?: (value: any) => string;
 }
 

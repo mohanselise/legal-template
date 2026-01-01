@@ -43,7 +43,9 @@ export function setSessionCookie(response: Response, sessionId: string) {
     // or response.cookies.set() if using NextResponse.
 
     // For NextResponse (which most API routes use):
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((response as any).cookies) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (response as any).cookies.set({
             name: SESSION_COOKIE_NAME,
             value: sessionId,

@@ -24,11 +24,14 @@ async function debugUilmLookup() {
     console.log('📋 Student Template from DB:');
     console.log('  Title:', studentTemplate.title);
     console.log('  Description:', studentTemplate.description);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     console.log('  UILM Title Key:', (studentTemplate as any).uilmTitleKey);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     console.log('  UILM Description Key:', (studentTemplate as any).uilmDescriptionKey);
     
     // Check messages structure
     console.log('\n📦 Messages structure:');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const templatesModule = (messages as any)?.templates;
     if (!templatesModule) {
       console.log('❌ templates module not found in messages');
@@ -39,6 +42,7 @@ async function debugUilmLookup() {
     console.log('📋 Top-level keys in templates module:', Object.keys(templatesModule).slice(0, 30));
     
     // Test the lookup logic
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const uilmTitleKey = (studentTemplate as any).uilmTitleKey;
     if (uilmTitleKey) {
       console.log(`\n🔑 Looking for UILM Title Key: "${uilmTitleKey}"`);

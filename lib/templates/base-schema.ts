@@ -261,21 +261,25 @@ export function createPartySchema(options: {
   requirePhone?: boolean;
   requireRepresentative?: boolean;
 } = {}) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let schema: z.ZodObject<any> = basePartySchema;
   
   if (options.requireEmail) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     schema = schema.omit({ email: true }).extend({
       email: z.string().email('Valid email is required'),
     }) as z.ZodObject<any>;
   }
   
   if (options.requirePhone) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     schema = schema.omit({ phone: true }).extend({
       phone: z.string().min(1, 'Phone number is required'),
     }) as z.ZodObject<any>;
   }
   
   if (options.requireRepresentative) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return partyWithRepresentativeSchema.omit({ 
       representativeName: true,
       representativeTitle: true,

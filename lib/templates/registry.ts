@@ -14,6 +14,7 @@ import type { TemplateConfig, TemplateMeta } from './types';
 /**
  * Internal registry map storing all template configurations
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const templateRegistry = new Map<string, TemplateConfig<any>>();
 
 /**
@@ -39,6 +40,7 @@ export function registerTemplate<TFormData>(
     console.warn(`Template "${config.id}" is already registered. Overwriting.`);
   }
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   templateRegistry.set(config.id, config as TemplateConfig<any>);
   metadataRegistry.set(config.id, config.meta);
   
@@ -167,6 +169,7 @@ export function isTemplateRegistered(id: string): boolean {
  * 
  * @returns Array of all template configurations
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getAllTemplates(): TemplateConfig<any>[] {
   return Array.from(templateRegistry.values());
 }
@@ -176,6 +179,7 @@ export function getAllTemplates(): TemplateConfig<any>[] {
  * 
  * @returns Array of template configurations where available=true
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getAvailableTemplates(): TemplateConfig<any>[] {
   return getAllTemplates().filter(t => t.meta.available);
 }

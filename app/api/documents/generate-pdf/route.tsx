@@ -167,9 +167,11 @@ export async function POST(request: NextRequest) {
     
     // 4. Generate signature field metadata using fixed-height block calculations
     // With fixed-height blocks, positions are deterministic and match PDF rendering exactly
+    // Pass letterhead to adjust positions when letterhead content area differs from default margins
     const signatureFields = generateSignatureFieldMetadata(
       signatories,
-      estimatedPages
+      estimatedPages,
+      legalDoc.letterhead
     );
 
     // Check if client wants metadata (for signature editor)

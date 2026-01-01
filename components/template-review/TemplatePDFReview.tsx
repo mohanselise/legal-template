@@ -635,13 +635,15 @@ export function TemplatePDFReview({
       setSignatureFields(convertedFields);
     } else if (signatureFields.length === 0 && signatories.length > 0) {
       // Generate default signature fields
+      // Pass letterhead to adjust positions when letterhead content area differs from default margins
       const metadataFields = generateSignatureFieldMetadata(
         signatories.map((sig, idx) => ({
           party: sig.role || `signatory_${idx}`, // Use role as party type or generate a unique one
           name: sig.name,
           email: sig.email,
         })),
-        numPages
+        numPages,
+        editableDocument.letterhead
       );
       const defaultFields = convertMetadataToFields(metadataFields, numPages);
       setSignatureFields(defaultFields);

@@ -603,7 +603,8 @@ function ReviewContent() {
       { party: 'employee' as const, name: emplInfo.name, email: emplInfo.email },
     ];
 
-    const metadataFields = generateSignatureFieldMetadata(signatories, totalPages);
+    // Pass letterhead to adjust positions when letterhead content area differs from default margins
+    const metadataFields = generateSignatureFieldMetadata(signatories, totalPages, generatedDocument.letterhead);
     const defaultFields = convertMetadataToFields(metadataFields, totalPages);
 
     console.log('⚠️ Using locally generated signature fields (fallback):', defaultFields);

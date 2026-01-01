@@ -1,4 +1,5 @@
 import { SIG_PAGE_LAYOUT, getSignatureBlockPosition, getSignaturePageNumber, calculateSignaturePages } from './signature-layout';
+import type { LetterheadConfig } from '@/app/api/templates/employment-agreement/schema';
 
 // Calculate signature layout positions for employer (index 0) and employee (index 1)
 const employerBlockTop = getSignatureBlockPosition(0);
@@ -77,18 +78,35 @@ export interface SignatoryInfo {
  * the PDF rendering positions from SignaturePage.tsx because both
  * use the same getSignatureBlockPosition() function.
  * 
+ * When letterhead is provided, positions are adjusted to account for
+ * the letterhead's content area margins instead of the default 72pt margins.
+ * 
  * @param signatories Array of signatory info from AI-generated document
  * @param numPages Total pages in the document (content pages, signature page(s) will be added)
+ * @param letterhead Optional letterhead configuration for margin adjustments
  * @returns Array of signature field metadata for overlay positioning
  */
 export function generateSignatureFieldMetadata(
   signatories: SignatoryInfo[],
-  numPages: number
+  numPages: number,
+  letterhead?: LetterheadConfig
 ): SignatureFieldMetadata[] {
   // Calculate content pages (everything before signature pages)
   // If numPages already includes signature pages, we need to adjust
   const signaturePageCount = calculateSignaturePages(signatories.length);
   const contentPages = Math.max(1, numPages - signaturePageCount);
+
+  // When letterhead is applied, use its content area margins instead of defaults
+  // The page uses letterhead.contentArea.x/y for padding, so signature positions shift accordingly
+  const marginX = letterhead?.contentArea.x ?? SIG_PAGE_LAYOUT.MARGIN_X;
+  
+  // For Y positioning: The signature page uses letterhead.contentArea.y for top padding
+  // instead of the default 72pt. We need to adjust the Y offset to account for this difference.
+  // BLOCK_START_Y (140) was calibrated for 72pt default top margin.
+  const defaultTopMargin = 72; // Default 1-inch top margin in points
+  const topMarginOffset = letterhead 
+    ? (letterhead.contentArea.y - defaultTopMargin) 
+    : 0;
 
   return signatories.flatMap((signatory, index) => {
     // Get the Y position for this signatory (handles pagination)
@@ -97,8 +115,8 @@ export function generateSignatureFieldMetadata(
     // Get which page this signatory's block will appear on
     const pageNumber = getSignaturePageNumber(index, contentPages);
     
-    // Absolute X position relative to page
-    const blockLeft = SIG_PAGE_LAYOUT.MARGIN_X;
+    // Absolute X position relative to page - use letterhead margin if available
+    const blockLeft = marginX;
     
     // Create a sanitized party identifier for field IDs
     const partyId = (signatory.party || 'signatory').replace(/\s+/g, '_').toLowerCase();
@@ -111,7 +129,7 @@ export function generateSignatureFieldMetadata(
       pageNumber,
       signatoryIndex: index,
       x: blockLeft + SIG_PAGE_LAYOUT.SIG_BOX_X_OFFSET,
-      y: blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET,
+      y: blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET + topMarginOffset,
       width: SIG_PAGE_LAYOUT.SIG_BOX_WIDTH,
       height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
     };
@@ -124,7 +142,7 @@ export function generateSignatureFieldMetadata(
       pageNumber,
       signatoryIndex: index,
       x: blockLeft + SIG_PAGE_LAYOUT.DATE_BOX_X_OFFSET,
-      y: blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET,
+      y: blockTop + SIG_PAGE_LAYOUT.SIG_BOX_Y_OFFSET + topMarginOffset,
       width: SIG_PAGE_LAYOUT.DATE_BOX_WIDTH,
       height: SIG_PAGE_LAYOUT.SIG_BOX_HEIGHT,
     };

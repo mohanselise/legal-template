@@ -71,6 +71,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
   return {
     locale,
-    messages
+    messages,
+    timeZone: 'UTC' // Temporary default timezone to prevent environment mismatch errors
   };
 });

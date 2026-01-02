@@ -239,10 +239,10 @@ export function UrlField({ field, value, onChange, error, enrichmentContext, for
         />
       )}
       {!isValid && urlValue && (
-        <p className="text-xs text-destructive">Please enter a valid URL</p>
+        <p className="text-sm text-destructive">Please enter a valid URL</p>
       )}
       {resolvedHelpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
+        <p className="text-sm text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>

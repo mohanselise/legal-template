@@ -67,15 +67,6 @@ export default async function Footer() {
           </Link>
           <span>•</span>
           <Link
-            href="https://selisegroup.com/software-development-terms/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-foreground hover:underline"
-          >
-            {t('softwareDevelopmentTerms')}
-          </Link>
-          <span>•</span>
-          <Link
             href="https://selisegroup.com/contact-us/"
             target="_blank"
             rel="noopener noreferrer"

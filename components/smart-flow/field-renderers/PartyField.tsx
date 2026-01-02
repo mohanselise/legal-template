@@ -341,7 +341,7 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
             {showBusinessDropdown && predictions.length > 0 && (
               <div className="absolute z-50 w-full mt-1 bg-[hsl(var(--popover))] border border-[hsl(var(--border))] rounded-lg shadow-xl max-h-72 overflow-y-auto">
                 <div className="px-3 py-2 bg-[hsl(var(--muted))]/30 border-b border-[hsl(var(--border))]/50">
-                  <p className="text-[10px] text-[hsl(var(--globe-grey))]">
+                  <p className="text-sm text-[hsl(var(--globe-grey))]">
                     Select a business to auto-fill address
                   </p>
                 </div>
@@ -360,7 +360,7 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
                         <div className="font-medium text-sm text-[hsl(var(--fg))]">
                           {prediction.structured_formatting.main_text}
                         </div>
-                        <div className="text-xs text-[hsl(var(--globe-grey))] mt-0.5 line-clamp-2">
+                        <div className="text-sm text-[hsl(var(--globe-grey))] mt-0.5 line-clamp-2">
                           {prediction.structured_formatting.secondary_text}
                         </div>
                       </div>
@@ -370,7 +370,7 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
               </div>
             )}
           </div>
-          <p className="text-[10px] text-[hsl(var(--globe-grey))]">
+          <p className="text-sm text-[hsl(var(--globe-grey))]">
             {isBusinessLikely
               ? "Legal name as registered. Start typing to search for businesses."
               : "Full legal name as it appears on official documents"}
@@ -436,13 +436,13 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
 
         {/* Address Section */}
         <div className="pt-2 border-t border-[hsl(var(--border))]/50">
-          <p className="text-xs font-medium text-[hsl(var(--globe-grey))] mb-3">
+          <p className="text-sm font-medium text-[hsl(var(--globe-grey))] mb-3">
             {isBusinessLikely ? "Registered Address" : "Address"}
           </p>
 
           {/* Street Address with autocomplete */}
           <div className="space-y-1.5 mb-3" ref={streetInputRef}>
-            <Label htmlFor={`${field.name}-street`} className="text-xs text-[hsl(var(--globe-grey))]">
+            <Label htmlFor={`${field.name}-street`} className="text-sm text-[hsl(var(--globe-grey))]">
               Street Address
             </Label>
             <div className="relative">
@@ -468,7 +468,7 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
               {showAddressDropdown && addressSuggestions.length > 0 && (
                 <div className="absolute z-50 w-full mt-1 bg-[hsl(var(--popover))] border border-[hsl(var(--border))] rounded-lg shadow-xl max-h-72 overflow-y-auto">
                   <div className="px-3 py-2 bg-[hsl(var(--muted))]/30 border-b border-[hsl(var(--border))]/50">
-                    <p className="text-[10px] text-[hsl(var(--globe-grey))]">
+                    <p className="text-sm text-[hsl(var(--globe-grey))]">
                       Select an address to auto-fill all fields
                     </p>
                   </div>
@@ -487,7 +487,7 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
                           <div className="font-medium text-sm text-[hsl(var(--fg))]">
                             {suggestion.structured_formatting?.main_text || suggestion.description.split(',')[0]}
                           </div>
-                          <div className="text-xs text-[hsl(var(--globe-grey))] mt-0.5 line-clamp-2">
+                          <div className="text-sm text-[hsl(var(--globe-grey))] mt-0.5 line-clamp-2">
                             {suggestion.structured_formatting?.secondary_text || suggestion.description}
                           </div>
                         </div>
@@ -497,7 +497,7 @@ export function PartyField({ field, value, onChange, error, enrichmentContext, f
                 </div>
               )}
             </div>
-            <p className="text-[10px] text-[hsl(var(--globe-grey))]">
+            <p className="text-sm text-[hsl(var(--globe-grey))]">
               Type at least 3 characters to see address suggestions
             </p>
           </div>

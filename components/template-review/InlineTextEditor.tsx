@@ -158,11 +158,11 @@ export function InlineTextEditor({
           <DialogDescription>
             {blockType === "effectiveDate" ? (
               <>
-                Edit the label and date value. Format: "Label: value" (e.g., "Effective Date: January 15, 2024" or "Commencement Date: Upon Signature"). Press <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Esc</kbd> to cancel or <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Ctrl+Enter</kbd> to save.
+                Edit the label and date value. Format: "Label: value" (e.g., "Effective Date: January 15, 2024" or "Commencement Date: Upon Signature"). Press <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-xs">Esc</kbd> to cancel or <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-xs">Ctrl+Enter</kbd> to save.
               </>
             ) : (
               <>
-                Make your changes below. Press <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Esc</kbd> to cancel or <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-[10px]">Ctrl+Enter</kbd> to save.
+                Make your changes below. Press <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-xs">Esc</kbd> to cancel or <kbd className="px-1.5 py-0.5 bg-[hsl(var(--muted))] rounded text-xs">Ctrl+Enter</kbd> to save.
               </>
             )}
           </DialogDescription>

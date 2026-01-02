@@ -895,7 +895,7 @@ function ReviewContent() {
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
-                <span className="text-xs font-medium text-[hsl(var(--fg))] min-w-[3.5rem] text-center px-2">
+                <span className="text-sm font-medium text-[hsl(var(--fg))] min-w-[3.5rem] text-center px-2">
                   {Math.round(scale * 100)}%
                 </span>
                 <button
@@ -912,14 +912,14 @@ function ReviewContent() {
               <div className="flex items-center border border-[hsl(var(--border))] rounded-md bg-[hsl(var(--bg))] divide-x divide-[hsl(var(--border))]">
                 <button
                   onClick={handleFitWidth}
-                  className="px-2.5 py-1.5 text-xs font-medium text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
+                  className="px-2.5 py-1.5 text-sm font-medium text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
                   title={t('fitWidth')}
                 >
                   {t('fitWidth')}
                 </button>
                 <button
                   onClick={handleFitPage}
-                  className="px-2.5 py-1.5 text-xs font-medium text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
+                  className="px-2.5 py-1.5 text-sm font-medium text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
                   title="100%"
                 >
                   100%
@@ -1001,7 +1001,7 @@ function ReviewContent() {
                           />
                         )}
                         {pdfUrl && signatureFields.length === 0 && page === (numPages || 1) && (
-                          <div className="absolute top-4 left-4 bg-yellow-100 border border-yellow-400 text-yellow-800 px-3 py-2 rounded text-xs">
+                          <div className="absolute top-4 left-4 bg-yellow-100 border border-yellow-400 text-yellow-800 px-3 py-2 rounded text-sm">
                             {t('noSignatureFieldsInitialized', { fieldCount: signatureFields.length, pageCount: numPages || 0 })}
                           </div>
                         )}
@@ -1049,13 +1049,13 @@ function ReviewContent() {
 
                 {/* Instructions */}
                 <div className="p-3 bg-[hsl(var(--brand-surface))] border border-[hsl(var(--brand-border))] rounded-lg mb-4">
-                  <p className="text-[10px] text-[hsl(var(--fg))] leading-relaxed">
+                  <p className="text-sm text-[hsl(var(--fg))] leading-relaxed">
                     {t('fieldsAutomaticallyPlaced')}
                   </p>
                 </div>
 
                 {/* Field Count */}
-                <div className="text-xs text-[hsl(var(--muted-foreground))] mb-4">
+                <div className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
                   <strong className="text-[hsl(var(--fg))] font-semibold">{signatureFields.length}</strong> {t('fieldsPlaced', { count: signatureFields.length, plural: signatureFields.length !== 1 ? t('fields') : t('field') })}
                 </div>
               </div>
@@ -1098,7 +1098,7 @@ function ReviewContent() {
                         
                         return (
                           <div key={key} className="pb-3 border-b border-[hsl(var(--border))] last:border-0">
-                            <dt className="text-[hsl(var(--muted-foreground))] capitalize text-xs mb-1">
+                            <dt className="text-[hsl(var(--muted-foreground))] capitalize text-sm mb-1">
                               {fieldLabel}
                             </dt>
                             <dd className="font-medium text-[hsl(var(--fg))] text-sm break-words">

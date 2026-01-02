@@ -908,7 +908,7 @@ export default function EditTemplatePage() {
                       placeholder="employment-agreement"
                       {...form.register("slug")}
                     />
-                    <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    <p className="text-sm text-[hsl(var(--globe-grey))]">
                       URL will be: /{locale}/templates/{form.watch("slug") || "slug"}/generate
                     </p>
                     {form.formState.errors.slug && (
@@ -1068,7 +1068,7 @@ export default function EditTemplatePage() {
                             <Copy className="h-4 w-4" />
                           </Button>
                         </div>
-                        <p className="text-xs text-[hsl(var(--globe-grey))]">
+                        <p className="text-sm text-[hsl(var(--globe-grey))]">
                           Share this link with your team for internal review. The link will stop working if you revoke it or publish the template.
                         </p>
                       </div>
@@ -1180,7 +1180,7 @@ export default function EditTemplatePage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="systemPromptRole">Role</Label>
-                    <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    <p className="text-sm text-[hsl(var(--globe-grey))]">
                       Define the AI&apos;s role (e.g., &quot;expert legal drafter specializing in employment agreements&quot;)
                     </p>
                     <Input
@@ -1203,14 +1203,14 @@ export default function EditTemplatePage() {
                               form.setValue("systemPrompt", defaultPrompt);
                             }
                           }}
-                          className="h-7 text-xs gap-1"
+                          className="h-7 text-sm gap-1"
                         >
                           <RotateCcw className="size-3" />
                           Load Default
                         </Button>
                       )}
                     </div>
-                    <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    <p className="text-sm text-[hsl(var(--globe-grey))]">
                       The system prompt defines the AI&apos;s behavior and output
                       format for document generation. Common instructions from Settings will be automatically appended.
                     </p>
@@ -1221,7 +1221,7 @@ export default function EditTemplatePage() {
                       {...form.register("systemPrompt")}
                     />
                     {form.watch("systemPrompt") && (
-                      <div className="flex justify-between items-center text-xs text-[hsl(var(--globe-grey))]">
+                      <div className="flex justify-between items-center text-sm text-[hsl(var(--globe-grey))]">
                         <span>
                           {form.watch("systemPrompt")?.length.toLocaleString()}{" "}
                           characters
@@ -1231,7 +1231,7 @@ export default function EditTemplatePage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => form.setValue("systemPrompt", null)}
-                          className="h-6 text-xs text-destructive hover:text-destructive"
+                          className="h-6 text-sm text-destructive hover:text-destructive"
                         >
                           Clear
                         </Button>
@@ -1273,7 +1273,7 @@ export default function EditTemplatePage() {
                   <div className="p-3 bg-[hsl(var(--poly-green))]/5 rounded-lg border border-[hsl(var(--poly-green))]/20">
                     <div className="flex items-start gap-2">
                       <Languages className="h-4 w-4 text-[hsl(var(--poly-green))] mt-0.5" />
-                      <div className="text-xs text-[hsl(var(--globe-grey))]">
+                      <div className="text-sm text-[hsl(var(--globe-grey))]">
                         <p className="font-medium text-[hsl(var(--fg))] mb-1">SELISE Blocks UILM Integration</p>
                         <p>
                           Add keys from the <strong>templates</strong> module to enable German translations.
@@ -1301,7 +1301,7 @@ export default function EditTemplatePage() {
                         {...form.register("uilmTitleKey")}
                         className="font-mono text-sm"
                       />
-                      <p className="text-xs text-[hsl(var(--globe-grey))]">
+                      <p className="text-sm text-[hsl(var(--globe-grey))]">
                         UILM key for the template title
                       </p>
                     </div>
@@ -1313,15 +1313,15 @@ export default function EditTemplatePage() {
                         {...form.register("uilmDescriptionKey")}
                         className="font-mono text-sm"
                       />
-                      <p className="text-xs text-[hsl(var(--globe-grey))]">
+                      <p className="text-sm text-[hsl(var(--globe-grey))]">
                         UILM key for the template description
                       </p>
                     </div>
                   </div>
 
-                  <div className="text-xs text-[hsl(var(--globe-grey))] p-2 bg-[hsl(var(--muted))]/30 rounded-md">
+                  <div className="text-sm text-[hsl(var(--globe-grey))] p-2 bg-[hsl(var(--muted))]/30 rounded-md">
                     <p className="font-medium mb-1">Module Details:</p>
-                    <code className="text-[10px] block">
+                    <code className="text-xs block">
                       Module: templates<br />
                       ID: 03e5475d-506d-4ad1-8d07-23fa768a7925
                     </code>
@@ -1394,7 +1394,7 @@ export default function EditTemplatePage() {
                     <div className="text-center py-6 text-[hsl(var(--globe-grey))]">
                       <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">No screens yet</p>
-                      <p className="text-xs mt-1">Click &quot;Add&quot; to create one</p>
+                      <p className="text-sm mt-1">Click &quot;Add&quot; to create one</p>
                     </div>
                   ) : (
                     <DndContext
@@ -1500,7 +1500,7 @@ export default function EditTemplatePage() {
                   <div>
                     <p className="font-medium text-[hsl(var(--fg))]">No landing page yet</p>
                     <p className="text-sm text-[hsl(var(--globe-grey))] mt-1">
-                      Create a custom landing page for <code className="px-1 py-0.5 bg-[hsl(var(--muted))] rounded text-xs">/{locale}/templates/{template?.slug}</code>.
+                      Create a custom landing page for <code className="px-1 py-0.5 bg-[hsl(var(--muted))] rounded text-sm">/{locale}/templates/{template?.slug}</code>.
                       This page will be shown to users when they visit the template URL.
                     </p>
                   </div>
@@ -1556,7 +1556,7 @@ export default function EditTemplatePage() {
                         {landingPageForm.formState.errors.title.message}
                       </p>
                     )}
-                    <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    <p className="text-sm text-[hsl(var(--globe-grey))]">
                       Used for the browser tab title and SEO
                     </p>
                   </div>
@@ -1567,7 +1567,7 @@ export default function EditTemplatePage() {
                       placeholder="Falls back to page title if empty"
                       {...landingPageForm.register("ogTitle")}
                     />
-                    <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    <p className="text-sm text-[hsl(var(--globe-grey))]">
                       Title for social media sharing
                     </p>
                   </div>
@@ -1598,7 +1598,7 @@ export default function EditTemplatePage() {
                     className="flex min-h-16 w-full rounded-lg border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-[hsl(var(--globe-grey))] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[hsl(var(--ring))] disabled:cursor-not-allowed disabled:opacity-50"
                     {...landingPageForm.register("ogDescription")}
                   />
-                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                  <p className="text-sm text-[hsl(var(--globe-grey))]">
                     Description for social media sharing
                   </p>
                 </div>
@@ -1622,7 +1622,7 @@ export default function EditTemplatePage() {
                       {landingPageForm.formState.errors.ogImage.message}
                     </p>
                   )}
-                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                  <p className="text-sm text-[hsl(var(--globe-grey))]">
                     Recommended: 1200x630px for optimal social media display
                   </p>
                 </div>
@@ -1680,7 +1680,7 @@ export default function EditTemplatePage() {
                   <div className="flex items-center justify-between">
                     <Label htmlFor="landing-html-body">HTML Body *</Label>
                     {landingPageForm.watch("htmlBody") && (
-                      <span className="text-xs text-[hsl(var(--globe-grey))]">
+                      <span className="text-sm text-[hsl(var(--globe-grey))]">
                         {landingPageForm.watch("htmlBody")?.length.toLocaleString()} characters
                       </span>
                     )}
@@ -1706,7 +1706,7 @@ export default function EditTemplatePage() {
                 </div>
 
                 <div className="p-3 bg-[hsl(var(--muted))]/30 rounded-lg border border-[hsl(var(--border))]">
-                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                  <p className="text-sm text-[hsl(var(--globe-grey))]">
                     <strong>Tips:</strong> You can use Tailwind CSS classes for styling.
                     The content will be rendered inside the main layout, so you don&apos;t need to include
                     header, footer, or html/body tags.

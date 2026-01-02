@@ -370,7 +370,7 @@ function SignatoryCard({
             ) : null}
           </div>
           {displayDescription && (
-            <p className="text-xs text-[hsl(var(--globe-grey))] mt-0.5">
+            <p className="text-sm text-[hsl(var(--globe-grey))] mt-0.5">
               {displayDescription}
             </p>
           )}

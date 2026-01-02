@@ -206,7 +206,7 @@ export function CountrySelect({
                 {/* Major countries section */}
                 {filteredCountries.major.length > 0 && (
                   <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
                       Major Countries
                     </div>
                     {filteredCountries.major.map((country) => (
@@ -243,7 +243,7 @@ export function CountrySelect({
                       <div className="my-1 border-t" />
                     )}
                     {filteredCountries.major.length > 0 && (
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                      <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
                         All Countries
                       </div>
                     )}
@@ -281,6 +281,7 @@ export function CountrySelect({
     </Popover>
   );
 }
+
 
 
 

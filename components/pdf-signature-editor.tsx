@@ -499,7 +499,7 @@ export function PDFSignatureEditor({
                   </div>
                   <div className="flex-1 text-left min-w-0">
                     <div className="font-semibold text-xs text-gray-900 truncate">{sig.name}</div>
-                    <div className="text-[10px] text-gray-500 truncate">
+                    <div className="text-sm text-gray-500 truncate">
                       {index === 0 ? '🏢 Employer' : '👤 Employee'} · {sig.role}
                     </div>
                   </div>
@@ -508,7 +508,7 @@ export function PDFSignatureEditor({
                       <div className="w-1.5 h-1.5 rounded-full bg-amber-500" title="Missing signature field" />
                     )}
                     {fieldCount > 0 && (
-                      <div className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                      <div className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700">
                         {fieldCount}
                       </div>
                     )}
@@ -544,7 +544,7 @@ export function PDFSignatureEditor({
                 </div>
                 <div className="flex-1 text-left">
                   <div className="font-semibold text-xs text-gray-900">{label}</div>
-                  <div className="text-[10px] text-gray-500">Click to place</div>
+                  <div className="text-sm text-gray-500">Click to place</div>
                 </div>
               </button>
             ))}
@@ -555,7 +555,7 @@ export function PDFSignatureEditor({
         <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
           <div className="flex items-start gap-2">
             <Info className="w-3.5 h-3.5 text-blue-600 mt-0.5 shrink-0" />
-            <div className="text-[10px] text-blue-900 leading-relaxed">
+            <div className="text-sm text-blue-900 leading-relaxed">
               <p className="font-semibold mb-1">✨ Auto-placed fields</p>
               <p className="text-blue-800">Drag to adjust • Add more • Delete unwanted</p>
             </div>
@@ -573,7 +573,7 @@ export function PDFSignatureEditor({
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-amber-900 mb-1">Missing Required Fields</p>
-                  <ul className="text-[10px] text-amber-800 space-y-0.5">
+                  <ul className="text-sm text-amber-800 space-y-0.5">
                     {validation.missingFields.map((msg, idx) => (
                       <li key={idx}>• {msg}</li>
                     ))}

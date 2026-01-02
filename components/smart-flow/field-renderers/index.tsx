@@ -189,7 +189,7 @@ function AISuggestionIndicator({
         onApply(suggestedValue);
       }}
       className="inline-flex items-center justify-center gap-2 sm:gap-1.5 px-4 sm:px-2.5 py-3 sm:py-1 
-        text-sm sm:text-xs font-semibold sm:font-medium rounded-lg sm:rounded-md
+        text-sm font-semibold sm:font-medium rounded-lg sm:rounded-md
         bg-[hsl(var(--selise-blue))]/10 sm:bg-[hsl(var(--selise-blue))]/5 
         text-[hsl(var(--selise-blue))] 
         hover:bg-[hsl(var(--selise-blue))]/20 sm:hover:bg-[hsl(var(--selise-blue))]/15 
@@ -367,7 +367,7 @@ export function TextField({ field, value, onChange, error, enrichmentContext, fo
         )}
       </div>
       {resolvedHelpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
+        <p className="text-sm text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
@@ -450,7 +450,7 @@ export function EmailField({ field, value, onChange, error, enrichmentContext, f
         )}
       </div>
       {resolvedHelpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
+        <p className="text-sm text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
@@ -567,7 +567,7 @@ export function DateField({ field, value, onChange, error, enrichmentContext, fo
         )}
       </div>
       {resolvedHelpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
+        <p className="text-sm text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
@@ -650,7 +650,7 @@ export function NumberField({ field, value, onChange, error, enrichmentContext, 
         )}
       </div>
       {resolvedHelpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
+        <p className="text-sm text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
@@ -681,7 +681,7 @@ export function CheckboxField({ field, value, onChange, error, formData, enrichm
             {field.required && <span className="text-destructive ml-1">*</span>}
           </Label>
           {resolvedHelpText && (
-            <p className="text-xs text-[hsl(var(--globe-grey))] mt-0.5">
+            <p className="text-sm text-[hsl(var(--globe-grey))] mt-0.5">
               {resolvedHelpText}
             </p>
           )}
@@ -817,7 +817,7 @@ export function MultiSelectField({ field, value, onChange, error, enrichmentCont
                   {optionLabel}
                 </div>
                 {optionDescription && (
-                  <div className="text-xs text-[hsl(var(--globe-grey))] mt-1 leading-relaxed">
+                  <div className="text-sm text-[hsl(var(--globe-grey))] mt-1 leading-relaxed">
                     {optionDescription}
                   </div>
                 )}
@@ -830,7 +830,7 @@ export function MultiSelectField({ field, value, onChange, error, enrichmentCont
       {/* Selected items summary (if any selected) */}
       {selectedValues.length > 0 && (
         <div className="pt-2 border-t border-[hsl(var(--border))]">
-          <p className="text-xs font-medium text-[hsl(var(--globe-grey))] mb-2">
+          <p className="text-sm font-medium text-[hsl(var(--globe-grey))] mb-2">
             Selected:
           </p>
           <div className="flex flex-wrap gap-2">
@@ -852,7 +852,7 @@ export function MultiSelectField({ field, value, onChange, error, enrichmentCont
       )}
 
       {resolvedHelpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
+        <p className="text-sm text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && (
         <div className="flex items-center gap-2 mt-2 text-sm text-amber-700">
@@ -1007,7 +1007,7 @@ export function SelectField({ field, value, onChange, error, enrichmentContext, 
       </div>
 
       {resolvedHelpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
+        <p className="text-sm text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && (
         <div className="flex items-center gap-2 mt-2 text-sm text-amber-700">
@@ -1156,7 +1156,7 @@ export function AdditionalSignatoriesField({
         </Button>
       </div>
       {field.helpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{field.helpText}</p>
+        <p className="text-sm text-[hsl(var(--globe-grey))]">{field.helpText}</p>
       )}
       {entries.length === 0 ? (
         <div className="rounded-lg border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 p-4 text-sm text-[hsl(var(--globe-grey))]">

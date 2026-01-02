@@ -1878,7 +1878,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                       <span className="font-medium truncate">
                         Enhancing your experience...
                       </span>
-                      <span className="text-[10px] sm:text-[11px] text-[hsl(var(--brand-muted))] truncate">
+                      <span className="text-sm text-[hsl(var(--brand-muted))] truncate">
                         AI is preparing smart suggestions in the background
                       </span>
                     </div>
@@ -1890,7 +1890,7 @@ function DynamicSmartFlowContent({ locale }: { locale: string }) {
                     </div>
                     <div className="flex flex-col flex-1 min-w-0">
                       <span className="font-medium">Enhancement unavailable</span>
-                      <span className="text-[10px] sm:text-[11px]">
+                      <span className="text-sm">
                         No worries — you can continue without AI suggestions
                       </span>
                     </div>

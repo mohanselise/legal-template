@@ -206,7 +206,7 @@ export function TextareaField({ field, value, onChange, error, enrichmentContext
         )}
       </div>
       {resolvedHelpText && (
-        <p className="text-xs text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
+        <p className="text-sm text-[hsl(var(--globe-grey))]">{resolvedHelpText}</p>
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>

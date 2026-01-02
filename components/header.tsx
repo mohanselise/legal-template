@@ -14,7 +14,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-[999] border-b border-border bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/80 dark:bg-gray-950/95">
+      <header className="sticky top-0 z-[999] border-b border-[hsl(var(--border))] bg-[hsl(var(--bg))] backdrop-blur-sm">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}

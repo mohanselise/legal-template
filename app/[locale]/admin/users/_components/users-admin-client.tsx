@@ -10,6 +10,7 @@ import { UsersTable } from "./users-table";
 import { InviteDialog } from "./invite-dialog";
 import { EditRoleDialog } from "./edit-role-dialog";
 import { DeleteUserDialog } from "./delete-user-dialog";
+import { RolesPermissionsInfo } from "./roles-permissions-info";
 import type { UserRole } from "@/lib/auth/roles";
 
 export interface SerializedUser {
@@ -215,6 +216,9 @@ export function UsersAdminClient({ locale }: UsersAdminClientProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Roles & Permissions Info */}
+      <RolesPermissionsInfo />
 
       {/* Table */}
       {isLoading ? (

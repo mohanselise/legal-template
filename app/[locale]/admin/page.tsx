@@ -23,7 +23,8 @@ import {
   Sparkles,
 } from "lucide-react";
 
-const adminModules = [
+// Note: Users module availability is set dynamically based on role
+const getAdminModules = (role: string | null) => [
   {
     title: "Templates",
     description: "Manage legal templates",
@@ -38,7 +39,7 @@ const adminModules = [
     icon: Users,
     href: "/admin/users",
     details: "Manage user accounts and permissions.",
-    available: false,
+    available: role === "admin", // Only available for admins
   },
   {
     title: "Analytics",
@@ -80,6 +81,8 @@ export default async function AdminDashboard({
     // No role or insufficient permissions
     nextRedirect("/sign-in");
   }
+
+  const adminModules = getAdminModules(role);
 
   return (
     <div className="container mx-auto space-y-8 px-4 py-10 lg:px-8">
@@ -136,74 +139,82 @@ export default async function AdminDashboard({
       </div>
 
       <div className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {adminModules.map((module) => {
-          const Icon = module.icon;
-          const cardContent = (
-            <Card
-              className={`group relative h-full overflow-hidden border transition-all ${
-                module.available
-                  ? "hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))]/30 hover:shadow-md"
-                  : "opacity-70"
-              }`}
-            >
-              <CardHeader className="space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+        {adminModules
+          .filter((module) => {
+            // Hide Users module for non-admins
+            if (module.title === "Users" && role !== "admin") {
+              return false;
+            }
+            return true;
+          })
+          .map((module) => {
+            const Icon = module.icon;
+            const cardContent = (
+              <Card
+                className={`group relative h-full overflow-hidden border transition-all ${
+                  module.available
+                    ? "hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))]/30 hover:shadow-md"
+                    : "opacity-70"
+                }`}
+              >
+                <CardHeader className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+                          module.available
+                            ? "bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
+                            : "bg-[hsl(var(--border))] text-[hsl(var(--globe-grey))]"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{module.title}</CardTitle>
+                        <CardDescription>{module.description}</CardDescription>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={module.available ? "secondary" : "outline"}
+                      className={
                         module.available
-                          ? "bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
-                          : "bg-[hsl(var(--border))] text-[hsl(var(--globe-grey))]"
-                      }`}
+                          ? "bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/20"
+                          : "text-[hsl(var(--globe-grey))] border-[hsl(var(--border))]"
+                      }
                     >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{module.title}</CardTitle>
-                      <CardDescription>{module.description}</CardDescription>
-                    </div>
+                      {module.available ? "Active" : "Coming soon"}
+                    </Badge>
                   </div>
-                  <Badge
-                    variant={module.available ? "secondary" : "outline"}
-                    className={
-                      module.available
-                        ? "bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/20"
-                        : "text-[hsl(var(--globe-grey))] border-[hsl(var(--border))]"
-                    }
-                  >
-                    {module.available ? "Active" : "Coming soon"}
-                  </Badge>
-                </div>
-                <CardDescription className="text-sm leading-relaxed text-[hsl(var(--globe-grey))]">
-                  {module.details}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between text-sm text-[hsl(var(--globe-grey))]">
-                <span>{module.available ? "Open module" : "Preview only"}</span>
-                {module.available && (
-                  <ArrowRight className="h-4 w-4 text-[hsl(var(--globe-grey))] transition-all group-hover:translate-x-1 group-hover:text-[hsl(var(--selise-blue))]" />
-                )}
-              </CardContent>
-            </Card>
-          );
+                  <CardDescription className="text-sm leading-relaxed text-[hsl(var(--globe-grey))]">
+                    {module.details}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex items-center justify-between text-sm text-[hsl(var(--globe-grey))]">
+                  <span>{module.available ? "Open module" : "Preview only"}</span>
+                  {module.available && (
+                    <ArrowRight className="h-4 w-4 text-[hsl(var(--globe-grey))] transition-all group-hover:translate-x-1 group-hover:text-[hsl(var(--selise-blue))]" />
+                  )}
+                </CardContent>
+              </Card>
+            );
 
-          return module.available ? (
-            <Link
-              key={module.title}
-              href={`/${locale}${module.href}`}
-              className={`block group cursor-pointer`}
-            >
-              {cardContent}
-            </Link>
-          ) : (
-            <div
-              key={module.title}
-              className="block opacity-60 cursor-not-allowed"
-            >
-              {cardContent}
-            </div>
-          );
-        })}
+            return module.available ? (
+              <Link
+                key={module.title}
+                href={`/${locale}${module.href}`}
+                className={`block group cursor-pointer`}
+              >
+                {cardContent}
+              </Link>
+            ) : (
+              <div
+                key={module.title}
+                className="block opacity-60 cursor-not-allowed"
+              >
+                {cardContent}
+              </div>
+            );
+          })}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

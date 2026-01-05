@@ -283,6 +283,9 @@ export default function EditTemplatePage() {
   const [isGeneratingLanding, setIsGeneratingLanding] = useState(false);
   const [landingKeywordInput, setLandingKeywordInput] = useState("");
 
+  // Classic form builder toggle
+  const [showClassicEditor, setShowClassicEditor] = useState(false);
+
   // Form builder dialog states
   const [screenEditorOpen, setScreenEditorOpen] = useState(false);
   const [editingScreen, setEditingScreen] = useState<ScreenWithFields | null>(null);
@@ -1345,98 +1348,134 @@ export default function EditTemplatePage() {
 
         {/* Form Builder Tab */}
         <TabsContent value="form-builder">
-          {/* Form Builder Header with AI Toggle */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold text-[hsl(var(--fg))]">
-                Form Builder
-              </h2>
-              <Badge variant="secondary" className="text-xs">
-                {screens.length} screen{screens.length !== 1 ? "s" : ""}
-              </Badge>
-            </div>
-            <Button
-              variant={aiPanelOpen ? "default" : "outline"}
-              size="sm"
-              onClick={() => setAiPanelOpen(!aiPanelOpen)}
-              className="gap-2"
-            >
-              {aiPanelOpen ? (
-                <>
-                  <PanelRightClose className="h-4 w-4" />
-                  Close AI Assistant
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  AI Assistant
-                </>
-              )}
-            </Button>
-          </div>
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center space-y-4 max-w-md mx-auto">
+                <div className="h-16 w-16 mx-auto rounded-full bg-[hsl(var(--selise-blue))]/10 flex items-center justify-center">
+                  <FileText className="h-8 w-8 text-[hsl(var(--selise-blue))]" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-[hsl(var(--fg))]">
+                    Form Builder
+                  </h3>
+                  <p className="text-sm text-[hsl(var(--globe-grey))]">
+                    Use the new visual form builder to create and manage your form screens.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center items-center pt-4">
+                  <Button
+                    onClick={() => router.push(`/${locale}/admin/templates/${templateId}/builder`)}
+                    className="gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Open Form Builder
+                  </Button>
+                  <button
+                    onClick={() => setShowClassicEditor(true)}
+                    className="text-sm text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--fg))] transition-colors underline underline-offset-4"
+                  >
+                    Classic Form Editor
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Screens Panel - Fixed width sidebar */}
-            <div className="w-full lg:w-64 xl:w-72 shrink-0 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-[hsl(var(--fg))] uppercase tracking-wider">
-                  Screens
-                </h3>
-                <Button size="sm" onClick={handleAddScreen}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add
+          {/* Classic Form Builder - Only show if showClassicEditor is true */}
+          {showClassicEditor && (
+            <>
+              {/* Form Builder Header with AI Toggle */}
+              <div className="flex items-center justify-between mb-4 mt-6">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-[hsl(var(--fg))]">
+                    Classic Form Builder
+                  </h2>
+                  <Badge variant="secondary" className="text-xs">
+                    {screens.length} screen{screens.length !== 1 ? "s" : ""}
+                  </Badge>
+                </div>
+                <Button
+                  variant={aiPanelOpen ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setAiPanelOpen(!aiPanelOpen)}
+                  className="gap-2"
+                >
+                  {aiPanelOpen ? (
+                    <>
+                      <PanelRightClose className="h-4 w-4" />
+                      Close AI Assistant
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      AI Assistant
+                    </>
+                  )}
                 </Button>
               </div>
 
-              <Card className="border-[hsl(var(--border))]">
-                <CardContent className="p-2">
-                  {screens.length === 0 ? (
-                    <div className="text-center py-6 text-[hsl(var(--globe-grey))]">
-                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No screens yet</p>
-                      <p className="text-sm mt-1">Click &quot;Add&quot; to create one</p>
-                    </div>
-                  ) : (
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <SortableContext
-                        items={screens.map((s) => s.id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <div className="space-y-1">
-                          {screens.map((screen, index) => (
-                            <SortableScreenItem
-                              key={screen.id}
-                              screen={screen}
-                              index={index}
-                              isSelected={selectedScreenId === screen.id}
-                              onSelect={() => setSelectedScreenId(screen.id)}
-                              onEdit={(e) => {
-                                e.stopPropagation();
-                                handleEditScreen(screen);
-                              }}
-                              onDelete={(e) => {
-                                e.stopPropagation();
-                                handleDeleteScreen(screen);
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    </DndContext>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+              <div className="flex flex-col lg:flex-row gap-4">
+                {/* Screens Panel - Fixed width sidebar */}
+                <div className="w-full lg:w-64 xl:w-72 shrink-0 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-[hsl(var(--fg))] uppercase tracking-wider">
+                      Screens
+                    </h3>
+                    <Button size="sm" onClick={handleAddScreen}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </Button>
+                  </div>
 
-            {/* Main Content Area - Field Palette, Fields and AI Panel */}
-            <div className={`flex-1 min-w-0 flex flex-col lg:flex-row gap-4`}>
-              {/* Form Builder with DnD - includes field palette and screen content */}
-              <div className={`${aiPanelOpen ? "flex-1 min-w-0" : "flex-1"}`}>
-                <FormBuilderDnd
+                  <Card className="border-[hsl(var(--border))]">
+                    <CardContent className="p-2">
+                      {screens.length === 0 ? (
+                        <div className="text-center py-6 text-[hsl(var(--globe-grey))]">
+                          <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No screens yet</p>
+                          <p className="text-sm mt-1">Click &quot;Add&quot; to create one</p>
+                        </div>
+                      ) : (
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <SortableContext
+                            items={screens.map((s) => s.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <div className="space-y-1">
+                              {screens.map((screen, index) => (
+                                <SortableScreenItem
+                                  key={screen.id}
+                                  screen={screen}
+                                  index={index}
+                                  isSelected={selectedScreenId === screen.id}
+                                  onSelect={() => setSelectedScreenId(screen.id)}
+                                  onEdit={(e) => {
+                                    e.stopPropagation();
+                                    handleEditScreen(screen);
+                                  }}
+                                  onDelete={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteScreen(screen);
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </SortableContext>
+                        </DndContext>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Main Content Area - Field Palette, Fields and AI Panel */}
+                <div className={`flex-1 min-w-0 flex flex-col lg:flex-row gap-4`}>
+                  {/* Form Builder with DnD - includes field palette and screen content */}
+                  <div className={`${aiPanelOpen ? "flex-1 min-w-0" : "flex-1"}`}>
+                    <FormBuilderDnd
                   templateId={templateId}
                   screens={screens}
                   selectedScreenId={selectedScreenId}
@@ -1468,6 +1507,8 @@ export default function EditTemplatePage() {
               )}
             </div>
           </div>
+            </>
+          )}
         </TabsContent>
 
         {/* Landing Page Tab */}

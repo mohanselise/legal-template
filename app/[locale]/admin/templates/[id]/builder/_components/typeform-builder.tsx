@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Check, Eye, Save } from "lucide-react";
 import type { TemplateScreen, TemplateField } from "@/lib/db";
+import { Kbd } from "@/components/ui/kbd";
 import { NavigationPanel } from "./navigation-panel";
 import { PreviewCanvas } from "./preview-canvas";
 import { PropertiesPanel } from "./properties-panel";
@@ -564,11 +565,11 @@ export function TypeformBuilder({
             {/* Keyboard shortcuts hint */}
             <div className="hidden lg:flex items-center gap-3 mr-4 text-xs text-[hsl(var(--globe-grey))]">
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-[hsl(var(--muted))] font-mono">↑↓</kbd>
+                <Kbd>↑↓</Kbd>
                 Navigate
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-[hsl(var(--muted))] font-mono">⌘N</kbd>
+                <Kbd>⌘N</Kbd>
                 Add
               </span>
             </div>

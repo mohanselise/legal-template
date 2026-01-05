@@ -48,6 +48,7 @@
   /* SELISE Brand Colors */
   --color-selise-blue: var(--selise-blue);
   --color-globe-grey: var(--globe-grey);
+  --color-globe-grey-dark: var(--globe-grey-dark);
   --color-oxford-blue: var(--oxford-blue);
   --color-white: var(--white);
   --color-eerie-black: var(--eerie-black);
@@ -80,6 +81,7 @@
   /* SELISE Primary Brand Colors */
   --selise-blue: 206 100% 35%;        /* #0066B2 - Primary brand color */
   --globe-grey: 0 0% 48%;             /* #7B7C7F - Secondary/muted */
+  --globe-grey-dark: 0 0% 35%;        /* #595959 - Darker grey for better contrast on switches */
   --oxford-blue: 204 100% 11%;        /* #001F35 - Dark accent */
   --white: 0 0% 100%;                 /* #FFFFFF - Light text/backgrounds */
   --eerie-black: 180 9% 12%;          /* #1B2021 - Primary text (dark) */

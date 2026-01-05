@@ -31,7 +31,6 @@ import {
   DollarSign,
   Percent,
   Link2,
-  Settings2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -44,16 +43,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { TemplateField, FieldType, TemplateScreen } from "@/lib/db";
-import { ConditionEditor, type AvailableField } from "./condition-editor";
+import { ConditionEditorDialog, type AvailableField } from "./condition-editor-dialog";
+import { AISettingsDialog, type AvailableContextKey } from "./ai-settings-dialog";
 import type { ConditionGroup } from "@/lib/templates/conditions";
+import { GitBranch } from "lucide-react";
 
-// Interface for available AI context keys from previous screens
-export interface AvailableContextKey {
-  screenTitle: string;
-  key: string;
-  type: string;
-  fullPath: string;
-}
+// Re-export AvailableContextKey from ai-settings-dialog
+export type { AvailableContextKey } from "./ai-settings-dialog";
 
 // Interface for available form fields from previous screens
 export interface AvailableFormField {
@@ -174,6 +170,10 @@ export function FieldEditor({
   const [newOption, setNewOption] = useState("");
   const [uilmOptionsKeys, setUilmOptionsKeys] = useState<string[]>([]);
   const [conditions, setConditions] = useState<ConditionGroup | null>(null);
+  const [conditionDialogOpen, setConditionDialogOpen] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiKey, setAiKey] = useState("");
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState<WizardStep>("basics");
@@ -230,6 +230,7 @@ export function FieldEditor({
             label: f.label,
             screenTitle: prevScreen.title,
             type: f.type,
+            options: f.options,
           });
         });
       }
@@ -244,6 +245,7 @@ export function FieldEditor({
             label: f.label,
             screenTitle: currentScreen.title + " (this screen)",
             type: f.type,
+            options: f.options,
           });
         });
     }
@@ -305,6 +307,8 @@ export function FieldEditor({
         });
         setOptions(field.options || []);
         setUilmOptionsKeys((field as any).uilmOptionsKeys || []);
+        setAiEnabled((field as any).aiSuggestionEnabled ?? false);
+        setAiKey((field as any).aiSuggestionKey || "");
         const fieldConditions = (field as any).conditions;
         if (fieldConditions) {
           try {
@@ -339,12 +343,16 @@ export function FieldEditor({
         setOptions([]);
         setUilmOptionsKeys([]);
         setConditions(null);
+        setAiEnabled(false);
+        setAiKey("");
         setShowAdvanced(false);
       }
       setCurrentStep("basics");
       setDirection(0);
       setError(null);
       setNewOption("");
+      setConditionDialogOpen(false);
+      setAiDialogOpen(false);
     }
   }, [open, field, reset, defaultType, defaultLabel, defaultPlaceholder, defaultRequired]);
 
@@ -396,6 +404,15 @@ export function FieldEditor({
     setValue("options", updated);
   };
 
+  const handleAIChange = (enabled: boolean, key: string) => {
+    setAiEnabled(enabled);
+    setAiKey(key);
+    setValue("aiSuggestionEnabled", enabled);
+    setValue("aiSuggestionKey", key);
+  };
+
+  const hasLogicConfigured = conditions || aiEnabled;
+
   const onSubmit = async (data: FieldFormData) => {
     setSaving(true);
     setError(null);
@@ -404,16 +421,16 @@ export function FieldEditor({
       const payload: Record<string, unknown> = {
         ...data,
         options: (fieldType === "select" || fieldType === "multiselect") ? options : [],
-        aiSuggestionEnabled: data.aiSuggestionEnabled ?? false,
+        aiSuggestionEnabled: aiEnabled,
         uilmLabelKey: data.uilmLabelKey?.trim() || null,
         uilmPlaceholderKey: data.uilmPlaceholderKey?.trim() || null,
         uilmHelpTextKey: data.uilmHelpTextKey?.trim() || null,
-          uilmOptionsKeys: (fieldType === "select" || fieldType === "multiselect") ? uilmOptionsKeys : [],
+        uilmOptionsKeys: (fieldType === "select" || fieldType === "multiselect") ? uilmOptionsKeys : [],
         conditions: conditions ? JSON.stringify(conditions) : null,
       };
       
-      if (data.aiSuggestionEnabled && data.aiSuggestionKey?.trim()) {
-        payload.aiSuggestionKey = data.aiSuggestionKey.trim();
+      if (aiEnabled && aiKey?.trim()) {
+        payload.aiSuggestionKey = aiKey.trim();
       } else {
         payload.aiSuggestionKey = null;
       }
@@ -740,60 +757,59 @@ export function FieldEditor({
         </h2>
         <p className="text-[hsl(var(--globe-grey))]">
           Optional features for power users
-                        </p>
-                      </div>
+        </p>
+      </div>
 
       <div className="space-y-4 max-w-lg mx-auto">
-        {/* AI Smart Suggestions */}
-        <div className="border border-[hsl(var(--border))] rounded-xl overflow-hidden">
-              <button
-                type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full flex items-center justify-between p-4 bg-[hsl(var(--selise-blue))]/5 hover:bg-[hsl(var(--selise-blue))]/10 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
-              <span className="font-medium">AI Smart Suggestions</span>
-                </div>
-            {showAdvanced ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-              </button>
-              
-          {showAdvanced && (
-                <div className="p-4 space-y-4 border-t border-[hsl(var(--border))]">
-              <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      {...register("aiSuggestionEnabled")}
-                  className="h-4 w-4 rounded"
-                />
-                <span className="text-sm">Enable AI suggestion from enrichment context</span>
-              </label>
-              
-              {watch("aiSuggestionEnabled") && computedContextKeys.length > 0 && (
-                        <div className="space-y-2">
-                  <Label className="text-sm">Select context key</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {computedContextKeys.map((ctx, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                        onClick={() => setValue("aiSuggestionKey", ctx.fullPath)}
-                        className={cn(
-                          "px-3 py-1.5 text-sm rounded-lg border transition-all",
-                          watch("aiSuggestionKey") === ctx.fullPath
-                            ? "border-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
-                            : "border-[hsl(var(--border))] hover:border-[hsl(var(--selise-blue))]"
-                        )}
-                      >
-                        {ctx.key}
-                                </button>
-                    ))}
-                          </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+        {/* Conditional Visibility Button */}
+        <button
+          type="button"
+          onClick={() => setConditionDialogOpen(true)}
+          className="w-full flex items-center justify-between p-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 hover:bg-[hsl(var(--muted))]/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <GitBranch className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
+            <span className="font-medium">Conditional Visibility</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {conditions && conditions.rules.length > 0 ? (
+              <Badge
+                variant="secondary"
+                className="text-xs bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
+              >
+                {conditions.rules.length} rule{conditions.rules.length !== 1 ? "s" : ""}
+              </Badge>
+            ) : (
+              <span className="text-xs text-[hsl(var(--globe-grey))]">Not set</span>
+            )}
+            <ChevronDown className="h-5 w-5 text-[hsl(var(--globe-grey))]" />
+          </div>
+        </button>
+
+        {/* AI Suggestions Button */}
+        <button
+          type="button"
+          onClick={() => setAiDialogOpen(true)}
+          className="w-full flex items-center justify-between p-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 hover:bg-[hsl(var(--muted))]/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Sparkles className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
+            <span className="font-medium">AI Suggestions</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {aiEnabled ? (
+              <Badge
+                variant="secondary"
+                className="text-xs bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))]"
+              >
+                On
+              </Badge>
+            ) : (
+              <span className="text-xs text-[hsl(var(--globe-grey))]">Off</span>
+            )}
+            <ChevronDown className="h-5 w-5 text-[hsl(var(--globe-grey))]" />
+          </div>
+        </button>
 
         {/* UILM Translations */}
         <div className="border border-[hsl(var(--poly-green))]/30 rounded-xl overflow-hidden">
@@ -801,41 +817,56 @@ export function FieldEditor({
             <div className="flex items-center gap-3">
               <Languages className="h-5 w-5 text-[hsl(var(--poly-green))]" />
               <span className="font-medium">Translations (UILM)</span>
-                </div>
+            </div>
           </div>
           <div className="p-4 space-y-3 border-t border-[hsl(var(--poly-green))]/20">
             <div className="grid gap-3">
               <div>
                 <Label className="text-sm">Label Key</Label>
-                      <Input
-                        placeholder="e.g., FIELD_COMPANY_NAME_LABEL"
-                        {...register("uilmLabelKey")}
-                        className="font-mono text-sm"
-                      />
-                    </div>
-                    {fieldType !== "checkbox" && (
+                <Input
+                  placeholder="e.g., FIELD_COMPANY_NAME_LABEL"
+                  {...register("uilmLabelKey")}
+                  className="font-mono text-sm"
+                />
+              </div>
+              {fieldType !== "checkbox" && (
                 <div>
                   <Label className="text-sm">Placeholder Key</Label>
-                        <Input
-                          placeholder="e.g., FIELD_COMPANY_NAME_PLACEHOLDER"
-                          {...register("uilmPlaceholderKey")}
-                          className="font-mono text-sm"
-                        />
-                      </div>
-                    )}
-                    </div>
-                            </div>
+                  <Input
+                    placeholder="e.g., FIELD_COMPANY_NAME_PLACEHOLDER"
+                    {...register("uilmPlaceholderKey")}
+                    className="font-mono text-sm"
+                  />
+                </div>
+              )}
             </div>
-
-            {/* Conditional Visibility */}
-            <ConditionEditor
-              value={conditions}
-              onChange={setConditions}
-              availableFields={availableFieldsForConditions}
-              label="Conditional Visibility"
-          description="Show this field only when specific conditions are met"
-        />
+          </div>
+        </div>
       </div>
+
+      {/* Condition Editor Dialog */}
+      <ConditionEditorDialog
+        open={conditionDialogOpen}
+        onOpenChange={setConditionDialogOpen}
+        targetLabel={fieldLabel || fieldName || "Field"}
+        targetIndex={field?.order ? field.order + 1 : 1}
+        conditions={conditions}
+        onConditionsChange={setConditions}
+        availableFields={availableFieldsForConditions}
+      />
+
+      {/* AI Settings Dialog */}
+      <AISettingsDialog
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        targetLabel={fieldLabel || "Field"}
+        fieldName={fieldName || "field"}
+        targetIndex={field?.order ? field.order + 1 : 1}
+        aiEnabled={aiEnabled}
+        aiKey={aiKey}
+        onSave={handleAIChange}
+        availableContextKeys={computedContextKeys}
+      />
     </div>
   );
 

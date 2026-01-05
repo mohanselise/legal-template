@@ -24,7 +24,6 @@ import {
   GitBranch,
   FileText,
   Users,
-  Zap,
 } from "lucide-react";
 import { useBuilder, type ScreenWithFields } from "./typeform-builder";
 import type { TemplateField, FieldType } from "@/lib/db";
@@ -32,7 +31,9 @@ import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ConditionEditor, type AvailableField } from "./condition-editor";
+import { Badge } from "@/components/ui/badge";
+import { ConditionEditorDialog, type AvailableField } from "./condition-editor-dialog";
+import { AISettingsDialog } from "./ai-settings-dialog";
 import type { ConditionGroup } from "@/lib/templates/conditions";
 
 // Field type options
@@ -122,7 +123,10 @@ function FieldProperties({
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [newOption, setNewOption] = useState("");
-  const [aiKeyInput, setAiKeyInput] = useState((field as any).aiSuggestionKey || "");
+  const [conditionDialogOpen, setConditionDialogOpen] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState((field as any).aiSuggestionEnabled || false);
+  const [aiKey, setAiKey] = useState((field as any).aiSuggestionKey || "");
   const [conditions, setConditions] = useState<ConditionGroup | null>(() => {
     const fieldConditions = (field as any).conditions;
     if (fieldConditions) {
@@ -139,7 +143,8 @@ function FieldProperties({
 
   // Update local state when field changes
   useEffect(() => {
-    setAiKeyInput((field as any).aiSuggestionKey || "");
+    setAiEnabled((field as any).aiSuggestionEnabled || false);
+    setAiKey((field as any).aiSuggestionKey || "");
     const fieldConditions = (field as any).conditions;
     if (fieldConditions) {
       try {
@@ -174,6 +179,7 @@ function FieldProperties({
           label: f.label,
           screenTitle: screen.title,
           type: f.type,
+          options: f.options,
         });
       }
     }
@@ -187,11 +193,26 @@ function FieldProperties({
           label: f.label,
           screenTitle: currentScreen.title,
           type: f.type,
+          options: f.options,
         });
       }
     }
 
     return result;
+  }, [allScreens, screenId, field.id]);
+
+  // Calculate field index for display
+  const fieldIndex = useMemo(() => {
+    const currentScreenIndex = allScreens.findIndex((s) => s.id === screenId);
+    let totalFields = 0;
+    for (let i = 0; i < currentScreenIndex; i++) {
+      totalFields += allScreens[i].fields.length;
+    }
+    const currentScreen = allScreens[currentScreenIndex];
+    const currentFieldIndex = currentScreen?.fields.findIndex(
+      (f) => f.id === field.id
+    );
+    return totalFields + (currentFieldIndex ?? 0) + 1;
   }, [allScreens, screenId, field.id]);
 
   const selectedTypeOption = fieldTypeOptions.find((t) => t.value === field.type);
@@ -215,32 +236,23 @@ function FieldProperties({
     updateField(field.id, { options: updatedOptions });
   };
 
-  const handleAiToggle = (checked: boolean) => {
-    updateField(field.id, {
-      aiSuggestionEnabled: checked,
-      aiSuggestionKey: checked ? aiKeyInput || `AI${field.name}` : null,
-    } as any);
-    if (checked && !aiKeyInput) {
-      setAiKeyInput(`AI${field.name}`);
-    }
-  };
-
-  const handleAiKeyChange = (value: string) => {
-    setAiKeyInput(value);
-  };
-
-  const handleAiKeyBlur = () => {
-    if ((field as any).aiSuggestionEnabled && aiKeyInput) {
-      updateField(field.id, { aiSuggestionKey: aiKeyInput } as any);
-    }
-  };
-
   const handleConditionsChange = (newConditions: ConditionGroup | null) => {
     setConditions(newConditions);
     updateField(field.id, {
       conditions: newConditions ? JSON.stringify(newConditions) : null,
     } as any);
   };
+
+  const handleAIChange = (enabled: boolean, key: string) => {
+    setAiEnabled(enabled);
+    setAiKey(key);
+    updateField(field.id, {
+      aiSuggestionEnabled: enabled,
+      aiSuggestionKey: enabled ? key : null,
+    } as any);
+  };
+
+  const hasLogicConfigured = conditions || aiEnabled;
 
   return (
     <motion.div
@@ -392,7 +404,7 @@ function FieldProperties({
               <span className="text-sm font-medium text-[hsl(var(--fg))]">
                 Advanced
               </span>
-              {((field as any).aiSuggestionEnabled || conditions) && (
+              {hasLogicConfigured && (
                 <span className="h-2 w-2 rounded-full bg-[hsl(var(--selise-blue))]" />
               )}
             </div>
@@ -427,74 +439,88 @@ function FieldProperties({
                     </p>
                   </div>
 
-                  {/* AI Suggestions */}
-                  <div className="space-y-3 p-3 rounded-lg bg-[hsl(var(--selise-blue))]/5 border border-[hsl(var(--selise-blue))]/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
-                        <Label className="text-sm font-medium text-[hsl(var(--fg))]">AI Suggestions</Label>
-                      </div>
-                      <Switch
-                        checked={(field as any).aiSuggestionEnabled || false}
-                        onCheckedChange={handleAiToggle}
-                      />
+                  {/* Conditional Visibility Button */}
+                  <button
+                    type="button"
+                    onClick={() => setConditionDialogOpen(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 hover:bg-[hsl(var(--muted))]/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <GitBranch className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+                      <span className="text-sm font-medium text-[hsl(var(--fg))]">
+                        Conditional Visibility
+                      </span>
                     </div>
-                    
-                    <AnimatePresence>
-                      {(field as any).aiSuggestionEnabled && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
+                    <div className="flex items-center gap-2">
+                      {conditions && conditions.rules.length > 0 ? (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
                         >
-                          <div className="space-y-2 pt-2">
-                            <Label className="text-xs text-[hsl(var(--globe-grey))]">
-                              AI Context Key
-                            </Label>
-                            <div className="flex gap-2">
-                              <Input
-                                value={aiKeyInput}
-                                onChange={(e) => handleAiKeyChange(e.target.value)}
-                                onBlur={handleAiKeyBlur}
-                                placeholder="e.g., companyName"
-                                className="flex-1 font-mono text-sm"
-                              />
-                              <button
-                                onClick={() => {
-                                  const autoKey = `AI${field.name}`;
-                                  setAiKeyInput(autoKey);
-                                  updateField(field.id, { aiSuggestionKey: autoKey } as any);
-                                }}
-                                className="p-2 rounded-lg hover:bg-[hsl(var(--muted))] text-[hsl(var(--selise-blue))]"
-                                title="Auto-generate key"
-                              >
-                                <Zap className="h-4 w-4" />
-                              </button>
-                            </div>
-                            <p className="text-xs text-[hsl(var(--globe-grey))]">
-                              Maps to a value from AI enrichment context for auto-fill.
-                            </p>
-                          </div>
-                        </motion.div>
+                          {conditions.rules.length} rule{conditions.rules.length !== 1 ? "s" : ""}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-[hsl(var(--globe-grey))]">Not set</span>
                       )}
-                    </AnimatePresence>
-                  </div>
+                      <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                    </div>
+                  </button>
 
-                  {/* Conditional Logic */}
-                  <ConditionEditor
-                    value={conditions}
-                    onChange={handleConditionsChange}
-                    availableFields={availableFieldsForConditions}
-                    label="Conditional Visibility"
-                    description="Show this field only when specific conditions are met."
-                  />
+                  {/* AI Suggestions Button */}
+                  <button
+                    type="button"
+                    onClick={() => setAiDialogOpen(true)}
+                    className="w-full flex items-center justify-between p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 hover:bg-[hsl(var(--muted))]/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+                      <span className="text-sm font-medium text-[hsl(var(--fg))]">
+                        AI Suggestions
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {aiEnabled ? (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))]"
+                        >
+                          On
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-[hsl(var(--globe-grey))]">Off</span>
+                      )}
+                      <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                    </div>
+                  </button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Condition Editor Dialog */}
+      <ConditionEditorDialog
+        open={conditionDialogOpen}
+        onOpenChange={setConditionDialogOpen}
+        targetLabel={field.label}
+        targetIndex={fieldIndex}
+        conditions={conditions}
+        onConditionsChange={handleConditionsChange}
+        availableFields={availableFieldsForConditions}
+      />
+
+      {/* AI Settings Dialog */}
+      <AISettingsDialog
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        targetLabel={field.label}
+        fieldName={field.name}
+        targetIndex={fieldIndex}
+        aiEnabled={aiEnabled}
+        aiKey={aiKey}
+        onSave={handleAIChange}
+      />
     </motion.div>
   );
 }
@@ -503,6 +529,7 @@ function FieldProperties({
 function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
   const { updateScreen, screens } = useBuilder();
   const [showTypeSelector, setShowTypeSelector] = useState(false);
+  const [conditionDialogOpen, setConditionDialogOpen] = useState(false);
   const [conditions, setConditions] = useState<ConditionGroup | null>(() => {
     const screenConditions = (screen as any).conditions;
     if (screenConditions) {
@@ -548,11 +575,17 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
           label: f.label,
           screenTitle: s.title,
           type: f.type,
+          options: f.options,
         });
       }
     }
 
     return result;
+  }, [screens, screen.id]);
+
+  // Calculate screen index for display
+  const screenIndex = useMemo(() => {
+    return screens.findIndex((s) => s.id === screen.id) + 1;
   }, [screens, screen.id]);
 
   const screenType = (screen as any).type || "standard";
@@ -570,6 +603,8 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
       conditions: newConditions ? JSON.stringify(newConditions) : null,
     } as any);
   };
+
+  const hasLogicConfigured = conditions && conditions.rules.length > 0;
 
   return (
     <motion.div
@@ -673,17 +708,46 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
 
         {/* Conditional Logic */}
         {availableFieldsForConditions.length > 0 && (
-          <div className="border-t border-[hsl(var(--border))] pt-4">
-            <ConditionEditor
-              value={conditions}
-              onChange={handleConditionsChange}
-              availableFields={availableFieldsForConditions}
-              label="Screen Visibility"
-              description="Show this screen only when specific conditions are met."
-            />
+          <div className="border-t border-[hsl(var(--border))] pt-4 space-y-3">
+            <button
+              type="button"
+              onClick={() => setConditionDialogOpen(true)}
+              className="w-full flex items-center justify-between p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 hover:bg-[hsl(var(--muted))]/50 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <GitBranch className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+                <span className="text-sm font-medium text-[hsl(var(--fg))]">
+                  Conditional Visibility
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {hasLogicConfigured ? (
+                  <Badge
+                    variant="secondary"
+                    className="text-xs bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
+                  >
+                    {conditions.rules.length} rule{conditions.rules.length !== 1 ? "s" : ""}
+                  </Badge>
+                ) : (
+                  <span className="text-xs text-[hsl(var(--globe-grey))]">Not set</span>
+                )}
+                <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+              </div>
+            </button>
           </div>
         )}
       </div>
+
+      {/* Condition Editor Dialog */}
+      <ConditionEditorDialog
+        open={conditionDialogOpen}
+        onOpenChange={setConditionDialogOpen}
+        targetLabel={screen.title}
+        targetIndex={screenIndex}
+        conditions={conditions}
+        onConditionsChange={handleConditionsChange}
+        availableFields={availableFieldsForConditions}
+      />
     </motion.div>
   );
 }

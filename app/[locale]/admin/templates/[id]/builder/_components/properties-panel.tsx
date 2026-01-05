@@ -260,11 +260,11 @@ function FieldProperties({
           <Label className="text-sm text-[hsl(var(--globe-grey))]">Answer</Label>
           <button
             onClick={() => setShowTypeSelector(!showTypeSelector)}
-            className="flex items-center justify-between w-full p-3 rounded-lg border border-[hsl(var(--border))] hover:border-[hsl(var(--selise-blue))]/50 transition-colors"
+            className="flex items-center justify-between w-full p-3 rounded-lg border border-[hsl(var(--border))] hover:border-[hsl(var(--selise-blue))]/50 transition-colors bg-[hsl(var(--bg))]"
           >
             <div className="flex items-center gap-2">
               <TypeIcon className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
-              <span className="text-sm font-medium">
+              <span className="text-sm font-medium text-[hsl(var(--fg))]">
                 {selectedTypeOption?.label || field.type}
               </span>
             </div>
@@ -296,10 +296,13 @@ function FieldProperties({
                           "flex items-center gap-2 p-2 rounded-lg text-left text-sm transition-colors",
                           isSelected
                             ? "bg-[hsl(var(--selise-blue))] text-white"
-                            : "hover:bg-[hsl(var(--muted))]"
+                            : "text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))]"
                         )}
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className={cn(
+                          "h-4 w-4",
+                          isSelected ? "text-white" : "text-[hsl(var(--globe-grey))]"
+                        )} />
                         <span className="truncate">{option.label}</span>
                       </button>
                     );
@@ -312,7 +315,7 @@ function FieldProperties({
 
         {/* Required Toggle */}
         <div className="flex items-center justify-between">
-          <Label className="text-sm">Required</Label>
+          <Label className="text-sm text-[hsl(var(--fg))]">Required</Label>
           <Switch
             checked={field.required}
             onCheckedChange={(checked) =>
@@ -324,14 +327,14 @@ function FieldProperties({
         {/* Options for select/multiselect */}
         {(field.type === "select" || field.type === "multiselect") && (
           <div className="space-y-3">
-            <Label className="text-sm">Options</Label>
+            <Label className="text-sm text-[hsl(var(--fg))]">Options</Label>
             <div className="space-y-2">
               {(field.options || []).map((option, index) => (
                 <div
                   key={index}
                   className="flex items-center gap-2 p-2 rounded-lg bg-[hsl(var(--muted))]/50"
                 >
-                  <span className="flex-1 text-sm truncate">{option}</span>
+                  <span className="flex-1 text-sm truncate text-[hsl(var(--fg))]">{option}</span>
                   <button
                     onClick={() => removeOption(index)}
                     className="p-1 hover:bg-[hsl(var(--destructive))]/10 rounded"
@@ -368,7 +371,7 @@ function FieldProperties({
         {/* Placeholder */}
         {field.type !== "checkbox" && (
           <div className="space-y-2">
-            <Label className="text-sm">Placeholder</Label>
+            <Label className="text-sm text-[hsl(var(--fg))]">Placeholder</Label>
             <Input
               value={field.placeholder || ""}
               onChange={(e) =>
@@ -411,7 +414,7 @@ function FieldProperties({
                 <div className="pt-4 space-y-4">
                   {/* Field Name */}
                   <div className="space-y-2">
-                    <Label className="text-sm">Field Name</Label>
+                    <Label className="text-sm text-[hsl(var(--fg))]">Field Name</Label>
                     <Input
                       value={field.name}
                       onChange={(e) =>
@@ -429,7 +432,7 @@ function FieldProperties({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
-                        <Label className="text-sm font-medium">AI Suggestions</Label>
+                        <Label className="text-sm font-medium text-[hsl(var(--fg))]">AI Suggestions</Label>
                       </div>
                       <Switch
                         checked={(field as any).aiSuggestionEnabled || false}
@@ -586,11 +589,11 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
           <Label className="text-sm text-[hsl(var(--globe-grey))]">Type</Label>
           <button
             onClick={() => setShowTypeSelector(!showTypeSelector)}
-            className="flex items-center justify-between w-full p-3 rounded-lg border border-[hsl(var(--border))] hover:border-[hsl(var(--selise-blue))]/50 transition-colors"
+            className="flex items-center justify-between w-full p-3 rounded-lg border border-[hsl(var(--border))] hover:border-[hsl(var(--selise-blue))]/50 transition-colors bg-[hsl(var(--bg))]"
           >
             <div className="flex items-center gap-2">
               <TypeIcon className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
-              <span className="text-sm font-medium">
+              <span className="text-sm font-medium text-[hsl(var(--fg))]">
                 {selectedTypeOption?.label || screenType}
               </span>
             </div>
@@ -622,10 +625,13 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
                           "flex items-center gap-2 w-full p-2 rounded-lg text-left text-sm transition-colors",
                           isSelected
                             ? "bg-[hsl(var(--selise-blue))] text-white"
-                            : "hover:bg-[hsl(var(--muted))]"
+                            : "text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))]"
                         )}
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className={cn(
+                          "h-4 w-4",
+                          isSelected ? "text-white" : "text-[hsl(var(--globe-grey))]"
+                        )} />
                         <span>{option.label}</span>
                       </button>
                     );
@@ -638,7 +644,7 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
 
         {/* Screen Title */}
         <div className="space-y-2">
-          <Label className="text-sm">Title</Label>
+          <Label className="text-sm text-[hsl(var(--fg))]">Title</Label>
           <Input
             value={screen.title}
             onChange={(e) => updateScreen(screen.id, { title: e.target.value })}
@@ -647,7 +653,7 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
 
         {/* Screen Description */}
         <div className="space-y-2">
-          <Label className="text-sm">Description</Label>
+          <Label className="text-sm text-[hsl(var(--fg))]">Description</Label>
           <Input
             value={screen.description || ""}
             onChange={(e) =>
@@ -661,7 +667,7 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
         <div className="p-3 rounded-lg bg-[hsl(var(--muted))]/30 space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-[hsl(var(--globe-grey))]">Fields</span>
-            <span className="font-medium">{screen.fields.length}</span>
+            <span className="font-medium text-[hsl(var(--fg))]">{screen.fields.length}</span>
           </div>
         </div>
 

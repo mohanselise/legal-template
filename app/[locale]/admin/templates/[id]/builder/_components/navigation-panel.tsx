@@ -104,7 +104,7 @@ function SortableFieldItem({ field, screenId, isSelected }: SortableFieldItemPro
         "group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ml-6",
         isSelected
           ? "bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
-          : "hover:bg-[hsl(var(--muted))]"
+          : "text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))]"
       )}
       onClick={() =>
         setSelection({ type: "field", screenId, fieldId: field.id })
@@ -117,7 +117,12 @@ function SortableFieldItem({ field, screenId, isSelected }: SortableFieldItemPro
       >
         <GripVertical className="h-3 w-3 text-[hsl(var(--globe-grey))]" />
       </div>
-      <Icon className="h-4 w-4 shrink-0" />
+      <Icon className={cn(
+        "h-4 w-4 shrink-0",
+        isSelected
+          ? "text-[hsl(var(--selise-blue))]"
+          : "text-[hsl(var(--globe-grey))]"
+      )} />
       <span className="text-sm truncate flex-1">{field.label}</span>
       <button
         onClick={(e) => {

@@ -9,6 +9,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { NavigationPanel } from "./navigation-panel";
 import { PreviewCanvas } from "./preview-canvas";
 import { PropertiesPanel } from "./properties-panel";
+import { PreviewDialog } from "./preview-dialog";
 
 // Types
 export interface ScreenWithFields extends TemplateScreen {
@@ -21,6 +22,7 @@ export interface Template {
   title: string;
   description: string;
   available: boolean;
+  previewToken?: string | null;
 }
 
 export type SelectionType = "screen" | "field" | null;
@@ -78,6 +80,8 @@ export function TypeformBuilder({
   });
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [previewToken, setPreviewToken] = useState<string | null>(template.previewToken || null);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
   // Get selected screen and field
   const selectedScreen = screens.find((s) => s.id === selection.screenId);
@@ -568,12 +572,20 @@ export function TypeformBuilder({
                 <Kbd>↑↓</Kbd>
                 Navigate
               </span>
-              <span className="flex items-center gap-1">
-                <Kbd>⌘N</Kbd>
-                Add
-              </span>
             </div>
-            <button className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-[hsl(var(--border))] text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors">
+            <button
+              onClick={() => {
+                if (previewToken) {
+                  // Navigate to preview URL
+                  const previewUrl = `/${locale}/templates/${template.slug}/generate?preview=${previewToken}`;
+                  window.open(previewUrl, "_blank");
+                } else {
+                  // Show dialog to create preview link
+                  setPreviewDialogOpen(true);
+                }
+              }}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-[hsl(var(--border))] text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
+            >
               <Eye className="h-4 w-4" />
               Preview
             </button>
@@ -599,6 +611,22 @@ export function TypeformBuilder({
           />
         </div>
       </div>
+
+      {/* Preview Dialog */}
+      <PreviewDialog
+        open={previewDialogOpen}
+        onOpenChange={setPreviewDialogOpen}
+        templateId={template.id}
+        templateSlug={template.slug}
+        locale={locale}
+        previewToken={previewToken}
+        onTokenGenerated={(token) => {
+          setPreviewToken(token);
+          // Auto-open preview after generation
+          const previewUrl = `/${locale}/templates/${template.slug}/generate?preview=${token}`;
+          window.open(previewUrl, "_blank");
+        }}
+      />
     </BuilderContext.Provider>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Type,
@@ -183,10 +184,31 @@ function FieldProperties({
     return null;
   });
 
+  // Local state for text inputs (for immediate UI updates)
+  const [localPlaceholder, setLocalPlaceholder] = useState(field.placeholder || "");
+  const [localName, setLocalName] = useState(field.name);
+
+  // Debounced update handlers (500ms delay)
+  const debouncedUpdatePlaceholder = useDebouncedCallback(
+    (value: string) => {
+      updateField(field.id, { placeholder: value || undefined });
+    },
+    500
+  );
+
+  const debouncedUpdateName = useDebouncedCallback(
+    (value: string) => {
+      updateField(field.id, { name: value });
+    },
+    500
+  );
+
   // Update local state when field changes
   useEffect(() => {
     setAiEnabled((field as any).aiSuggestionEnabled || false);
     setAiKey((field as any).aiSuggestionKey || "");
+    setLocalPlaceholder(field.placeholder || "");
+    setLocalName(field.name);
     const fieldConditions = (field as any).conditions;
     if (fieldConditions) {
       try {
@@ -201,7 +223,15 @@ function FieldProperties({
     } else {
       setConditions(null);
     }
-  }, [field.id]);
+  }, [field.id, field.placeholder, field.name]);
+
+  // Cancel pending updates when field changes
+  useEffect(() => {
+    return () => {
+      debouncedUpdatePlaceholder.cancel();
+      debouncedUpdateName.cancel();
+    };
+  }, [field.id, debouncedUpdatePlaceholder, debouncedUpdateName]);
 
   // Compute available fields for conditions (fields from previous screens + earlier fields in current screen)
   const availableFieldsForConditions = useMemo<AvailableField[]>(() => {
@@ -445,10 +475,15 @@ function FieldProperties({
           <div className="space-y-2">
             <Label className="text-sm text-[hsl(var(--fg))]">Placeholder</Label>
             <Input
-              value={field.placeholder || ""}
-              onChange={(e) =>
-                updateField(field.id, { placeholder: e.target.value || undefined })
-              }
+              value={localPlaceholder}
+              onChange={(e) => {
+                const value = e.target.value;
+                setLocalPlaceholder(value);
+                debouncedUpdatePlaceholder(value);
+              }}
+              onBlur={() => {
+                debouncedUpdatePlaceholder.flush();
+              }}
               placeholder="Type your answer here..."
             />
           </div>
@@ -488,10 +523,15 @@ function FieldProperties({
                   <div className="space-y-2">
                     <Label className="text-sm text-[hsl(var(--fg))]">Field Name</Label>
                     <Input
-                      value={field.name}
-                      onChange={(e) =>
-                        updateField(field.id, { name: e.target.value })
-                      }
+                      value={localName}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setLocalName(value);
+                        debouncedUpdateName(value);
+                      }}
+                      onBlur={() => {
+                        debouncedUpdateName.flush();
+                      }}
                       className="font-mono text-sm"
                     />
                     <p className="text-xs text-[hsl(var(--globe-grey))]">
@@ -606,8 +646,29 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
     return null;
   });
 
-  // Update conditions when screen changes
+  // Local state for text inputs (for immediate UI updates)
+  const [localTitle, setLocalTitle] = useState(screen.title);
+  const [localDescription, setLocalDescription] = useState(screen.description || "");
+
+  // Debounced update handlers (500ms delay)
+  const debouncedUpdateTitle = useDebouncedCallback(
+    (value: string) => {
+      updateScreen(screen.id, { title: value });
+    },
+    500
+  );
+
+  const debouncedUpdateDescription = useDebouncedCallback(
+    (value: string) => {
+      updateScreen(screen.id, { description: value || undefined });
+    },
+    500
+  );
+
+  // Update conditions and local state when screen changes
   useEffect(() => {
+    setLocalTitle(screen.title);
+    setLocalDescription(screen.description || "");
     const screenConditions = (screen as any).conditions;
     if (screenConditions) {
       try {
@@ -622,7 +683,15 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
     } else {
       setConditions(null);
     }
-  }, [screen.id]);
+  }, [screen.id, screen.title, screen.description]);
+
+  // Cancel pending updates when screen changes
+  useEffect(() => {
+    return () => {
+      debouncedUpdateTitle.cancel();
+      debouncedUpdateDescription.cancel();
+    };
+  }, [screen.id, debouncedUpdateTitle, debouncedUpdateDescription]);
 
   // Compute available fields for conditions (fields from all previous screens)
   const availableFieldsForConditions = useMemo<AvailableField[]>(() => {
@@ -770,8 +839,15 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
         <div className="space-y-2">
           <Label className="text-sm text-[hsl(var(--fg))]">Title</Label>
           <Input
-            value={screen.title}
-            onChange={(e) => updateScreen(screen.id, { title: e.target.value })}
+            value={localTitle}
+            onChange={(e) => {
+              const value = e.target.value;
+              setLocalTitle(value);
+              debouncedUpdateTitle(value);
+            }}
+            onBlur={() => {
+              debouncedUpdateTitle.flush();
+            }}
           />
         </div>
 
@@ -779,10 +855,15 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
         <div className="space-y-2">
           <Label className="text-sm text-[hsl(var(--fg))]">Description</Label>
           <Input
-            value={screen.description || ""}
-            onChange={(e) =>
-              updateScreen(screen.id, { description: e.target.value || undefined })
-            }
+            value={localDescription}
+            onChange={(e) => {
+              const value = e.target.value;
+              setLocalDescription(value);
+              debouncedUpdateDescription(value);
+            }}
+            onBlur={() => {
+              debouncedUpdateDescription.flush();
+            }}
             placeholder="Optional description..."
           />
         </div>

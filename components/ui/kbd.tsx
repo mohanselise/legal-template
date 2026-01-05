@@ -34,5 +34,20 @@ const Kbd = React.forwardRef<HTMLElement, KbdProps>(
 )
 Kbd.displayName = "Kbd"
 
-export { Kbd, kbdVariants }
+export interface KbdGroupProps extends React.HTMLAttributes<HTMLDivElement> {}
+
+const KbdGroup = React.forwardRef<HTMLDivElement, KbdGroupProps>(
+  ({ className, ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={cn("inline-flex items-center gap-1", className)}
+        {...props}
+      />
+    )
+  }
+)
+KbdGroup.displayName = "KbdGroup"
+
+export { Kbd, KbdGroup, kbdVariants }
 

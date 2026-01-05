@@ -24,6 +24,7 @@ import {
   GitBranch,
   FileText,
   Users,
+  Wand2,
 } from "lucide-react";
 import { useBuilder, type ScreenWithFields } from "./typeform-builder";
 import type { TemplateField, FieldType } from "@/lib/db";
@@ -33,8 +34,49 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ConditionEditorDialog, type AvailableField } from "./condition-editor-dialog";
-import { AISettingsDialog } from "./ai-settings-dialog";
+import { AISettingsDialog, type AvailableContextKey } from "./ai-settings-dialog";
+import { AIEnrichmentDialog } from "./ai-enrichment-dialog";
 import type { ConditionGroup } from "@/lib/templates/conditions";
+
+// Helper function to extract context keys from aiOutputSchema
+function extractContextKeysFromSchema(
+  schema: string | null | undefined,
+  screenTitle: string
+): AvailableContextKey[] {
+  if (!schema) return [];
+  
+  try {
+    const parsed = JSON.parse(schema);
+    if (parsed.type !== "object" || !parsed.properties) return [];
+    
+    const keys: AvailableContextKey[] = [];
+    
+    const flattenProperties = (
+      properties: Record<string, any>,
+      prefix = ""
+    ): void => {
+      Object.entries(properties).forEach(([key, value]: [string, any]) => {
+        const fullPath = prefix ? `${prefix}.${key}` : key;
+        keys.push({
+          screenTitle,
+          key,
+          type: value.type || "unknown",
+          fullPath,
+        });
+        
+        // Recursively handle nested objects
+        if (value.type === "object" && value.properties) {
+          flattenProperties(value.properties, fullPath);
+        }
+      });
+    };
+    
+    flattenProperties(parsed.properties);
+    return keys;
+  } catch {
+    return [];
+  }
+}
 
 // Field type options
 const fieldTypeOptions: {
@@ -214,6 +256,24 @@ function FieldProperties({
     );
     return totalFields + (currentFieldIndex ?? 0) + 1;
   }, [allScreens, screenId, field.id]);
+
+  // Compute available AI context keys from previous screens' aiOutputSchema
+  const availableContextKeys = useMemo<AvailableContextKey[]>(() => {
+    const keys: AvailableContextKey[] = [];
+    const currentScreenIndex = allScreens.findIndex((s) => s.id === screenId);
+
+    // Get keys from all previous screens that have aiOutputSchema
+    for (let i = 0; i < currentScreenIndex; i++) {
+      const screen = allScreens[i];
+      const schemaKeys = extractContextKeysFromSchema(
+        (screen as any).aiOutputSchema,
+        screen.title
+      );
+      keys.push(...schemaKeys);
+    }
+
+    return keys;
+  }, [allScreens, screenId]);
 
   const selectedTypeOption = fieldTypeOptions.find((t) => t.value === field.type);
   const TypeIcon = selectedTypeOption?.icon || Type;
@@ -520,6 +580,7 @@ function FieldProperties({
         aiEnabled={aiEnabled}
         aiKey={aiKey}
         onSave={handleAIChange}
+        availableContextKeys={availableContextKeys}
       />
     </motion.div>
   );
@@ -530,6 +591,7 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
   const { updateScreen, screens } = useBuilder();
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [conditionDialogOpen, setConditionDialogOpen] = useState(false);
+  const [aiEnrichmentDialogOpen, setAiEnrichmentDialogOpen] = useState(false);
   const [conditions, setConditions] = useState<ConditionGroup | null>(() => {
     const screenConditions = (screen as any).conditions;
     if (screenConditions) {
@@ -604,7 +666,34 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
     } as any);
   };
 
+  const handleAIEnrichmentSave = (aiPrompt: string | null, aiOutputSchema: string | null) => {
+    updateScreen(screen.id, {
+      aiPrompt,
+      aiOutputSchema,
+    } as any);
+  };
+
   const hasLogicConfigured = conditions && conditions.rules.length > 0;
+  
+  // Check if AI enrichment is configured
+  const hasEnrichmentConfigured = Boolean(
+    (screen as any).aiPrompt?.trim() || (screen as any).aiOutputSchema?.trim()
+  );
+  
+  // Count output keys in schema
+  const enrichmentKeyCount = useMemo(() => {
+    const schema = (screen as any).aiOutputSchema;
+    if (!schema?.trim()) return 0;
+    try {
+      const parsed = JSON.parse(schema);
+      if (parsed.type === "object" && parsed.properties) {
+        return Object.keys(parsed.properties).length;
+      }
+    } catch {
+      return 0;
+    }
+    return 0;
+  }, [(screen as any).aiOutputSchema]);
 
   return (
     <motion.div
@@ -706,6 +795,35 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
           </div>
         </div>
 
+        {/* AI Enrichment */}
+        <div className="border-t border-[hsl(var(--border))] pt-4 space-y-3">
+          <button
+            type="button"
+            onClick={() => setAiEnrichmentDialogOpen(true)}
+            className="w-full flex items-center justify-between p-3 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]/30 hover:bg-[hsl(var(--muted))]/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+              <span className="text-sm font-medium text-[hsl(var(--fg))]">
+                AI Enrichment
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {hasEnrichmentConfigured ? (
+                <Badge
+                  variant="secondary"
+                  className="text-xs bg-[hsl(var(--lime-green))]/10 text-[hsl(var(--poly-green))]"
+                >
+                  {enrichmentKeyCount} key{enrichmentKeyCount !== 1 ? "s" : ""}
+                </Badge>
+              ) : (
+                <span className="text-xs text-[hsl(var(--globe-grey))]">Not set</span>
+              )}
+              <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+            </div>
+          </button>
+        </div>
+
         {/* Conditional Logic */}
         {availableFieldsForConditions.length > 0 && (
           <div className="border-t border-[hsl(var(--border))] pt-4 space-y-3">
@@ -747,6 +865,16 @@ function ScreenProperties({ screen }: { screen: ScreenWithFields }) {
         conditions={conditions}
         onConditionsChange={handleConditionsChange}
         availableFields={availableFieldsForConditions}
+      />
+
+      {/* AI Enrichment Dialog */}
+      <AIEnrichmentDialog
+        open={aiEnrichmentDialogOpen}
+        onOpenChange={setAiEnrichmentDialogOpen}
+        screen={screen as any}
+        screenIndex={screenIndex}
+        allScreens={screens as any}
+        onSave={handleAIEnrichmentSave}
       />
     </motion.div>
   );

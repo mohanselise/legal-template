@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -8,7 +8,9 @@ import {
   Zap,
   X,
   Check,
-  Copy,
+  ChevronDown,
+  Search,
+  Info,
 } from "lucide-react";
 import {
   Dialog,
@@ -22,8 +24,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 // Interface for available AI context keys from previous screens
 export interface AvailableContextKey {
@@ -66,12 +72,15 @@ export function AISettingsDialog({
   // Local state for editing
   const [enabled, setEnabled] = useState(initialAiEnabled);
   const [key, setKey] = useState(initialAiKey);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Reset local state when dialog opens
   useEffect(() => {
     if (open) {
       setEnabled(initialAiEnabled);
       setKey(initialAiKey);
+      setSearchQuery("");
     }
   }, [open, initialAiEnabled, initialAiKey]);
 
@@ -85,14 +94,61 @@ export function AISettingsDialog({
   };
 
   const autoGenerateKey = () => {
-    const sanitizedName = fieldName.replace(/[^a-zA-Z0-9]/g, "_");
-    setKey(`AI_${sanitizedName}`);
+    // Try to find a matching key from available context keys based on field name
+    const fieldNameLower = fieldName.toLowerCase();
+    const matchingKey = availableContextKeys.find(
+      (k) => k.key.toLowerCase() === fieldNameLower || k.key.toLowerCase().includes(fieldNameLower)
+    );
+    
+    if (matchingKey) {
+      setKey(matchingKey.fullPath);
+    } else {
+      // Fallback to generating AI_ prefixed key
+      const sanitizedName = fieldName.replace(/[^a-zA-Z0-9]/g, "_");
+      setKey(`AI${sanitizedName}`);
+    }
   };
 
-  const copyKey = () => {
-    navigator.clipboard.writeText(key);
-    toast.success("Copied to clipboard");
+  // Filter keys based on search
+  const filteredAvailableKeys = useMemo(() => {
+    if (!searchQuery) return availableContextKeys;
+    const query = searchQuery.toLowerCase();
+    return availableContextKeys.filter(
+      (k) =>
+        k.key.toLowerCase().includes(query) ||
+        k.fullPath.toLowerCase().includes(query) ||
+        k.screenTitle.toLowerCase().includes(query)
+    );
+  }, [searchQuery, availableContextKeys]);
+
+  // Group keys by screen
+  const groupedKeys = useMemo(() => {
+    const groups: Record<string, AvailableContextKey[]> = {};
+    filteredAvailableKeys.forEach((k) => {
+      if (!groups[k.screenTitle]) {
+        groups[k.screenTitle] = [];
+      }
+      groups[k.screenTitle].push(k);
+    });
+    return groups;
+  }, [filteredAvailableKeys]);
+
+  const selectKey = (selectedKey: string) => {
+    setKey(selectedKey);
+    setPickerOpen(false);
+    setSearchQuery("");
   };
+
+  // Check if current key is from available keys
+  const currentKeyInfo = useMemo(() => {
+    const available = availableContextKeys.find((k) => k.fullPath === key || k.key === key);
+    if (available) return { type: "available", label: available.key, screen: available.screenTitle };
+    
+    if (key) return { type: "custom", label: key };
+    return null;
+  }, [key, availableContextKeys]);
+
+  const hasAvailableKeys = availableContextKeys.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -149,20 +205,20 @@ export function AISettingsDialog({
 
           <div className="px-6 py-6 space-y-6">
             {/* Enable Toggle */}
-            <div className="flex items-center justify-between p-4 rounded-xl bg-[hsl(var(--muted))]/30 border border-[hsl(var(--border))]">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-[hsl(var(--muted))]/50 border border-[hsl(var(--border))]">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-[hsl(var(--fg))]">
                   Enable AI Suggestions
                 </p>
                 <p className="text-xs text-[hsl(var(--globe-grey))]">
-                  Auto-fill this field with AI-generated suggestions from enrichment context
+                  Auto-fill this field with AI-generated suggestions
                 </p>
               </div>
               <Switch
                 checked={enabled}
                 onCheckedChange={(checked) => {
                   setEnabled(checked);
-                  if (checked && !key) {
+                  if (checked && !key && hasAvailableKeys) {
                     autoGenerateKey();
                   }
                 }}
@@ -179,76 +235,169 @@ export function AISettingsDialog({
                   className="overflow-hidden"
                 >
                   <div className="space-y-6">
-                    {/* Context Key Input */}
+                    {/* Context Key Picker */}
                     <div className="space-y-3">
                       <Label className="text-sm font-medium text-[hsl(var(--fg))]">
                         AI Context Key
                       </Label>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
+                      <p className="text-xs text-[hsl(var(--globe-grey))]">
+                        Select which data from AI enrichment should populate this field
+                      </p>
+                      
+                      {hasAvailableKeys ? (
+                        <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className={cn(
+                                "w-full flex items-center justify-between p-3 rounded-xl border transition-colors text-left",
+                                key
+                                  ? "border-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/5"
+                                  : "border-[hsl(var(--border))] hover:border-[hsl(var(--selise-blue))]/50"
+                              )}
+                            >
+                              {key ? (
+                                <div className="flex items-center gap-2">
+                                  <Sparkles className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+                                  <span className="font-mono text-sm text-[hsl(var(--fg))]">
+                                    {key}
+                                  </span>
+                                  {currentKeyInfo?.type === "available" && currentKeyInfo.screen && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {currentKeyInfo.screen}
+                                    </Badge>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-sm text-[hsl(var(--globe-grey))]">
+                                  Select a context key...
+                                </span>
+                              )}
+                              <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent 
+                            className="w-[--radix-popover-trigger-width] p-0" 
+                            align="start"
+                            sideOffset={4}
+                          >
+                            {/* Search */}
+                            <div className="p-3 border-b border-[hsl(var(--border))]">
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                                <Input
+                                  value={searchQuery}
+                                  onChange={(e) => setSearchQuery(e.target.value)}
+                                  placeholder="Search context keys..."
+                                  className="pl-9"
+                                  autoFocus
+                                />
+                              </div>
+                            </div>
+
+                            <div className="max-h-[300px] overflow-y-auto">
+                              {/* Keys grouped by screen */}
+                              {Object.entries(groupedKeys).map(([screenTitle, keys]) => (
+                                <div key={screenTitle} className="p-2 border-b border-[hsl(var(--border))] last:border-b-0">
+                                  <p className="px-2 py-1.5 text-xs font-medium text-[hsl(var(--globe-grey))] uppercase flex items-center gap-1">
+                                    <Sparkles className="h-3 w-3" />
+                                    {screenTitle}
+                                  </p>
+                                  {keys.map((ctx, idx) => (
+                                    <button
+                                      key={`${screenTitle}-${idx}`}
+                                      type="button"
+                                      onClick={() => selectKey(ctx.fullPath)}
+                                      className={cn(
+                                        "w-full flex items-center justify-between p-2 rounded-lg text-left transition-colors",
+                                        key === ctx.fullPath
+                                          ? "bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
+                                          : "hover:bg-[hsl(var(--muted))]"
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-mono text-sm">{ctx.key}</span>
+                                        {key === ctx.fullPath && (
+                                          <Check className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
+                                        )}
+                                      </div>
+                                      <span className="text-xs text-[hsl(var(--globe-grey))]">
+                                        {ctx.type}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              ))}
+
+                              {filteredAvailableKeys.length === 0 && searchQuery && (
+                                <div className="p-4 text-center text-sm text-[hsl(var(--globe-grey))]">
+                                  No keys matching &quot;{searchQuery}&quot;
+                                </div>
+                              )}
+
+                              {/* Auto-generate option */}
+                              <div className="p-2 border-t border-[hsl(var(--border))]">
+                                <div className="flex items-center gap-2 p-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      autoGenerateKey();
+                                      setPickerOpen(false);
+                                    }}
+                                    className="flex-1"
+                                  >
+                                    <Zap className="h-4 w-4 mr-2" />
+                                    Auto-match Key
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      ) : (
+                        /* No available keys - show info message */
+                        <div className="p-4 rounded-xl bg-[hsl(var(--muted))]/50 border border-dashed border-[hsl(var(--border))]">
+                          <div className="flex items-start gap-3">
+                            <Info className="h-5 w-5 text-[hsl(var(--globe-grey))] shrink-0 mt-0.5" />
+                            <div className="space-y-2">
+                              <p className="text-sm text-[hsl(var(--fg))]">
+                                No AI enrichment configured on previous screens
+                              </p>
+                              <p className="text-xs text-[hsl(var(--globe-grey))]">
+                                To use AI suggestions, configure an AI Enrichment Prompt on an earlier screen. 
+                                The output keys defined there will be available for auto-fill.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Manual input for custom keys */}
+                      <div className="space-y-2">
+                        <Label className="text-xs text-[hsl(var(--globe-grey))]">
+                          Or enter a custom key
+                        </Label>
+                        <div className="flex gap-2">
                           <Input
                             value={key}
                             onChange={(e) => setKey(e.target.value)}
-                            placeholder="e.g., companyName"
-                            className="font-mono text-sm pr-10"
+                            placeholder="e.g., AIcompanyName"
+                            className="font-mono text-sm"
                           />
-                          {key && (
-                            <button
-                              type="button"
-                              onClick={copyKey}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-[hsl(var(--muted))] text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--fg))]"
-                              title="Copy key"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </button>
-                          )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={autoGenerateKey}
+                            title="Auto-generate key"
+                          >
+                            <Zap className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={autoGenerateKey}
-                          title="Auto-generate key"
-                        >
-                          <Zap className="h-4 w-4" />
-                        </Button>
                       </div>
-                      <p className="text-xs text-[hsl(var(--globe-grey))]">
-                        This key maps to a value from the AI enrichment context. When available, it will auto-fill this field.
-                      </p>
                     </div>
-
-                    {/* Available Context Keys */}
-                    {availableContextKeys.length > 0 && (
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium text-[hsl(var(--fg))]">
-                          Available Context Keys
-                        </Label>
-                        <p className="text-xs text-[hsl(var(--globe-grey))]">
-                          These keys are available from previous screen AI enrichments. Click to use.
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {availableContextKeys.map((ctx, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => setKey(ctx.fullPath)}
-                              className={cn(
-                                "px-3 py-1.5 text-sm rounded-lg border transition-all",
-                                key === ctx.fullPath
-                                  ? "border-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
-                                  : "border-[hsl(var(--border))] hover:border-[hsl(var(--selise-blue))] bg-[hsl(var(--bg))]"
-                              )}
-                            >
-                              <span className="font-mono">{ctx.key}</span>
-                              <span className="ml-1 text-xs text-[hsl(var(--globe-grey))]">
-                                ({ctx.screenTitle})
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
 
                     {/* Preview */}
                     {key && (
@@ -262,7 +411,9 @@ export function AISettingsDialog({
                               AI will auto-fill this field
                             </p>
                             <p className="text-xs text-[hsl(var(--globe-grey))]">
-                              When the enrichment context contains <span className="font-mono text-[hsl(var(--selise-blue))]">{key}</span>, its value will be suggested for this field.
+                              When the enrichment context contains{" "}
+                              <span className="font-mono text-[hsl(var(--selise-blue))]">{key}</span>,
+                              its value will be suggested for this field.
                             </p>
                           </div>
                         </div>
@@ -307,4 +458,3 @@ export function AISettingsDialog({
     </Dialog>
   );
 }
-

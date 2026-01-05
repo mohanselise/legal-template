@@ -80,9 +80,9 @@ export default function TemplatesAdminPage() {
   const popularCount = templates.filter((t) => t.popular).length;
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[hsl(var(--fg))] font-heading">
             Template Manager
@@ -113,7 +113,7 @@ export default function TemplatesAdminPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-3 mb-8">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">

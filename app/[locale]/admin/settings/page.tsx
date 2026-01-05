@@ -494,29 +494,15 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container max-w-5xl py-8 px-4">
+    <div className="space-y-8 max-w-5xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <Link href={`/${locale}/admin`}>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-[hsl(var(--selise-blue))]/10 flex items-center justify-center">
-              <Settings className="h-6 w-6 text-[hsl(var(--selise-blue))]" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-[hsl(var(--fg))]">
-                System Settings
-              </h1>
-              <p className="text-sm text-[hsl(var(--globe-grey))]">
-                Organized by focus area for faster edits
-              </p>
-            </div>
-          </div>
-        </div>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-[hsl(var(--fg))] font-heading">
+          System Settings
+        </h1>
+        <p className="text-[hsl(var(--globe-grey))]">
+          Configure AI models, integration keys, and system preferences
+        </p>
       </div>
 
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">

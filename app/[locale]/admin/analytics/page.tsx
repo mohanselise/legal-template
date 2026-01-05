@@ -59,10 +59,17 @@ export default function AnalyticsPage() {
     }, []);
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">Analytics</h2>
-                <div className="flex items-center space-x-2">
+        <div className="space-y-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-[hsl(var(--fg))] font-heading">
+                        Analytics
+                    </h1>
+                    <p className="text-[hsl(var(--globe-grey))] mt-1">
+                        View document generation and usage statistics
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => { fetchStats(); fetchLogs(pagination.page); }}>
                         <RefreshCw className="mr-2 h-4 w-4" />
                         Refresh
@@ -76,7 +83,7 @@ export default function AnalyticsPage() {
                 </div>
             </div>
 
-            <Tabs defaultValue="overview" className="space-y-4">
+            <Tabs defaultValue="overview" className="space-y-6">
                 <TabsList>
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="logs">Logs</TabsTrigger>

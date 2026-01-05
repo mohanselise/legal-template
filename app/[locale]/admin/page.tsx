@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   FileText,
@@ -17,47 +16,24 @@ import {
   BarChart3,
   Settings,
   ArrowRight,
-  ArrowUpRight,
-  LifeBuoy,
-  ShieldCheck,
+  CheckCircle2,
+  Circle,
+  KeyRound,
   Sparkles,
+  Plus,
 } from "lucide-react";
+import { prisma } from "@/lib/db";
+import { getBlocksProjectKey, getOpenRouterApiKey } from "@/lib/system-settings";
 
-// Note: Users module availability is set dynamically based on role
-const getAdminModules = (role: string | null) => [
-  {
-    title: "Templates",
-    description: "Manage legal templates",
-    icon: FileText,
-    href: "/admin/templates",
-    details: "Create, edit, and manage all legal document templates.",
-    available: true,
-  },
-  {
-    title: "Users",
-    description: "User management",
-    icon: Users,
-    href: "/admin/users",
-    details: "Manage user accounts and permissions.",
-    available: role === "admin", // Only available for admins
-  },
-  {
-    title: "Analytics",
-    description: "Usage statistics",
-    icon: BarChart3,
-    href: "/admin/analytics",
-    details: "View document generation and usage analytics.",
-    available: true,
-  },
-  {
-    title: "Settings",
-    description: "System configuration",
-    icon: Settings,
-    href: "/admin/settings",
-    details: "Configure system settings and preferences.",
-    available: true,
-  },
-];
+interface ChecklistItem {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  actionHref: string;
+  actionLabel: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
 
 export default async function AdminDashboard({
   params,
@@ -82,208 +58,227 @@ export default async function AdminDashboard({
     nextRedirect("/sign-in");
   }
 
-  const adminModules = getAdminModules(role);
+  // Server-side status probes
+  const [templateCount, blocksKey, openRouterKey] = await Promise.all([
+    prisma.template.count(),
+    getBlocksProjectKey(),
+    getOpenRouterApiKey(),
+  ]);
+
+  const hasTemplates = templateCount > 0;
+  const hasIntegrationKeys = Boolean(blocksKey && openRouterKey);
+
+  // Build checklist items
+  const checklistItems: ChecklistItem[] = [
+    {
+      id: "integration-keys",
+      title: "Configure integration keys",
+      description: "Set up SELISE Blocks and OpenRouter API keys in settings to enable AI features.",
+      completed: hasIntegrationKeys,
+      actionHref: `/${locale}/admin/settings`,
+      actionLabel: "Open Settings",
+      icon: KeyRound,
+    },
+    {
+      id: "create-template",
+      title: "Create your first template",
+      description: "Add a legal document template so users can generate contracts and agreements.",
+      completed: hasTemplates,
+      actionHref: `/${locale}/admin/templates/new`,
+      actionLabel: "Create Template",
+      icon: FileText,
+    },
+    ...(role === "admin"
+      ? [
+          {
+            id: "manage-users",
+            title: "Invite team members",
+            description: "Add editors or admins to help manage templates and settings.",
+            completed: false, // Could check user count if needed
+            actionHref: `/${locale}/admin/users`,
+            actionLabel: "Manage Users",
+            icon: Users,
+          } as ChecklistItem,
+        ]
+      : []),
+    {
+      id: "review-analytics",
+      title: "Review analytics",
+      description: "Check usage statistics and monitor document generation activity.",
+      completed: false, // Always actionable
+      actionHref: `/${locale}/admin/analytics`,
+      actionLabel: "View Analytics",
+      icon: BarChart3,
+    },
+  ];
+
+  const completedCount = checklistItems.filter((item) => item.completed).length;
+  const progressPercentage = Math.round(
+    (completedCount / checklistItems.length) * 100
+  );
 
   return (
-    <div className="container mx-auto space-y-8 px-4 py-10 lg:px-8">
-      <div className="overflow-hidden rounded-2xl border bg-linear-to-r from-[hsl(var(--gradient-mid-from))] to-[hsl(var(--gradient-mid-to))] text-[hsl(var(--white))] shadow-sm">
-        <div className="flex flex-col gap-4 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--selise-blue))]/20 px-3 py-1 text-xs font-semibold">
-              <Sparkles className="h-4 w-4" />
-              Admin workspace
-            </span>
-            <h1 className="text-3xl font-bold leading-tight sm:text-4xl font-heading">
-              Welcome back, {user.firstName || user.emailAddresses[0]?.emailAddress}
-            </h1>
-            <p className="max-w-2xl text-sm text-[hsl(var(--white))]/85 sm:text-base">
-              Manage templates, insights, and configuration from a single, organized dashboard.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              asChild
-              size="lg"
-              variant="secondary"
-              className="bg-[hsl(var(--white))] text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--white))]/90"
-            >
-              <Link href={`/${locale}/admin/templates`} className="inline-flex items-center gap-2">
-                Manage templates
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="border-[hsl(var(--white))]/70 text-[hsl(var(--white))] hover:bg-[hsl(var(--white))]/10"
-            >
-              <Link href={`/${locale}/admin/analytics`} className="inline-flex items-center gap-2">
-                View analytics
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
+    <div className="space-y-8">
+      {/* Welcome Header */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
+          <span className="text-sm font-medium text-[hsl(var(--globe-grey))]">
+            Admin Dashboard
+          </span>
         </div>
+        <h1 className="text-3xl font-bold text-[hsl(var(--fg))] font-heading">
+          Welcome back, {user.firstName || user.emailAddresses[0]?.emailAddress?.split("@")[0]}
+        </h1>
+        <p className="text-[hsl(var(--globe-grey))]">
+          Get started by completing the setup checklist below.
+        </p>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-[hsl(var(--fg))]">Admin modules</h2>
-            <p className="text-sm text-[hsl(var(--globe-grey))]">
-              Jump into a workspace to continue your tasks.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {adminModules
-          .filter((module) => {
-            // Hide Users module for non-admins
-            if (module.title === "Users" && role !== "admin") {
-              return false;
-            }
-            return true;
-          })
-          .map((module) => {
-            const Icon = module.icon;
-            const cardContent = (
-              <Card
-                className={`group relative h-full overflow-hidden border transition-all ${
-                  module.available
-                    ? "hover:-translate-y-1 hover:border-[hsl(var(--selise-blue))]/30 hover:shadow-md"
-                    : "opacity-70"
-                }`}
-              >
-                <CardHeader className="space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`flex h-11 w-11 items-center justify-center rounded-xl ${
-                          module.available
-                            ? "bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
-                            : "bg-[hsl(var(--border))] text-[hsl(var(--globe-grey))]"
-                        }`}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{module.title}</CardTitle>
-                        <CardDescription>{module.description}</CardDescription>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Getting Started Checklist */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Getting Started</CardTitle>
+                  <CardDescription>
+                    Complete these steps to set up your admin workspace
+                  </CardDescription>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-[hsl(var(--selise-blue))] font-heading">
+                    {progressPercentage}%
+                  </div>
+                  <div className="text-xs text-[hsl(var(--globe-grey))]">
+                    {completedCount} of {checklistItems.length} complete
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {checklistItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.id}
+                    className={`flex items-start gap-4 rounded-lg border p-4 transition-colors ${
+                      item.completed
+                        ? "border-[hsl(var(--lime-green))]/30 bg-[hsl(var(--lime-green))]/5"
+                        : "border-[hsl(var(--border))] bg-[hsl(var(--card))]"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                        item.completed
+                          ? "bg-[hsl(var(--lime-green))] text-white"
+                          : "border-2 border-[hsl(var(--border))] bg-transparent"
+                      }`}
+                    >
+                      {item.completed ? (
+                        <CheckCircle2 className="h-4 w-4" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Icon
+                              className={`h-4 w-4 ${
+                                item.completed
+                                  ? "text-[hsl(var(--lime-green))]"
+                                  : "text-[hsl(var(--globe-grey))]"
+                              }`}
+                            />
+                            <h3
+                              className={`font-medium ${
+                                item.completed
+                                  ? "text-[hsl(var(--globe-grey))] line-through"
+                                  : "text-[hsl(var(--fg))]"
+                              }`}
+                            >
+                              {item.title}
+                            </h3>
+                          </div>
+                          <p className="text-sm text-[hsl(var(--globe-grey))]">
+                            {item.description}
+                          </p>
+                        </div>
+                        {!item.completed && (
+                          <Button asChild size="sm" variant="outline">
+                            <Link
+                              href={item.actionHref}
+                              className="inline-flex items-center gap-1.5"
+                            >
+                              {item.actionLabel}
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
+                          </Button>
+                        )}
                       </div>
                     </div>
-                    <Badge
-                      variant={module.available ? "secondary" : "outline"}
-                      className={
-                        module.available
-                          ? "bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/20"
-                          : "text-[hsl(var(--globe-grey))] border-[hsl(var(--border))]"
-                      }
-                    >
-                      {module.available ? "Active" : "Coming soon"}
-                    </Badge>
                   </div>
-                  <CardDescription className="text-sm leading-relaxed text-[hsl(var(--globe-grey))]">
-                    {module.details}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex items-center justify-between text-sm text-[hsl(var(--globe-grey))]">
-                  <span>{module.available ? "Open module" : "Preview only"}</span>
-                  {module.available && (
-                    <ArrowRight className="h-4 w-4 text-[hsl(var(--globe-grey))] transition-all group-hover:translate-x-1 group-hover:text-[hsl(var(--selise-blue))]" />
-                  )}
-                </CardContent>
-              </Card>
-            );
+                );
+              })}
+            </CardContent>
+          </Card>
+        </div>
 
-            return module.available ? (
-              <Link
-                key={module.title}
-                href={`/${locale}${module.href}`}
-                className={`block group cursor-pointer`}
+        {/* Quick Actions */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Common tasks at your fingertips</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button asChild className="w-full justify-start" size="lg">
+                <Link href={`/${locale}/admin/templates/new`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Template
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="w-full justify-start"
+                size="lg"
               >
-                {cardContent}
-              </Link>
-            ) : (
-              <div
-                key={module.title}
-                className="block opacity-60 cursor-not-allowed"
+                <Link href={`/${locale}/admin/settings`}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Open Settings
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="w-full justify-start"
+                size="lg"
               >
-                {cardContent}
-              </div>
-            );
-          })}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Your account</CardTitle>
-            <CardDescription>Quick glance at your profile details.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between rounded-lg border px-3 py-2">
-              <span className="text-sm font-medium text-[hsl(var(--fg))]">Email</span>
-              <span className="text-sm text-[hsl(var(--globe-grey))]">
-                {user.emailAddresses[0]?.emailAddress}
-              </span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border px-3 py-2">
-              <span className="text-sm font-medium text-[hsl(var(--fg))]">User ID</span>
-              <span className="text-sm text-[hsl(var(--globe-grey))]">{user.id}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border px-3 py-2">
-              <span className="text-sm font-medium text-[hsl(var(--fg))]">Created</span>
-              <span className="text-sm text-[hsl(var(--globe-grey))]">
-                {new Date(user.createdAt).toLocaleDateString()}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-dashed">
-          <CardHeader>
-            <CardTitle>Need help?</CardTitle>
-            <CardDescription>Stay confident while you manage admin tasks.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]">
-                <LifeBuoy className="h-4 w-4" />
-              </span>
-              <div>
-                <p className="text-sm font-medium text-[hsl(var(--fg))]">Support</p>
-                <p className="text-sm text-[hsl(var(--globe-grey))]">
-                  Review settings or reach the team if something looks off.
-                </p>
+                <Link href={`/${locale}/admin/analytics`}>
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  View Analytics
+                </Link>
+              </Button>
+              {role === "admin" && (
                 <Button
                   asChild
-                  size="sm"
-                  variant="ghost"
-                  className="mt-2 px-0 text-[hsl(var(--selise-blue))] hover:text-[hsl(var(--selise-blue))]"
+                  variant="outline"
+                  className="w-full justify-start"
+                  size="lg"
                 >
-                  <Link href={`/${locale}/admin/settings`} className="inline-flex items-center gap-1">
-                    Open settings
-                    <ArrowUpRight className="h-4 w-4" />
+                  <Link href={`/${locale}/admin/users`}>
+                    <Users className="mr-2 h-4 w-4" />
+                    Manage Users
                   </Link>
                 </Button>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]">
-                <ShieldCheck className="h-4 w-4" />
-              </span>
-              <div>
-                <p className="text-sm font-medium text-[hsl(var(--fg))]">Security</p>
-                <p className="text-sm text-[hsl(var(--globe-grey))]">
-                  Keep your account secure by verifying sign-in details regularly.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

@@ -57,6 +57,7 @@ export default clerkMiddleware(
     const signInUrl = new URL('/sign-in', request.url).toString();
 
     // Handle admin API routes - check auth and return early
+    // Role-based authorization is handled in the API route handlers
     if (pathname.startsWith('/api/admin')) {
       if (isProtectedRoute(request)) {
         await auth.protect({
@@ -85,6 +86,7 @@ export default clerkMiddleware(
     }
 
     // Protect admin routes - Clerk will redirect to /sign-in (not /en/sign-in)
+    // Role-based authorization is handled in the layout component
     if (isProtectedRoute(request)) {
       await auth.protect({
         unauthenticatedUrl: signInUrl,

@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { AdminLayoutClient } from "./_components/admin-layout-client";
+import { getUserRole, type UserRole } from "@/lib/auth/roles";
 
 export default async function AdminLayout({
   children,
@@ -17,5 +18,14 @@ export default async function AdminLayout({
     redirect("/sign-in");
   }
 
-  return <AdminLayoutClient locale={locale}>{children}</AdminLayoutClient>;
+  const role = getUserRole(user);
+  
+  // If user has no role, redirect to sign-in
+  if (!role) {
+    redirect("/sign-in");
+  }
+
+  // Route-level access control is handled in individual page components
+  // This layout verifies the user has a role and passes it to the client
+  return <AdminLayoutClient locale={locale} userRole={role}>{children}</AdminLayoutClient>;
 }

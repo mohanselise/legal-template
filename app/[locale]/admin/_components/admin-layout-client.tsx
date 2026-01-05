@@ -3,22 +3,29 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, FileText, Users } from "lucide-react";
+import { LayoutDashboard, FileText, Users, BarChart3 } from "lucide-react";
+import { type UserRole, hasAccess } from "@/lib/auth/roles";
 
-const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/templates", label: "Templates", icon: FileText },
-  { href: "/admin/users", label: "Users", icon: Users },
+const allNavItems = [
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, roles: ["admin"] as UserRole[] },
+  { href: "/admin/templates", label: "Templates", icon: FileText, roles: ["admin", "editor"] as UserRole[] },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3, roles: ["admin", "editor"] as UserRole[] },
+  { href: "/admin/users", label: "Users", icon: Users, roles: ["admin"] as UserRole[] },
 ];
 
 export function AdminLayoutClient({
   children,
   locale,
+  userRole,
 }: {
   children: React.ReactNode;
   locale: string;
+  userRole: UserRole;
 }) {
   const pathname = usePathname();
+
+  // Filter nav items based on user role
+  const navItems = allNavItems.filter((item) => item.roles.includes(userRole));
 
   const isActive = (href: string) => {
     const fullPath = `/${locale}${href}`;
@@ -34,7 +41,7 @@ export function AdminLayoutClient({
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-6">
             <Link
-              href={`/${locale}/admin`}
+              href={`/${locale}/admin${userRole === "editor" ? "/templates" : ""}`}
               className="text-lg font-semibold text-[hsl(var(--selise-blue))] font-heading"
             >
               Admin Portal

@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect as nextRedirect } from "next/navigation";
 import Link from "next/link";
+import { getUserRole, hasAccess } from "@/lib/auth/roles";
 import {
   Card,
   CardContent,
@@ -67,6 +68,16 @@ export default async function AdminDashboard({
 
   if (!user) {
     // Redirect to sign-in without locale prefix (sign-in is excluded from i18n)
+    nextRedirect("/sign-in");
+  }
+
+  const role = getUserRole(user);
+  if (!role || !hasAccess(role, "/admin")) {
+    // Editors should be redirected to templates
+    if (role === "editor") {
+      nextRedirect(`/${locale}/admin/templates`);
+    }
+    // No role or insufficient permissions
     nextRedirect("/sign-in");
   }
 

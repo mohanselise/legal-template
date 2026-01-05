@@ -27,6 +27,7 @@ export const ROLE_PERMISSIONS: Record<string, UserRole[]> = {
   // API routes
   "/api/admin/templates": ["admin", "editor"],
   "/api/admin/analytics": ["admin", "editor"],
+  "/api/admin/users": ["admin"],
   // All other API routes require admin
 };
 

@@ -4,27 +4,45 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Plus, X, Sparkles, ChevronDown, ChevronUp, Copy, Variable, Languages } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Loader2,
+  Plus,
+  X,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Variable,
+  Languages,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Type,
+  Mail,
+  Calendar,
+  Hash,
+  CheckSquare,
+  List,
+  AlignLeft,
+  Phone,
+  MapPin,
+  Building2,
+  DollarSign,
+  Percent,
+  Link2,
+  Settings2,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import type { TemplateField, FieldType, TemplateScreen } from "@/lib/db";
 import { ConditionEditor, type AvailableField } from "./condition-editor";
 import type { ConditionGroup } from "@/lib/templates/conditions";
@@ -34,7 +52,7 @@ export interface AvailableContextKey {
   screenTitle: string;
   key: string;
   type: string;
-  fullPath: string; // The key to use in aiSuggestionKey
+  fullPath: string;
 }
 
 // Interface for available form fields from previous screens
@@ -43,7 +61,7 @@ export interface AvailableFormField {
   fieldName: string;
   fieldLabel: string;
   fieldType: string;
-  variableSyntax: string; // e.g., {{fieldName}}
+  variableSyntax: string;
 }
 
 const fieldSchema = z.object({
@@ -60,10 +78,8 @@ const fieldSchema = z.object({
   placeholder: z.string().optional(),
   helpText: z.string().optional(),
   options: z.array(z.string()).default([]),
-  // AI Smart Suggestions from enrichment context
   aiSuggestionEnabled: z.boolean().default(false),
   aiSuggestionKey: z.string().optional(),
-  // UILM Translation Keys
   uilmLabelKey: z.string().optional(),
   uilmPlaceholderKey: z.string().optional(),
   uilmHelpTextKey: z.string().optional(),
@@ -82,32 +98,60 @@ interface FieldEditorProps {
   availableFormFields?: AvailableFormField[];
   currentScreen?: TemplateScreen & { fields?: TemplateField[] };
   allScreens?: (TemplateScreen & { fields?: TemplateField[] })[];
-  // Default values when creating from palette drag
   defaultType?: FieldType;
   defaultLabel?: string;
   defaultPlaceholder?: string;
   defaultRequired?: boolean;
 }
 
-const fieldTypeOptions: { value: FieldType; label: string; description?: string; group: string }[] = [
-  // Composite fields (most feature-rich)
-  { value: "party", label: "Party (Name + Address)", description: "Business/person with full address - Google Places ready", group: "Composite" },
-  { value: "address", label: "Address", description: "Full address (street, city, state, postal, country)", group: "Composite" },
-  { value: "phone", label: "Phone", description: "Phone number with country code selector", group: "Composite" },
-  { value: "currency", label: "Currency Amount", description: "Amount with currency selector (CHF, EUR, USD)", group: "Composite" },
-  // Specialized fields
-  { value: "percentage", label: "Percentage", description: "0-100% input with validation", group: "Specialized" },
-  { value: "url", label: "URL / Website", description: "Link with validation and preview", group: "Specialized" },
-  { value: "textarea", label: "Long Text", description: "Multi-line text for descriptions", group: "Specialized" },
-  // Basic fields
-  { value: "text", label: "Text", description: "Single-line text input", group: "Basic" },
-  { value: "email", label: "Email", description: "Email with validation", group: "Basic" },
-  { value: "date", label: "Date", description: "Date picker", group: "Basic" },
-  { value: "number", label: "Number", description: "Numeric input (not for money!)", group: "Basic" },
-  { value: "checkbox", label: "Checkbox", description: "Yes/No toggle", group: "Basic" },
-  { value: "select", label: "Select / Dropdown", description: "Fixed options dropdown", group: "Basic" },
-  { value: "multiselect", label: "Multi-Select", description: "Multiple options (checkboxes)", group: "Basic" },
+// Field type options with icons
+const fieldTypeOptions: { value: FieldType; label: string; description: string; icon: React.ComponentType<{ className?: string }>; group: string }[] = [
+  // Composite fields
+  { value: "party", label: "Party", description: "Name + Address with Google Places", icon: Building2, group: "Composite" },
+  { value: "address", label: "Address", description: "Full address fields", icon: MapPin, group: "Composite" },
+  { value: "phone", label: "Phone", description: "With country code", icon: Phone, group: "Composite" },
+  { value: "currency", label: "Currency", description: "Amount with symbol", icon: DollarSign, group: "Composite" },
+  // Specialized
+  { value: "percentage", label: "Percentage", description: "0-100% input", icon: Percent, group: "Specialized" },
+  { value: "url", label: "URL", description: "Link with validation", icon: Link2, group: "Specialized" },
+  { value: "textarea", label: "Long Text", description: "Multi-line text", icon: AlignLeft, group: "Specialized" },
+  // Basic
+  { value: "text", label: "Text", description: "Single-line input", icon: Type, group: "Basic" },
+  { value: "email", label: "Email", description: "Email with validation", icon: Mail, group: "Basic" },
+  { value: "date", label: "Date", description: "Date picker", icon: Calendar, group: "Basic" },
+  { value: "number", label: "Number", description: "Numeric input", icon: Hash, group: "Basic" },
+  { value: "checkbox", label: "Checkbox", description: "Yes/No toggle", icon: CheckSquare, group: "Basic" },
+  { value: "select", label: "Select", description: "Dropdown options", icon: List, group: "Basic" },
+  { value: "multiselect", label: "Multi-Select", description: "Multiple choices", icon: List, group: "Basic" },
 ];
+
+// Wizard step definitions
+type WizardStep = "basics" | "type" | "options" | "details" | "advanced" | "review";
+
+const getSteps = (fieldType: FieldType): WizardStep[] => {
+  const steps: WizardStep[] = ["basics", "type"];
+  if (fieldType === "select" || fieldType === "multiselect") {
+    steps.push("options");
+  }
+  steps.push("details", "advanced", "review");
+  return steps;
+};
+
+// Animation variants
+const slideVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? 300 : -300,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (direction: number) => ({
+    x: direction < 0 ? 300 : -300,
+    opacity: 0,
+  }),
+};
 
 export function FieldEditor({
   open,
@@ -128,82 +172,52 @@ export function FieldEditor({
   const [error, setError] = useState<string | null>(null);
   const [options, setOptions] = useState<string[]>([]);
   const [newOption, setNewOption] = useState("");
-  const [aiSectionExpanded, setAiSectionExpanded] = useState(false);
-  const [variablesSectionExpanded, setVariablesSectionExpanded] = useState(false);
-  const [uilmSectionExpanded, setUilmSectionExpanded] = useState(false);
-  const [activeInputField, setActiveInputField] = useState<"label" | "placeholder" | "helpText" | null>(null);
   const [uilmOptionsKeys, setUilmOptionsKeys] = useState<string[]>([]);
   const [conditions, setConditions] = useState<ConditionGroup | null>(null);
 
-  // Compute available AI context keys from previous screens if not provided
+  // Wizard state
+  const [currentStep, setCurrentStep] = useState<WizardStep>("basics");
+  const [direction, setDirection] = useState(0);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Compute context keys from previous screens
   const computedContextKeys: AvailableContextKey[] = useMemo(() => {
-    // If already provided, use the prop
-    if (availableContextKeys.length > 0) {
-      return availableContextKeys;
-    }
-    
-    // Otherwise, compute from allScreens
+    if (availableContextKeys.length > 0) return availableContextKeys;
     const keys: AvailableContextKey[] = [];
-    
     if (!currentScreen) return keys;
     
-    // Get previous screens (those with order < current screen's order)
     const previousScreens = allScreens
       .filter((s) => s.order < currentScreen.order)
       .sort((a, b) => a.order - b.order);
 
     previousScreens.forEach((prevScreen) => {
       const schemaStr = (prevScreen as any).aiOutputSchema;
-      if (!schemaStr || !schemaStr.trim()) return;
-
+      if (!schemaStr?.trim()) return;
       try {
         const schema = JSON.parse(schemaStr);
         if (schema.type === "object" && schema.properties) {
-          // Flatten schema properties to get all fields
-          const flattenProperties = (properties: Record<string, any>, prefix = ""): void => {
-            Object.entries(properties).forEach(([key, value]: [string, any]) => {
-              const fullKey = prefix ? `${prefix}.${key}` : key;
+          Object.entries(schema.properties).forEach(([key, value]: [string, any]) => {
               keys.push({
                 screenTitle: prevScreen.title,
-                key: fullKey,
+              key,
                 type: value.type || "unknown",
-                fullPath: fullKey,
+              fullPath: key,
               });
-
-              // Recursively handle nested objects
-              if (value.type === "object" && value.properties) {
-                flattenProperties(value.properties, fullKey);
-              }
             });
-          };
-
-          flattenProperties(schema.properties);
         }
-      } catch (e) {
-        console.error(`Failed to parse schema for screen ${prevScreen.title}`, e);
-      }
+      } catch {}
     });
-
     return keys;
   }, [availableContextKeys, allScreens, currentScreen]);
 
-  // Check if there are any variables available
-  const hasVariables = availableFormFields.length > 0 || computedContextKeys.length > 0;
-
-  // Compute available fields for condition editor
-  // Includes fields from previous screens AND fields before this one on the current screen
+  // Available fields for conditions
   const availableFieldsForConditions: AvailableField[] = useMemo(() => {
     const fields: AvailableField[] = [];
-    
     if (!currentScreen) return fields;
     
-    // Get the order of current screen
     const currentScreenOrder = currentScreen.order;
-    
-    // Get the order of current field (or last position if new field)
     const currentFieldOrder = field?.order ?? (currentScreen.fields?.length ?? 0);
     
-    // Add fields from previous screens
     const previousScreens = allScreens
       .filter((s) => s.order < currentScreenOrder)
       .sort((a, b) => a.order - b.order);
@@ -221,11 +235,9 @@ export function FieldEditor({
       }
     });
     
-    // Add fields from current screen that come before this field
     if (currentScreen.fields) {
       currentScreen.fields
         .filter((f) => f.order < currentFieldOrder && f.id !== field?.id)
-        .sort((a, b) => a.order - b.order)
         .forEach((f) => {
           fields.push({
             name: f.name,
@@ -239,23 +251,13 @@ export function FieldEditor({
     return fields;
   }, [currentScreen, allScreens, field?.order, field?.id]);
 
-  // Insert variable into the active text field
-  const insertVariable = (variableSyntax: string) => {
-    if (!activeInputField) {
-      toast.info("Click on Label, Placeholder, or Help Text field first to insert the variable");
-      return;
-    }
-    const currentValue = watch(activeInputField) || "";
-    setValue(activeInputField, currentValue + variableSyntax, { shouldDirty: true });
-    toast.success(`Inserted ${variableSyntax} into ${activeInputField}`);
-  };
-
   const {
     register,
     handleSubmit,
     reset,
     watch,
     setValue,
+    trigger,
     formState: { errors },
   } = useForm<FieldFormData>({
     resolver: zodResolver(fieldSchema),
@@ -277,13 +279,15 @@ export function FieldEditor({
   });
 
   const fieldType = watch("type");
+  const fieldName = watch("name");
+  const fieldLabel = watch("label");
+  const steps = getSteps(fieldType);
+  const currentStepIndex = steps.indexOf(currentStep);
 
-  // Reset form when dialog opens/closes or field changes
+  // Reset form when dialog opens
   useEffect(() => {
     if (open) {
       if (field) {
-        const aiEnabled = (field as any).aiSuggestionEnabled ?? false;
-        const hasUilmKeys = !!(field as any).uilmLabelKey || !!(field as any).uilmPlaceholderKey || !!(field as any).uilmHelpTextKey;
         reset({
           name: field.name,
           label: field.label,
@@ -292,7 +296,7 @@ export function FieldEditor({
           placeholder: field.placeholder || "",
           helpText: field.helpText || "",
           options: field.options || [],
-          aiSuggestionEnabled: aiEnabled,
+          aiSuggestionEnabled: (field as any).aiSuggestionEnabled ?? false,
           aiSuggestionKey: (field as any).aiSuggestionKey || "",
           uilmLabelKey: (field as any).uilmLabelKey || "",
           uilmPlaceholderKey: (field as any).uilmPlaceholderKey || "",
@@ -301,9 +305,6 @@ export function FieldEditor({
         });
         setOptions(field.options || []);
         setUilmOptionsKeys((field as any).uilmOptionsKeys || []);
-        setAiSectionExpanded(aiEnabled);
-        setUilmSectionExpanded(hasUilmKeys);
-        // Load conditions from field
         const fieldConditions = (field as any).conditions;
         if (fieldConditions) {
           try {
@@ -314,8 +315,12 @@ export function FieldEditor({
         } else {
           setConditions(null);
         }
+        setShowAdvanced(
+          !!(field as any).aiSuggestionEnabled ||
+          !!(field as any).uilmLabelKey ||
+          !!(field as any).conditions
+        );
       } else {
-        // Use default values from palette drag if provided
         reset({
           name: "",
           label: defaultLabel || "",
@@ -333,14 +338,48 @@ export function FieldEditor({
         });
         setOptions([]);
         setUilmOptionsKeys([]);
-        setAiSectionExpanded(false);
-        setUilmSectionExpanded(false);
         setConditions(null);
+        setShowAdvanced(false);
       }
+      setCurrentStep("basics");
+      setDirection(0);
       setError(null);
       setNewOption("");
     }
   }, [open, field, reset, defaultType, defaultLabel, defaultPlaceholder, defaultRequired]);
+
+  // Navigation handlers
+  const goToStep = (step: WizardStep) => {
+    const targetIndex = steps.indexOf(step);
+    setDirection(targetIndex > currentStepIndex ? 1 : -1);
+    setCurrentStep(step);
+  };
+
+  const goNext = async () => {
+    // Validate current step before proceeding
+    if (currentStep === "basics") {
+      const valid = await trigger(["name", "label"]);
+      if (!valid) return;
+    }
+    if (currentStep === "options" && (fieldType === "select" || fieldType === "multiselect") && options.length === 0) {
+      toast.error("Add at least one option");
+      return;
+    }
+    
+    const nextIndex = currentStepIndex + 1;
+    if (nextIndex < steps.length) {
+      setDirection(1);
+      setCurrentStep(steps[nextIndex]);
+    }
+  };
+
+  const goBack = () => {
+    const prevIndex = currentStepIndex - 1;
+    if (prevIndex >= 0) {
+      setDirection(-1);
+      setCurrentStep(steps[prevIndex]);
+    }
+  };
 
   const addOption = () => {
     if (newOption.trim() && !options.includes(newOption.trim())) {
@@ -362,21 +401,17 @@ export function FieldEditor({
     setError(null);
 
     try {
-      // Include options for select type and AI suggestion fields
       const payload: Record<string, unknown> = {
         ...data,
         options: (fieldType === "select" || fieldType === "multiselect") ? options : [],
         aiSuggestionEnabled: data.aiSuggestionEnabled ?? false,
-        // UILM Translation Keys
         uilmLabelKey: data.uilmLabelKey?.trim() || null,
         uilmPlaceholderKey: data.uilmPlaceholderKey?.trim() || null,
         uilmHelpTextKey: data.uilmHelpTextKey?.trim() || null,
           uilmOptionsKeys: (fieldType === "select" || fieldType === "multiselect") ? uilmOptionsKeys : [],
-        // Conditional visibility
         conditions: conditions ? JSON.stringify(conditions) : null,
       };
       
-      // Only include aiSuggestionKey if it has a value, otherwise don't include it
       if (data.aiSuggestionEnabled && data.aiSuggestionKey?.trim()) {
         payload.aiSuggestionKey = data.aiSuggestionKey.trim();
       } else {
@@ -398,10 +433,7 @@ export function FieldEditor({
         throw new Error(errorData.error || "Failed to save field");
       }
 
-      // Show success message
       toast.success(field ? "Field updated successfully" : "Field created successfully");
-      
-      // Close modal and refresh
       onOpenChange(false);
       onSaved();
     } catch (err) {
@@ -413,479 +445,386 @@ export function FieldEditor({
     }
   };
 
+  // Progress bar component
+  const ProgressBar = () => (
+    <div className="flex items-center justify-center gap-2 mb-8">
+      {steps.map((step, index) => {
+        const isActive = index === currentStepIndex;
+        const isCompleted = index < currentStepIndex;
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogHeader>
-            <DialogTitle>{field ? "Edit Field" : "Add Field"}</DialogTitle>
-            <DialogDescription>
-              {field
-                ? "Update the field properties."
-                : "Create a new form field for this screen."}
-            </DialogDescription>
-          </DialogHeader>
+          <div key={step} className="flex items-center">
+            <button
+              type="button"
+              onClick={() => index < currentStepIndex && goToStep(step)}
+              disabled={index > currentStepIndex}
+              className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all",
+                isActive && "bg-[hsl(var(--selise-blue))] text-white scale-110",
+                isCompleted && "bg-[hsl(var(--lime-green))] text-white cursor-pointer hover:scale-105",
+                !isActive && !isCompleted && "bg-[hsl(var(--muted))] text-[hsl(var(--globe-grey))]"
+              )}
+            >
+              {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
+            </button>
+            {index < steps.length - 1 && (
+              <div
+                className={cn(
+                  "w-8 h-0.5 mx-1",
+                  index < currentStepIndex
+                    ? "bg-[hsl(var(--lime-green))]"
+                    : "bg-[hsl(var(--muted))]"
+                )}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 
-          <div className="space-y-4 py-4">
-            {/* Field Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name">Field Name *</Label>
+  // Step 1: Basics
+  const BasicsStep = () => (
+    <div className="space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold text-[hsl(var(--fg))] font-heading">
+          Let's start with the basics
+        </h2>
+        <p className="text-[hsl(var(--globe-grey))]">
+          Give your field a name and label
+        </p>
+      </div>
+
+      <div className="space-y-6 max-w-md mx-auto">
+        <div className="space-y-3">
+          <Label htmlFor="name" className="text-base font-medium">
+            Field Name
+          </Label>
               <Input
                 id="name"
                 placeholder="e.g., companyName"
                 {...register("name")}
+            className="h-12 text-lg"
+            autoFocus
               />
-              <p className="text-xs text-[hsl(var(--globe-grey))]">
-                Used as the key in form data. Start with letter, alphanumeric only.
+          <p className="text-sm text-[hsl(var(--globe-grey))]">
+            Used as the key in form data. Start with a letter, alphanumeric only.
               </p>
               {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
+            <p className="text-sm text-[hsl(var(--destructive))]">{errors.name.message}</p>
               )}
             </div>
 
-            {/* Label */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="label">Label *</Label>
-                {hasVariables && activeInputField === "label" && (
-                  <span className="text-xs text-[hsl(var(--selise-blue))]">← Insert variables below</span>
-                )}
-              </div>
+        <div className="space-y-3">
+          <Label htmlFor="label" className="text-base font-medium">
+            Label
+          </Label>
               <Input
                 id="label"
-                placeholder="e.g., Company Name or Email for {{employeeName}}"
+            placeholder="e.g., Company Name"
                 {...register("label")}
-                onFocus={() => setActiveInputField("label")}
-                className={activeInputField === "label" ? "ring-2 ring-[hsl(var(--selise-blue))]/30" : ""}
+            className="h-12 text-lg"
               />
+          <p className="text-sm text-[hsl(var(--globe-grey))]">
+            What users will see when filling out the form.
+          </p>
               {errors.label && (
-                <p className="text-sm text-destructive">{errors.label.message}</p>
+            <p className="text-sm text-[hsl(var(--destructive))]">{errors.label.message}</p>
               )}
             </div>
+      </div>
+    </div>
+  );
 
-            {/* Type */}
-            <div className="space-y-2">
-              <Label htmlFor="type">Field Type *</Label>
-              <Select
-                value={fieldType}
-                onValueChange={(value) => setValue("type", value as FieldType)}
+  // Step 2: Type Selection
+  const TypeStep = () => {
+    const groups = ["Composite", "Specialized", "Basic"];
+    
+    return (
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold text-[hsl(var(--fg))] font-heading">
+            What type of field is this?
+          </h2>
+          <p className="text-[hsl(var(--globe-grey))]">
+            Choose the best match for your data
+          </p>
+                  </div>
+
+        <div className="space-y-6">
+          {groups.map((group) => (
+            <div key={group} className="space-y-3">
+              <h3 className={cn(
+                "text-xs font-semibold uppercase tracking-wider px-1",
+                group === "Composite" && "text-[hsl(var(--selise-blue))]",
+                group === "Specialized" && "text-[hsl(var(--poly-green))]",
+                group === "Basic" && "text-[hsl(var(--globe-grey))]"
+              )}>
+                {group}
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {fieldTypeOptions.filter(o => o.group === group).map((option) => {
+                  const Icon = option.icon;
+                  const isSelected = fieldType === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setValue("type", option.value)}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center",
+                        isSelected
+                          ? "border-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/5 scale-105"
+                          : "border-[hsl(var(--border))] hover:border-[hsl(var(--selise-blue))]/50 hover:bg-[hsl(var(--muted))]/50"
+                      )}
+                    >
+                      <Icon className={cn(
+                        "h-6 w-6",
+                        isSelected ? "text-[hsl(var(--selise-blue))]" : "text-[hsl(var(--globe-grey))]"
+                      )} />
+                      <span className={cn(
+                        "font-medium text-sm",
+                        isSelected ? "text-[hsl(var(--selise-blue))]" : "text-[hsl(var(--fg))]"
+                      )}>
+                        {option.label}
+                      </span>
+                      <span className="text-xs text-[hsl(var(--globe-grey))] line-clamp-2">
+                        {option.description}
+                      </span>
+                    </button>
+                  );
+                })}
+                      </div>
+            </div>
+                  ))}
+                  </div>
+                      </div>
+    );
+  };
+
+  // Step 3: Options (for select/multiselect)
+  const OptionsStep = () => (
+    <div className="space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold text-[hsl(var(--fg))] font-heading">
+          Add your options
+        </h2>
+        <p className="text-[hsl(var(--globe-grey))]">
+          These will appear in the dropdown for users to select
+        </p>
+                  </div>
+
+      <div className="max-w-md mx-auto space-y-4">
+        <div className="flex gap-2">
+          <Input
+            value={newOption}
+            onChange={(e) => setNewOption(e.target.value)}
+            placeholder="Type an option and press Enter..."
+            className="h-12 text-lg"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addOption();
+              }
+            }}
+            autoFocus
+          />
+          <Button
+            type="button"
+            onClick={addOption}
+            disabled={!newOption.trim()}
+            className="h-12 px-4"
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+                      </div>
+
+        {options.length > 0 ? (
+          <div className="space-y-2">
+            {options.map((option, index) => (
+              <motion.div
+                key={option}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -100 }}
+                className="flex items-center justify-between p-3 rounded-lg bg-[hsl(var(--muted))]/50 border border-[hsl(var(--border))]"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select field type" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[400px]">
-                  {/* Composite Fields */}
-                  <div className="px-2 py-1.5 text-xs font-semibold text-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/5">
-                    Composite Fields (Recommended)
-                  </div>
-                  {fieldTypeOptions.filter(o => o.group === "Composite").map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{option.label}</span>
-                        {option.description && (
-                          <span className="text-xs text-[hsl(var(--globe-grey))]">{option.description}</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                  {/* Specialized Fields */}
-                  <div className="px-2 py-1.5 text-xs font-semibold text-[hsl(var(--poly-green))] bg-[hsl(var(--poly-green))]/5 mt-1">
-                    Specialized Fields
-                  </div>
-                  {fieldTypeOptions.filter(o => o.group === "Specialized").map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{option.label}</span>
-                        {option.description && (
-                          <span className="text-xs text-[hsl(var(--globe-grey))]">{option.description}</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                  {/* Basic Fields */}
-                  <div className="px-2 py-1.5 text-xs font-semibold text-[hsl(var(--globe-grey))] bg-[hsl(var(--muted))]/50 mt-1">
-                    Basic Fields
-                  </div>
-                  {fieldTypeOptions.filter(o => o.group === "Basic").map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{option.label}</span>
-                        {option.description && (
-                          <span className="text-xs text-[hsl(var(--globe-grey))]">{option.description}</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.type && (
-                <p className="text-sm text-destructive">{errors.type.message}</p>
-              )}
-              {/* Field type hint */}
-              {fieldType && (
-                <p className="text-xs text-[hsl(var(--globe-grey))]">
-                  {fieldTypeOptions.find(o => o.value === fieldType)?.description}
-                </p>
-              )}
+                <span className="font-medium">{option}</span>
+                <button
+                  type="button"
+                  onClick={() => removeOption(index)}
+                  className="p-1 hover:bg-[hsl(var(--destructive))]/10 rounded text-[hsl(var(--destructive))]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-[hsl(var(--globe-grey))]">
+            <List className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>No options added yet</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Step 4: Details
+  const DetailsStep = () => (
+    <div className="space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold text-[hsl(var(--fg))] font-heading">
+          Fine-tune the details
+        </h2>
+        <p className="text-[hsl(var(--globe-grey))]">
+          Make it helpful for your users
+        </p>
             </div>
 
-            {/* Required Toggle */}
-            <div className="flex items-center gap-3">
+      <div className="space-y-6 max-w-md mx-auto">
+        {/* Required toggle */}
+        <label className="flex items-center gap-4 p-4 rounded-xl border border-[hsl(var(--border))] cursor-pointer hover:bg-[hsl(var(--muted))]/50 transition-colors">
               <input
                 type="checkbox"
-                id="required"
                 {...register("required")}
-                className="h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
-              />
-              <Label htmlFor="required" className="cursor-pointer">
-                Required field
-              </Label>
+            className="h-5 w-5 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
+          />
+          <div>
+            <span className="font-medium text-[hsl(var(--fg))]">Required field</span>
+            <p className="text-sm text-[hsl(var(--globe-grey))]">
+              Users must fill this out to proceed
+            </p>
             </div>
+        </label>
 
-            {/* Placeholder (not for checkbox) */}
+        {/* Placeholder */}
             {fieldType !== "checkbox" && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="placeholder">Placeholder</Label>
-                  {hasVariables && activeInputField === "placeholder" && (
-                    <span className="text-xs text-[hsl(var(--selise-blue))]">← Insert variables below</span>
-                  )}
-                </div>
+          <div className="space-y-3">
+            <Label htmlFor="placeholder" className="text-base font-medium">
+              Placeholder text
+            </Label>
                 <Input
                   id="placeholder"
-                  placeholder="e.g., Enter {{companyName}}'s email..."
+              placeholder="e.g., Enter your company name..."
                   {...register("placeholder")}
-                  onFocus={() => setActiveInputField("placeholder")}
-                  className={activeInputField === "placeholder" ? "ring-2 ring-[hsl(var(--selise-blue))]/30" : ""}
+              className="h-12"
                 />
               </div>
             )}
 
-            {/* Help Text */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="helpText">Help Text</Label>
-                {hasVariables && activeInputField === "helpText" && (
-                  <span className="text-xs text-[hsl(var(--selise-blue))]">← Insert variables below</span>
-                )}
-              </div>
+        {/* Help text */}
+        <div className="space-y-3">
+          <Label htmlFor="helpText" className="text-base font-medium">
+            Help text
+          </Label>
               <Input
                 id="helpText"
-                placeholder="e.g., Work email for {{employeeName}} at {{companyName}}"
+            placeholder="e.g., This should match your official registration"
                 {...register("helpText")}
-                onFocus={() => setActiveInputField("helpText")}
-                className={activeInputField === "helpText" ? "ring-2 ring-[hsl(var(--selise-blue))]/30" : ""}
-              />
-            </div>
-
-            {/* Template Variables Section */}
-            {hasVariables && (
-              <div className="border border-[hsl(var(--border))] rounded-lg overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setVariablesSectionExpanded(!variablesSectionExpanded)}
-                  className="w-full flex items-center justify-between p-3 bg-[hsl(var(--poly-green))]/5 hover:bg-[hsl(var(--poly-green))]/10 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Variable className="h-4 w-4 text-[hsl(var(--poly-green))]" />
-                    <span className="font-medium text-sm text-[hsl(var(--fg))]">
-                      Template Variables
-                    </span>
-                    <Badge variant="secondary" className="text-xs">
-                      {availableFormFields.length + computedContextKeys.length}
-                    </Badge>
-                  </div>
-                  {variablesSectionExpanded ? (
-                    <ChevronUp className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
-                  )}
-                </button>
-                
-                {variablesSectionExpanded && (
-                  <div className="p-4 space-y-4 border-t border-[hsl(var(--border))]">
-                    <p className="text-xs text-[hsl(var(--globe-grey))]">
-                      Click on <strong>Label</strong>, <strong>Placeholder</strong>, or <strong>Help Text</strong> field above, then click a variable below to insert it. 
-                      Variables will be replaced with actual values when the form is rendered.
-                    </p>
-                    
-                    {activeInputField && (
-                      <div className="flex items-center gap-2 p-2 bg-[hsl(var(--selise-blue))]/10 rounded-md text-xs text-[hsl(var(--selise-blue))]">
-                        <span>Inserting into: <strong>{activeInputField}</strong></span>
+            className="h-12"
+          />
+          <p className="text-sm text-[hsl(var(--globe-grey))]">
+            Additional context shown below the field
+          </p>
                       </div>
-                    )}
-
-                    {/* Form Fields from Previous Steps */}
-                    {availableFormFields.length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-[hsl(var(--globe-grey))] uppercase tracking-wider">
-                          Form Fields from Previous Steps
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {availableFormFields.map((formField, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => insertVariable(formField.variableSyntax)}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-white border border-[hsl(var(--border))] text-[hsl(var(--fg))] hover:border-[hsl(var(--poly-green))] hover:bg-[hsl(var(--poly-green))]/5 transition-colors"
-                              title={`Insert ${formField.variableSyntax} - from ${formField.screenTitle}`}
-                            >
-                              <Copy className="h-3 w-3" />
-                              {formField.fieldName}
-                              <span className="opacity-50">({formField.fieldType})</span>
-                            </button>
-                          ))}
                         </div>
                       </div>
-                    )}
+  );
 
-                    {/* AI Context from Previous Steps */}
-                    {computedContextKeys.length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-[hsl(var(--globe-grey))] uppercase tracking-wider">
-                          AI Context from Previous Steps
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                          {computedContextKeys.map((ctx, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => insertVariable(`{{${ctx.fullPath}}}`)}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-white border border-[hsl(var(--border))] text-[hsl(var(--fg))] hover:border-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/5 transition-colors"
-                              title={`Insert {{${ctx.fullPath}}} - from ${ctx.screenTitle}`}
-                            >
-                              <Sparkles className="h-3 w-3" />
-                              {ctx.key}
-                              <span className="opacity-50">({ctx.type})</span>
-                            </button>
-                          ))}
-                        </div>
-                        <p className="text-xs text-[hsl(var(--globe-grey))] italic">
-                          AI context values include a fallback - if unavailable, the variable name will be shown.
+  // Step 5: Advanced
+  const AdvancedStep = () => (
+    <div className="space-y-6">
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold text-[hsl(var(--fg))] font-heading">
+          Advanced options
+        </h2>
+        <p className="text-[hsl(var(--globe-grey))]">
+          Optional features for power users
                         </p>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
 
-            {/* AI Smart Suggestions Section */}
-            <div className="border border-[hsl(var(--border))] rounded-lg overflow-hidden">
+      <div className="space-y-4 max-w-lg mx-auto">
+        {/* AI Smart Suggestions */}
+        <div className="border border-[hsl(var(--border))] rounded-xl overflow-hidden">
               <button
                 type="button"
-                onClick={() => setAiSectionExpanded(!aiSectionExpanded)}
-                className="w-full flex items-center justify-between p-3 bg-[hsl(var(--selise-blue))]/5 hover:bg-[hsl(var(--selise-blue))]/10 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-[hsl(var(--selise-blue))]" />
-                  <span className="font-medium text-sm text-[hsl(var(--fg))]">
-                    AI Smart Suggestions
-                  </span>
-                  {watch("aiSuggestionEnabled") && watch("aiSuggestionKey") && (
-                    <Badge variant="secondary" className="text-xs bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]">
-                      {watch("aiSuggestionKey")}
-                    </Badge>
-                  )}
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center justify-between p-4 bg-[hsl(var(--selise-blue))]/5 hover:bg-[hsl(var(--selise-blue))]/10 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
+              <span className="font-medium">AI Smart Suggestions</span>
                 </div>
-                {aiSectionExpanded ? (
-                  <ChevronUp className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
-                )}
+            {showAdvanced ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
               </button>
               
-              {aiSectionExpanded && (
+          {showAdvanced && (
                 <div className="p-4 space-y-4 border-t border-[hsl(var(--border))]">
-                  <p className="text-xs text-[hsl(var(--globe-grey))]">
-                    Map this field to a value from AI Enrichment context. Users can auto-fill with one click.
-                  </p>
-                  
-                  {/* Enable Toggle */}
-                  <div className="flex items-center gap-3">
+              <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      id="aiSuggestionEnabled"
                       {...register("aiSuggestionEnabled")}
-                      className="h-4 w-4 rounded border-[hsl(var(--border))] text-[hsl(var(--selise-blue))] focus:ring-[hsl(var(--selise-blue))]"
-                    />
-                    <Label htmlFor="aiSuggestionEnabled" className="cursor-pointer text-sm">
-                      Enable AI suggestion from enrichment context
-                    </Label>
-                  </div>
-
-                  {/* Key Selection (only shown when enabled) */}
-                  {watch("aiSuggestionEnabled") && (
-                    <div className="space-y-3">
-                      {/* Available Context Keys */}
-                      {computedContextKeys.length > 0 ? (
+                  className="h-4 w-4 rounded"
+                />
+                <span className="text-sm">Enable AI suggestion from enrichment context</span>
+              </label>
+              
+              {watch("aiSuggestionEnabled") && computedContextKeys.length > 0 && (
                         <div className="space-y-2">
-                          <Label className="text-sm">
-                            Select from Available Context Keys
-                          </Label>
-                          <div className="flex flex-wrap gap-2 p-3 bg-[hsl(var(--muted))]/30 rounded-lg border border-[hsl(var(--border))]">
-                            {computedContextKeys.map((ctx, idx) => {
-                              const isSelected = watch("aiSuggestionKey") === ctx.fullPath;
-                              return (
+                  <Label className="text-sm">Select context key</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {computedContextKeys.map((ctx, idx) => (
                                 <button
                                   key={idx}
                                   type="button"
-                                  onClick={() => setValue("aiSuggestionKey", ctx.fullPath, { shouldDirty: true })}
-                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-all ${
-                                    isSelected
-                                      ? "bg-[hsl(var(--selise-blue))] text-white ring-2 ring-[hsl(var(--selise-blue))]/30"
-                                      : "bg-white border border-[hsl(var(--border))] text-[hsl(var(--fg))] hover:border-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/5"
-                                  }`}
-                                >
-                                  <Sparkles className="h-3 w-3" />
-                                  <span>{ctx.key}</span>
-                                  <span className={`text-[10px] ${isSelected ? "opacity-70" : "opacity-50"}`}>
-                                    ({ctx.type})
-                                  </span>
+                        onClick={() => setValue("aiSuggestionKey", ctx.fullPath)}
+                        className={cn(
+                          "px-3 py-1.5 text-sm rounded-lg border transition-all",
+                          watch("aiSuggestionKey") === ctx.fullPath
+                            ? "border-[hsl(var(--selise-blue))] bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]"
+                            : "border-[hsl(var(--border))] hover:border-[hsl(var(--selise-blue))]"
+                        )}
+                      >
+                        {ctx.key}
                                 </button>
-                              );
-                            })}
+                    ))}
                           </div>
-                          <p className="text-xs text-[hsl(var(--globe-grey))]">
-                            These keys are from AI Output Schema of previous screens. Click to select.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="p-3 bg-[hsl(var(--muted))]/30 rounded-lg border border-dashed border-[hsl(var(--border))]">
-                          <p className="text-xs text-[hsl(var(--globe-grey))] text-center">
-                            No AI context keys available. Configure AI Enrichment on previous screens first.
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Manual Input (fallback/override) */}
-                      <div className="space-y-2">
-                        <Label htmlFor="aiSuggestionKey" className="text-sm text-[hsl(var(--globe-grey))]">
-                          Or enter key manually
-                        </Label>
-                        <Input
-                          id="aiSuggestionKey"
-                          placeholder="e.g., suggestedEmail or currency"
-                          {...register("aiSuggestionKey")}
-                          className="text-sm"
-                        />
-                      </div>
-
-                      {/* Selected Key Display */}
-                      {watch("aiSuggestionKey") && (
-                        <div className="flex items-center gap-2 p-2 bg-[hsl(var(--lime-green))]/10 rounded-md border border-[hsl(var(--lime-green))]/20">
-                          <Sparkles className="h-4 w-4 text-[hsl(var(--poly-green))]" />
-                          <span className="text-sm font-medium text-[hsl(var(--poly-green))]">
-                            Selected: {watch("aiSuggestionKey")}
-                          </span>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* UILM Translations Section */}
-            <div className="border border-[hsl(var(--poly-green))]/30 rounded-lg overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setUilmSectionExpanded(!uilmSectionExpanded)}
-                className="w-full flex items-center justify-between p-3 bg-[hsl(var(--poly-green))]/5 hover:bg-[hsl(var(--poly-green))]/10 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Languages className="h-4 w-4 text-[hsl(var(--poly-green))]" />
-                  <span className="font-medium text-sm text-[hsl(var(--fg))]">
-                    Translations (UILM)
-                  </span>
-                  {(watch("uilmLabelKey") || watch("uilmPlaceholderKey") || watch("uilmHelpTextKey")) && (
-                    <Badge variant="secondary" className="text-xs bg-[hsl(var(--poly-green))]/10 text-[hsl(var(--poly-green))]">
-                      Configured
-                    </Badge>
-                  )}
+        {/* UILM Translations */}
+        <div className="border border-[hsl(var(--poly-green))]/30 rounded-xl overflow-hidden">
+          <div className="p-4 bg-[hsl(var(--poly-green))]/5">
+            <div className="flex items-center gap-3">
+              <Languages className="h-5 w-5 text-[hsl(var(--poly-green))]" />
+              <span className="font-medium">Translations (UILM)</span>
                 </div>
-                {uilmSectionExpanded ? (
-                  <ChevronUp className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-[hsl(var(--globe-grey))]" />
-                )}
-              </button>
-              
-              {uilmSectionExpanded && (
-                <div className="p-4 space-y-4 border-t border-[hsl(var(--poly-green))]/20">
-                  <p className="text-xs text-[hsl(var(--globe-grey))]">
-                    Map field content to UILM keys for multi-language support.
-                  </p>
-                  
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="uilmLabelKey" className="text-sm">Label Key</Label>
+          </div>
+          <div className="p-4 space-y-3 border-t border-[hsl(var(--poly-green))]/20">
+            <div className="grid gap-3">
+              <div>
+                <Label className="text-sm">Label Key</Label>
                       <Input
-                        id="uilmLabelKey"
                         placeholder="e.g., FIELD_COMPANY_NAME_LABEL"
                         {...register("uilmLabelKey")}
                         className="font-mono text-sm"
                       />
                     </div>
-                    
                     {fieldType !== "checkbox" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="uilmPlaceholderKey" className="text-sm">Placeholder Key</Label>
+                <div>
+                  <Label className="text-sm">Placeholder Key</Label>
                         <Input
-                          id="uilmPlaceholderKey"
                           placeholder="e.g., FIELD_COMPANY_NAME_PLACEHOLDER"
                           {...register("uilmPlaceholderKey")}
                           className="font-mono text-sm"
                         />
                       </div>
                     )}
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="uilmHelpTextKey" className="text-sm">Help Text Key</Label>
-                      <Input
-                        id="uilmHelpTextKey"
-                        placeholder="e.g., FIELD_COMPANY_NAME_HELP"
-                        {...register("uilmHelpTextKey")}
-                        className="font-mono text-sm"
-                      />
                     </div>
-
-                    {/* UILM Options Keys (for select and multiselect types) */}
-                    {(fieldType === "select" || fieldType === "multiselect") && options.length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="text-sm">Option Keys</Label>
-                        <p className="text-xs text-[hsl(var(--globe-grey))]">
-                          UILM keys for each select option (in same order as options above)
-                        </p>
-                        <div className="space-y-2">
-                          {options.map((option, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <span className="text-xs text-[hsl(var(--globe-grey))] min-w-[100px] truncate">
-                                {option}:
-                              </span>
-                              <Input
-                                placeholder={`e.g., OPTION_${option.toUpperCase().replace(/\s+/g, '_')}`}
-                                value={uilmOptionsKeys[index] || ""}
-                                onChange={(e) => {
-                                  const newKeys = [...uilmOptionsKeys];
-                                  newKeys[index] = e.target.value;
-                                  setUilmOptionsKeys(newKeys);
-                                  setValue("uilmOptionsKeys", newKeys, { shouldDirty: true });
-                                }}
-                                className="font-mono text-sm flex-1"
-                              />
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="text-xs text-[hsl(var(--globe-grey))] p-2 bg-[hsl(var(--muted))]/30 rounded-md">
-                    Module: templates (ID: 03e5475d-506d-4ad1-8d07-23fa768a7925)
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Conditional Visibility */}
@@ -894,90 +833,189 @@ export function FieldEditor({
               onChange={setConditions}
               availableFields={availableFieldsForConditions}
               label="Conditional Visibility"
-              description="Show this field only when specific conditions are met based on other form responses."
-            />
+          description="Show this field only when specific conditions are met"
+        />
+      </div>
+    </div>
+  );
 
-            {/* Options (for select and multiselect types) */}
-            {(fieldType === "select" || fieldType === "multiselect") && (
-              <div className="space-y-2">
-                <Label>Options</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={newOption}
-                    onChange={(e) => setNewOption(e.target.value)}
-                    placeholder="Add an option..."
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addOption();
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={addOption}
-                    disabled={!newOption.trim()}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+  // Step 6: Review
+  const ReviewStep = () => {
+    const typeOption = fieldTypeOptions.find(o => o.value === fieldType);
+    const TypeIcon = typeOption?.icon || Type;
+    
+    return (
+      <div className="space-y-8">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold text-[hsl(var(--fg))] font-heading">
+            Review your field
+          </h2>
+          <p className="text-[hsl(var(--globe-grey))]">
+            Everything look good?
+          </p>
                 </div>
-                {options.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {options.map((option, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="pr-1 gap-1"
-                      >
-                        {option}
-                        <button
-                          type="button"
-                          onClick={() => removeOption(index)}
-                          className="ml-1 hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
+
+        <div className="max-w-md mx-auto">
+          <div className="rounded-2xl border-2 border-[hsl(var(--selise-blue))]/20 bg-[hsl(var(--selise-blue))]/5 p-6 space-y-4">
+            {/* Type badge */}
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-xl bg-[hsl(var(--selise-blue))]/10 flex items-center justify-center">
+                <TypeIcon className="h-6 w-6 text-[hsl(var(--selise-blue))]" />
+              </div>
+              <div>
+                <Badge variant="secondary" className="bg-[hsl(var(--selise-blue))]/10 text-[hsl(var(--selise-blue))]">
+                  {typeOption?.label || fieldType}
                       </Badge>
-                    ))}
-                  </div>
-                )}
-                {options.length === 0 && (
-                  <p className="text-xs text-[hsl(var(--globe-grey))]">
-                    Add at least one option for the dropdown
-                  </p>
+                {watch("required") && (
+                  <Badge variant="outline" className="ml-2 text-[hsl(var(--destructive))] border-[hsl(var(--destructive))]/50">
+                    Required
+                  </Badge>
                 )}
               </div>
+            </div>
+
+            {/* Field details */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-start">
+                <span className="text-sm text-[hsl(var(--globe-grey))]">Name</span>
+                <span className="font-mono text-sm font-medium">{fieldName || "—"}</span>
+              </div>
+              <div className="flex justify-between items-start">
+                <span className="text-sm text-[hsl(var(--globe-grey))]">Label</span>
+                <span className="font-medium">{fieldLabel || "—"}</span>
+              </div>
+              {watch("placeholder") && (
+                <div className="flex justify-between items-start">
+                  <span className="text-sm text-[hsl(var(--globe-grey))]">Placeholder</span>
+                  <span className="text-sm italic text-[hsl(var(--globe-grey))]">{watch("placeholder")}</span>
+                  </div>
+                )}
+              {(fieldType === "select" || fieldType === "multiselect") && options.length > 0 && (
+                <div className="flex justify-between items-start">
+                  <span className="text-sm text-[hsl(var(--globe-grey))]">Options</span>
+                  <span className="text-sm">{options.length} options</span>
+                </div>
+              )}
+              {watch("aiSuggestionEnabled") && (
+                <div className="flex justify-between items-start">
+                  <span className="text-sm text-[hsl(var(--globe-grey))]">AI Suggestion</span>
+                  <Badge variant="secondary" className="text-xs">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    {watch("aiSuggestionKey") || "Enabled"}
+                  </Badge>
+              </div>
             )}
+            </div>
+          </div>
+        </div>
 
             {error && (
-              <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <div className="max-w-md mx-auto p-4 rounded-lg bg-[hsl(var(--destructive))]/10 text-[hsl(var(--destructive))] text-sm">
                 {error}
               </div>
             )}
           </div>
+    );
+  };
 
-          <DialogFooter>
-            <Button
+  // Render current step content
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case "basics":
+        return <BasicsStep />;
+      case "type":
+        return <TypeStep />;
+      case "options":
+        return <OptionsStep />;
+      case "details":
+        return <DetailsStep />;
+      case "advanced":
+        return <AdvancedStep />;
+      case "review":
+        return <ReviewStep />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 border-b border-[hsl(var(--border))]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[hsl(var(--fg))]">
+                {field ? "Edit Field" : "Add Field"}
+              </h3>
+              <button
               type="button"
-              variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={saving}
-            >
-              Cancel
+                className="p-1 rounded hover:bg-[hsl(var(--muted))]"
+              >
+                <X className="h-5 w-5 text-[hsl(var(--globe-grey))]" />
+              </button>
+            </div>
+            <ProgressBar />
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto px-6 py-8">
+            <AnimatePresence mode="wait" custom={direction}>
+              <motion.div
+                key={currentStep}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                {renderStepContent()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-[hsl(var(--border))] bg-[hsl(var(--bg))]">
+            <div className="flex items-center justify-between">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={currentStepIndex === 0 ? () => onOpenChange(false) : goBack}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {currentStepIndex === 0 ? "Cancel" : "Back"}
             </Button>
+
+              {currentStep === "review" ? (
             <Button
               type="submit"
-              disabled={saving || ((fieldType === "select" || fieldType === "multiselect") && options.length === 0)}
-              className="bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-[hsl(var(--white))] hover:text-[hsl(var(--white))]"
-            >
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  disabled={saving}
+                  className="gap-2 bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-white"
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
               {field ? "Save Changes" : "Create Field"}
             </Button>
-          </DialogFooter>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={goNext}
+                  className="gap-2 bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--oxford-blue))] text-white"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
   );
 }
-

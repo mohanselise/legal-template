@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import { ConditionalFooter } from "@/components/conditional-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { JsonLd } from "@/components/json-ld";
 
@@ -86,7 +87,9 @@ export default async function LocaleLayout({
         <div className="flex flex-col min-h-screen" lang={locale}>
           <Header />
           <main className="flex-1">{children}</main>
-          <Footer />
+          <ConditionalFooter>
+            <Footer />
+          </ConditionalFooter>
           <Toaster position="top-center" richColors />
         </div>
       </NextIntlClientProvider>

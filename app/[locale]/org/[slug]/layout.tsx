@@ -18,7 +18,7 @@ export default async function OrgLayout({
   }
 
   // Get organization from database by slug (with auto-sync from Clerk if not found)
-  const organization = await getOrganizationBySlugWithSync(slug, orgId);
+  const organization = await getOrganizationBySlugWithSync(slug, orgId ?? null);
 
   if (!organization) {
     notFound();

@@ -619,7 +619,13 @@
         "turnstileConfigMissing": "Turnstile configuration missing",
         "turnstileConfigDescription": "Please set NEXT_PUBLIC_TURNSTILE_SITE_KEY in your environment variables.",
         "iUnderstandGetStarted": "I Understand, Get Started",
-        "pressEnterToBegin": "Press Enter to begin"
+        "pressEnterToBegin": "Press Enter to begin",
+        "beforeYouContinue": "Safety & Security Checkpoint",
+        "tosCheckboxLabel": "I have read and agree to the",
+        "termsOfService": "Terms of Service",
+        "and": "and",
+        "privacyPolicy": "Privacy Policy",
+        "pleaseAcceptTerms": "Please accept the Terms of Service to continue"
       },
       "navigation": {
         "back": "Back",

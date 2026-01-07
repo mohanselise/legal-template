@@ -32,8 +32,9 @@ import { LegalDisclaimer } from '@/components/legal-disclaimer';
 import { Turnstile } from 'next-turnstile';
 import { setTurnstileToken as storeTurnstileToken } from '@/lib/turnstile-token-manager';
 import { Stepper, StepperCompact } from '@/components/ui/stepper';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, Clock, Users, Shield } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Clock, Users, Shield } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 
 // Steps where "Use Market Standard" button should appear (Work, Compensation, Legal)
 const MARKET_STANDARD_STEPS = [3, 4, 5];
@@ -337,6 +338,10 @@ function SmartFlowContent() {
   const generationTaskRef = useRef<(() => Promise<BackgroundGenerationResult | null>) | null>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileStatus, setTurnstileStatus] = useState<'success' | 'error' | 'expired' | 'required'>('required');
+  const [tosAccepted, setTosAccepted] = useState(false);
+  const [tosTransitioning, setTosTransitioning] = useState(false);
+
+  // Note: Transition is handled directly in onClick handler to avoid timing issues
 
   const STEPS = [
     { id: 'company', title: tSteps('company'), component: Step1CompanyIdentity },
@@ -950,34 +955,15 @@ function SmartFlowContent() {
             </div>
           </div>
 
-          {/* Collapsible Disclaimer */}
-          <Collapsible className="mb-8">
-            <CollapsibleTrigger className="w-full rounded-xl border border-[hsl(var(--brand-border))] bg-muted p-4 text-left hover:bg-muted/80 transition-colors group">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-5 w-5 flex-shrink-0 text-[hsl(var(--brand-primary))]" />
-                  <span className="font-medium text-[hsl(var(--fg))]">{t('welcome.viewImportantInfo')}</span>
-                </div>
-                <ChevronDown className="h-5 w-5 text-[hsl(var(--brand-muted))] transition-transform group-data-[state=open]:rotate-180" />
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2 rounded-xl border border-[hsl(var(--brand-border))] bg-muted p-6 text-left animate-in slide-in-from-top-2">
-              <div className="space-y-3 text-sm leading-relaxed text-[hsl(var(--brand-muted))]">
-                <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.notLegalAdvice')}</strong> {t('welcome.notLegalAdviceText')}</p>
-                <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.aiGenerated')}</strong> {t('welcome.aiGeneratedText')}</p>
-                <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.jurisdiction')}</strong> {t('welcome.jurisdictionText')}</p>
-                <p><strong className="text-[hsl(var(--brand-primary))]">{t('welcome.reviewRequired')}</strong> {t('welcome.reviewRequiredText')}</p>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-
-          {/* Human Verification - Simplified styling */}
+          {/* Before you continue - Combined ToS and Verification */}
           <div className="mb-6 rounded-lg border border-[hsl(var(--brand-border))] bg-card p-4">
-            <div className="mb-3 text-center">
+            <div className="mb-4 text-center">
               <h3 className="text-sm font-medium text-[hsl(var(--fg))] font-heading">
-                Security verification
+                {t('welcome.beforeYouContinue')}
               </h3>
             </div>
+            
+            {/* Human Verification */}
             {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
               <div className="flex flex-col items-center gap-3">
                 <Turnstile
@@ -1029,22 +1015,177 @@ function SmartFlowContent() {
             )}
           </div>
 
-          <button
+          {/* Terms of Service Consent Card */}
+          <motion.button
+            type="button"
             onClick={() => {
-              if (turnstileStatus === 'success' && turnstileToken) {
-                // Token already stored in onVerify callback
-                setShowWelcome(false);
+              if (turnstileStatus === 'success' && turnstileToken && !tosAccepted && !tosTransitioning) {
+                setTosAccepted(true);
+                setTosTransitioning(true);
+                // Show loading animation for 1.8 seconds before proceeding
+                setTimeout(() => {
+                  setShowWelcome(false);
+                }, 1800);
               }
             }}
-            disabled={turnstileStatus !== 'success' || !turnstileToken}
-            className="inline-flex items-center gap-3 rounded-xl bg-[hsl(var(--brand-primary))] px-10 py-4 text-lg font-semibold text-[hsl(var(--brand-primary-foreground))] shadow-lg transition-transform hover:scale-105 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            disabled={turnstileStatus !== 'success' || !turnstileToken || tosAccepted}
+            className={`
+              group relative w-full max-w-2xl mx-auto rounded-3xl border-2 px-6 py-5 md:px-8 md:py-6 text-left transition-all duration-300 select-none
+              active:scale-[0.98] touch-manipulation
+              ${tosAccepted 
+                ? 'border-[hsl(var(--brand-primary))] bg-gradient-to-br from-[hsl(var(--brand-primary)/_0.08)] to-[hsl(var(--brand-primary)/_0.02)] shadow-xl shadow-[hsl(var(--brand-primary)/_0.15)]' 
+                : 'border-[hsl(var(--brand-border))] bg-card hover:border-[hsl(var(--brand-primary))] hover:bg-[hsl(var(--brand-primary)/_0.02)] hover:shadow-lg'
+              }
+              ${turnstileStatus !== 'success' || !turnstileToken ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+            `}
+            whileHover={{ scale: turnstileStatus === 'success' && turnstileToken ? 1.015 : 1 }}
+            whileTap={{ scale: turnstileStatus === 'success' && turnstileToken ? 0.985 : 1 }}
           >
-            {t('welcome.iUnderstandGetStarted')}
-            <ArrowRight className="h-5 w-5" />
-          </button>
-          <p className="hidden md:block mt-8 text-sm text-[hsl(var(--brand-muted))]">
-            {t('welcome.pressEnterToBegin')}
-          </p>
+            <div className="flex items-center gap-4 md:gap-5">
+              {/* Custom Checkbox - Larger for touch with smooth animation */}
+              <motion.div 
+                className={`
+                  flex-shrink-0 h-8 w-8 md:h-7 md:w-7 rounded-lg border-2 flex items-center justify-center
+                  ${tosAccepted 
+                    ? 'border-[hsl(var(--brand-primary))] bg-[hsl(var(--brand-primary))] shadow-md shadow-[hsl(var(--brand-primary)/_0.3)]' 
+                    : 'border-[hsl(var(--brand-muted)/_0.3)] bg-background group-hover:border-[hsl(var(--brand-primary))] group-hover:bg-[hsl(var(--brand-primary)/_0.05)]'
+                  }
+                `}
+                initial={false}
+                animate={{ 
+                  scale: tosAccepted ? [1, 1.15, 1] : 1,
+                  backgroundColor: tosAccepted ? 'hsl(var(--brand-primary))' : 'hsl(var(--bg))'
+                }}
+                transition={{ 
+                  scale: { duration: 0.4, ease: [0.34, 1.56, 0.64, 1] },
+                  backgroundColor: { duration: 0.25, ease: "easeOut" }
+                }}
+              >
+                <svg 
+                  className="h-5 w-5 md:h-4 md:w-4" 
+                  viewBox="0 0 24 24" 
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <motion.path
+                    d="M5 12l5 5L19 7"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ 
+                      pathLength: tosAccepted ? 1 : 0,
+                      opacity: tosAccepted ? 1 : 0
+                    }}
+                    transition={{ 
+                      pathLength: { 
+                        duration: 0.4, 
+                        delay: tosAccepted ? 0.1 : 0,
+                        ease: [0.65, 0, 0.35, 1]
+                      },
+                      opacity: { duration: 0.15, delay: tosAccepted ? 0.05 : 0 }
+                    }}
+                  />
+                </svg>
+              </motion.div>
+              
+              {/* Text Content */}
+              <div className="flex-1 min-w-0">
+                <p className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${tosAccepted ? 'text-[hsl(var(--fg))]' : 'text-[hsl(var(--fg)/_0.7)]'}`}>
+                  {t('welcome.tosCheckboxLabel')}{' '}
+                  <Link
+                    href="/terms-of-service"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[hsl(var(--brand-primary))] hover:underline font-semibold underline-offset-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {t('welcome.termsOfService')}
+                  </Link>
+                  {' '}{t('welcome.and')}{' '}
+                  <Link
+                    href="https://selisegroup.com/privacy-policy/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[hsl(var(--brand-primary))] hover:underline font-semibold underline-offset-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {t('welcome.privacyPolicy')}
+                  </Link>
+                </p>
+              </div>
+
+              {/* Arrow indicator */}
+              <motion.div 
+                className={`flex-shrink-0 transition-colors duration-300 ${tosAccepted ? 'text-[hsl(var(--brand-primary))]' : 'text-[hsl(var(--brand-muted)/_0.4)] group-hover:text-[hsl(var(--brand-primary))]'}`}
+                animate={{ x: tosAccepted ? 0 : [0, 4, 0] }}
+                transition={{ duration: 1.5, repeat: tosAccepted ? 0 : Infinity, ease: "easeInOut" }}
+              >
+                <ArrowRight className="h-5 w-5 md:h-6 md:w-6" />
+              </motion.div>
+            </div>
+            
+            {/* Success feedback with loading animation */}
+            <AnimatePresence>
+              {tosAccepted && tosTransitioning && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-5 pt-5 border-t border-[hsl(var(--brand-primary)/_0.2)]">
+                    {/* Loading progress bar */}
+                    <div className="relative w-full h-1.5 bg-[hsl(var(--brand-primary)/_0.15)] rounded-full overflow-hidden mb-4">
+                      <motion.div
+                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-[hsl(var(--brand-primary))] to-[hsl(var(--brand-primary)/_0.7)] rounded-full"
+                        initial={{ width: "0%" }}
+                        animate={{ width: "100%" }}
+                        transition={{ duration: 1.6, ease: [0.4, 0, 0.2, 1] }}
+                      />
+                      {/* Shimmer effect */}
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                        initial={{ x: "-100%" }}
+                        animate={{ x: "200%" }}
+                        transition={{ duration: 1, repeat: 2, ease: "linear" }}
+                      />
+                    </div>
+                    
+                    {/* Loading text with animated dots */}
+                    <div className="flex items-center justify-center gap-3 text-[hsl(var(--brand-primary))]">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+                      >
+                        <Sparkles className="h-5 w-5" />
+                      </motion.div>
+                      <span className="text-sm font-medium">
+                        Preparing your agreement
+                        <motion.span
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: [0, 1, 0] }}
+                          transition={{ duration: 1.2, repeat: Infinity, times: [0, 0.5, 1] }}
+                        >...</motion.span>
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.button>
+          
+          {turnstileStatus !== 'success' || !turnstileToken ? (
+            <p className="mt-4 text-sm text-[hsl(var(--brand-muted))]">
+              Complete the verification above to continue
+            </p>
+          ) : !tosAccepted ? (
+            <p className="mt-4 text-sm text-[hsl(var(--brand-muted))] flex items-center justify-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-[hsl(var(--brand-primary))] animate-pulse" />
+              Tap to agree and continue
+            </p>
+          ) : null}
         </motion.div>
       </div>
     );

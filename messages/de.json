@@ -675,7 +675,13 @@
         "turnstileConfigMissing": "Turnstile-Konfiguration fehlt",
         "turnstileConfigDescription": "Bitte setzen Sie NEXT_PUBLIC_TURNSTILE_SITE_KEY in Ihren Umgebungsvariablen.",
         "iUnderstandGetStarted": "Ich verstehe, los geht's",
-        "pressEnterToBegin": "Drücken Sie Enter, um zu beginnen"
+        "pressEnterToBegin": "Drücken Sie Enter, um zu beginnen",
+        "beforeYouContinue": "Sicherheitscheckpoint",
+        "tosCheckboxLabel": "Ich habe die gelesen und stimme zu",
+        "termsOfService": "Nutzungsbedingungen",
+        "and": "und",
+        "privacyPolicy": "Datenschutzerklärung",
+        "pleaseAcceptTerms": "Bitte akzeptieren Sie die Nutzungsbedingungen, um fortzufahren"
       },
       "navigation": {
         "back": "Zurück",

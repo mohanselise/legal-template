@@ -8,12 +8,15 @@ This is a Next.js 16 application for legal templates, built with React 19, TypeS
 
 ## Tech Stack
 
-- **Framework**: Next.js 16.0.1 (App Router)
-- **React**: 19.2.0
+- **Framework**: Next.js 16.0.10 (App Router)
+- **React**: 19.2.3
 - **TypeScript**: Strict mode enabled
 - **Styling**: Tailwind CSS v4 with PostCSS
 - **Package Manager**: pnpm (note: `pnpm-lock.yaml` is present)
-- **Fonts**: Geist Sans and Geist Mono via next/font
+- **Database**: Neon Postgres with Prisma ORM
+- **Authentication**: Clerk with role-based access control
+- **Internationalization**: next-intl with SELISE Blocks UILM integration
+- **Fonts**: Aptos (primary), Bahnschrift (secondary), Open Sans (body) - loaded from `/public/fonts/`
 
 ## Development Commands
 
@@ -29,17 +32,70 @@ pnpm start
 
 # Run linting
 pnpm lint
+
+# Database commands
+pnpm db:generate    # Generate Prisma client
+pnpm db:push        # Push schema changes to database
+pnpm db:migrate     # Run migrations
+pnpm db:seed        # Seed database with initial data
+pnpm db:studio      # Open Prisma Studio GUI
+
+# Testing commands (signature workflow)
+pnpm test:upload    # Test file upload
+pnpm test:prepare   # Test contract preparation
+pnpm test:rollout   # Test rollout flow
 ```
 
 ## Project Structure
 
-- `app/` - Next.js App Router directory containing routes and layouts
-  - `layout.tsx` - Root layout with font configuration and metadata
-  - `page.tsx` - Home page component
-  - `globals.css` - Global styles and Tailwind directives
-- `public/` - Static assets (SVG icons, images)
-- `next.config.ts` - Next.js configuration (TypeScript)
-- `tsconfig.json` - TypeScript configuration with `@/*` path alias mapping to root
+```
+app/
+├── [locale]/                    # Internationalized routes (en, de)
+│   ├── (public)/               # Public pages (home, about, faq, templates)
+│   ├── (auth)/                 # Auth pages (sign-in, sign-up)
+│   ├── admin/                  # Admin dashboard (protected)
+│   │   ├── templates/          # Template management
+│   │   ├── analytics/          # Usage analytics
+│   │   ├── settings/           # System settings
+│   │   └── users/              # User management
+│   └── templates/              # Template generation flows
+│       └── employment-agreement/
+│           └── generate/       # Smart Flow wizard
+├── api/                        # API routes
+│   ├── ai/                     # AI endpoints (suggest, enrich, generate)
+│   ├── intelligence/           # Data enrichment (company, job-title)
+│   ├── places/                 # Geolocation (autocomplete, reverse-geocode)
+│   ├── signature/              # SELISE Signature integration
+│   ├── admin/                  # Admin CRUD APIs
+│   └── turnstile/              # Cloudflare Turnstile validation
+├── layout.tsx                  # Root layout with fonts and providers
+└── globals.css                 # Global styles and Tailwind directives
+
+components/
+├── ui/                         # shadcn/ui components (26+)
+├── smart-flow/                 # Form wizard components
+├── admin/                      # Admin dashboard components
+└── pdf-signature-editor.tsx    # PDF signature field editor
+
+lib/
+├── auth/                       # Clerk auth helpers and role definitions
+├── card-engine/                # Drag-and-drop card system
+├── prisma.ts                   # Prisma client singleton
+├── openrouter.ts               # AI provider integration
+└── uilm-loader.ts              # SELISE Blocks translation loader
+
+prisma/
+├── schema.prisma               # Database schema
+└── seed.ts                     # Seed data
+
+messages/                       # i18n translation files
+├── en.json                     # English translations
+└── de.json                     # German translations
+
+public/
+├── fonts/                      # Brand fonts (Aptos, Bahnschrift)
+└── images/                     # Static assets
+```
 
 ## Key Architecture Notes
 
@@ -57,8 +113,8 @@ pnpm lint
 
 ### Styling with Tailwind v4
 - Tailwind CSS v4 is configured via PostCSS plugin `@tailwindcss/postcss`
-- Dark mode support is included (uses `dark:` prefix)
-- Custom CSS variables for Geist fonts: `--font-geist-sans`, `--font-geist-mono`
+- Dark mode support via `next-themes` (uses `dark:` prefix)
+- Custom CSS variables for brand fonts: `--font-aptos`, `--font-bahnschrift`, `--font-open-sans`
 
 ### ESLint Configuration
 - Uses modern ESLint flat config format (`eslint.config.mjs`)
@@ -71,6 +127,149 @@ pnpm lint
 2. **Server Components by default** - only add `'use client'` when using hooks, event handlers, or browser APIs
 3. **Import paths** - prefer using the `@/*` alias for imports from the root
 4. **Image optimization** - use Next.js `<Image>` component from `next/image` for all images
+
+## Authentication (Clerk)
+
+This project uses Clerk for authentication with role-based access control.
+
+### Roles
+
+Two roles are defined in `lib/auth/roles.ts`:
+- **admin**: Full access to all admin features
+- **editor**: Limited access to template and analytics management
+
+### Route Permissions
+
+```typescript
+// Admin-only routes
+'/admin'
+'/admin/settings'
+'/admin/users'
+
+// Admin & Editor routes
+'/admin/templates'
+'/admin/analytics'
+```
+
+### Usage
+
+```typescript
+// Server Component - check role
+import { checkRole } from '@/lib/auth/roles'
+
+export default async function AdminPage() {
+  if (!await checkRole('admin')) {
+    redirect('/unauthorized')
+  }
+  // ...
+}
+
+// API Route - check access
+import { checkApiRouteAccess } from '@/lib/auth/roles'
+
+export async function GET() {
+  const access = await checkApiRouteAccess('/admin/users')
+  if (!access.allowed) {
+    return new Response('Unauthorized', { status: 403 })
+  }
+  // ...
+}
+```
+
+### Environment Variables
+
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+CLERK_SECRET_KEY=sk_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+```
+
+## Internationalization (next-intl + UILM)
+
+The app supports English (`en`) and German (`de`) with locale-prefixed routes (e.g., `/en/templates`, `/de/templates`).
+
+### Configuration
+
+- **Routing**: Locale is always shown in URL (`localePrefix: 'always'`)
+- **Default locale**: English (`en`)
+- **Translation files**: `messages/en.json`, `messages/de.json`
+
+### SELISE Blocks UILM Integration
+
+German translations are fetched from SELISE Blocks API with fallback to local files:
+
+```typescript
+// lib/uilm-loader.ts
+// Fetches from https://api.seliseblocks.com with X-BLOCKS-KEY header
+// Falls back to local JSON if API fails
+// Deep merges with English as base language
+```
+
+### Usage
+
+```typescript
+// Server Component
+import { getTranslations } from 'next-intl/server'
+
+export default async function Page() {
+  const t = await getTranslations('home')
+  return <h1>{t('title')}</h1>
+}
+
+// Client Component
+'use client'
+import { useTranslations } from 'next-intl'
+
+export function Component() {
+  const t = useTranslations('common')
+  return <button>{t('submit')}</button>
+}
+```
+
+### Translation Modules
+
+- `common` - Shared UI strings
+- `home` - Home page
+- `templates` - Template listing
+- `employmentAgreement` - EA-specific terms
+- `footer`, `faq`, `about`, `tips`, `miniMap`
+
+### Environment Variables
+
+```bash
+NEXT_PUBLIC_BLOCKS_API_URL=https://api.seliseblocks.com
+NEXT_PUBLIC_X_BLOCKS_KEY=your-project-key
+```
+
+## Analytics & Bot Prevention
+
+### Microsoft Clarity
+
+Session recording and heatmaps via `@microsoft/clarity`:
+
+```bash
+NEXT_PUBLIC_CLARITY_PROJECT_ID=your-clarity-id
+```
+
+### Google Analytics
+
+Via `@next/third-parties`:
+
+```bash
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+```
+
+### Cloudflare Turnstile
+
+Bot prevention captcha via `next-turnstile`:
+
+```bash
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your-site-key
+TURNSTILE_SECRET_KEY=your-secret-key
+```
+
+Validation endpoint: `/api/turnstile/validate`
 
 ## Brand Guidelines (SELISE Brand Book)
 
@@ -127,9 +326,10 @@ SELISE uses a structured typographic hierarchy. Update font imports in `app/layo
 - Usage: SELISE logo only to maintain brand identity
 - Do not use for general text
 
-**Fallback (Current)**: Geist Sans and Geist Mono
-- Use until brand fonts are properly installed
-- Plan migration to Aptos (primary), Bahnschrift (secondary), and Open Sans (body)
+**Current Implementation**: Brand fonts are loaded from `/public/fonts/`
+- Aptos (regular & bold) - Primary typeface
+- Bahnschrift - Secondary typeface
+- CSS variables: `--font-aptos`, `--font-bahnschrift`, `--font-open-sans`
 
 ### Color System
 
@@ -419,37 +619,147 @@ Security & guardrails
 - Enforce input validation for tool calls; reject overly broad queries
 - Log audit events for create/update operations
 
-## Database & environments (Neon Postgres)
+## Database (Neon Postgres + Prisma)
 
-- Environment variables are defined in `.env.local` (local only; do not commit) and should be set in your deployment environment
-- Required keys: `DATABASE_URL` (pooled) and, when needed, `DATABASE_URL_UNPOOLED` for long-running operations
-- Recommended client: `@neondatabase/serverless` for simple SQL in App Router Server Components and Route Handlers
+### Setup
 
-Example usage pattern
+- **ORM**: Prisma with `@prisma/adapter-neon` for serverless
+- **Schema**: `prisma/schema.prisma`
+- **Config**: `prisma.config.ts` for build-time generation
 
-```ts
-// server-only file
-import { neon } from '@neondatabase/serverless'
-const sql = neon(process.env.DATABASE_URL!)
+### Environment Variables
 
-export async function getTemplateTitles() {
-  return await sql/*sql*/`select id, title from templates order by updated_at desc limit 50`;
+```bash
+DATABASE_URL=postgresql://...?sslmode=require        # Pooled connection
+DATABASE_URL_UNPOOLED=postgresql://...?sslmode=require  # Direct connection (migrations)
+```
+
+### Usage
+
+```typescript
+// lib/prisma.ts - singleton client
+import { PrismaClient } from '@/prisma/generated/client'
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
+export const prisma = globalForPrisma.prisma || new PrismaClient()
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+// Usage in Server Components/Route Handlers
+import { prisma } from '@/lib/prisma'
+
+const templates = await prisma.template.findMany({
+  include: { screens: { include: { fields: true } } }
+})
+```
+
+### Data Model
+
+**Core Models:**
+
+```prisma
+model Template {
+  id              String           @id @default(cuid())
+  name            String
+  slug            String           @unique
+  description     String?
+  uilmTitleKey    String?          // SELISE Blocks translation key
+  uilmDescKey     String?
+  screens         TemplateScreen[]
+  pages           TemplatePage[]
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model TemplateScreen {
+  id                  String          @id @default(cuid())
+  templateId          String
+  template            Template        @relation(...)
+  title               String
+  description         String?
+  screenType          ScreenType      @default(standard)
+  order               Int
+  fields              TemplateField[]
+  conditions          Json?           // Conditional visibility rules
+  aiPrompt            String?         // AI generation prompt
+  signatoriesConfig   Json?           // For signatory screens
+}
+
+model TemplateField {
+  id                String         @id @default(cuid())
+  screenId          String
+  screen            TemplateScreen @relation(...)
+  name              String
+  label             String
+  fieldType         FieldType
+  placeholder       String?
+  helpText          String?
+  required          Boolean        @default(false)
+  order             Int
+  options           Json?          // For select/radio fields
+  validation        Json?          // Validation rules
+  conditions        Json?          // Show/hide conditions
+  aiSuggestionKey   String?        // Key for AI suggestions
+}
+
+enum FieldType {
+  text, textarea, email, phone, date, number, select,
+  radio, checkbox, address, party, currency, percentage, url
+}
+
+enum ScreenType {
+  standard, signatory, dynamic
 }
 ```
 
-Runtime notes
-- Prefer Node.js runtime for DB-heavy routes; use Edge only when you don’t need Postgres connections
-- Add indexes for frequent lookups (e.g., `templates(title, updated_at)`, `clauses(tags)`)
-- Plan to add migrations (Drizzle or Prisma) in a follow-up; until then, keep DDL scripts under `./db/migrations/`
+**Supporting Models:**
 
-## Product data model (suggested, non-binding)
+```prisma
+model SystemSettings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+}
 
-- templates: id, title, body, variables_json, tags, created_at, updated_at
-- clauses: id, title, body, tags, created_at, updated_at
-- render_jobs: id, template_id, input_json, output, status, created_at, completed_at
-- audit_events: id, actor, action, entity, entity_id, created_at, meta_json
+model ApiUsageLog {
+  id            String   @id @default(cuid())
+  endpoint      String
+  model         String
+  inputTokens   Int
+  outputTokens  Int
+  cost          Float
+  createdAt     DateTime @default(now())
+}
 
-These will be finalized alongside the MCP tool contracts and migrations.
+model ModelPricing {
+  id            String   @id @default(cuid())
+  modelId       String   @unique
+  inputCostPer1M  Float
+  outputCostPer1M Float
+  updatedAt     DateTime @updatedAt
+}
+
+model TemplatePage {
+  id          String    @id @default(cuid())
+  templateId  String
+  template    Template  @relation(...)
+  slug        String
+  title       String
+  blocks      Json      // Content blocks (hero, features, etc.)
+  isActive    Boolean   @default(true)
+}
+```
+
+### Commands
+
+```bash
+pnpm db:generate    # Generate Prisma client after schema changes
+pnpm db:push        # Push schema to database (dev)
+pnpm db:migrate     # Run migrations (production)
+pnpm db:studio      # Open Prisma Studio GUI
+pnpm db:seed        # Seed initial data
+```
 
 ## SELISE Signature Integration
 
@@ -585,4 +895,153 @@ await fetch('/api/signature/rollout', {
     ]
   })
 });
+```
+
+## API Routes Overview
+
+The application exposes 40+ API routes organized by domain:
+
+### AI & Intelligence
+
+| Route | Purpose |
+|-------|---------|
+| `/api/ai/suggest` | Field value suggestions |
+| `/api/ai/enrich-context` | Context enrichment for forms |
+| `/api/ai/template-configurator` | AI-powered template config |
+| `/api/ai/next-question` | Dynamic question generation |
+| `/api/ai/generate-dynamic-fields` | Generate fields based on context |
+| `/api/ai/job-responsibilities` | Job title intelligence |
+| `/api/intelligence/company` | Company data lookup |
+| `/api/intelligence/job-title` | Job title standardization |
+| `/api/intelligence/market-standards` | Market data for compensation |
+
+### Places & Geolocation
+
+| Route | Purpose |
+|-------|---------|
+| `/api/places/autocomplete` | Address autocomplete |
+| `/api/places/business-search` | Business name lookup |
+| `/api/places/details` | Place details by ID |
+| `/api/places/reverse-geocode` | Coordinates to address |
+
+### Admin CRUD
+
+| Route | Purpose |
+|-------|---------|
+| `/api/admin/templates` | Template management |
+| `/api/admin/screens` | Screen management |
+| `/api/admin/fields` | Field management |
+| `/api/admin/settings` | System settings |
+| `/api/admin/users` | User management |
+| `/api/admin/analytics` | Usage analytics |
+| `/api/admin/models` | AI model configuration |
+| `/api/admin/template-pages` | Landing page content |
+
+### Documents & Signature
+
+| Route | Purpose |
+|-------|---------|
+| `/api/documents/generate-pdf` | PDF generation |
+| `/api/signature/prepare` | Prepare contract |
+| `/api/signature/rollout` | Send for signature |
+| `/api/signature/get-pdf` | Fetch PDF from storage |
+| `/api/signature/send` | Send invitations |
+| `/api/letterhead/detect-content-area` | Letterhead detection |
+
+### Other
+
+| Route | Purpose |
+|-------|---------|
+| `/api/turnstile/validate` | Cloudflare captcha validation |
+| `/api/suggestions` | Generic suggestions endpoint |
+
+## Key Dependencies
+
+### Core Framework
+- `next` 16.0.10 - React framework
+- `react` / `react-dom` 19.2.3 - UI library
+- `typescript` 5.x - Type safety
+
+### Database & Auth
+- `@prisma/client` + `@prisma/adapter-neon` - ORM with Neon adapter
+- `@neondatabase/serverless` - Serverless Postgres client
+- `@clerk/nextjs` - Authentication
+
+### UI & Styling
+- `tailwindcss` v4 - Utility CSS
+- `@radix-ui/*` - Headless UI primitives (via shadcn/ui)
+- `class-variance-authority` - Component variants
+- `tailwind-merge` - Utility merging
+- `lucide-react` - Icons
+- `framer-motion` - Animations
+- `sonner` - Toast notifications
+- `next-themes` - Dark mode
+
+### Forms & Validation
+- `react-hook-form` - Form state management
+- `@hookform/resolvers` - Validation resolvers
+- `zod` - Schema validation
+
+### Document Generation
+- `react-pdf` + `pdfjs-dist` - PDF viewing
+- `@react-pdf/renderer` - Server-side PDF generation
+- `jspdf` + `jspdf-autotable` - Client-side PDF
+- `docx` - Word document generation
+- `html2canvas` - HTML to image
+
+### Drag & Drop
+- `@dnd-kit/core` + `@dnd-kit/sortable` - Drag and drop
+
+### Analytics & Security
+- `@microsoft/clarity` - Session recording
+- `@next/third-parties` - Google Analytics
+- `next-turnstile` - Cloudflare captcha
+
+### Internationalization
+- `next-intl` - i18n framework
+
+### Utilities
+- `date-fns` - Date formatting
+- `uuid` - ID generation
+- `use-debounce` - Debouncing
+- `jsonrepair` - JSON repair
+- `canvas-confetti` - Celebration animations
+- `recharts` - Data visualization
+
+## Environment Variables
+
+Complete list of required environment variables:
+
+```bash
+# Database
+DATABASE_URL=postgresql://...
+DATABASE_URL_UNPOOLED=postgresql://...
+
+# Authentication (Clerk)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+CLERK_SECRET_KEY=sk_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+
+# Internationalization (SELISE Blocks UILM)
+NEXT_PUBLIC_BLOCKS_API_URL=https://api.seliseblocks.com
+NEXT_PUBLIC_X_BLOCKS_KEY=your-project-key
+
+# Analytics
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+NEXT_PUBLIC_CLARITY_PROJECT_ID=your-clarity-id
+
+# Bot Prevention (Cloudflare Turnstile)
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your-site-key
+TURNSTILE_SECRET_KEY=your-secret-key
+
+# SELISE Signature
+SELISE_CLIENT_ID=your-client-id
+SELISE_CLIENT_SECRET=your-client-secret
+
+# AI Provider (OpenRouter)
+OPENROUTER_API_KEY=your-api-key
+
+# Google Places (for address autocomplete)
+GOOGLE_PLACES_API_KEY=your-api-key
 ```

@@ -58,6 +58,13 @@ export default async function Footer() {
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-6 border-t border-[hsl(var(--brand-border))] pt-8 text-xs text-muted-foreground">
           <Link
+            href="/terms-of-service"
+            className="hover:text-foreground hover:underline"
+          >
+            {t('termsOfService')}
+          </Link>
+          <span>•</span>
+          <Link
             href="https://selisegroup.com/privacy-policy/"
             target="_blank"
             rel="noopener noreferrer"

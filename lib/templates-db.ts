@@ -254,3 +254,126 @@ export async function getAllPublishedTemplatePagesForSitemap(): Promise<
   }
 }
 
+// ============================================================================
+// Organization-Aware Template Queries
+// ============================================================================
+
+/**
+ * Fetch templates for an organization user.
+ * Returns all public templates (organizationId = null) PLUS the org's private templates.
+ */
+export async function getTemplatesForOrgUser(
+  organizationId: string | null
+): Promise<TemplateWithIcon[]> {
+  try {
+    // If no organization, just return public templates
+    if (!organizationId) {
+      return getAvailableTemplates();
+    }
+
+    const templates = await prisma.template.findMany({
+      where: {
+        OR: [
+          // Public templates (no organization)
+          { organizationId: null, available: true },
+          // Organization's own templates (including drafts for org members)
+          { organizationId },
+        ],
+      },
+      orderBy: [{ popular: "desc" }, { title: "asc" }],
+    });
+    return templates.map(mapTemplateWithIcon);
+  } catch (error) {
+    console.error("[TEMPLATES_DB] Failed to fetch templates for org user:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetch only an organization's private templates
+ */
+export async function getOrgTemplates(
+  organizationId: string
+): Promise<TemplateWithIcon[]> {
+  try {
+    const templates = await prisma.template.findMany({
+      where: { organizationId },
+      orderBy: [{ available: "desc" }, { updatedAt: "desc" }],
+    });
+    return templates.map(mapTemplateWithIcon);
+  } catch (error) {
+    console.error("[TEMPLATES_DB] Failed to fetch org templates:", error);
+    return [];
+  }
+}
+
+/**
+ * Check if a user can access a specific template.
+ * Public templates are accessible to anyone.
+ * Org templates require membership in that organization.
+ */
+export async function canAccessTemplate(
+  slug: string,
+  userOrgId: string | null
+): Promise<{ canAccess: boolean; template: TemplateWithIcon | null }> {
+  try {
+    const template = await prisma.template.findUnique({
+      where: { slug },
+    });
+
+    if (!template) {
+      return { canAccess: false, template: null };
+    }
+
+    const templateWithIcon = mapTemplateWithIcon(template);
+
+    // Public template (no org)
+    if (!template.organizationId) {
+      // Must be available for public access (or have valid preview token, handled elsewhere)
+      return { canAccess: template.available, template: templateWithIcon };
+    }
+
+    // Org template - user must be member of that org
+    if (template.organizationId === userOrgId) {
+      return { canAccess: true, template: templateWithIcon };
+    }
+
+    // User not in this org
+    return { canAccess: false, template: null };
+  } catch (error) {
+    console.error("[TEMPLATES_DB] Failed to check template access:", error);
+    return { canAccess: false, template: null };
+  }
+}
+
+/**
+ * Get template with organization info
+ */
+export async function getTemplateWithOrg(slug: string): Promise<
+  | (TemplateWithIcon & {
+      organization: { id: string; name: string; slug: string } | null;
+    })
+  | null
+> {
+  try {
+    const template = await prisma.template.findUnique({
+      where: { slug },
+      include: {
+        organization: {
+          select: { id: true, name: true, slug: true },
+        },
+      },
+    });
+
+    if (!template) return null;
+
+    return {
+      ...mapTemplateWithIcon(template),
+      organization: template.organization,
+    };
+  } catch (error) {
+    console.error("[TEMPLATES_DB] Failed to fetch template with org:", error);
+    return null;
+  }
+}
+

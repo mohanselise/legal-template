@@ -3,31 +3,45 @@
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Menu, X, FileText, HelpCircle, Mail, Globe2 } from 'lucide-react';
+import { Menu, X, FileText, HelpCircle, Mail, Globe2, LogIn, Building2 } from 'lucide-react';
 import Image from 'next/image';
 import { LanguageSwitcher } from './language-switcher';
 import { AnimatePresence, motion } from 'framer-motion';
+import { SignedIn, SignedOut, UserButton, useOrganization } from '@clerk/nextjs';
+import { Button } from '@/components/ui/button';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const t = useTranslations('common');
+  const { organization } = useOrganization();
 
   return (
     <>
       <header className="sticky top-0 z-[999] border-b border-[hsl(var(--border))] bg-[hsl(var(--bg))] backdrop-blur-sm">
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
+            {/* Logo - Show org logo if available */}
             <div className="flex items-center">
-              <Link href="/" className="flex items-center gap-2">
-                <Image
-                  src="/Selise Legal Templates.svg"
-                  alt="SELISE Legal Templates"
-                  width={424}
-                  height={241}
-                  className="h-10 w-auto md:h-12"
-                  priority
-                />
+              <Link href={organization ? `/org/${organization.slug}` : "/"} className="flex items-center gap-2">
+                {organization?.imageUrl ? (
+                  <Image
+                    src={organization.imageUrl}
+                    alt={organization.name}
+                    width={48}
+                    height={48}
+                    className="h-10 w-10 md:h-12 md:w-12 rounded-lg object-contain"
+                    priority
+                  />
+                ) : (
+                  <Image
+                    src="/Selise Legal Templates.svg"
+                    alt="SELISE Legal Templates"
+                    width={424}
+                    height={241}
+                    className="h-10 w-auto md:h-12"
+                    priority
+                  />
+                )}
               </Link>
             </div>
 
@@ -60,6 +74,35 @@ export default function Header() {
                 {t('contact')}
               </a>
               <LanguageSwitcher />
+
+              {/* Auth - Sign In or User Button */}
+              <SignedOut>
+                <Button asChild variant="default" size="sm">
+                  <a href="/sign-in">{t('signIn')}</a>
+                </Button>
+              </SignedOut>
+              <SignedIn>
+                {organization ? (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={`/org/${organization.slug}`}>
+                      <Building2 className="h-4 w-4 mr-2" />
+                      {organization.name}
+                    </a>
+                  </Button>
+                ) : (
+                  <Button asChild variant="outline" size="sm">
+                    <a href="/org/new">{t('createOrganization')}</a>
+                  </Button>
+                )}
+                <UserButton
+                  afterSignOutUrl="/"
+                  appearance={{
+                    elements: {
+                      avatarBox: 'h-8 w-8',
+                    },
+                  }}
+                />
+              </SignedIn>
             </div>
 
             {/* Mobile menu button */}
@@ -105,14 +148,25 @@ export default function Header() {
               {/* Header with close button */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-[hsl(var(--border))]">
                 <div className="flex items-center gap-3">
-                  <Image
-                    src="/Selise Legal Templates.svg"
-                    alt="SELISE Legal Templates"
-                    width={424}
-                    height={241}
-                    className="h-8 w-auto"
-                    priority
-                  />
+                  {organization?.imageUrl ? (
+                    <Image
+                      src={organization.imageUrl}
+                      alt={organization.name}
+                      width={40}
+                      height={40}
+                      className="h-10 w-10 rounded-lg object-contain"
+                      priority
+                    />
+                  ) : (
+                    <Image
+                      src="/Selise Legal Templates.svg"
+                      alt="SELISE Legal Templates"
+                      width={424}
+                      height={241}
+                      className="h-8 w-auto"
+                      priority
+                    />
+                  )}
                 </div>
                 <button
                   type="button"
@@ -185,6 +239,60 @@ export default function Header() {
                       <LanguageSwitcher />
                     </div>
                   </div>
+                </div>
+
+                {/* Sign In / User */}
+                <div className="mt-4">
+                  <SignedOut>
+                    <a
+                      href="/sign-in"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-4 rounded-xl px-5 py-4 text-lg font-semibold text-white bg-[hsl(var(--selise-blue))] hover:bg-[hsl(var(--selise-blue))]/90 transition-colors font-subheading group"
+                    >
+                      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+                        <LogIn className="w-6 h-6" />
+                      </div>
+                      <span>{t('signIn')}</span>
+                    </a>
+                  </SignedOut>
+                  <SignedIn>
+                    {organization ? (
+                      <a
+                        href={`/org/${organization.slug}`}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-4 rounded-xl px-5 py-4 text-lg font-semibold text-[hsl(var(--fg))] bg-[hsl(var(--muted))]/50 hover:bg-[hsl(var(--muted))] transition-colors font-subheading group mb-3"
+                      >
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[hsl(var(--selise-blue))]/10 flex items-center justify-center text-[hsl(var(--selise-blue))] group-hover:bg-[hsl(var(--selise-blue))]/20 transition-colors">
+                          <Building2 className="w-6 h-6" />
+                        </div>
+                        <span>{organization.name}</span>
+                      </a>
+                    ) : (
+                      <a
+                        href="/org/new"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-4 rounded-xl px-5 py-4 text-lg font-semibold text-[hsl(var(--fg))] bg-[hsl(var(--muted))]/50 hover:bg-[hsl(var(--muted))] transition-colors font-subheading group mb-3"
+                      >
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[hsl(var(--selise-blue))]/10 flex items-center justify-center text-[hsl(var(--selise-blue))] group-hover:bg-[hsl(var(--selise-blue))]/20 transition-colors">
+                          <Building2 className="w-6 h-6" />
+                        </div>
+                        <span>{t('createOrganization')}</span>
+                      </a>
+                    )}
+                    <div className="flex items-center gap-4 rounded-xl px-5 py-4 bg-[hsl(var(--muted))]/50">
+                      <UserButton
+                        afterSignOutUrl="/"
+                        appearance={{
+                          elements: {
+                            avatarBox: 'h-12 w-12',
+                          },
+                        }}
+                      />
+                      <span className="text-lg font-semibold text-[hsl(var(--fg))] font-subheading">
+                        Account
+                      </span>
+                    </div>
+                  </SignedIn>
                 </div>
               </div>
             </motion.div>

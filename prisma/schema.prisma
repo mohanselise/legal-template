@@ -10,6 +10,28 @@ datasource db {
   provider = "postgresql"
 }
 
+// Organization model for enterprise multi-tenancy
+model Organization {
+  id           String   @id @default(cuid())
+  clerkOrgId   String   @unique // Clerk organization ID
+  name         String
+  slug         String   @unique
+  logoUrl      String?
+
+  // Org settings/limits
+  maxUsers     Int      @default(10)
+  maxTemplates Int      @default(50)
+
+  // Relations
+  templates    Template[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([clerkOrgId])
+  @@index([slug])
+}
+
 // Template model for legal document templates
 model Template {
   id               String   @id @default(cuid())
@@ -33,6 +55,10 @@ model Template {
   // Internal Preview Access
   previewToken       String?  @unique // Secret token for draft preview access
 
+  // Organization ownership (null = global/public template)
+  organizationId     String?
+  organization       Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   screens TemplateScreen[]
 
   createdAt DateTime @default(now())
@@ -40,6 +66,7 @@ model Template {
 
   @@index([available])
   @@index([slug])
+  @@index([organizationId])
 }
 
 // Screen/Step within a template form

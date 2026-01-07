@@ -4,6 +4,8 @@
     "about": "About",
     "faq": "FAQ",
     "contact": "Contact",
+    "signIn": "Sign In",
+    "createOrganization": "Create Organization",
     "generateDocument": "Generate Document",
     "legalTemplates": "Legal Templates",
     "openMainMenu": "Open main menu",

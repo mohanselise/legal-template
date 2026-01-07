@@ -1,7 +1,16 @@
 import { User, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+/**
+ * Platform roles - for global admin dashboard access
+ */
 export type UserRole = "admin" | "editor";
+
+/**
+ * Organization roles - for enterprise org members
+ * Re-exported from organization.ts for convenience
+ */
+export type { OrgRole } from "./organization";
 
 /**
  * Route permissions mapping

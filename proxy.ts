@@ -6,10 +6,12 @@ import { NextRequest, NextResponse } from 'next/server';
 // German language codes (ISO 639-1)
 const GERMAN_LANGUAGE_CODES = ['de', 'de-de', 'de-at', 'de-ch', 'de-li', 'de-be', 'de-lu'];
 
-// Define protected routes (admin dashboard and API routes)
+// Define protected routes (admin dashboard, org dashboard, and API routes)
 const isProtectedRoute = createRouteMatcher([
   '/:locale/admin(.*)',
+  '/:locale/org(.*)',
   '/api/admin(.*)',
+  '/api/org(.*)',
 ]);
 
 function detectLocale(request: NextRequest): string {
@@ -67,6 +69,17 @@ export default clerkMiddleware(
       return NextResponse.next();
     }
 
+    // Handle org API routes - check auth and return early
+    // Org membership authorization is handled in the API route handlers
+    if (pathname.startsWith('/api/org')) {
+      if (isProtectedRoute(request)) {
+        await auth.protect({
+          unauthenticatedUrl: signInUrl,
+        });
+      }
+      return NextResponse.next();
+    }
+
     // Check if path has locale
     const pathnameHasLocale = routing.locales.some(
       (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
@@ -110,14 +123,16 @@ export const config = {
   // Match only internationalized pathnames
   matcher: [
     // Match all pathnames except for
-    // - … if they start with `/api` (except /api/admin), `/_next` or `/_vercel`
+    // - … if they start with `/api` (except /api/admin and /api/org), `/_next` or `/_vercel`
     // - … the ones containing a dot (e.g. `favicon.ico`)
-    '/((?!api(?!/admin)|_next|_vercel|.*\\..*).*)',
+    '/((?!api(?!/admin|/org)|_next|_vercel|.*\\..*).*)',
     // Optional: only run on root (/) URL
     '/',
     // Include sign-in route
     '/sign-in(.*)',
     // Include admin API routes for authentication
     '/api/admin(.*)',
+    // Include org API routes for authentication
+    '/api/org(.*)',
   ],
 };

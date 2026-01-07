@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import Image from "next/image";
@@ -22,8 +23,12 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
 
-  const template = await prisma.template.findUnique({
-    where: { slug },
+  // Only show metadata for public templates
+  const template = await prisma.template.findFirst({
+    where: {
+      slug,
+      organizationId: null, // Only public templates
+    },
   });
 
   if (!template) {
@@ -57,6 +62,25 @@ export default async function TemplateGeneratePage({ params, searchParams }: Pro
 
   if (!template) {
     notFound();
+  }
+
+  // Security check: If template belongs to an organization, verify user access
+  if (template.organizationId) {
+    const { orgId } = await auth();
+
+    // User must be a member of the organization that owns this template
+    if (!orgId) {
+      notFound(); // Don't reveal org templates exist to non-members
+    }
+
+    // Get the organization to compare
+    const org = await prisma.organization.findUnique({
+      where: { id: template.organizationId },
+    });
+
+    if (!org || org.clerkOrgId !== orgId) {
+      notFound(); // User is not in the org that owns this template
+    }
   }
 
   // For templates with specific implementations, redirect to them

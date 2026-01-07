@@ -65,12 +65,18 @@ interface TypeformBuilderProps {
   template: Template;
   initialScreens: ScreenWithFields[];
   locale: string;
+  /** API base path for org templates (e.g., "/api/org/orgId"). Defaults to "/api/admin" */
+  apiBasePath?: string;
+  /** Back URL for the exit button */
+  backUrl?: string;
 }
 
 export function TypeformBuilder({
   template,
   initialScreens,
   locale,
+  apiBasePath = "/api/admin",
+  backUrl,
 }: TypeformBuilderProps) {
   const [screens, setScreens] = useState<ScreenWithFields[]>(initialScreens);
   const [selection, setSelection] = useState<Selection>({
@@ -236,7 +242,7 @@ export function TypeformBuilder({
   const refreshScreens = useCallback(async () => {
     try {
       const response = await fetch(
-        `/api/admin/templates/${template.id}/screens`
+        `${apiBasePath}/templates/${template.id}/screens`
       );
       if (!response.ok) throw new Error("Failed to fetch screens");
       const data = await response.json();
@@ -244,14 +250,14 @@ export function TypeformBuilder({
     } catch (error) {
       toast.error("Failed to refresh screens");
     }
-  }, [template.id]);
+  }, [template.id, apiBasePath]);
 
   // Update a field
   const updateField = useCallback(
     async (fieldId: string, updates: Partial<TemplateField>) => {
       setSaving(true);
       try {
-        const response = await fetch(`/api/admin/fields/${fieldId}`, {
+        const response = await fetch(`${apiBasePath}/fields/${fieldId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(updates),
@@ -275,7 +281,7 @@ export function TypeformBuilder({
         setLastSaved(new Date());
       }
     },
-    [refreshScreens]
+    [apiBasePath, refreshScreens]
   );
 
   // Update a screen
@@ -284,7 +290,7 @@ export function TypeformBuilder({
       setSaving(true);
       try {
         const response = await fetch(
-          `/api/admin/templates/${template.id}/screens/${screenId}`,
+          `${apiBasePath}/templates/${template.id}/screens/${screenId}`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -307,7 +313,7 @@ export function TypeformBuilder({
         setLastSaved(new Date());
       }
     },
-    [template.id, refreshScreens]
+    [template.id, apiBasePath, refreshScreens]
   );
 
   // Add a new screen
@@ -315,7 +321,7 @@ export function TypeformBuilder({
     setSaving(true);
     try {
       const response = await fetch(
-        `/api/admin/templates/${template.id}/screens`,
+        `${apiBasePath}/templates/${template.id}/screens`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -341,7 +347,7 @@ export function TypeformBuilder({
     } finally {
       setSaving(false);
     }
-  }, [template.id, screens.length, refreshScreens]);
+  }, [template.id, screens.length, apiBasePath, refreshScreens]);
 
   // Add a new field to a screen
   const addField = useCallback(
@@ -349,7 +355,7 @@ export function TypeformBuilder({
       setSaving(true);
       try {
         const screen = screens.find((s) => s.id === screenId);
-        const response = await fetch(`/api/admin/screens/${screenId}/fields`, {
+        const response = await fetch(`${apiBasePath}/screens/${screenId}/fields`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -375,7 +381,7 @@ export function TypeformBuilder({
         setSaving(false);
       }
     },
-    [screens, refreshScreens]
+    [screens, apiBasePath, refreshScreens]
   );
 
   // Delete a screen
@@ -384,7 +390,7 @@ export function TypeformBuilder({
       setSaving(true);
       try {
         const response = await fetch(
-          `/api/admin/templates/${template.id}/screens/${screenId}`,
+          `${apiBasePath}/templates/${template.id}/screens/${screenId}`,
           { method: "DELETE" }
         );
         if (!response.ok) throw new Error("Failed to delete screen");
@@ -409,7 +415,7 @@ export function TypeformBuilder({
         setSaving(false);
       }
     },
-    [template.id, screens, refreshScreens]
+    [template.id, screens, apiBasePath, refreshScreens]
   );
 
   // Delete a field
@@ -417,7 +423,7 @@ export function TypeformBuilder({
     async (fieldId: string) => {
       setSaving(true);
       try {
-        const response = await fetch(`/api/admin/fields/${fieldId}`, {
+        const response = await fetch(`${apiBasePath}/fields/${fieldId}`, {
           method: "DELETE",
         });
         if (!response.ok) throw new Error("Failed to delete field");
@@ -439,7 +445,7 @@ export function TypeformBuilder({
         setSaving(false);
       }
     },
-    [selection.fieldId, selection.screenId, refreshScreens]
+    [selection.fieldId, selection.screenId, apiBasePath, refreshScreens]
   );
 
   // Reorder screens
@@ -452,7 +458,7 @@ export function TypeformBuilder({
 
       try {
         const response = await fetch(
-          `/api/admin/templates/${template.id}/screens`,
+          `${apiBasePath}/templates/${template.id}/screens`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -466,7 +472,7 @@ export function TypeformBuilder({
         await refreshScreens();
       }
     },
-    [template.id, screens, refreshScreens]
+    [template.id, screens, apiBasePath, refreshScreens]
   );
 
   // Reorder fields within a screen
@@ -484,7 +490,7 @@ export function TypeformBuilder({
       );
 
       try {
-        const response = await fetch(`/api/admin/screens/${screenId}/fields`, {
+        const response = await fetch(`${apiBasePath}/screens/${screenId}/fields`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fieldIds }),
@@ -496,7 +502,7 @@ export function TypeformBuilder({
         await refreshScreens();
       }
     },
-    [refreshScreens]
+    [apiBasePath, refreshScreens]
   );
 
   const contextValue: BuilderContextType = {

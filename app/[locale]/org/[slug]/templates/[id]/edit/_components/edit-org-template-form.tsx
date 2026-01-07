@@ -427,7 +427,7 @@ export function EditOrgTemplateForm({
                   </h3>
                   <p className="text-sm text-[hsl(var(--globe-grey))]">
                     {template.screens.length === 0
-                      ? "No screens yet. Add screens and fields to build your form."
+                      ? "No screens yet. Open the form builder to add screens and fields."
                       : `This template has ${template.screens.length} screen${template.screens.length !== 1 ? "s" : ""} with ${template.screens.reduce((acc, s) => acc + s.fields.length, 0)} field${template.screens.reduce((acc, s) => acc + s.fields.length, 0) !== 1 ? "s" : ""}.`}
                   </p>
                 </div>
@@ -457,9 +457,13 @@ export function EditOrgTemplateForm({
                 )}
 
                 <div className="pt-4">
-                  <p className="text-sm text-[hsl(var(--globe-grey))] mb-4">
-                    The full form builder is coming soon. For now, contact your administrator to configure form fields.
-                  </p>
+                  <Button
+                    onClick={() => router.push(`/${locale}/org/${orgSlug}/templates/${template.id}/builder`)}
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Open Form Builder
+                  </Button>
                 </div>
               </div>
             </CardContent>

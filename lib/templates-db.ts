@@ -68,11 +68,15 @@ function mapTemplateWithIcon(template: Template): TemplateWithIcon {
 }
 
 /**
- * Fetch all templates from the database
+ * Fetch all PUBLIC templates from the database
+ * Excludes organization-specific templates
  */
 export async function getAllTemplates(): Promise<TemplateWithIcon[]> {
   try {
     const templates = await prisma.template.findMany({
+      where: {
+        organizationId: null, // Only public templates
+      },
       orderBy: [{ popular: "desc" }, { title: "asc" }],
     });
     return templates.map(mapTemplateWithIcon);
@@ -83,12 +87,16 @@ export async function getAllTemplates(): Promise<TemplateWithIcon[]> {
 }
 
 /**
- * Fetch only available templates from the database
+ * Fetch only available PUBLIC templates from the database
+ * Excludes organization-specific templates
  */
 export async function getAvailableTemplates(): Promise<TemplateWithIcon[]> {
   try {
     const templates = await prisma.template.findMany({
-      where: { available: true },
+      where: {
+        available: true,
+        organizationId: null, // Only public templates
+      },
       orderBy: [{ popular: "desc" }, { title: "asc" }],
     });
     return templates.map(mapTemplateWithIcon);
@@ -99,7 +107,8 @@ export async function getAvailableTemplates(): Promise<TemplateWithIcon[]> {
 }
 
 /**
- * Search available templates with pagination.
+ * Search available PUBLIC templates with pagination.
+ * Excludes organization-specific templates
  */
 export async function searchAvailableTemplates(options?: {
   query?: string;
@@ -110,6 +119,7 @@ export async function searchAvailableTemplates(options?: {
   const pageSize = Math.max(1, Math.min(50, options?.pageSize ?? 12));
   const where: Prisma.TemplateWhereInput = {
     available: true,
+    organizationId: null, // Only public templates
     ...(options?.query
       ? {
           OR: [
@@ -149,12 +159,16 @@ export async function searchAvailableTemplates(options?: {
 }
 
 /**
- * Fetch only upcoming (not available) templates from the database
+ * Fetch only upcoming (not available) PUBLIC templates from the database
+ * Excludes organization-specific templates
  */
 export async function getUpcomingTemplates(): Promise<TemplateWithIcon[]> {
   try {
     const templates = await prisma.template.findMany({
-      where: { available: false },
+      where: {
+        available: false,
+        organizationId: null, // Only public templates
+      },
       orderBy: { title: "asc" },
     });
     return templates.map(mapTemplateWithIcon);
@@ -165,9 +179,32 @@ export async function getUpcomingTemplates(): Promise<TemplateWithIcon[]> {
 }
 
 /**
- * Fetch a single template by slug
+ * Fetch a single PUBLIC template by slug
+ * Excludes organization-specific templates for security
  */
 export async function getTemplateBySlug(
+  slug: string
+): Promise<TemplateWithIcon | null> {
+  try {
+    const template = await prisma.template.findFirst({
+      where: {
+        slug,
+        organizationId: null, // Only public templates
+      },
+    });
+    return template ? mapTemplateWithIcon(template) : null;
+  } catch (error) {
+    console.error("[TEMPLATES_DB] Failed to fetch template by slug:", error);
+    return null;
+  }
+}
+
+/**
+ * Fetch any template by slug (including org templates)
+ * WARNING: Only use this after verifying access permissions!
+ * For public-facing code, use getTemplateBySlug instead.
+ */
+export async function getTemplateBySlugInternal(
   slug: string
 ): Promise<TemplateWithIcon | null> {
   try {

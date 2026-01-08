@@ -27,6 +27,11 @@ export default async function OrgSettingsPage({
 
   const organization = await prisma.organization.findUnique({
     where: { slug },
+    include: {
+      letterheads: {
+        orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+      },
+    },
   });
 
   if (!organization) {
@@ -52,6 +57,11 @@ export default async function OrgSettingsPage({
           logoUrl: organization.logoUrl,
           hasSeliseCredentials: !!(organization.seliseClientId && organization.seliseClientSecret),
         }}
+      />
+
+      <LetterheadSection
+        orgId={organization.id}
+        initialLetterheads={organization.letterheads}
       />
 
       <DangerZone orgId={organization.id} orgName={organization.name} />

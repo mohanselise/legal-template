@@ -18,23 +18,34 @@ export const ourFileRouter = {
     },
   })
     .middleware(async () => {
-      const { userId } = await auth();
-      if (!userId) {
-        throw new UploadThingError("Unauthorized");
-      }
+      try {
+        const { userId, orgId, orgRole } = await auth();
+        console.log("[UPLOADTHING] Auth result:", { userId, orgId, orgRole });
 
-      // Only org admins can upload letterheads
-      const isAdmin = await isOrgAdmin();
-      if (!isAdmin) {
-        throw new UploadThingError("Forbidden: Admin access required");
-      }
+        if (!userId) {
+          throw new UploadThingError("Unauthorized");
+        }
 
-      const org = await getActiveOrganization();
-      if (!org) {
-        throw new UploadThingError("No active organization");
-      }
+        // Only org admins can upload letterheads
+        const isAdmin = await isOrgAdmin();
+        console.log("[UPLOADTHING] isAdmin:", isAdmin);
 
-      return { userId, organizationId: org.id };
+        if (!isAdmin) {
+          throw new UploadThingError("Forbidden: Admin access required");
+        }
+
+        const org = await getActiveOrganization();
+        console.log("[UPLOADTHING] Organization:", org?.id, org?.name);
+
+        if (!org) {
+          throw new UploadThingError("No active organization");
+        }
+
+        return { userId, organizationId: org.id };
+      } catch (error) {
+        console.error("[UPLOADTHING] Middleware error:", error);
+        throw error;
+      }
     })
     .onUploadComplete(async ({ metadata, file }) => {
       return {

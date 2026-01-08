@@ -95,6 +95,14 @@ export default clerkMiddleware(
       return NextResponse.next();
     }
 
+    // Handle uploadthing API routes - check auth and return early
+    if (pathname.startsWith('/api/uploadthing')) {
+      await auth.protect({
+        unauthenticatedUrl: signInUrl,
+      });
+      return NextResponse.next();
+    }
+
     // Check if path has locale
     const pathnameHasLocale = routing.locales.some(
       (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
@@ -139,9 +147,9 @@ export const config = {
   // Match only internationalized pathnames
   matcher: [
     // Match all pathnames except for
-    // - … if they start with `/api` (except /api/admin, /api/org, /api/onboarding), `/_next` or `/_vercel`
+    // - … if they start with `/api` (except /api/admin, /api/org, /api/onboarding, /api/uploadthing), `/_next` or `/_vercel`
     // - … the ones containing a dot (e.g. `favicon.ico`)
-    '/((?!api(?!/admin|/org|/onboarding)|_next|_vercel|.*\\..*).*)',
+    '/((?!api(?!/admin|/org|/onboarding|/uploadthing)|_next|_vercel|.*\\..*).*)',
     // Optional: only run on root (/) URL
     '/',
     // Include sign-in route
@@ -154,5 +162,7 @@ export const config = {
     '/api/org(.*)',
     // Include onboarding API routes for authentication
     '/api/onboarding(.*)',
+    // Include uploadthing API routes for authentication
+    '/api/uploadthing(.*)',
   ],
 };

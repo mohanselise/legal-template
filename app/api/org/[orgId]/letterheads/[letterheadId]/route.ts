@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/db";
+import { prisma, unsetOtherDefaultLetterheads } from "@/lib/db";
 import { UTApi } from "uploadthing/server";
 import {
   canAccessOrganization,
@@ -154,13 +154,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     // Handle isDefault toggle
     if (isDefault !== undefined) {
-      if (isDefault && !existing.isDefault) {
-        // Setting as default - unset other defaults first
-        await prisma.organizationLetterhead.updateMany({
-          where: { organizationId: orgId, isDefault: true },
-          data: { isDefault: false },
-        });
-      }
       updateData.isDefault = !!isDefault;
     }
 
@@ -168,6 +161,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       where: { id: letterheadId },
       data: updateData,
     });
+
+    // If setting as default, unset other defaults (uses raw SQL to avoid transaction issues)
+    if (isDefault && !existing.isDefault) {
+      await unsetOtherDefaultLetterheads(orgId, letterheadId);
+    }
 
     return NextResponse.json({ letterhead });
   } catch (error) {

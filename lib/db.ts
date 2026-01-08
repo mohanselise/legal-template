@@ -9,7 +9,7 @@
  */
 
 import { PrismaNeonHttp } from "@prisma/adapter-neon";
-import { PrismaClient } from "./generated/prisma/client";
+import { PrismaClient, Prisma } from "./generated/prisma/client";
 
 // Singleton pattern for Prisma Client
 // Prevents multiple instances during Next.js hot-reload in development
@@ -46,6 +46,20 @@ function getPrismaClient(): PrismaClient {
 }
 
 export const prisma = getPrismaClient();
+
+/**
+ * Unset all default letterheads for an organization except the specified one.
+ * Uses raw SQL to avoid transaction issues with Neon HTTP adapter.
+ */
+export async function unsetOtherDefaultLetterheads(orgId: string, exceptId: string) {
+  await prisma.$executeRaw`
+    UPDATE "OrganizationLetterhead"
+    SET "isDefault" = false, "updatedAt" = NOW()
+    WHERE "organizationId" = ${orgId}
+      AND "isDefault" = true
+      AND "id" != ${exceptId}
+  `;
+}
 
 // Export types for convenience
 export type {

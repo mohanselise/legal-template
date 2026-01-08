@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@/lib/db";
+import { prisma, unsetOtherDefaultLetterheads } from "@/lib/db";
 import {
   canAccessOrganization,
   isOrgAdmin,
@@ -138,14 +138,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // If this letterhead is set as default, unset other defaults
-    if (isDefault) {
-      await prisma.organizationLetterhead.updateMany({
-        where: { organizationId: orgId, isDefault: true },
-        data: { isDefault: false },
-      });
-    }
-
     const letterhead = await prisma.organizationLetterhead.create({
       data: {
         organizationId: orgId,
@@ -163,6 +155,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         isDefault: !!isDefault,
       },
     });
+
+    // If this letterhead is set as default, unset other defaults (uses raw SQL to avoid transaction issues)
+    if (isDefault) {
+      await unsetOtherDefaultLetterheads(orgId, letterhead.id);
+    }
 
     return NextResponse.json({ letterhead }, { status: 201 });
   } catch (error) {

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSeliseCredentialsForOrg } from '@/lib/system-settings';
+import { getActiveOrganization } from '@/lib/auth/organization';
 
 /**
  * Prepare contract with SELISE Signature
@@ -21,19 +23,21 @@ export async function POST(request: NextRequest) {
 
     // If fileId and accessToken not provided, upload first
     if (!uploadedFileId || !access_token) {
-      // Validate environment variables
-      const clientId = process.env.SELISE_CLIENT_ID;
-      const clientSecret = process.env.SELISE_CLIENT_SECRET;
+      // Get user's active organization for credential lookup
+      const activeOrg = await getActiveOrganization();
+
+      // Get credentials with org fallback to system settings
+      const { clientId, clientSecret, source } = await getSeliseCredentialsForOrg(activeOrg?.id);
 
       if (!clientId || !clientSecret) {
         return NextResponse.json(
-          { error: 'SELISE credentials not configured' },
+          { error: 'SELISE credentials not configured. Please set them in Organization Settings or Admin Settings.' },
           { status: 500 }
         );
       }
 
       // Step 1: Get access token
-      console.log('🔐 Step 1: Authenticating with SELISE Identity API...');
+      console.log(`🔐 Step 1: Authenticating with SELISE Identity API (credentials from: ${source})...`);
       const tokenResponse = await fetch('https://selise.app/api/identity/v100/identity/token', {
         method: 'POST',
         headers: {

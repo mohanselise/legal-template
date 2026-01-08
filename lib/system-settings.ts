@@ -68,3 +68,64 @@ export async function getBlocksProjectKey(): Promise<string> {
   const value = await getSystemSetting("blocksProjectKey", fallback);
   return value || "";
 }
+
+export async function getSeliseClientId(): Promise<string> {
+  const fallback = process.env.SELISE_CLIENT_ID || null;
+  const value = await getSystemSetting("seliseClientId", fallback);
+  return value || "";
+}
+
+export async function getSeliseClientSecret(): Promise<string> {
+  const fallback = process.env.SELISE_CLIENT_SECRET || null;
+  const value = await getSystemSetting("seliseClientSecret", fallback);
+  return value || "";
+}
+
+/**
+ * Get SELISE credentials with organization-level override support
+ * Priority: Org credentials -> System settings -> Environment variables
+ *
+ * @param orgId - Optional organization ID to check for org-specific credentials
+ * @returns Object with clientId, clientSecret, and source indicating where credentials came from
+ */
+export async function getSeliseCredentialsForOrg(orgId?: string | null): Promise<{
+  clientId: string;
+  clientSecret: string;
+  source: "organization" | "system" | "env";
+}> {
+  // If orgId provided, check organization credentials first
+  if (orgId) {
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { seliseClientId: true, seliseClientSecret: true },
+    });
+
+    // If org has both credentials configured, use them
+    if (org?.seliseClientId && org?.seliseClientSecret) {
+      return {
+        clientId: org.seliseClientId,
+        clientSecret: org.seliseClientSecret,
+        source: "organization",
+      };
+    }
+  }
+
+  // Fall back to system settings (which itself falls back to env vars)
+  const [clientId, clientSecret] = await Promise.all([
+    getSeliseClientId(),
+    getSeliseClientSecret(),
+  ]);
+
+  // Determine if we're using system settings or env vars
+  const systemSetting = await prisma.systemSettings.findUnique({
+    where: { key: "seliseClientId" },
+  });
+
+  const source = systemSetting?.value ? "system" : "env";
+
+  return {
+    clientId,
+    clientSecret,
+    source,
+  };
+}

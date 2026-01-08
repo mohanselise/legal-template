@@ -6,6 +6,8 @@ import {
   clearSystemSettingCache,
   getBlocksProjectKey,
   getOpenRouterApiKey,
+  getSeliseClientId,
+  getSeliseClientSecret,
 } from "@/lib/system-settings";
 
 const settingsSchema = z.object({
@@ -26,6 +28,8 @@ const settingsSchema = z.object({
   // Integration keys
   blocksProjectKey: z.string().optional(),
   openRouterApiKey: z.string().optional(),
+  seliseClientId: z.string().optional(),
+  seliseClientSecret: z.string().optional(),
 });
 
 /**
@@ -53,6 +57,8 @@ export async function GET(request: NextRequest) {
       templateConfiguratorBusinessLogic,
       blocksProjectKey,
       openRouterApiKey,
+      seliseClientId,
+      seliseClientSecret,
     ] = await Promise.all([
       prisma.systemSettings.findUnique({ where: { key: "documentGenerationAiModel" } }),
       prisma.systemSettings.findUnique({ where: { key: "commonPromptInstructions" } }),
@@ -66,6 +72,8 @@ export async function GET(request: NextRequest) {
       prisma.systemSettings.findUnique({ where: { key: "templateConfiguratorBusinessLogic" } }),
       getBlocksProjectKey(),
       getOpenRouterApiKey(),
+      getSeliseClientId(),
+      getSeliseClientSecret(),
     ]);
 
     // If not found, return empty (will use default in frontend)
@@ -82,6 +90,8 @@ export async function GET(request: NextRequest) {
       templateConfiguratorBusinessLogic: templateConfiguratorBusinessLogic?.value || null,
       blocksProjectKey: blocksProjectKey || null,
       openRouterApiKey: openRouterApiKey || null,
+      seliseClientId: seliseClientId || null,
+      seliseClientSecret: seliseClientSecret || null,
     });
   } catch (error) {
     console.error("[SETTINGS_GET]", error);
@@ -126,6 +136,8 @@ export async function PUT(request: NextRequest) {
       templateConfiguratorBusinessLogic,
       blocksProjectKey,
       openRouterApiKey,
+      seliseClientId,
+      seliseClientSecret,
     } = validation.data;
 
     // Upsert settings in parallel
@@ -357,10 +369,48 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    if (seliseClientId !== undefined) {
+      upsertPromises.push(
+        prisma.systemSettings.upsert({
+          where: { key: "seliseClientId" },
+          update: {
+            value: seliseClientId,
+            updatedBy: userId,
+          },
+          create: {
+            key: "seliseClientId",
+            value: seliseClientId,
+            description: "SELISE Signature API Client ID for e-signing",
+            updatedBy: userId,
+          },
+        })
+      );
+    }
+
+    if (seliseClientSecret !== undefined) {
+      upsertPromises.push(
+        prisma.systemSettings.upsert({
+          where: { key: "seliseClientSecret" },
+          update: {
+            value: seliseClientSecret,
+            updatedBy: userId,
+          },
+          create: {
+            key: "seliseClientSecret",
+            value: seliseClientSecret,
+            description: "SELISE Signature API Client Secret for e-signing",
+            updatedBy: userId,
+          },
+        })
+      );
+    }
+
     await Promise.all(upsertPromises);
     clearSystemSettingCache([
       "blocksProjectKey",
       "openRouterApiKey",
+      "seliseClientId",
+      "seliseClientSecret",
       "documentGenerationAiModel",
       "commonPromptInstructions",
       "documentGenerationOutputInUserLocale",

@@ -53,7 +53,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    return NextResponse.json({ organization });
+    // Return organization with credential status (not actual values)
+    const { seliseClientId, seliseClientSecret, ...orgWithoutCredentials } = organization;
+    return NextResponse.json({
+      organization: {
+        ...orgWithoutCredentials,
+        hasSeliseCredentials: !!(seliseClientId && seliseClientSecret),
+      },
+    });
   } catch (error) {
     console.error("[ORG_GET_BY_ID]", error);
     return NextResponse.json(
@@ -93,7 +100,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const { name, slug, logoUrl, maxUsers, maxTemplates } = body;
+    const { name, slug, logoUrl, maxUsers, maxTemplates, seliseClientId, seliseClientSecret } = body;
 
     // Build update data
     const updateData: Record<string, any> = {};
@@ -128,6 +135,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (maxTemplates !== undefined) {
       updateData.maxTemplates = maxTemplates;
+    }
+
+    // Handle SELISE Signature credentials
+    // Allow empty string to clear credentials (falls back to system settings)
+    if (seliseClientId !== undefined) {
+      updateData.seliseClientId = seliseClientId || null;
+    }
+
+    if (seliseClientSecret !== undefined) {
+      updateData.seliseClientSecret = seliseClientSecret || null;
     }
 
     // Get the organization to find clerkOrgId

@@ -64,6 +64,8 @@ const settingsSchema = z.object({
   // Integration keys
   blocksProjectKey: z.string().optional(),
   openRouterApiKey: z.string().optional(),
+  seliseClientId: z.string().optional(),
+  seliseClientSecret: z.string().optional(),
 });
 
 const DEFAULT_TEMPLATE_CONFIGURATOR_BUSINESS_LOGIC = `You are building REUSABLE, FRICTIONLESS legal form templates. End users fill these out to generate contracts.
@@ -383,6 +385,8 @@ export default function SettingsPage() {
       templateConfiguratorBusinessLogic: "",
       blocksProjectKey: "",
       openRouterApiKey: "",
+      seliseClientId: "",
+      seliseClientSecret: "",
     },
   });
 
@@ -408,6 +412,8 @@ export default function SettingsPage() {
           templateConfiguratorBusinessLogic: data.templateConfiguratorBusinessLogic || DEFAULT_TEMPLATE_CONFIGURATOR_BUSINESS_LOGIC,
           blocksProjectKey: data.blocksProjectKey || "",
           openRouterApiKey: data.openRouterApiKey || "",
+          seliseClientId: data.seliseClientId || "",
+          seliseClientSecret: data.seliseClientSecret || "",
         });
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -426,6 +432,8 @@ export default function SettingsPage() {
           templateConfiguratorBusinessLogic: DEFAULT_TEMPLATE_CONFIGURATOR_BUSINESS_LOGIC,
           blocksProjectKey: "",
           openRouterApiKey: "",
+          seliseClientId: "",
+          seliseClientSecret: "",
         });
       } finally {
         setIsLoading(false);
@@ -567,6 +575,30 @@ export default function SettingsPage() {
                     type="password"
                     placeholder="Enter OpenRouter API key"
                     {...form.register("openRouterApiKey")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="seliseClientId">SELISE Signature Client ID</Label>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Client ID for SELISE Signature API. Used for e-signing contracts.
+                  </p>
+                  <Input
+                    id="seliseClientId"
+                    type="password"
+                    placeholder="Enter SELISE Client ID"
+                    {...form.register("seliseClientId")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="seliseClientSecret">SELISE Signature Client Secret</Label>
+                  <p className="text-xs text-[hsl(var(--globe-grey))]">
+                    Client Secret for SELISE Signature API. Stored securely in settings.
+                  </p>
+                  <Input
+                    id="seliseClientSecret"
+                    type="password"
+                    placeholder="Enter SELISE Client Secret"
+                    {...form.register("seliseClientSecret")}
                   />
                 </div>
               </CardContent>

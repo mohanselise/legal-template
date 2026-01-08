@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import { OrgLayoutClient } from "./_components/org-layout-client";
 import { mapClerkOrgRole, getOrganizationBySlugWithSync } from "@/lib/auth/organization";
+import { prisma } from "@/lib/db";
 
 export default async function OrgLayout({
   children,
@@ -34,6 +35,17 @@ export default async function OrgLayout({
 
   if (!role) {
     redirect(`/${locale}/org/unauthorized`);
+  }
+
+  // Check if user has completed onboarding
+  const profile = await prisma.userProfile.findUnique({
+    where: { clerkUserId: userId },
+    select: { onboardingCompleted: true },
+  });
+
+  if (!profile?.onboardingCompleted) {
+    // Redirect to onboarding
+    redirect(`/${locale}/onboarding`);
   }
 
   return (

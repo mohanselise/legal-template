@@ -1,16 +1,16 @@
-import { SignIn } from '@clerk/nextjs';
+import { SignUp } from '@clerk/nextjs';
 
-export default function SignInPage() {
+export default function SignUpPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[hsl(var(--gradient-light-from))] to-[hsl(var(--gradient-light-to))]">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-[hsl(var(--fg))]">Welcome Back</h1>
+          <h1 className="text-3xl font-bold text-[hsl(var(--fg))]">Create Account</h1>
           <p className="mt-2 text-[hsl(var(--globe-grey))]">
-            Sign in to access your dashboard
+            Sign up to get started with Legal Templates
           </p>
         </div>
-        <SignIn
+        <SignUp
           appearance={{
             elements: {
               rootBox: 'mx-auto',
@@ -18,9 +18,9 @@ export default function SignInPage() {
             },
           }}
           routing="path"
-          path="/sign-in"
-          signUpUrl="/sign-up"
-          afterSignInUrl="/en/onboarding"
+          path="/sign-up"
+          signInUrl="/sign-in"
+          afterSignUpUrl="/en/onboarding"
         />
       </div>
     </div>

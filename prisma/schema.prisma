@@ -28,12 +28,52 @@ model Organization {
 
   // Relations
   templates    Template[]
+  permissions  OrganizationPermission[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([clerkOrgId])
   @@index([slug])
+}
+
+// User profile for onboarding status and extended profile data
+model UserProfile {
+  id                       String    @id @default(cuid())
+  clerkUserId              String    @unique // Clerk user ID
+
+  // Profile basics
+  jobTitle                 String?
+  department               String?
+
+  // Onboarding tracking
+  onboardingCompleted      Boolean   @default(false)
+  onboardingCompletedAt    DateTime?
+  onboardingStepsCompleted String[]  @default([]) // ["profile", "org_settings", "invite_team"]
+
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  @@index([clerkUserId])
+}
+
+// Granular organization permissions (for custom role overrides)
+model OrganizationPermission {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Permission name (e.g., "templates.create", "settings.integrations")
+  permission     String
+
+  // Roles that have this permission (org_admin, org_editor, org_member)
+  roles          String[]
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, permission])
+  @@index([organizationId])
 }
 
 // Template model for legal document templates

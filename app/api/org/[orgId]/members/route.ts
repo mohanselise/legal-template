@@ -185,13 +185,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Create invitation via Clerk
+    // Create invitation via Clerk - redirect to sign-up for new users
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const invitation =
       await client.organizations.createOrganizationInvitation({
         organizationId: org.clerkOrgId,
         emailAddress: email,
         role: clerkRole,
         inviterUserId: userId,
+        redirectUrl: `${baseUrl}/sign-up`,
       });
 
     return NextResponse.json({

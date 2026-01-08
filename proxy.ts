@@ -20,12 +20,19 @@ function detectLocale(request: NextRequest): string {
   return 'en';
 }
 
-function getLocalePrefixedSignInTarget(pathname: string): string | null {
+function getLocalePrefixedAuthTarget(pathname: string): string | null {
   for (const locale of routing.locales) {
-    const localizedBase = `/${locale}/sign-in`;
-    if (pathname === localizedBase || pathname.startsWith(`${localizedBase}/`)) {
-      const remainder = pathname.slice(localizedBase.length);
+    // Handle /en/sign-in → /sign-in
+    const signInBase = `/${locale}/sign-in`;
+    if (pathname === signInBase || pathname.startsWith(`${signInBase}/`)) {
+      const remainder = pathname.slice(signInBase.length);
       return `/sign-in${remainder}`;
+    }
+    // Handle /en/sign-up → /sign-up
+    const signUpBase = `/${locale}/sign-up`;
+    if (pathname === signUpBase || pathname.startsWith(`${signUpBase}/`)) {
+      const remainder = pathname.slice(signUpBase.length);
+      return `/sign-up${remainder}`;
     }
   }
   return null;
@@ -49,9 +56,9 @@ export default clerkMiddleware(
       return NextResponse.next();
     }
 
-    const localeSignInTarget = getLocalePrefixedSignInTarget(pathname);
-    if (localeSignInTarget) {
-      const target = new URL(localeSignInTarget + request.nextUrl.search, request.url);
+    const authTarget = getLocalePrefixedAuthTarget(pathname);
+    if (authTarget) {
+      const target = new URL(authTarget + request.nextUrl.search, request.url);
       return NextResponse.redirect(target);
     }
 
@@ -80,6 +87,14 @@ export default clerkMiddleware(
       return NextResponse.next();
     }
 
+    // Handle onboarding API routes - check auth and return early
+    if (pathname.startsWith('/api/onboarding')) {
+      await auth.protect({
+        unauthenticatedUrl: signInUrl,
+      });
+      return NextResponse.next();
+    }
+
     // Check if path has locale
     const pathnameHasLocale = routing.locales.some(
       (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
@@ -92,7 +107,8 @@ export default clerkMiddleware(
     }
 
     // Redirect root or non-localized paths to English
-    if (!pathnameHasLocale && !pathname.startsWith('/sign-in')) {
+    // Exclude auth routes from locale prefixing
+    if (!pathnameHasLocale && !pathname.startsWith('/sign-in') && !pathname.startsWith('/sign-up')) {
       const locale = detectLocale(request); // Always returns 'en'
       const newPath = pathname === '/' ? `/${locale}` : `/${locale}${pathname}`;
       return NextResponse.redirect(new URL(newPath + request.nextUrl.search, request.url));
@@ -106,7 +122,7 @@ export default clerkMiddleware(
       });
     }
 
-    if (pathname.startsWith('/sign-in')) {
+    if (pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up')) {
       return NextResponse.next();
     }
 
@@ -115,7 +131,7 @@ export default clerkMiddleware(
   },
   {
     signInUrl: '/sign-in',
-    signUpUrl: '/sign-in',
+    signUpUrl: '/sign-up',
   }
 );
 
@@ -123,16 +139,20 @@ export const config = {
   // Match only internationalized pathnames
   matcher: [
     // Match all pathnames except for
-    // - … if they start with `/api` (except /api/admin and /api/org), `/_next` or `/_vercel`
+    // - … if they start with `/api` (except /api/admin, /api/org, /api/onboarding), `/_next` or `/_vercel`
     // - … the ones containing a dot (e.g. `favicon.ico`)
-    '/((?!api(?!/admin|/org)|_next|_vercel|.*\\..*).*)',
+    '/((?!api(?!/admin|/org|/onboarding)|_next|_vercel|.*\\..*).*)',
     // Optional: only run on root (/) URL
     '/',
     // Include sign-in route
     '/sign-in(.*)',
+    // Include sign-up route
+    '/sign-up(.*)',
     // Include admin API routes for authentication
     '/api/admin(.*)',
     // Include org API routes for authentication
     '/api/org(.*)',
+    // Include onboarding API routes for authentication
+    '/api/onboarding(.*)',
   ],
 };

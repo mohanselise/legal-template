@@ -954,5 +954,76 @@
     "signatories": "Signatories",
     "signatureLabel": "Signature",
     "dateLabel": "Date"
+  },
+  "onboarding": {
+    "title": "Welcome to {orgName}",
+    "titleNoOrg": "Welcome",
+    "subtitle": "Let's get you set up in just a few steps",
+    "steps": {
+      "profile": {
+        "title": "Your Profile",
+        "description": "Tell us a bit about yourself"
+      },
+      "orgSettings": {
+        "title": "Organization",
+        "description": "Configure your organization details"
+      },
+      "inviteTeam": {
+        "title": "Invite Team",
+        "description": "Add team members to collaborate on legal documents"
+      },
+      "complete": {
+        "title": "Get Started",
+        "description": "You're all set!"
+      }
+    },
+    "form": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "jobTitle": "Job Title",
+      "jobTitlePlaceholder": "e.g., Legal Counsel, Contract Manager",
+      "department": "Department",
+      "departmentPlaceholder": "e.g., Legal, Operations, HR",
+      "orgName": "Organization Name",
+      "orgNamePlaceholder": "Acme Corporation",
+      "orgNameHelp": "This is how your organization will appear to team members",
+      "email": "Email address",
+      "emailPlaceholder": "colleague@company.com",
+      "role": "Role",
+      "roleAdmin": "Admin",
+      "roleAdminDescription": "Full access to all features",
+      "roleEditor": "Editor",
+      "roleEditorDescription": "Can create and edit templates",
+      "roleMember": "Member",
+      "roleMemberDescription": "Can view and use templates"
+    },
+    "buttons": {
+      "continue": "Continue",
+      "skip": "Skip for now",
+      "sendInvitations": "Send Invitations",
+      "addAnother": "Add another",
+      "goToDashboard": "Go to Dashboard",
+      "saving": "Saving...",
+      "sending": "Sending...",
+      "loading": "Loading..."
+    },
+    "complete": {
+      "title": "You're All Set!",
+      "description": "Welcome to {orgName}. You're ready to start creating legal documents.",
+      "descriptionNoOrg": "You're ready to start creating legal documents.",
+      "quickLinks": "Quick Links",
+      "browseTemplates": "Browse Templates",
+      "browseTemplatesDescription": "Explore available legal document templates",
+      "manageTeam": "Manage Team",
+      "manageTeamDescription": "Invite team members and manage roles",
+      "settings": "Settings",
+      "settingsDescription": "Configure organization settings"
+    },
+    "errors": {
+      "failedToSave": "Failed to save profile",
+      "failedToUpdate": "Failed to update organization",
+      "failedToInvite": "Failed to send invitation",
+      "networkError": "Network error"
+    }
   }
 }

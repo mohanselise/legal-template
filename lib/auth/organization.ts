@@ -1,6 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import type { Organization } from "@/lib/generated/prisma/client";
+import { DEFAULT_ROLE_PERMISSIONS, type OrgPermission } from "./permissions";
 
 /**
  * Organization roles within Clerk Organizations
@@ -262,4 +263,64 @@ export async function getOrganizationBySlugWithSync(
   }
 
   return organization;
+}
+
+/**
+ * Check if the current user has a specific permission in their organization
+ * First checks default role permissions, then checks for custom org-level overrides
+ */
+export async function hasOrgPermission(permission: OrgPermission): Promise<boolean> {
+  const role = await getOrgRole();
+  if (!role) return false;
+
+  // Check default role permissions
+  const rolePermissions = DEFAULT_ROLE_PERMISSIONS[role];
+  if (rolePermissions.includes(permission)) {
+    return true;
+  }
+
+  // Check for custom org-level permission overrides
+  const org = await getActiveOrganization();
+  if (org) {
+    const customPermission = await prisma.organizationPermission.findUnique({
+      where: {
+        organizationId_permission: {
+          organizationId: org.id,
+          permission,
+        },
+      },
+    });
+
+    if (customPermission && customPermission.roles.includes(role)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Require a specific permission - returns false if not granted
+ * Use in server components/API routes to check permissions
+ */
+export async function requireOrgPermission(permission: OrgPermission): Promise<boolean> {
+  return hasOrgPermission(permission);
+}
+
+/**
+ * Check multiple permissions at once
+ * Returns true if user has ALL specified permissions
+ */
+export async function hasAllOrgPermissions(permissions: OrgPermission[]): Promise<boolean> {
+  const results = await Promise.all(permissions.map(hasOrgPermission));
+  return results.every(Boolean);
+}
+
+/**
+ * Check multiple permissions at once
+ * Returns true if user has ANY of the specified permissions
+ */
+export async function hasAnyOrgPermission(permissions: OrgPermission[]): Promise<boolean> {
+  const results = await Promise.all(permissions.map(hasOrgPermission));
+  return results.some(Boolean);
 }

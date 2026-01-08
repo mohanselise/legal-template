@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { mapClerkOrgRole } from "@/lib/auth/organization";
 import { OrgSettingsForm } from "./_components/org-settings-form";
 import { DangerZone } from "./_components/danger-zone";
+import { LetterheadSection } from "./_components/letterhead-section";
 
 export default async function OrgSettingsPage({
   params,

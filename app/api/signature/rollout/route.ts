@@ -2,6 +2,8 @@ import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import type { LegalDocument } from '@/app/api/templates/employment-agreement/schema';
 import { SIG_PAGE_LAYOUT, getSignatureBlockPosition } from '@/lib/pdf/signature-layout';
+import { getSeliseCredentialsForOrg } from '@/lib/system-settings';
+import { getActiveOrganization } from '@/lib/auth/organization';
 
 interface SignatureField {
   id: string;
@@ -95,18 +97,21 @@ export async function POST(request: NextRequest) {
       console.log('⚠️  No signature fields provided, will use default positions');
     }
 
-    const clientId = process.env.SELISE_CLIENT_ID;
-    const clientSecret = process.env.SELISE_CLIENT_SECRET;
+    // Get user's active organization for credential lookup
+    const activeOrg = await getActiveOrganization();
+
+    // Get credentials with org fallback to system settings
+    const { clientId, clientSecret, source } = await getSeliseCredentialsForOrg(activeOrg?.id);
 
     if (!clientId || !clientSecret) {
       return NextResponse.json(
-        { error: 'SELISE credentials are not configured on the server.' },
+        { error: 'SELISE credentials not configured. Please set them in Organization Settings or Admin Settings.' },
         { status: 500 }
       );
     }
 
     // Acquire token
-    console.log('🔐 Authenticating with SELISE Identity API…');
+    console.log(`🔐 Authenticating with SELISE Identity API (credentials from: ${source})…`);
     const token = await getAccessToken(clientId, clientSecret);
     console.log('✅ Access token acquired\n');
 

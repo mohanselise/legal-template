@@ -49,6 +49,7 @@ export default async function OrgSettingsPage({
           name: organization.name,
           slug: organization.slug,
           logoUrl: organization.logoUrl,
+          hasSeliseCredentials: !!(organization.seliseClientId && organization.seliseClientSecret),
         }}
       />
 

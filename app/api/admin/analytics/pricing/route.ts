@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { requireAdminRole, requireAdminOrEditorRole } from '@/lib/auth/roles';
 
 const pricingSchema = z.object({
     model: z.string().min(1),
@@ -16,6 +17,11 @@ export async function GET(request: NextRequest) {
         if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        // Verify admin or editor role
+        const forbidden = await requireAdminOrEditorRole();
+        if (forbidden) return forbidden;
+
         const pricing = await prisma.modelPricing.findMany({
             orderBy: {
                 model: 'asc',
@@ -39,6 +45,10 @@ export async function POST(request: NextRequest) {
         if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        // Verify admin role (pricing modifications are admin-only)
+        const forbidden = await requireAdminRole();
+        if (forbidden) return forbidden;
 
         const body = await request.json();
         const validation = pricingSchema.safeParse(body);

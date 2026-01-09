@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { randomUUID } from "crypto";
+import { requireAdminOrEditorRole } from "@/lib/auth/roles";
 
 type RouteParams = {
   params: Promise<{ id: string }>;
@@ -25,6 +26,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin or editor role
+    const forbidden = await requireAdminOrEditorRole();
+    if (forbidden) return forbidden;
 
     const { id } = await params;
 
@@ -73,6 +78,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin or editor role
+    const forbidden = await requireAdminOrEditorRole();
+    if (forbidden) return forbidden;
 
     const { id } = await params;
 

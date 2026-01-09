@@ -3,14 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { FileImage, Plus } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { FileImage, Plus, Upload } from "lucide-react";
 import { LetterheadCard } from "./letterhead-card";
 import { LetterheadUploadDialog } from "./letterhead-upload-dialog";
 import type { OrganizationLetterhead } from "@/lib/generated/prisma/client";
@@ -33,58 +27,49 @@ export function LetterheadSection({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-[hsl(var(--selise-blue))]/10 flex items-center justify-center">
-                <FileImage className="h-5 w-5 text-[hsl(var(--selise-blue))]" />
+      {initialLetterheads.length === 0 ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="border-2 border-dashed border-[hsl(var(--border))] rounded-lg p-12 text-center">
+              <div className="h-16 w-16 rounded-2xl bg-[hsl(var(--selise-blue))]/10 flex items-center justify-center mx-auto mb-4">
+                <FileImage className="w-8 h-8 text-[hsl(var(--selise-blue))]" />
               </div>
-              <div>
-                <CardTitle>Company Letterheads</CardTitle>
-                <CardDescription>
-                  Upload letterheads for your organization&apos;s documents
-                </CardDescription>
-              </div>
+              <h3 className="font-semibold text-lg text-[hsl(var(--fg))] mb-2">
+                No letterheads yet
+              </h3>
+              <p className="text-sm text-[hsl(var(--globe-grey))] mb-6 max-w-sm mx-auto">
+                Upload your company letterhead to automatically apply branding to all generated documents.
+              </p>
+              <Button onClick={() => setShowUploadDialog(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload First Letterhead
+              </Button>
             </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-[hsl(var(--globe-grey))]">
+              {initialLetterheads.length} letterhead{initialLetterheads.length !== 1 ? 's' : ''} uploaded
+            </p>
             <Button onClick={() => setShowUploadDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Letterhead
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          {initialLetterheads.length === 0 ? (
-            <div className="border-2 border-dashed border-[hsl(var(--border))] rounded-lg p-8 text-center">
-              <FileImage className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="font-medium text-[hsl(var(--fg))] mb-1">
-                No letterheads yet
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Upload your company letterhead to use in generated documents.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => setShowUploadDialog(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Upload Letterhead
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {initialLetterheads.map((letterhead) => (
-                <LetterheadCard
-                  key={letterhead.id}
-                  letterhead={letterhead}
-                  orgId={orgId}
-                  onUpdate={handleUpdate}
-                />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {initialLetterheads.map((letterhead) => (
+              <LetterheadCard
+                key={letterhead.id}
+                letterhead={letterhead}
+                orgId={orgId}
+                onUpdate={handleUpdate}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <LetterheadUploadDialog
         open={showUploadDialog}

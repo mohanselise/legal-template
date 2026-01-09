@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { $Enums } from "@/lib/generated/prisma/client";
+import { requireAdminOrEditorRole } from "@/lib/auth/roles";
 
 // Schema for creating a screen
 const createScreenSchema = z.object({
@@ -44,6 +45,10 @@ export async function GET(
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin or editor role
+    const forbidden = await requireAdminOrEditorRole();
+    if (forbidden) return forbidden;
 
     const { id: templateId } = await params;
 
@@ -92,6 +97,10 @@ export async function POST(
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin or editor role
+    const forbidden = await requireAdminOrEditorRole();
+    if (forbidden) return forbidden;
 
     const { id: templateId } = await params;
 
@@ -184,6 +193,10 @@ export async function PATCH(
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin or editor role
+    const forbidden = await requireAdminOrEditorRole();
+    if (forbidden) return forbidden;
 
     const { id: templateId } = await params;
 

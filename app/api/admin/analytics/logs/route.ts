@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma, Prisma } from '@/lib/db';
+import { requireAdminOrEditorRole } from '@/lib/auth/roles';
 
 export async function GET(request: NextRequest) {
     try {
@@ -9,11 +10,16 @@ export async function GET(request: NextRequest) {
         if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        // Verify admin or editor role
+        const forbidden = await requireAdminOrEditorRole();
+        if (forbidden) return forbidden;
+
         const searchParams = request.nextUrl.searchParams;
 
-        // Pagination
-        const page = parseInt(searchParams.get('page') || '1');
-        const limit = parseInt(searchParams.get('limit') || '50');
+        // Pagination with bounds validation
+        const page = Math.max(parseInt(searchParams.get('page') || '1'), 1);
+        const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50'), 1), 100);
         const skip = (page - 1) * limit;
 
         // Filters

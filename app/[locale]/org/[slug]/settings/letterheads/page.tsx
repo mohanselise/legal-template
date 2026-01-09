@@ -2,9 +2,9 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { mapClerkOrgRole } from "@/lib/auth/organization";
-import { GeneralSettingsForm } from "./_components/general-settings-form";
+import { LetterheadSection } from "../_components/letterhead-section";
 
-export default async function SettingsGeneralPage({
+export default async function SettingsLetterheadsPage({
   params,
 }: {
   params: Promise<{ locale: string; slug: string }>;
@@ -18,18 +18,16 @@ export default async function SettingsGeneralPage({
 
   const role = mapClerkOrgRole(orgRole ?? undefined);
 
-  // Only admins can access settings
   if (role !== "org_admin") {
     redirect(`/${locale}/org/${slug}`);
   }
 
   const organization = await prisma.organization.findUnique({
     where: { slug },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      logoUrl: true,
+    include: {
+      letterheads: {
+        orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+      },
     },
   });
 
@@ -41,20 +39,16 @@ export default async function SettingsGeneralPage({
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-[hsl(var(--fg))] font-heading">
-          General Settings
+          Company Letterheads
         </h2>
         <p className="text-sm text-[hsl(var(--globe-grey))] mt-1">
-          Update your organization&apos;s basic information
+          Upload and manage letterheads for your organization&apos;s documents
         </p>
       </div>
 
-      <GeneralSettingsForm
+      <LetterheadSection
         orgId={organization.id}
-        initialData={{
-          name: organization.name,
-          slug: organization.slug,
-          logoUrl: organization.logoUrl,
-        }}
+        initialLetterheads={organization.letterheads}
       />
     </div>
   );

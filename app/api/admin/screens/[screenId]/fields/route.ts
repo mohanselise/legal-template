@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma, FieldType } from "@/lib/db";
+import { requireAdminOrEditorRole } from "@/lib/auth/roles";
 
 // Schema for creating a field
 const createFieldSchema = z.object({
@@ -47,6 +48,10 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Verify admin or editor role
+    const forbidden = await requireAdminOrEditorRole();
+    if (forbidden) return forbidden;
+
     const { screenId } = await params;
 
     // Verify screen exists
@@ -86,6 +91,10 @@ export async function POST(
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin or editor role
+    const forbidden = await requireAdminOrEditorRole();
+    if (forbidden) return forbidden;
 
     const { screenId } = await params;
 
@@ -178,6 +187,10 @@ export async function PATCH(
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin or editor role
+    const forbidden = await requireAdminOrEditorRole();
+    if (forbidden) return forbidden;
 
     const { screenId } = await params;
 

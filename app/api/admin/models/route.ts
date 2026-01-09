@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { getOpenRouterApiKey } from "@/lib/system-settings";
+import { requireAdminRole } from "@/lib/auth/roles";
 
 // Cache models for 1 hour
 let cachedModels: OpenRouterModel[] | null = null;
@@ -108,6 +109,10 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin role (model configuration is admin-only)
+    const forbidden = await requireAdminRole();
+    if (forbidden) return forbidden;
 
     const { searchParams } = new URL(request.url);
     const useCase = searchParams.get("useCase") || undefined;

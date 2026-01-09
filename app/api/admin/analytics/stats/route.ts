@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { startOfDay, subDays, startOfMonth } from 'date-fns';
+import { requireAdminOrEditorRole } from '@/lib/auth/roles';
 
 export async function GET(request: NextRequest) {
     try {
@@ -10,6 +11,10 @@ export async function GET(request: NextRequest) {
         if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        // Verify admin or editor role
+        const forbidden = await requireAdminOrEditorRole();
+        if (forbidden) return forbidden;
 
         const now = new Date();
         const last24h = subDays(now, 1);

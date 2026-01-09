@@ -9,6 +9,7 @@ import {
   getSeliseClientId,
   getSeliseClientSecret,
 } from "@/lib/system-settings";
+import { requireAdminRole } from "@/lib/auth/roles";
 
 const settingsSchema = z.object({
   // Document generation settings
@@ -42,6 +43,10 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin role
+    const forbidden = await requireAdminRole();
+    if (forbidden) return forbidden;
 
     // Get all settings
     const [
@@ -77,6 +82,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     // If not found, return empty (will use default in frontend)
+    // SECURITY: Never expose actual secret values - only return boolean flags
     return NextResponse.json({
       documentGenerationAiModel: documentGenerationAiModel?.value || null,
       commonPromptInstructions: commonPromptInstructions?.value || null,
@@ -88,10 +94,10 @@ export async function GET(request: NextRequest) {
       formEnrichmentOutputInUserLocale: formEnrichmentOutputInUserLocale?.value === "true",
       templateConfiguratorAiModel: templateConfiguratorAiModel?.value || null,
       templateConfiguratorBusinessLogic: templateConfiguratorBusinessLogic?.value || null,
-      blocksProjectKey: blocksProjectKey || null,
-      openRouterApiKey: openRouterApiKey || null,
-      seliseClientId: seliseClientId || null,
-      seliseClientSecret: seliseClientSecret || null,
+      // Return only configuration status, not actual secret values
+      hasBlocksProjectKey: !!blocksProjectKey,
+      hasOpenRouterApiKey: !!openRouterApiKey,
+      hasSeliseCredentials: !!(seliseClientId && seliseClientSecret),
     });
   } catch (error) {
     console.error("[SETTINGS_GET]", error);
@@ -112,6 +118,10 @@ export async function PUT(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin role
+    const forbidden = await requireAdminRole();
+    if (forbidden) return forbidden;
 
     const body = await request.json();
     const validation = settingsSchema.safeParse(body);

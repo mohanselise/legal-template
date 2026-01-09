@@ -5,6 +5,7 @@ import {
   mapClerkOrgRole,
   getOrganizationByClerkId,
 } from "@/lib/auth/organization";
+import { getUserRole } from "@/lib/auth/roles";
 import { OnboardingWizard } from "./_components/onboarding-wizard";
 
 export default async function OnboardingPage({
@@ -18,6 +19,12 @@ export default async function OnboardingPage({
 
   if (!userId || !user) {
     redirect("/sign-in");
+  }
+
+  // Platform admins/editors go directly to admin dashboard
+  const platformRole = getUserRole(user);
+  if (platformRole === "admin" || platformRole === "editor") {
+    redirect(`/${locale}/admin`);
   }
 
   // Get organization details if user is in an org

@@ -2,9 +2,9 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { mapClerkOrgRole } from "@/lib/auth/organization";
-import { GeneralSettingsForm } from "./_components/general-settings-form";
+import { IntegrationsSettings } from "./_components/integrations-settings";
 
-export default async function SettingsGeneralPage({
+export default async function SettingsIntegrationsPage({
   params,
 }: {
   params: Promise<{ locale: string; slug: string }>;
@@ -18,7 +18,6 @@ export default async function SettingsGeneralPage({
 
   const role = mapClerkOrgRole(orgRole ?? undefined);
 
-  // Only admins can access settings
   if (role !== "org_admin") {
     redirect(`/${locale}/org/${slug}`);
   }
@@ -27,9 +26,8 @@ export default async function SettingsGeneralPage({
     where: { slug },
     select: {
       id: true,
-      name: true,
-      slug: true,
-      logoUrl: true,
+      seliseClientId: true,
+      seliseClientSecret: true,
     },
   });
 
@@ -41,20 +39,16 @@ export default async function SettingsGeneralPage({
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-[hsl(var(--fg))] font-heading">
-          General Settings
+          Integrations
         </h2>
         <p className="text-sm text-[hsl(var(--globe-grey))] mt-1">
-          Update your organization&apos;s basic information
+          Connect external services and APIs
         </p>
       </div>
 
-      <GeneralSettingsForm
+      <IntegrationsSettings
         orgId={organization.id}
-        initialData={{
-          name: organization.name,
-          slug: organization.slug,
-          logoUrl: organization.logoUrl,
-        }}
+        hasSeliseCredentials={!!(organization.seliseClientId && organization.seliseClientSecret)}
       />
     </div>
   );

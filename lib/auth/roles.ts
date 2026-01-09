@@ -117,21 +117,65 @@ export function getAllowedRoutes(role: UserRole | null): string[] {
 export async function checkApiRouteAccess(pathname: string): Promise<NextResponse | null> {
   const user = await currentUser();
   const role = getUserRole(user);
-  
+
   if (!role) {
     return NextResponse.json(
       { error: "Unauthorized: No role assigned" },
       { status: 403 }
     );
   }
-  
+
   if (!hasAccess(role, pathname)) {
     return NextResponse.json(
       { error: "Forbidden: Insufficient permissions" },
       { status: 403 }
     );
   }
-  
+
   return null; // Access granted
+}
+
+/**
+ * Require admin role for API route access
+ * Returns a NextResponse with 403 if not admin, null if access is granted
+ *
+ * Usage:
+ * const forbidden = await requireAdminRole();
+ * if (forbidden) return forbidden;
+ */
+export async function requireAdminRole(): Promise<NextResponse | null> {
+  const user = await currentUser();
+  const role = getUserRole(user);
+
+  if (role !== "admin") {
+    return NextResponse.json(
+      { error: "Forbidden: Admin access required" },
+      { status: 403 }
+    );
+  }
+
+  return null;
+}
+
+/**
+ * Require admin or editor role for API route access
+ * Returns a NextResponse with 403 if neither role, null if access is granted
+ *
+ * Usage:
+ * const forbidden = await requireAdminOrEditorRole();
+ * if (forbidden) return forbidden;
+ */
+export async function requireAdminOrEditorRole(): Promise<NextResponse | null> {
+  const user = await currentUser();
+  const role = getUserRole(user);
+
+  if (!role || !["admin", "editor"].includes(role)) {
+    return NextResponse.json(
+      { error: "Forbidden: Admin or editor access required" },
+      { status: 403 }
+    );
+  }
+
+  return null;
 }
 

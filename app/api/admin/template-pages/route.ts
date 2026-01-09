@@ -10,6 +10,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma, Prisma } from "@/lib/db";
 import { createTemplatePageSchema } from "./schema";
 import { ZodError } from "zod";
+import { requireAdminOrEditorRole } from "@/lib/auth/roles";
 
 /**
  * GET /api/admin/template-pages
@@ -22,6 +23,10 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin or editor role
+    const forbidden = await requireAdminOrEditorRole();
+    if (forbidden) return forbidden;
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search");
@@ -73,6 +78,10 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    // Verify admin or editor role
+    const forbidden = await requireAdminOrEditorRole();
+    if (forbidden) return forbidden;
 
     const body = await request.json();
     const data = createTemplatePageSchema.parse(body);

@@ -2,9 +2,9 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { mapClerkOrgRole } from "@/lib/auth/organization";
-import { GeneralSettingsForm } from "./_components/general-settings-form";
+import { DangerZoneSettings } from "./_components/danger-zone-settings";
 
-export default async function SettingsGeneralPage({
+export default async function SettingsDangerZonePage({
   params,
 }: {
   params: Promise<{ locale: string; slug: string }>;
@@ -18,7 +18,6 @@ export default async function SettingsGeneralPage({
 
   const role = mapClerkOrgRole(orgRole ?? undefined);
 
-  // Only admins can access settings
   if (role !== "org_admin") {
     redirect(`/${locale}/org/${slug}`);
   }
@@ -28,8 +27,6 @@ export default async function SettingsGeneralPage({
     select: {
       id: true,
       name: true,
-      slug: true,
-      logoUrl: true,
     },
   });
 
@@ -40,22 +37,15 @@ export default async function SettingsGeneralPage({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-[hsl(var(--fg))] font-heading">
-          General Settings
+        <h2 className="text-xl font-semibold text-[hsl(var(--crimson))] font-heading">
+          Danger Zone
         </h2>
         <p className="text-sm text-[hsl(var(--globe-grey))] mt-1">
-          Update your organization&apos;s basic information
+          Irreversible actions that permanently affect your organization
         </p>
       </div>
 
-      <GeneralSettingsForm
-        orgId={organization.id}
-        initialData={{
-          name: organization.name,
-          slug: organization.slug,
-          logoUrl: organization.logoUrl,
-        }}
-      />
+      <DangerZoneSettings orgId={organization.id} orgName={organization.name} />
     </div>
   );
 }

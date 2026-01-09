@@ -529,7 +529,7 @@ export function TypeformBuilder({
         <header className="h-14 border-b border-[hsl(var(--border))] bg-[hsl(var(--bg))] flex items-center justify-between px-4 shrink-0">
           <div className="flex items-center gap-4">
             <a
-              href={`/${locale}/admin/templates`}
+              href={backUrl || `/${locale}/admin/templates`}
               className="p-2 rounded-lg text-[hsl(var(--globe-grey))] hover:text-[hsl(var(--fg))] hover:bg-[hsl(var(--muted))] transition-colors"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

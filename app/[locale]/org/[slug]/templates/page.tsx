@@ -5,8 +5,9 @@ import { prisma } from "@/lib/db";
 import { mapClerkOrgRole } from "@/lib/auth/organization";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, FileText, Edit, Trash2, Eye, EyeOff } from "lucide-react";
+import { FileText, Edit, Eye, EyeOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { NewTemplateDialog } from "./_components/new-template-dialog";
 
 export default async function OrgTemplatesPage({
   params,
@@ -54,12 +55,12 @@ export default async function OrgTemplatesPage({
           </p>
         </div>
         {canManage && (
-          <Button asChild>
-            <Link href={`/${locale}/org/${slug}/templates/new`}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Template
-            </Link>
-          </Button>
+          <NewTemplateDialog
+            locale={locale}
+            orgSlug={slug}
+            orgName={organization.name}
+            orgId={organization.id}
+          />
         )}
       </div>
 
@@ -72,12 +73,12 @@ export default async function OrgTemplatesPage({
               Create your first organization template to get started.
             </p>
             {canManage && (
-              <Button asChild>
-                <Link href={`/${locale}/org/${slug}/templates/new`}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Template
-                </Link>
-              </Button>
+              <NewTemplateDialog
+                locale={locale}
+                orgSlug={slug}
+                orgName={organization.name}
+                orgId={organization.id}
+              />
             )}
           </CardContent>
         </Card>

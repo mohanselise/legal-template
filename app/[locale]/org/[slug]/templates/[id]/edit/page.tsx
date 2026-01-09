@@ -60,6 +60,7 @@ export default async function EditOrgTemplatePage({
       orgSlug={slug}
       orgId={organization.id}
       template={template}
+      previewToken={template.previewToken}
     />
   );
 }

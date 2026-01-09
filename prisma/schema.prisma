@@ -27,9 +27,10 @@ model Organization {
   seliseClientSecret String?
 
   // Relations
-  templates    Template[]
-  permissions  OrganizationPermission[]
-  letterheads  OrganizationLetterhead[]
+  templates         Template[]
+  permissions       OrganizationPermission[]
+  letterheads       OrganizationLetterhead[]
+  templateRequests  TemplateRequest[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -335,4 +336,36 @@ model TemplatePage {
   @@index([slug])
   @@index([locale])
   @@index([published])
+}
+
+// Template Request - Requests for SELISE team to create templates on behalf of organizations
+model TemplateRequest {
+  id              String       @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Requester info
+  requestedBy     String       // Clerk user ID who made the request
+  requesterEmail  String
+  requesterName   String
+
+  // Request details
+  type            String       @default("collaboration") // "collaboration" | "custom"
+  status          String       @default("pending") // "pending" | "in_progress" | "completed" | "cancelled"
+  notes           String?      @db.Text
+
+  // Response from SELISE team
+  assignedTo      String?      // Admin user handling the request
+  responseNotes   String?      @db.Text
+
+  // Resulting template (if created)
+  templateId      String?      // Reference to created template
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  completedAt     DateTime?
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([requestedBy])
 }
